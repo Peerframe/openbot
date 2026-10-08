@@ -6,7 +6,7 @@ import { z } from "zod";
 export class WriteFailure extends Error {
   constructor(
     readonly status: number,
-    readonly body: { error: string },
+    readonly body: { error: string; [key: string]: unknown },
   ) {
     super("Owner write refused.");
   }

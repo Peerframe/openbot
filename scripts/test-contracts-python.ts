@@ -27,8 +27,6 @@ import {
   OwnedDockerFixture,
   startControlPostgres,
 } from "./python-acceptance-fixture.ts";
-import { qualifyPrimaryBotWrite } from "./ts-primary-bot-acceptance.ts";
-import { qualifyTranscriptionRead } from "./ts-transcription-acceptance.ts";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const args = process.argv.slice(2);
@@ -232,6 +230,9 @@ try {
               OPENBOT_CONTROL_PROXY_ADDRESS: "127.0.0.1",
               OPENBOT_CONTROL_TS_READ_GROUP: readGroup ? "transcription" : "none",
               OPENBOT_CONTROL_TS_WRITE_GROUP: readGroup ? "primary-bot" : "none",
+              OPENBOT_CONTROL_TS_AUTH_GROUP: readGroup ? "owner" : "none",
+              OPENBOT_CONTROL_TS_PRODUCT_GROUP: readGroup ? "p3" : "none",
+              OPENBOT_CONTROL_TS_CHANNEL_READ_GROUP: readGroup ? "channels" : "none",
               OPENBOT_CONTROL_PUBLIC_ORIGIN: baseUrl,
             }
           : {}),
@@ -249,24 +250,45 @@ try {
       },
     );
   const startEntry = (readGroup = true) =>
-    processes.start(process.execPath, ["apps/server-ts/dist/serve.js"], {
-      ...allowlistedEnvironment(["PATH", "HOME", "TMPDIR"]),
-      OPENBOT_TS_PYTHON_ORIGIN: `http://127.0.0.1:${pythonPort}`,
-      OPENBOT_TS_PUBLIC_ORIGIN: baseUrl,
-      OPENBOT_TS_HOST: "127.0.0.1",
-      OPENBOT_TS_PORT: String(port),
-      OPENBOT_TS_READ_GROUP: readGroup ? "transcription" : "none",
-      OPENBOT_TS_WRITE_GROUP: readGroup ? "primary-bot" : "none",
-      OPENBOT_TS_WRITE_ALLOWED_ORIGINS: `${baseUrl},https://secondary.example.test`,
-      OPENBOT_TS_READ_ALLOWED_ORIGINS: `${baseUrl},https://secondary.example.test`,
-      OPENBOT_TS_DATABASE_URL: dsn,
-      ...(tlsDirectory
-        ? {
-            OPENBOT_TS_TLS_CERT_PATH: join(tlsDirectory, "server.pem"),
-            OPENBOT_TS_TLS_KEY_PATH: join(tlsDirectory, "server.key"),
-          }
-        : {}),
-    });
+    processes.start(
+      process.execPath,
+      selectedSuite === "models"
+        ? ["scripts/ts-model-fixture.ts", modelReceipt]
+        : ["apps/server-ts/dist/serve.js"],
+      {
+        ...allowlistedEnvironment(["PATH", "HOME", "TMPDIR"]),
+        OPENBOT_TS_PYTHON_ORIGIN: `http://127.0.0.1:${pythonPort}`,
+        OPENBOT_TS_PUBLIC_ORIGIN: baseUrl,
+        OPENBOT_TS_HOST: "127.0.0.1",
+        OPENBOT_TS_PORT: String(port),
+        OPENBOT_TS_READ_GROUP: readGroup ? "transcription" : "none",
+        OPENBOT_TS_WRITE_GROUP: readGroup ? "primary-bot" : "none",
+        OPENBOT_TS_AUTH_GROUP: readGroup ? "owner" : "none",
+        OPENBOT_TS_PRODUCT_GROUP: readGroup ? "p3" : "none",
+        ...(publisher
+          ? {
+              OPENBOT_CONTROL_PUBLISHER_DIRECTORY: publisherDirectory,
+              OPENBOT_CONTROL_PUBLISHER_PASSPHRASE_FILE: publisherPassphrase,
+            }
+          : {}),
+        OPENBOT_TS_OBJECT_ROOT: join(directory, "objects"),
+        OPENBOT_TS_ARTIFACT_ROOT: join(directory, "artifacts"),
+        OPENBOT_TS_MODEL_CONNECTION_KEY_PATH: join(directory, "objects", "model-connections.key"),
+        OPENBOT_TS_CHANNEL_READ_GROUP: readGroup ? "channels" : "none",
+        OPENBOT_TS_OWNER_PASSWORD: password,
+        OPENBOT_TS_AUTH_ALLOWED_ORIGINS: `${baseUrl},https://secondary.example.test`,
+        OPENBOT_TS_WRITE_ALLOWED_ORIGINS: `${baseUrl},https://secondary.example.test`,
+        OPENBOT_TS_READ_ALLOWED_ORIGINS: `${baseUrl},https://secondary.example.test`,
+        OPENBOT_TS_DATABASE_URL: dsn,
+        OPENBOT_TS_PLUGIN_LOCAL_ENDPOINTS: JSON.stringify([plugins.endpoint]),
+        ...(tlsDirectory
+          ? {
+              OPENBOT_TS_TLS_CERT_PATH: join(tlsDirectory, "server.pem"),
+              OPENBOT_TS_TLS_KEY_PATH: join(tlsDirectory, "server.key"),
+            }
+          : {}),
+      },
+    );
   let child = startPython(entry === "ts");
   let entryChild = entry === "ts" ? startEntry() : undefined;
   const waitReady = async () => {
@@ -377,7 +399,7 @@ try {
       "TLS entry restart retained the same HTTPS URL and secure Owner session; private Python retained the forwarded operations. Canonical HTTPS redirect and private direct refusal passed.",
     );
   }
-  const cookie = setCookie.split(";")[0];
+  let cookie = setCookie.split(";")[0]!;
   assert(cookie);
   const created = await fetch(`${baseUrl}/api/v1/bots`, {
     method: "POST",
@@ -430,7 +452,35 @@ try {
       "Mixed → direct Python → mixed switch retained the public URL, SQL Bot and issued Owner session; one writer at each step.",
     );
   }
-  if (entry === "ts" && ["all", "control", "resources"].includes(selectedSuite)) {
+  let pluginQualification: (() => Promise<void>) | undefined;
+  if (
+    entry === "ts" &&
+    [
+      "all",
+      "control",
+      "resources",
+      "artifacts",
+      "lifecycle",
+      "employee",
+      "automations",
+      "plugins",
+      "browser",
+    ].includes(selectedSuite)
+  ) {
+    // Python-only contracts must not load optional compiled TS acceptance modules.
+    const { qualifyP3Completion } = await import("./ts-p3-completion-acceptance.ts");
+    const { qualifyIdentityLifecycle } = await import("./ts-identity-lifecycle-acceptance.ts");
+    const { qualifyFileOwnership } = await import("./ts-files-acceptance.test.ts");
+    const { qualifyChannelReads } = await import("./ts-channel-read-acceptance.ts");
+    const { qualifyPluginOwnership } = await import("./ts-plugins-acceptance.ts");
+    const { qualifySchedulingOwnership } = await import("./ts-scheduling-acceptance.ts");
+    const { qualifyEmployeeOwnership } = await import("./ts-employee-acceptance.ts");
+    const { qualifyProductReads } = await import("./ts-product-reads-acceptance.ts");
+    const { qualifyModelOwnership } = await import("./ts-model-acceptance.ts");
+    const { qualifyOwnerAuth } = await import("./ts-owner-auth-acceptance.ts");
+    const { qualifyPrimaryBotWrite } = await import("./ts-primary-bot-acceptance.ts");
+    const { qualifyProductIdentity } = await import("./ts-product-identity-acceptance.ts");
+    const { qualifyTranscriptionRead } = await import("./ts-transcription-acceptance.ts");
     const ownershipAcceptance = {
       databaseUrl: dsn,
       origin: baseUrl,
@@ -460,8 +510,74 @@ try {
         await waitReady();
       },
     };
-    await qualifyTranscriptionRead(ownershipAcceptance);
-    await qualifyPrimaryBotWrite(ownershipAcceptance);
+    if (["all", "control"].includes(selectedSuite)) {
+      await qualifyTranscriptionRead(ownershipAcceptance);
+      await qualifyPrimaryBotWrite(ownershipAcceptance);
+      cookie = await qualifyOwnerAuth({ ...ownershipAcceptance, password });
+      await qualifyChannelReads({ ...ownershipAcceptance, cookie });
+      await qualifyProductIdentity({ ...ownershipAcceptance, cookie });
+      await qualifyModelOwnership({ ...ownershipAcceptance, cookie });
+    }
+    if (["all", "control", "lifecycle", "resources", "artifacts"].includes(selectedSuite)) {
+      await qualifyProductReads({ ...ownershipAcceptance, cookie });
+      await qualifyFileOwnership({
+        ...ownershipAcceptance,
+        cookie,
+        objectRoot: join(directory, "objects"),
+      });
+    }
+    if (["all", "lifecycle", "automations"].includes(selectedSuite))
+      await qualifySchedulingOwnership({
+        ...ownershipAcceptance,
+        cookie,
+        async admit(scheduleId) {
+          const config = join(directory, "automation-admission.json");
+          const workRoot = join(directory, "automation-work");
+          await mkdir(workRoot, { mode: 0o700 });
+          await writeFile(
+            config,
+            JSON.stringify({
+              dsn,
+              scheduleId,
+              objectRoot: join(directory, "objects", "attachments"),
+              workRoot,
+            }),
+            { mode: 0o600 },
+          );
+          const admission = processes.start(
+            join(root, "apps/server-python/.worker-venv/bin/python"),
+            ["-I", "-B", "apps/server-python/scripts/contract-automation-admission.py", config],
+            environment,
+          );
+          const deadline = setTimeout(() => admission.kill("SIGTERM"), 30000);
+          try {
+            await processes.waitSuccess(admission);
+          } finally {
+            clearTimeout(deadline);
+            await rm(config);
+          }
+        },
+      });
+    if (["all", "lifecycle"].includes(selectedSuite))
+      await qualifyIdentityLifecycle({
+        ...ownershipAcceptance,
+        cookie,
+        root,
+        modelKeyPath: join(directory, "objects", "model-connections.key"),
+      });
+    if (["all", "plugins"].includes(selectedSuite))
+      pluginQualification = () =>
+        qualifyPluginOwnership({
+          ...ownershipAcceptance,
+          cookie,
+          endpoint: plugins.endpoint,
+          token: plugins.token,
+          storePath: join(directory, "objects", "plugins", "state.json"),
+        });
+    if (["all", "employee"].includes(selectedSuite))
+      await qualifyEmployeeOwnership({ ...ownershipAcceptance, cookie });
+    if (["all", "browser"].includes(selectedSuite))
+      await qualifyP3Completion({ ...ownershipAcceptance, cookie });
   }
   // This owned database has no Worker. Seed publication states so HTTP decision/unread
   // contracts exercise real transactions without claiming execution by a production Host.
@@ -801,6 +917,19 @@ try {
     }
   }
   await runCli(fixture, selectedSuite);
+  if (pluginQualification && selectedSuite === "all") {
+    // The control contract deliberately rotates the password and revokes every old session.
+    // This independent fixture starts with fresh authority after that successful security test.
+    const fresh = randomBytes(32).toString("base64url");
+    const sessionDatabase = createDatabase(dsn);
+    try {
+      await sessionDatabase.client`INSERT INTO auth_sessions(id,token_digest,owner_id,expires_at) VALUES(${randomUUID()},${createHash("sha256").update(fresh).digest("hex")},'owner',clock_timestamp()+interval '5 minutes')`;
+    } finally {
+      await sessionDatabase.close();
+    }
+    cookie = `${tls ? "__Host-openbot_session" : "openbot_session"}=${fresh}`;
+  }
+  await pluginQualification?.();
   if (selectedSuite === "all" || selectedSuite === "nodes" || selectedSuite === "browser") {
     const evidence = createDatabase(dsn);
     try {

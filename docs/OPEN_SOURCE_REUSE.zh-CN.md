@@ -649,3 +649,32 @@ Python 保留签发/撤销、写入和模型解析。不增加版本、持久化
 行锁和现有审计。Fastify5.12.5 原始请求体入口只在 Origin/会话校验后解析本接口1024字节/5秒 JSON。
 不增加依赖、结构、凭证访问或复制源码；保留 Python 身份生命周期和明确双边回退。
 见[决策](research/typescript-control-plane-p0.zh-CN.md#p3-主-bot-选择决策2026-10-08)。
+
+### P3 Owner 身份认证（2026-10-08）
+
+复用 Node 内置异步 scrypt 和既有 PostgreSQL 会话合同，不新增密码学依赖、不迁移数据、不复制源码。
+Node22.22.2 与 @noble/hashes2.4.0 的评估见[对应决策](research/typescript-control-plane-p0.zh-CN.md)。
+六个操作必须显式成组选择，并通过真实并发、反向切换和界面验收。
+
+
+### P3 模型、附件与存储（2026-10-08）
+
+模型调用复用 OpenAI 7.28.0、Anthropic SDK 0.131.0；私有文件使用 Koffi 3.3.2 的固定 POSIX
+接口，保留原有密钥格式、跨进程锁和 SQL 清理凭据。目录遍历只读取已核对的 ABI 字段，不复制
+原生头文件。文档识别复用未改动的 Node 解析辅助程序及固定解析器/语言包；转写使用相同 OpenAI
+版本的 multipart 接口。不增加解析器分叉，也不安装应用或系统服务。具体边界和来源见
+[迁移决策](research/typescript-control-plane-p0.zh-CN.md#p3-附件与存储接管扩展2026-10-08进行中)。
+
+### P3 可选身份开场白（2026-10-08）
+
+复用保留的身份、审计和 Work 取消事务，以及已经审阅的 OpenAI7.28.0 和 Anthropic0.131.0 SDK。
+已锁定的 entities8.0.0（BSD-2-Clause）成为显式运行时依赖，保持 Python HTML 字符引用兼容；
+不安装新软件，不复制上游源码。见[生命周期与开场白决定](research/typescript-control-plane-p0.md#p3-identity-lifecycle-and-optional-greeting-extension-2026-10-08)。
+
+
+### P3 完整产品组合（2026-10-08）
+
+复用 Node24.21.0 HTTP 取消、Postgres.js3.4.9、PostgreSQL17.11 咨询锁及保留的 MIT Employee
+发布包格式/签名函数。有限私有端口让 P4 保留唯一的实时 Worker 连接注册表，由 TS 接管公开 P3 策略、
+会话和审计。没有新增依赖或复制上游源码。固定版本证据、未采用双注册表的理由、一次性派发和通知监听行为见
+[边界决策](research/typescript-control-plane-p0.zh-CN.md)。

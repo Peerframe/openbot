@@ -344,33 +344,181 @@ same-scope resource comparison. See ADR-0050 for the detailed gates and Owner ap
 
 ## Current migration checkpoint (2026-10-08)
 
+The complete P3 candidate is in `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`, branch
+`codex/ts-control-plane-p3-completion`. [PR209](https://github.com/Peerframe/openbot/pull/209) and
+[PR208](https://github.com/Peerframe/openbot/pull/208) remain drafts targeting `main`; PR209 includes
+PR208's authentication work. The Owner requests one complete P3 review and evaluation before any
+merge. Claude's Step43 UI, installed applications and production data remain untouched.
 
-Active worktree: `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`, branch
-`codex/ts-control-plane-p3-primary-bot`, integrated with latest main
-`fe1520dcf997ed31452ea63c37ef5ea488cd7187` after the separately authorized PR205 merge.
-The new main tree equals qualified PR205 head `b62c22fe` and the hosted tested merge tree. PR200 was merged after the Owner's continuation
-approval. Its tree `a0fc4e6ed0baa011f9b0829b9c78edb8538f161a` is identical to the qualified
-PR candidate: all17 jobs at [CI37561911353](https://github.com/Peerframe/openbot/actions/runs/37561911353).
-Main [CI37613802756](https://github.com/Peerframe/openbot/actions/runs/37613802756) initially failed
-in direct Python MCP resource/prompt contracts with a10-second timeout. Attempt2 passed direct
-Python all/publisher/models, then timed out at the same normal MCP content-read loop through the
-mixed TS entry (`plugins.ts:296`). Assertions/timeouts are unchanged. The two entry observations do
-not establish a TS-forwarding cause. The shared HTTP watcher correction in PR205 later passes all17
-[CI37661699512](https://github.com/Peerframe/openbot/actions/runs/37661699512) jobs at head `b62c22fe`;
-the previous failed runs remain historical evidence. This is separate from the previously reported workspace503.
-Step43's sidebar crown/avatar/animation remains Claude-owned; no messages or UI edits are made here.
-The original dirty checkout, installed app and user profiles remain preserved.
+The explicit composition owns **109 of121** existing default operations: authentication, settings,
+identity/conversations, workspace/SSE, files/storage, knowledge and portability, approvals/automation
+management, plugins, Node identity and human browser HTTP. The remaining12 are task/action/message
+execution, Run commands, artifact metadata and execution health; Worker sockets, live registry,
+harness and Temporal remain P4. Python retirement is P5. Public P3 handlers never fall back to Python;
+paired reverse reads the same newer SQL, encrypted files and plugin state. A finite private runtime
+port retains one actual Worker registry until P4; it grants no alternate assignment authority.
 
-The preceding published PR205 candidate transfers only `GET /api/v1/settings/transcription` to TS. Python retains
-PUT, session issuance/password/revocation, settings/audit writes, model resolution, processing and
-Temporal. Both processes use the same existing PostgreSQL and shared strict response schema.
-No data/schema migration, read cache, secondary auth source or automatic fallback is introduced.
-Operator selection defaults to `none`. Explicit paired `transcription` selection makes Python's
-private GET refuse with `operation_owned_by_ts`; switching both flags to `none` restores forwarding
-on the same address/database/session, including newer data. Python's implementation is retained
-only for this bounded reverse-switch window; retire it when the whole transcription cohort's
-write/consumer gates pass, then remove the forwarding adapter in P5. The marked, uninstalled native
-candidate uses this reviewed cohort and refuses old/incomplete resource selection.
+Current source runs the complete real HTTP/HTTPS suites (270 checks plus19 artifact checks),
+ownership/reverse/rollback qualifications, configured publisher12 and synthetic-provider18 checks.
+The complete boundary fixture verifies all17 final public quarantines, actual live registry/socket
+reads, single-use dispatch, post-admission revocation/profile/gate loss and committed SSE notifications.
+Synthetic peers/providers qualify boundary behavior; they do not qualify live execution or paid calls.
+Python regression passed1075 with2 recorded skips; Worker/Temporal qualification stays in required CI.
+
+UI initially recorded workspace/reactions503 during the second Bot. Real SQL reproduced an immediate
+admission refusal at the fifth request. The fixed pool retains four SQL connections with at most
+twelve bounded waiting requests. Its deterministic regression passes; the final whole-interface
+receipt is PASS12/12,111 responses,zero unexpected responses/page errors/workspace503. The v7 staged
+and actual packaged macOS arm64 API-only Preview both pass resource34 and portability13 contracts,
+restart/persistence and owned process cleanup.641 compiled/source files match both closures; v6 is
+retained as rollback. This is unsigned, uninstalled and uses synthetic encryption, without new
+Keychain, actual Electron GUI, Worker/browser execution or other-platform qualification.
+
+The [single receipt](typescript-control-plane-p2-native.json), key `currentP3CompletionCandidate`,
+records exact local evidence and source fingerprints. Hosted CI must be read for the actual PR HEAD;
+the older `bdadf851` run is historical only. Local credential scanning was rejected by automatic
+approval review before execution; the authorized PR's required hosted security job remains the gate.
+This checkpoint records candidate scope and local evidence, not merge authorization or a release.
+
+The first published completion HEAD `b913c01a` passed hosted security but exposed a clean-checkout
+build-order defect in validate and Python-contract CI. Script typechecking now builds its TS
+prerequisite, and Python-only contracts load no TS qualification modules. With TS output absent,
+Python control50 and a full cold `npm run check` pass; the restored mixed boundary8/browser14 also
+pass. All641 product fingerprints are unchanged, preserving the native/UI evidence. The repaired
+HEAD still requires its own complete hosted result.
+
+The next hosted HEAD `da12a8a2` exposed an intermittent packed-Preview `ECONNRESET` while sending
+an import body just above2MiB. The early413/Connection-close raced the unfinished upload. Review of
+[Node22.22.2 response completion](https://github.com/nodejs/node/blob/v22.22.2/lib/_http_server.js#L1007-L1039)
+confirmed that response completion can start socket destruction without waiting for unread input.
+Reuse the existing streaming parser: reject unchanged, discard no more than the operation limit
+plus64KiB without retaining/parsing rejected content, and retain its existing5s deadline/cancellation.
+Bodies beyond that discard bound still stop immediately. No retry, body-limit expansion, dependency
+change or copied upstream source. The before/after regression covers declared and streaming overflow,
+the byte cap and cancellation; actual packaged portability contracts requalify the failing entry.
+
+
+### P3 protected files and model credentials decision (2026-10-08)
+
+The current Python key and attachment stores use descriptor-relative `openat`/`mkdirat`/`linkat`,
+`O_NOFOLLOW` on every path component, kernel `flock` shared with other Python processes, and fsync.
+Node24 core does not expose openat or flock. Path-only lstat/open sequences and lock directories
+would weaken race protection or create a second lock protocol during coexistence. Retaining a
+Python file helper would prevent P5 retirement. Rejected fs-ext2.1.1 (MIT, `aded976099c2b06c944f0897a9b004dbf266e234`):
+it provides flock but not descriptor-relative operations and uses NAN. A custom Node-API addon
+would require an additional source/build/release boundary for the same narrow system calls.
+
+Choose released MIT **Koffi3.3.2**, upstream tag `koffi/3.3.2`, commit
+`390a0abb8b240188695084fb5662b965783e4e78`, published2026-09-25. Review covers the immutable npm
+source tarball, native loader/FFI prototypes, release fixes, MIT license, platform matrix, upstream
+C/JS ABI tests and open issues. The package has no mandatory runtime JS dependency; optional
+platform packages are pinned3.3.2. Darwin-arm64 adds about1.2MiB of native binary payload. Existing
+production package-graph staging must include the applicable optional binary and its notices.
+No upstream source is copied or substantially adapted. No app or system service is installed.
+
+Expose only fixed private libc signatures to trusted Server code. Never accept a library path,
+symbol, signature, pointer or flag from HTTP, model, plugin or renderer input. Support this adapter
+only on the existing Linux/macOS64-bit Server targets; Windows remains a remote client. Keep the
+raw32-byte0600 key, directory lock, no-replacement hard-link publication, stable opened-inode and
+nanosecond metadata checks, canonical v1 AES-256-GCM envelope and ordered JSON AAD. Node built-in
+crypto provides encryption; Koffi is only the missing POSIX adapter. Refuse unsupported platforms
+and corrupt/missing keys with existing ciphertext. Do not weaken Python rollback compatibility.
+
+Sources: [Node24 fs API](https://nodejs.org/docs/latest-v24.x/api/fs.html),
+[Koffi source location and tests](https://koffi.dev/contribute),
+[pinned source](https://codeberg.org/Koromix/rygel/src/commit/390a0abb8b240188695084fb5662b965783e4e78/src/koffi),
+[release history](https://koffi.dev/changelog), [load/prototype API](https://koffi.dev/load),
+[fs-ext source](https://github.com/baudehlo/node-fs-ext/tree/aded976099c2b06c944f0897a9b004dbf266e234),
+[Darwin flags](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/sys/fcntl.h),
+[Linux6.12 flags](https://github.com/torvalds/linux/blob/v6.12/include/uapi/asm-generic/fcntl.h).
+[Koffi issue274](https://github.com/Koromix/koffi/issues/274) concerns a Go library spawning threads
+inside a Node Worker; its threadless libc case does not reproduce. Our fixed system-call adapter
+uses no foreign background threads or callbacks, but process-exit and packaging tests remain required.
+
+This decision is implementation evidence, not qualification: require real Python/TS ciphertext
+interchange and concurrent initializers, bad permissions/symlinks/path replacement/lock timeout,
+Linux/macOS checks, bounded model transport parity, mixed HTTP/HTTPS, UI12/12 and native closure
+qualification before selecting the next public cohort. No paid provider calls are authorized.
+
+### P3 conversation and identity editing decision (2026-10-08)
+
+Reuse ADR0050's Fastify5.12.5/Postgres.js3.4.9/PostgreSQL17.11 and the current P1 TS validators;
+port the current Python transactions, not the frozen oracle. Unicode code-point adapters retain
+Python creation/profile limits. Keep one Owner transaction through the actual mutation, audit and
+final expiry check; SHARE locks continue to serialize revocation. No schema or dependency changes.
+
+The first real control suite exposed missing SSE invalidation after a TS channel rename. Python's
+product registrar previously incremented a process-local revision. Compare: moving the entire SSE
+workspace composition immediately would couple this group to live Node registry and Work progress;
+a new shared counter table adds persistent migration state; reusing PostgreSQL transactional
+`NOTIFY` adds no schema and preserves rollback semantics. Choose a temporary empty-payload
+`openbot_product_changed` notification for the migrated **generic product mutations only**.
+Typed appearance/profile/creation routes retain their existing snapshot-change behavior, including
+appearance no-op silence. Python remains the sole SSE publisher; one autocommit listener invalidates
+its existing poll state, closes with the product and fails streams closed on listener loss.
+It does not issue authority, dispatch, replay writes or expose data. Remove it when SSE ownership
+moves to TS. Mutations continue safely while Python is explicitly stopped; reconnect fetches current
+facts. No upstream source is copied or substantially adapted.
+
+Reviewed [PostgreSQL17 NOTIFY](https://www.postgresql.org/docs/17/sql-notify.html) commit delivery,
+coalescing and queue limits, and installed [Psycopg3.3.6 async connection source](https://github.com/psycopg/psycopg/blob/3.3.6/psycopg/psycopg/connection_async.py)
+(notifies generator and cancellation). The existing PostgreSQL and Psycopg licenses/notices remain
+unchanged. Real SSE slow-consumer/no-op/reconnect tests supplement the listener failure unit test.
+
+### P3 channel read decision (2026-10-08)
+
+The next local candidate selects exactly `listBots`, `listChannels`, `listMessages` and `listRuns`
+under paired `OPENBOT_TS_CHANNEL_READ_GROUP=channels` / `OPENBOT_CONTROL_TS_CHANNEL_READ_GROUP=channels`.
+It builds on draft #208; the Owner explicitly retains that draft and authorizes local work only.
+Existing identity writers, greetings, dispatch, workspace assembly and Temporal remain Python-owned.
+The retained Python read methods continue to serve internal consumers; only these public routes
+are quarantined while selected. Reverse selection reads newer shared facts without restoring data.
+
+Reuse reviewed Fastify5.12.5, Postgres.js3.4.9 and PostgreSQL17.11; no dependency, schema or copied
+upstream source. Rechecked [Postgres.js transaction/type documentation](https://github.com/porsager/postgres/blob/v3.4.9/README.md)
+and [PostgreSQL17 READ COMMITTED semantics](https://www.postgresql.org/docs/17/transaction-iso.html#XACT-READ-COMMITTED).
+A bounded read-only transaction preserves the existing session recheck after projection SQL, so
+revocation committed during a blocked read is visible before exposing either data or a scoped error.
+Repeatable-read would hide that revocation; a shared session lock would change logout blocking.
+Keep the existing bounded admission helper, fixed SQL/order/limits and no retry/fallback.
+
+Preserve microsecond cursor timestamps as SQL text rather than converting through JavaScript Date;
+public timestamps retain millisecond precision. Reuse shared response schemas with the existing
+Python code-point adapter for channel previews. Cursor admission retains exact integer version,
+canonical base64url, duplicate-key refusal, retained byte-JSON encodings and channel binding. SQL bounds message/Run payloads
+before transfer; final response size uses Python's JSON separator accounting. Real disposable
+HTTP/HTTPS parity, invalid/oversized records, revocation during a blocked read, newer-data reverse
+switch, Python-down reads, UI12/12 and native staged/packaged probes are required before qualification.
+
+### P3 Owner authentication decision (2026-10-08)
+
+PR206 is merged at `41a1a5b57b258e5b34d9c4ef80096b69b376930f`; its tree matches the qualified
+primary-Bot candidate. The next local candidate moves all six Owner auth/session operations
+together, behind explicit paired `owner` selection. Other Python authority and CLI recovery remain.
+Local qualification is recorded above; production selection, publication and P3 completion remain separate.
+
+Reuse Node's built-in asynchronous `crypto.scrypt`, `randomBytes` and `timingSafeEqual`, the existing
+Postgres.js3.4.9/PostgreSQL17.11 boundary, and shared TS schemas. Reviewed Node22.22.2 commit
+[2645dc73720b1b4f27c49f395d3c66025ce126cc](https://github.com/nodejs/node/blob/2645dc73720b1b4f27c49f395d3c66025ce126cc/doc/api/crypto.md),
+[RFC7914](https://www.rfc-editor.org/rfc/rfc7914.html), and
+[OWASP password storage guidance](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html).
+Retain the exact salted scrypt format, N32768/r8/p3, 64MiB maxmem, 32-byte output and UTF-8 scalar
+input. Persisted credentials override bootstrap configuration; no schema or credential rewrite.
+Native work uses libuv; admission remains occupied until actual completion after disconnect/timeout.
+
+Compared maintained MIT [@noble/hashes2.4.0](https://github.com/paulmillr/noble-hashes/releases/tag/2.4.0),
+commit `663c2aeeffc308ac0cded59bd32f7c212adacfc2`: no production dependencies, Node>=20.19,
+KDF/ACVP/fuzz tests; reviewed its release, README/security guidance and open UTF-8/async-loop issues.
+Its historical independent audit does not establish audit of this release. The built-in API avoids
+another crypto dependency and JS scheduling adapter while preserving the existing storage contract.
+No upstream implementation is copied or substantially adapted; no new dependency is installed.
+
+Security acceptance requires the existing global auth-before-session lock order, shared client-network
+throttles, post-KDF credential-revision recheck, commit-before-cookie, expiry/revocation checks, atomic
+audit rollback, bounded body/KDF/SQL admission, and no fallback or retry. Invalid attempts must commit.
+Qualify real PostgreSQL HTTP and verified-CA HTTPS, concurrent stale-password issuance, shared
+Python/TS credentials and sessions across reverse switch, UI12/12, full checks and staged/packaged
+native startup/restart. Record results in the existing receipt only after execution.
 
 ### P3 primary Bot selection decision (2026-10-08)
 
@@ -1424,3 +1572,170 @@ bundles remain in `apps/desktop/out`; no Applications install or persistent serv
 backend/native local candidate is ready; required hosted CI and Claude's overall interface acceptance
 remain distinct outstanding evidence. The next checkpoint is to reconcile those existing gates and
 prepare one P3 settings/read group with real forward/reverse SQL evidence; no P3 writer is active yet.
+
+### P3 model and settings ownership (2026-10-08)
+
+Reuse the ADR0050 OpenAI7.28.0 and Anthropic0.131.0 SDK decisions and current Python SQL/DTO behavior.
+`identity-models` is an explicit cumulative selector paired on both services. No schema migration,
+credential re-encryption or environment-key fallback is introduced. Connection mutations retain the
+existing advisory namespace, revision CAS, Bot-before-connection lock order and atomic audit.
+Owner authorization is checked before sending and again before publishing a remote result. Two
+checks may be in flight; cancellation never releases capacity until the underlying operation settles.
+SDK retry, redirect, logging, ambient headers, organization/project selection and proxy fallback are
+disabled. Fixed HTTPS transport bounds headers/bytes and validates actual provider response shapes;
+only a private constructor used by the disposable test process can supply a synthetic transport.
+
+The protected-file decision above preserves Python's AES-GCM envelope/AAD and raw32-byte key, not a
+second secret store. The v6 desktop manifest pins both SDKs and Koffi and refuses missing native
+binaries before starting either service. Libraries are staged inside the candidate; no system apps
+are installed. The timezone validator uses the reviewed POSIX system TZif roots with exact component
+case rather than `Intl.supportedValuesOf`, which omits retained aliases. This matches the existing
+[Python ZoneInfo system-data contract](https://docs.python.org/3.12/library/zoneinfo.html#data-sources)
+on the qualified POSIX targets; the local Server does not claim Windows support.
+
+Implementation is a port of current OpenBot Python behavior and use of released SDK APIs. No upstream
+source was copied. The real model18 contract, encrypted-key interoperability/concurrent initializer
+checks, final-authority/CAS/audit-failure tests and native restart probes are recorded in the current
+receipt. Remaining P3 modules and final hosted qualification are still required before phase completion.
+
+
+### P3 attachment and storage ownership extension (2026-10-08, in progress)
+
+Reuse the protected-files decision and Koffi 3.3.2 pin above. Descriptor-relative enumeration uses
+fixed `fdopendir`/`readdir` ABI facts from the supported Darwin/Linux 64-bit platform headers,
+with a fresh `openat(fd, ".")` description for each pass; duplicating a descriptor would share its
+enumeration offset. Darwin x64 uses the INODE64 symbols; arm64 has only that ABI. The implementation
+copies no header or library source. See [Apple's dirent header](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/sys/dirent.h),
+[Linux readdir](https://man7.org/linux/man-pages/man3/readdir.3.html), and
+[Koffi pointer decoding](https://koffi.dev/pointers). No dependency change is needed.
+
+Retain the existing OwnerFiles layout, cross-process flock, immutable-byte digest checks, namespace
+separation, shared SQL tables, and C19/C21 recovery protocol. A durable journal precedes staging;
+SQL purge receipts decide deletion versus restoration after an uncertain COMMIT. Preflight every
+restore destination before moving any file. Final message/run table SHARE locks prevent phantom
+references between the final count and receipt commit. SQL admission must settle before releasing
+the file lock or restoring metadata on abort. Storage policy still defaults off; the explicit P3
+candidate owns the periodic maintenance loop and quarantines the paired Python loop. Internal Python
+P4 file readers retain the same lock and recovery protocol. No production data or installed app is
+used for qualification. New storage/attachment routes remain an unqualified development candidate
+until the resource contracts, fault cases, UI and native gates finish; this does not close all P3.
+
+
+P3 processing reuses the existing reviewed `parser_worker.ts` byte protocol and exact parser/language
+packages. It remains a shared Node helper inside the retained Python source package during coexistence;
+P5 must move this asset and its manifest reference before removing that package. The TS controller
+uses the current bundled Node 24.21.0 with the same fixed permission flags, private temporary directory,
+resource ceilings and empty credential environment. It kills the owned POSIX process group on timeout
+or cancellation and waits for `close` before releasing admission or removing temporary files. This is
+ordinary-JavaScript confinement around trusted native parser dependencies, not an OS sandbox claim.
+The [pinned Node child-process reference](https://github.com/nodejs/node/blob/v24.21.0/doc/api/child_process.md)
+and [permission limits](https://github.com/nodejs/node/blob/v24.21.0/doc/api/permissions.md) confirm these
+lifetime and security boundaries. No new dependency, copied upstream implementation or parser fork.
+
+Audio processing uses the already reviewed OpenAI 7.28.0 SDK's actual multipart API with fixed
+`whisper-1`, official `/v1/audio/transcriptions`, no retries/redirects/ambient headers, a 90-second
+lifetime and a 2 MiB raw-response bound. Owner, live channel, attachment digest/deletion and selected
+credential revision/key are checked before transfer. Derived text has the retained 262144 UTF-16-unit
+limit; original bytes/passwords are not persisted into its metadata. Both parser and SDK admission
+remain occupied until actual work settles. Qualification uses synthetic files and a constructor-only
+SDK transport fixture; no live provider call or model charge is claimed.
+
+### P3 Employee knowledge reuse extension (2026-10-08)
+
+Reuse the accepted [reviewed skill content](reviewed-skill-content.md) decision and its pinned yaml 2.9.0, unchanged Agent Skills parser and local sensitive-text scanner from the retained Employee publisher package. Two explicit pure exports avoid another parser or copied implementation; no publisher keyring or CLI is imported by knowledge routes. Dependency versions and grants are unchanged. The existing Python knowledge store defines the same Owner transactions, immutable skill definitions, digest review, dependency state, revision CAS and content-free events. The learning direction remains inspired by Hermes Agent.
+
+Native proposal review shares the retained P4 source/channel or native-root lock, root-to-leaf Task order and source/profile/scope/digest checks before Bot and proposal locks. It only reviews completed source facts; it never admits, executes or schedules Work. The TS adapter preserves those checks locally; P4 execution stays in Python/Temporal. Existing SQL projection limits apply before rows leave PostgreSQL. Cross-language HTTP, stopped-Python ownership and stale/digest/rollback tests qualify this candidate before further migration. No new upstream source copied.
+
+The source-integrity tests exposed a driver precision boundary: infer PostgreSQL timestamp parameters through `text` before casting, so microsecond deadline comparisons do not pass through JavaScript `Date`. Native scope/claim integers retain raw JSON token checks. During paired reverse, native review's retained WorkConflict/WorkNotFound exceptions now map to the declared 409/404 product errors instead of escaping as an unhandled 500; authority and SQL rollback are unchanged.
+
+### P3 approval and schedule control extension (2026-10-08)
+
+Reuse ADR-0049's additional-confirmation policy, exact shared TS targets and existing SQL/attachment locks. TS owns settings CAS and the retained single-use legacy Run approval transaction; an expired decision commits `expired`/`blocked` and its event before returning409. Work action admission, minimum adapter authority and durable execution remain P4. No exception gains a capability.
+
+Reuse the accepted [recurring submission](server-automations.md) transaction model for Owner schedule CRUD. Shared PostgreSQL stores the same records; TS validates attachment bytes/derived-text digest under the existing file-before-SQL lock, retains count serialization and elapsed-interval resume. The single existing `ProductWorkService._pass` in Python remains the explicit P4 Work admission/Temporal lifecycle owner, including `PostgresAutomations.submit_due`; TS introduces no competing timer or Workflow starter. Verify TS-created schedules through that real retained admission path and concurrent claim/reverse cases. P3 HTTP ownership does not claim a new Task execution engine. No dependency, copied upstream code or production-data mutation.
+
+### P3 MCP plugin ownership decision (2026-10-08)
+
+Reuse the reviewed MCP SDK1.32.1 (`ff07b001194fe60ee9deb2121cf119057565796d`, MIT) and its existing Ajv8.20.0 closure for the twelve public plugin operations. Replacing MCP or adding a subprocess protocol would increase compatibility and authority work. The fixed local SDK source (`client/streamableHttp`, `client/index`, `validation/ajv-provider`) confirms injectable fetch, disabled reconnect, session cleanup and schema-provider hooks. Its default `validateSchema:false` does not preserve Python's draft-07 validation; the adapter explicitly enables schema validation, rejects the existing reference/regex/unsupported-keyword set before compilation, and bounds depth, nodes and bytes. No upstream source is copied. See the [existing plugin decision](third-party-mcp-plugins.md), [MCP transport standard](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/2025-11-25/docs/specification/2025-11-25/basic/transports.mdx), and [Ajv validation options](https://ajv.js.org/options.html#validateschema). The pinned GitHub SDK source was unavailable to the browser on this run; the installed locked source, not an unverified newer release, was inspected.
+
+The HTTP adapter uses Node24 core sockets with an isolated Agent, resolves and checks every address, pins the selected address, retains exact endpoint/Host/TLS identity, refuses redirects/proxies/compression, and caps requests, responses and time. Special-use network facts are checked against [CPython3.12.13 ipaddress](https://raw.githubusercontent.com/python/cpython/v3.12.13/Lib/ipaddress.py); no Python implementation is copied. The existing explicit constructor-owned loopback allowlist is retained only for configured local endpoints. Imported tools never select a transport destination.
+
+Reuse the AES-256-GCM `openbot.plugins/v1` envelope, private descriptor-relative files, Python's named `flock` lease and recovery journal. Every public mutation holds that lease across the final Owner SQL commit; retained P4 Work readers use the same lease and current revision. Keep reviewed catalog revision3, Chinese text and source fingerprints byte-for-byte. Current `serve.py` constructs `PluginService` without legacy `assert_run_scope`, so it cannot create legacy in-memory pending calls; preserve the empty snapshot and authenticated `not_found` decision behavior. Real native plugin effects and durable approval decisions remain the already-declared P4 Work endpoints, with actual grant/revision revalidation. This does not qualify plugin execution, legacy callback compositions or P3 completion. Cross-language encrypted-state, HTTP/HTTPS, negative transport, current UI and native closure gates remain required before this candidate is accepted.
+
+### P3 identity lifecycle and optional greeting extension (2026-10-08)
+
+Reuse OpenBot's retained identity lifecycle, workspace-first primary preference locks and channel-first membership revocation. Create identity, evolution and audit atomically; quick creation allocates a unique Chinese name and direct conversation in that transaction. Deletion refuses active Work, tombstones the identity, redacts source-referenced content and reports post-commit file/plugin cleanup truthfully. Membership revocation uses the existing durable Work cancellation facts and keeps admitted/unknown effects for P4 reconciliation; no new execution engine or network cancellation command.
+
+The optional quick-create greeting reuses OpenAI7.28.0/Anthropic0.131.0, one request, 256 output tokens, 32KiB response and 15-second model deadline. It uses only twelve bounded names/roles, no tools/history/retry, and checks Owner, selected model revision and first-message state before transfer and publication. The model deadline cannot interrupt a later SQL commit. Fixed failure categories alone use an internal audit connection after Owner expiry.
+
+For Python `html.unescape` compatibility, reuse the already installed [entities8.0.0](https://github.com/fb55/entities/tree/v8.0.0) (BSD-2-Clause) decoder; make that exact release a direct runtime dependency without installing software. The maintained release source/tests and [WHATWG character-reference algorithm](https://html.spec.whatwg.org/multipage/parsing.html#character-reference-state) were inspected. A custom entity table would duplicate a standards parser; he1.2.0 or html-entities2.6.0 would add another closure for the same operation. Keep the small CPython invalid numeric-reference and Unicode whitespace compatibility rules around the released decoder. Differential text vectors, real SDK synthetic transport, HTTP/SQL races, reverse selection and UI acceptance remain the cohort gate. No upstream implementation was copied; no live provider or paid call is authorized by these tests.
+
+
+The identity UI gate reproduced the earlier `503 GET /api/v1/workspace` during quick creation.
+A forced concurrent primary-preference commit reproduces the same503 directly on the private
+Python route. Its repeatable-read snapshot attempted `SELECT ... FOR SHARE` on a preference row
+changed after the snapshot began. [PostgreSQL17 isolation semantics](https://www.postgresql.org/docs/17/transaction-iso.html#XACT-REPEATABLE-READ)
+explain that serialization failure. Read the display preference from the same consistent snapshot
+without a row lock; retain Owner SHARE/final-expiry checks and all writer lock orders. No mutation
+retry or forwarding fallback is added. Direct-Python and TS-forwarded concurrent-read regression
+checks must pass, along with the exact UI journey; the failed UI receipt remains recorded.
+
+## P3 remaining product boundary decision (2026-10-08)
+
+The completion candidate migrates workspace/SSE, Employee portability, Node identity HTTP and
+human browser HTTP together. Their shared dependency is the live Worker registry, explicitly
+retained with the Worker protocol in P4. Copying that registry into TS would create competing
+connection/assignment owners; querying persisted `nodes` would misrepresent liveness. Instead,
+the existing fixed numeric-loopback upstream exposes a finite private runtime port. Public ingress
+rejects that namespace before forwarding. Read requests carry the original Owner session and are
+revalidated; they return bounded live metadata, never an empty successful fallback on failure.
+Browser transport remains an execution port: TS owns the public session, lease, policy and audit;
+the socket owner must independently revalidate the committed authority immediately before send.
+Node credential mutation and handshakes must share a PostgreSQL fence across the two processes.
+The port is removed when the Worker registry moves in P4, not retained as a second product server.
+
+Reuse Node 24.21.0 `http.request`, Postgres.js 3.4.9, PostgreSQL 17.11 session advisory locks,
+Fastify 5.12.5 and the retained MIT `@openbot/employee-publisher` pure format/signature functions.
+No new dependency, model account, public protocol or upstream source copy is introduced. Evidence:
+[Node HTTP cancellation and explicit Agent](https://nodejs.org/docs/latest-v24.x/api/http.html#httprequestoptions-callback),
+[PostgreSQL lock lifetime](https://www.postgresql.org/docs/17/explicit-locking.html#ADVISORY-LOCKS),
+and existing `BrowserPauseGate`, `WorkerHostRegistry`, portability publisher and shared protocol
+contracts at the candidate's preceding implementation `96775606`. Session locks are bounded and
+released by closing their dedicated connection; SQL transactions do not wait across Worker effects.
+Acceptance must exercise real retained registry sockets, revocation/re-enrollment races, stale
+browser binding/lease rejection, signed/unsigned portability, SSE invalidation and reverse selection.
+This decision is not evidence that those gates have passed.
+
+
+The implementation uses a dedicated session advisory fence (`1326850643`, hashed Node ID) shared
+with retained handshakes. Re-enrollment proves the still-valid one-use token, disconnects the old
+socket through the private port, then consumes the token and replaces SQL credentials while that
+fence remains held. Revocation follows the same detach-before-commit order with fresh Owner checks.
+A failed write can leave the old peer disconnected; it cannot leave a connected revoked identity.
+No SQL transaction waits across this transport. Enrollment attempts keep the existing shared
+throttle and network-identity digest; callers cannot provide forwarding headers to the public entry.
+
+Browser HTTP owns the existing durable pause and original Host binding. Its complete effect uses
+the existing human/Agent session advisory namespace (`1326850642`). Each private dispatch binds exact
+wire bytes and the original Owner session to a bounded, one-use audit ticket. P4 commits its unique
+claim before send, then rechecks Owner, Bot profile, credential, exact connection, deployment route,
+control lease and the live gate backend inside the socket send guard. Tickets contain a digest,
+request ID, route and gate PID, not URLs, typed text, cookies or screenshot bytes. Unknown effects
+remain paused and are never retried. Client disconnect retains the original bounded wait; process
+shutdown aborts transport and writes uncertainty before releasing the gate. A lost fence is failure.
+
+SSE uses the existing three-second poll and bounded committed DTOs. The pinned Postgres.js 3.4.9
+`src/index.js`/`src/connection.js` notification option is accessed by a tiny typed adapter using raw
+`LISTEN`, because its higher-level `listen()` automatically reconnects. A lost dedicated listener
+fails closed; no silent missed-invalidation interval is accepted. Python's coexistence listener is
+inactive when TS owns SSE, and retained only for the earlier explicit reverse groups.
+
+
+The complete UI journey exposed two503 responses during the second quick-created Bot (workspace
+and reactions). A deterministic real-SQL regression reproduced four blocked product reads returning
+200 and a fifth workspace request returning503 before any SQL attempt. The shared product pool's
+four immediate admission slots were sized for a narrow cohort. Preserve four SQL connections but
+admit at most sixteen requests (twelve waiting in the existing Postgres.js queue), all inside the
+existing six-second deadline and final authority check. No unbounded queue, transaction retry or
+larger SQL concurrency is introduced. Authentication/KDF and the other independently bounded
+cohorts keep their existing limits. Require the forced burst regression and a clean full UI receipt.

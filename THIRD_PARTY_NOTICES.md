@@ -28,6 +28,15 @@ and notices.
   Its LICENSE remains in production dependencies; the MIT terms are reproduced below.
   See [plugin research](docs/research/third-party-mcp-plugins.md).
 
+- Koffi3.3.2 and its matching optional platform package — Copyright (c)2026 Niels Martignène;
+  MIT License. The P3 TS candidate uses fixed private POSIX calls; no upstream source is copied.
+- `openai`7.28.0 — Copyright2026 OpenAI; Apache License2.0.
+- `@anthropic-ai/sdk`0.131.0 — Copyright2023 Anthropic, PBC; MIT License.
+  The P3 model candidate uses released clients with explicit credentials, bounded transport and no
+  retries. Their complete LICENSE files remain in the production closure; see the
+  [P3 file boundary decision](docs/research/typescript-control-plane-p0.md#p3-protected-files-and-model-credentials-decision-2026-10-08)
+  and the existing ADR0050 SDK review. No app or system service is installed.
+
 - Fastify5.12.5 — Copyright (c) 2016-present The Fastify team; MIT License.
 - `@fastify/reply-from`12.6.5 — Copyright (c) 2017-present Matteo Collina and The Fastify team;
   MIT License. The P2 TS entry uses released public APIs without copied upstream code.

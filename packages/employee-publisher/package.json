@@ -5,7 +5,28 @@
   "license": "MIT",
   "type": "module",
   "description": "Retained offline Owner publisher-key tooling; not a Server runtime.",
-  "exports": {},
+  "exports": {
+    "./agent-skills": {
+      "types": "./dist/agent-skills.d.ts",
+      "import": "./dist/agent-skills.js"
+    },
+    "./sensitive-content": {
+      "types": "./dist/sensitive-content.d.ts",
+      "import": "./dist/sensitive-content.js"
+    },
+    "./employee-package": {
+      "types": "./dist/employee-package.d.ts",
+      "import": "./dist/employee-package.js"
+    },
+    "./employee-package-content": {
+      "types": "./dist/employee-package-content.d.ts",
+      "import": "./dist/employee-package-content.js"
+    },
+    "./publisher-keyring": {
+      "types": "./dist/employee-publisher-keyring.d.ts",
+      "import": "./dist/employee-publisher-keyring.js"
+    }
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "vitest run src && node --test ../../scripts/employee-publisher-key.test.ts",

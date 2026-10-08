@@ -84,7 +84,7 @@ async def _remove_channel_content(db, channel_id):
     """Delete unreferenced messages and redact those durable Work still points at."""
     referenced = (
         "SELECT source_message_id FROM work_sources UNION "
-        "SELECT assignment_message_id FROM work_collaborations")
+        "SELECT assignment_message_id FROM work_collaborations WHERE assignment_message_id IS NOT NULL")
     redacted = await (await db.execute(
         "UPDATE messages SET content=%s WHERE channel_id=%s AND id IN (" + referenced + ") RETURNING id",
         (REDACTED_CONTENT, channel_id))).fetchall()

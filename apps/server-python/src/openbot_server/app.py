@@ -44,17 +44,30 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
                profiles: ProfileStore | None = None, tasks: TaskStore | None = None,
                run_commands: RunCommandStore | None = None, work=None, product=None,
                proxy_address: str | None = None, public_origin: str | None = None,
-               ts_read_group: str = "none", ts_write_group: str = "none") -> FastAPI:
+               ts_read_group: str = "none", ts_write_group: str = "none", ts_auth_group: str = "none", ts_channel_read_group: str = "none", ts_product_group: str = "none") -> FastAPI:
+    if ts_product_group not in ("none", "identity", "identity-models", "p3") or (ts_product_group != "none" and (product is None or proxy_address is None)):
+        raise ValueError("TS product ownership requires an explicit private product proxy.")
+    if ts_channel_read_group not in ("none", "channels") or (ts_channel_read_group != "none" and
+            (product is None or proxy_address is None or public_origin is None)):
+        raise ValueError("TS channel read ownership requires explicit private product proxy mode.")
     if ts_read_group not in ("none", "transcription") or (ts_read_group != "none" and
             (product is None or proxy_address is None or public_origin is None)):
         raise ValueError("TS read ownership requires explicit private product proxy mode.")
     if ts_write_group not in ("none", "primary-bot") or (ts_write_group != "none" and
             (product is None or proxy_address is None or public_origin is None)):
         raise ValueError("TS write ownership requires explicit private product proxy mode.")
+    if ts_auth_group not in ("none", "owner") or (ts_auth_group != "none" and
+            (product is None or proxy_address is None or public_origin is None or auth is None)):
+        raise ValueError("TS auth ownership requires explicit private product proxy mode.")
     if not owner_name or any(origin == "*" or origin == "null" for origin in allowed_origins):
         raise ValueError("An Owner name and explicit origins are required.")
     if auth is not None and auth.owner_name != owner_name:
         raise ValueError("Owner-auth and read identity must match.")
+    if ts_product_group not in ("none", "p3"):
+        from .ts_product_events import ProductInvalidations
+        product.ts_invalidations = ProductInvalidations(product.transactions._dsn)
+    if product is not None:
+        product.storage_owned_by_ts = ts_product_group == "p3"
     cookie_name = "__Host-openbot_session" if secure_cookies else "openbot_session"
     cookie = APIKeyCookie(name=cookie_name, auto_error=False)
 
@@ -85,6 +98,9 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
 
     app = FastAPI(title="OpenBot control-plane reference", version="0.0.0",
                   docs_url=None, redoc_url=None, lifespan=lifespan)
+    if ts_product_group == "p3":
+        from .ts_runtime_port import register_runtime_port
+        register_runtime_port(app, product, secure_cookies=secure_cookies, allowed_origins=allowed_origins)
     if (proxy_address is None) != (public_origin is None):
         raise ValueError("Private proxy peer and public origin must be configured together.")
     if proxy_address is not None:
@@ -97,6 +113,9 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
 
     @app.middleware("http")
     async def private_response(request: Request, call_next):
+        from .ts_product_ownership import owns as ts_product_owns
+        if ts_product_group != "none" and ts_product_owns(request.method, request.url.path, ts_product_group):
+            return JSONResponse({"error": "operation_owned_by_ts"}, status_code=503, headers={"Cache-Control":"no-store","X-Content-Type-Options":"nosniff","X-Frame-Options":"DENY"})
         auth_write = auth is not None and request.method == "POST" and request.url.path in (
             "/api/v1/auth/login", "/api/v1/auth/logout", "/api/v1/auth/password",
             "/api/v1/auth/sessions/revoke-others")
@@ -170,6 +189,8 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
     @app.get("/api/v1/auth/session", response_model=AuthSession,
              response_model_exclude_none=True, operation_id="getOwnerSession")
     async def session(request: Request):
+        if ts_auth_group == "owner":
+            return JSONResponse({"error": "operation_owned_by_ts"}, status_code=503)
         result = await read(request, "session", required=False)
         if result.expires_at is None:
             return {"authenticated": False}
@@ -179,6 +200,8 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
     @app.get("/api/v1/bots", response_model=BotsResponse,
              response_model_exclude_none=True, operation_id="listBots")
     async def bots(request: Request):
+        if ts_channel_read_group == "channels":
+            return JSONResponse({"error": "operation_owned_by_ts"}, status_code=503)
         result = await read(request, "bots")
         try:
             return bounded_response(BotsResponse(bots=[project_bot(row) for row in result.rows]))
@@ -188,6 +211,8 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
     @app.get("/api/v1/channels", response_model=ChannelsResponse,
              response_model_exclude_none=True, operation_id="listChannels")
     async def channels(request: Request):
+        if ts_channel_read_group == "channels":
+            return JSONResponse({"error": "operation_owned_by_ts"}, status_code=503)
         result = await read(request, "channels")
         try:
             return bounded_response(ChannelsResponse(channels=project_channels(result.rows)))
@@ -198,6 +223,8 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
              response_model_exclude_none=True, operation_id="listMessages")
     async def messages(request: Request, channel_id: str = Path(min_length=1, max_length=128),
                        before: str | None = Query(None, max_length=2048), limit: int = Query(100, ge=1, le=100)):
+        if ts_channel_read_group == "channels":
+            return JSONResponse({"error": "operation_owned_by_ts"}, status_code=503)
         before, limit = pagination_query(request.query_params.multi_items())
         options = {} if before is None and limit == 100 else dict(before=before, limit=limit)
         result = await store.read(await cookie(request), "messages", channel_id=channel_id, **options)
@@ -213,6 +240,8 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
     @app.get("/api/v1/channels/{channel_id}/runs", response_model=RunsResponse,
              response_model_exclude_none=True, operation_id="listRuns")
     async def runs(request: Request, channel_id: str = Path(min_length=1, max_length=128)):
+        if ts_channel_read_group == "channels":
+            return JSONResponse({"error": "operation_owned_by_ts"}, status_code=503)
         result = await store.read(await cookie(request), "runs", channel_id=channel_id)
         if result.expires_at is None:
             raise HTTPException(401, "Authentication required.")
@@ -224,7 +253,7 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
             raise StoreUnavailable("invalid_projection") from None
 
     if auth is not None:
-        register_auth_routes(app, auth, secure_cookies=secure_cookies, allowed_origins=allowed_origins)
+        register_auth_routes(app, auth, secure_cookies=secure_cookies, allowed_origins=allowed_origins, ts_owned=ts_auth_group == "owner")
 
     input_definitions = register_identity_routes(
         app, identity, store, secure_cookies=secure_cookies, allowed_origins=allowed_origins,

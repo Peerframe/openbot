@@ -54,8 +54,15 @@ class PostgresWorkspace:
 
     async def snapshot(self, token):
         async with self.transactions.transaction(token) as db:
-            from .workspace_settings import current_workspace_settings, project
-            settings = project(await current_workspace_settings(db))
+            from .workspace_settings import project
+            # The repeatable-read snapshot already keeps this display preference consistent
+            # with Bots/channels. Locking a concurrently changed row would raise 40001.
+            # Owner session SHARE and final expiry checks still fence disclosure/revocation.
+            settings_row = await (await db.execute("SELECT primary_bot_id,revision FROM workspace_settings "
+                "WHERE workspace_id='workspace'")).fetchone()
+            if settings_row is None:
+                raise StoreUnavailable('workspace_settings_unavailable')
+            settings = project(settings_row)
             # A single snapshot prevents counts/relationships from crossing concurrent commits.
             bots = await (await db.execute("SELECT id,name,role,status,computer_profile,"
                 "jsonb_build_object('appearance',configuration->'appearance','model',configuration->'model') AS configuration,created_at "

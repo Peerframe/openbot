@@ -25,3 +25,5 @@ retains the offline key lifecycle, template formats and validation. Obsolete Sto
 request schemas and task-routing functions from the original source closure have been removed.
 `SOURCE.json` describes the initial extraction, including paths that have since retired; it is
 historical provenance, not a current source manifest. Runtime authority remains in Python.
+
+The P3 TS candidate reuses the pure `agent-skills` and `sensitive-content` subpath exports. These parse bounded text without database, filesystem, keyring or network authority; they do not start the offline CLI. The selected TS service owns its authenticated SQL transactions. Default/reverse Python ownership is retained during migration.

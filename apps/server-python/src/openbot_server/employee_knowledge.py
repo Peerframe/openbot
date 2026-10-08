@@ -381,7 +381,13 @@ class PostgresEmployeeKnowledge:
             native = await _one(connection, "SELECT source_kind,source_work_run_id FROM knowledge_proposals WHERE bot_id=%s AND id=%s", (bot_id,proposal_id), missing="knowledge_proposal_not_found")
             if native['source_kind']=='task':
                 from .work_native_knowledge import review_proposal
-                return await review_proposal(connection,bot_id,proposal_id,value)
+                from .work_values import WorkConflict, WorkNotFound
+                try:
+                    return await review_proposal(connection,bot_id,proposal_id,value)
+                except WorkConflict as error:
+                    raise ControlError(409, str(error)) from None
+                except WorkNotFound:
+                    raise ControlError(404, "work_not_found") from None
             proposal = await _one(connection, "SELECT * FROM knowledge_proposals WHERE bot_id=%s AND id=%s FOR UPDATE", (bot_id, proposal_id), missing="knowledge_proposal_not_found")
             if proposal["status"] != "pending":
                 raise ControlError(409, "knowledge_proposal_already_reviewed")

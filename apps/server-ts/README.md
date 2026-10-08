@@ -3,9 +3,10 @@
 [简体中文](README.zh-CN.md)
 
 Accepted [ADR-0050](../../docs/decisions/0050-typescript-control-plane.md) P2 introduces one public
-HTTP/Worker entry and one fixed private Python upstream. Python still owns all 121 default HTTP
-operation, authentication, approval, audit, database and background service. Nothing is retired and
-the installed Desktop still uses its Python baseline. The forwarding adapter exits in P5.
+HTTP/Worker entry and one fixed private Python upstream. Python is the default owner of the 121
+HTTP operations and background services. Explicitly selected P3 groups transfer only their listed
+operations after qualification. The installed Desktop retains its Python baseline; the temporary
+forwarder exits in P5.
 
 Install the repository's locked dependencies and Python Worker environment using
 [CONTRIBUTING](../../CONTRIBUTING.md). Run from the repository root:
@@ -99,7 +100,7 @@ occurs at the entry. Source integration evidence is in the linked record; licens
 The isolated macOS arm64 candidate uses one PostgreSQL supervisor/migrator, private Python and public
 TS. The strict `ts-control.json` resource marker selects the pair; malformed/incomplete TS resources
 refuse startup. Either child's exit stops its partner, and inherited parent pipes stop both when
-Desktop exits. TS receives transport configuration only. The retained Node runtime is still required.
+Desktop exits. TS receives the selected groups' explicit database and Owner bootstrap configuration; only the explicit shared protected key-file path, never model API keys in its environment. The retained Node runtime is still required.
 Build and review the unsigned candidate without replacing an installed application:
 
 ```sh
@@ -186,3 +187,116 @@ Real mixed/HTTPS contracts include primary-Bot failures, concurrency, expiry/rev
 rollback, client-abort SQL cleanup, Python-stop and paired reverse. Run the required exact-candidate
 TS UI12/12 before any operation switch; qualify native staging and the actual uninstalled package.
 See [the decision](../../docs/research/typescript-control-plane-p0.md#p3-primary-bot-selection-decision-2026-10-08).
+
+## Owner authentication candidate
+
+The explicit `owner` group owns GET session/sessions and POST login/logout/password/revoke-others.
+Set `OPENBOT_TS_AUTH_GROUP=owner` and private Python `OPENBOT_CONTROL_TS_AUTH_GROUP=owner` together.
+Use the same database and `OPENBOT_TS_OWNER_PASSWORD` as Python's explicit bootstrap password,
+`OPENBOT_OWNER_NAME` (default Owner), `OPENBOT_TS_SESSION_TTL_HOURS` (default12, range1–168), and
+`OPENBOT_TS_AUTH_ALLOWED_ORIGINS` (default public origin). Keep TTL/identity/origin/cookie mode equal
+on both sides. Persisted credentials override bootstrap; Python CLI recovery retains its authority.
+The six exact private routes refuse503 while selected; other methods and OPTIONS still forward.
+
+The native v3 marker fixes `authGroup:owner` in addition to the read/write selections. Native launch
+passes only its existing bootstrap credential to the TS issuer, alongside the shared database.
+Two asynchronous native KDFs and four SQL transactions may run concurrently; overflow fails closed503.
+Slots remain occupied until actual work settles, including abort/timeout. JSON is bounded to8192 bytes
+and5s; each KDF/SQL operation has a6s deadline. Passwords remain the exact UTF-8 scalar/code-point
+contract and fixed scrypt format. Tokens never persist in plaintext. Password verification occurs
+before issuance's lock, then rechecks credential revision; cookies follow committed audit/session data.
+
+Reverse only by stopping both processes and setting both auth flags to `none`, on the same database,
+public address and cookie mode. Do not restore old credential/session rows. Retain the prior qualified
+package during the rollback window; Python routes retire after this full cohort is accepted and the
+window closes. Require real SQL/HTTP/HTTPS concurrency and reverse-switch checks, UI12/12, full checks,
+and native stage/package qualification before selection. Native smoke explicitly submits the changed
+password after restart; this does not claim automatic Desktop bootstrap login after a user changes it.
+See [the auth decision](../../docs/research/typescript-control-plane-p0.md#p3-owner-authentication-decision-2026-10-08).
+
+## Channel read candidate (P3)
+
+The local `channels` cohort selects only GET Bot list, channel list, channel messages and channel Runs.
+Set `OPENBOT_TS_CHANNEL_READ_GROUP=channels` on TS and
+`OPENBOT_CONTROL_TS_CHANNEL_READ_GROUP=channels` on private Python, with the same explicit
+`OPENBOT_TS_DATABASE_URL` used by other selected groups. Both default to `none`; unknown selections
+and Python selection outside private product mode refuse startup. Optional
+`OPENBOT_TS_READ_ALLOWED_ORIGINS` retains the existing read CORS policy.
+
+The four Python HTTP routes refuse while selected; internal Python readers and all identity/message/
+Run writers remain active in their existing roles. Reads use bounded read-only READ COMMITTED SQL,
+recheck the Owner session before returning data or a channel-specific error, preserve message cursor
+microseconds and enforce existing SQL/JSON ceilings. No table migration, provider access or dispatch.
+For reverse, stop the pair, select `none` on both sides and restart using the same newer database.
+Retain the previous qualified package; never restore old session or message data.
+
+The v4 unsigned macOS arm64 Preview marker includes `channelReadGroup:channels` and requires all
+three compiled read modules before launching the pair. The contract and UI drivers select this group
+with prior qualified groups. Real HTTP/HTTPS comparisons include pagination, revocation during blocked
+reads, bounded admission, malformed/oversized records, Python-down availability and reverse switching.
+See [current qualification](../../docs/research/typescript-control-plane-p0.md#current-migration-checkpoint-2026-10-08).
+
+## P3 conversation and identity editing candidate
+
+`OPENBOT_TS_PRODUCT_GROUP=identity` selects eleven routes: channel creation, direct conversation,
+member join, profile/appearance edits, Bot/channel rename, mark-read, unread counts and reactions.
+Pair it with `OPENBOT_CONTROL_TS_PRODUCT_GROUP=identity` on the private Python product. The default
+is `none`; reverse both selections together against the same newer database. This group does not
+include Bot creation/deletion, member removal or any execution authority. The v5 Preview marker
+requires `productGroup:identity` and its three compiled modules before either child starts.
+
+Owner SHARE locks, final expiry, CAS and audit remain one bounded SQL transaction. Generic product
+mutations send empty committed PostgreSQL invalidations to Python's sole SSE publisher; typed
+appearance no-ops remain silent. The listener owns no facts or work and is removed when SSE moves.
+See the [current evidence and remaining P3 scope](../../docs/research/typescript-control-plane-p0.md#current-migration-checkpoint-2026-10-08).
+
+## P3 model/settings candidate
+
+Pair `OPENBOT_TS_PRODUCT_GROUP=identity-models` with
+`OPENBOT_CONTROL_TS_PRODUCT_GROUP=identity-models`. Set
+`OPENBOT_TS_MODEL_CONNECTION_KEY_PATH` to the same absolute file as Python's
+`OPENBOT_CONTROL_MODEL_CONNECTION_KEY_PATH`. Optional `OPENBOT_TS_MODEL_CUSTOM_BASE_URLS` is a
+JSON array of exact reviewed HTTPS bases, matching Python's configured allowlist. This adds eleven
+model/settings operations to `identity`; default `none` and paired reverse remain supported.
+The packaged v6 candidate requires the fixed SDK/native versions and complete native payload.
+See the [decision and current evidence](../../docs/research/typescript-control-plane-p0.md#p3-model-and-settings-ownership-2026-10-08).
+This candidate does not complete P3 or move task execution from Python/Temporal.
+
+## Complete P3 candidate
+
+Pair `OPENBOT_TS_PRODUCT_GROUP=p3` with `OPENBOT_CONTROL_TS_PRODUCT_GROUP=p3`, alongside the
+qualified auth/read/write/channel selections above. This selects the remaining product API groups:
+files/storage, Employee knowledge and portability, approvals/automation settings, plugins,
+identity lifecycle, workspace/SSE, Node identity and human browser HTTP. The v7 Preview marker
+selects this composition. It is a review candidate; consult the
+[current receipt](../../docs/research/typescript-control-plane-p2-native.json) for exact validation.
+
+Configure `OPENBOT_TS_OBJECT_ROOT`, `OPENBOT_TS_ARTIFACT_ROOT` and `OPENBOT_TS_PLUGIN_STORE_PATH`
+to the same protected paths used by Python, and the same reviewed local plugin endpoint allowlist
+in `OPENBOT_TS_PLUGIN_LOCAL_ENDPOINTS`. Set `OPENBOT_TS_PARSER_WORKER_PATH` to the retained
+`apps/server-python/src/openbot_server/parser_worker.ts` and `OPENBOT_TS_NODE_MODULE_ROOT` to the
+locked repository `node_modules`; these execute the existing Node document parser, not Python.
+Desktop supplies its packaged paths explicitly. Model key and endpoint settings remain as above.
+When signed Employee portability is configured, supply the same private
+`OPENBOT_CONTROL_PUBLISHER_DIRECTORY` and `OPENBOT_CONTROL_PUBLISHER_PASSPHRASE_FILE` to the TS
+process. A configured invalid keyring prevents startup; it never falls back to unsigned export.
+
+TS owns the public P3 handlers and their SQL authorization/audit. Python refuses the paired public
+routes while retaining P4 Work/Temporal, Worker WebSockets and their actual live registry. A fixed
+private `/_openbot/p4/` port supplies live metadata, credential disconnection and independently
+revalidated browser dispatch. Public ingress always refuses that namespace. A runtime failure is
+an explicit failure, not an empty successful node list. Browser admission uses a shared gate and
+single-use ticket; private dispatch rechecks authority and never retries an uncertain effect.
+SSE uses committed invalidations; loss of its listener closes streams until explicit restart.
+
+Reverse by stopping both processes and restoring a matched prior selection against the same
+newer data, keys and plugin state. Do not restore old credentials, receipts or pause state. In-memory
+browser views expire on switching; persistent human pause and uncertain effects remain for safe
+reconciliation. The private runtime port exits with its registry in P4, the forwarder in P5. Neither
+P3 nor this API-only native package retires Python or qualifies live Worker/browser execution.
+
+The required candidate gates are full HTTP/HTTPS contracts (including configured publisher and
+synthetic model variants), `npm run check`, native staged/packaged probes and
+`npm run ui:acceptance -- --entry ts` with PASS 12/12. UI receipts must have no unexplained workspace
+503. Synthetic peers exercise real sockets and SQL boundaries but do not replace actual execution
+acceptance. Keep draft PRs targeted at `main` until the unified review authorizes merge.

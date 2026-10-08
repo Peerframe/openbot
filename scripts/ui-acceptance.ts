@@ -5,7 +5,7 @@
 import assert from "node:assert/strict";
 import { type ChildProcess, spawn } from "node:child_process";
 import { randomBytes, randomUUID } from "node:crypto";
-import { existsSync, mkdirSync, openSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, openSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -89,8 +89,10 @@ try {
   console.error(error instanceof Error ? error.message : String(error));
   process.exit(2);
 }
-const work = join(options.out ?? tmpdir(), `openbot-ui-acceptance-${Date.now()}`);
-mkdirSync(work, { recursive: true, mode: 0o700 });
+const requestedWork = join(options.out ?? tmpdir(), `openbot-ui-acceptance-${Date.now()}`);
+mkdirSync(requestedWork, { recursive: true, mode: 0o700 });
+// macOS TMPDIR can traverse /var; protected storage requires the actual owned path.
+const work = realpathSync(requestedWork);
 const data = join(work, "data");
 for (const dir of ["objects", "artifacts", "model"])
   mkdirSync(join(data, dir), { recursive: true, mode: 0o700 });
@@ -195,6 +197,9 @@ try {
           OPENBOT_CONTROL_PUBLIC_ORIGIN: origin,
           OPENBOT_CONTROL_TS_READ_GROUP: "transcription",
           OPENBOT_CONTROL_TS_WRITE_GROUP: "primary-bot",
+          OPENBOT_CONTROL_TS_AUTH_GROUP: "owner",
+          OPENBOT_CONTROL_TS_PRODUCT_GROUP: "p3",
+          OPENBOT_CONTROL_TS_CHANNEL_READ_GROUP: "channels",
         }
       : {}),
   };
@@ -207,6 +212,14 @@ try {
     OPENBOT_TS_PUBLIC_ORIGIN: origin,
     OPENBOT_TS_READ_GROUP: "transcription",
     OPENBOT_TS_WRITE_GROUP: "primary-bot",
+    OPENBOT_TS_AUTH_GROUP: "owner",
+    OPENBOT_TS_PRODUCT_GROUP: "p3",
+    OPENBOT_TS_OBJECT_ROOT: join(data, "objects"),
+    OPENBOT_TS_ARTIFACT_ROOT: join(data, "artifacts"),
+    OPENBOT_TS_MODEL_CONNECTION_KEY_PATH: join(data, "objects", "model-connections.key"),
+    OPENBOT_TS_CHANNEL_READ_GROUP: "channels",
+    OPENBOT_TS_OWNER_PASSWORD: ownerPassword,
+    OPENBOT_TS_AUTH_ALLOWED_ORIGINS: origin,
     OPENBOT_TS_WRITE_ALLOWED_ORIGINS: origin,
     OPENBOT_TS_READ_ALLOWED_ORIGINS: origin,
     OPENBOT_TS_DATABASE_URL: databaseUrl,

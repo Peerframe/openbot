@@ -16,14 +16,17 @@ function lock(packages: Record<string, unknown>): {
   };
 }
 
-test("TS entry production closure includes the fixed adapter and excludes its WS test dependency", async () => {
+test("TS entry production closure includes reviewed adapters, model SDKs and native binaries", async () => {
   const source = JSON.parse(
     await readFile(new URL("../package-lock.json", import.meta.url), "utf8"),
   );
   const graph = collectProductionPackageGraph(source, "apps/server-ts");
-  assert.deepEqual(graph.workspaceKeys, ["apps/server-ts", "packages/protocol"]);
+  assert.deepEqual(graph.workspaceKeys, ["apps/server-ts", "packages/domain", "packages/employee-publisher", "packages/protocol"]);
   assert(graph.packageKeys.includes("node_modules/fastify"));
   assert(graph.packageKeys.includes("node_modules/@fastify/reply-from"));
+  for (const name of ["openai", "@anthropic-ai/sdk", "koffi", "@koromix/koffi-darwin-arm64", "yaml"]) {
+    assert(graph.packageKeys.includes(`node_modules/${name}`), `${name} must be staged`);
+  }
   assert(!graph.packageKeys.includes("node_modules/ws"));
   assert(!graph.workspaceKeys.includes("tests/oracles/legacy-server"));
   assert.throws(() => collectProductionPackageGraph(source, "apps/server-ts/other"), /Unsupported/);
