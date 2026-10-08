@@ -1179,3 +1179,9 @@ key publication/encryption bytes; no public FFI, foreign callbacks, copied sourc
 Reject fs-ext2.1.1 (no openat), path-only core adapters (race gap), and an additional custom addon
 (build/maintenance cost). Exact sources, platform/packaging constraints and required interchange
 checks are in the [P3 decision](research/typescript-control-plane-p0.md#p3-protected-files-and-model-credentials-decision-2026-10-08).
+
+
+P3 attachment/storage ownership extends the same Koffi 3.3.2 adapter with fixed directory enumeration
+and rename operations, retaining OpenBot's purge journal and SQL-receipt protocol. Processing reuses
+the unchanged Node parser helper and reviewed package pins, and OpenAI 7.28.0's multipart audio API.
+No parser source or native header is copied. See the [ownership extension and runtime evidence](research/typescript-control-plane-p0.md#p3-attachment-and-storage-ownership-extension-2026-10-08-in-progress).

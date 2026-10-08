@@ -1567,3 +1567,45 @@ Implementation is a port of current OpenBot Python behavior and use of released 
 source was copied. The real model18 contract, encrypted-key interoperability/concurrent initializer
 checks, final-authority/CAS/audit-failure tests and native restart probes are recorded in the current
 receipt. Remaining P3 modules and final hosted qualification are still required before phase completion.
+
+
+### P3 attachment and storage ownership extension (2026-10-08, in progress)
+
+Reuse the protected-files decision and Koffi 3.3.2 pin above. Descriptor-relative enumeration uses
+fixed `fdopendir`/`readdir` ABI facts from the supported Darwin/Linux 64-bit platform headers,
+with a fresh `openat(fd, ".")` description for each pass; duplicating a descriptor would share its
+enumeration offset. Darwin x64 uses the INODE64 symbols; arm64 has only that ABI. The implementation
+copies no header or library source. See [Apple's dirent header](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/sys/dirent.h),
+[Linux readdir](https://man7.org/linux/man-pages/man3/readdir.3.html), and
+[Koffi pointer decoding](https://koffi.dev/pointers). No dependency change is needed.
+
+Retain the existing OwnerFiles layout, cross-process flock, immutable-byte digest checks, namespace
+separation, shared SQL tables, and C19/C21 recovery protocol. A durable journal precedes staging;
+SQL purge receipts decide deletion versus restoration after an uncertain COMMIT. Preflight every
+restore destination before moving any file. Final message/run table SHARE locks prevent phantom
+references between the final count and receipt commit. SQL admission must settle before releasing
+the file lock or restoring metadata on abort. Storage policy still defaults off; the explicit P3
+candidate owns the periodic maintenance loop and quarantines the paired Python loop. Internal Python
+P4 file readers retain the same lock and recovery protocol. No production data or installed app is
+used for qualification. New storage/attachment routes remain an unqualified development candidate
+until the resource contracts, fault cases, UI and native gates finish; this does not close all P3.
+
+
+P3 processing reuses the existing reviewed `parser_worker.ts` byte protocol and exact parser/language
+packages. It remains a shared Node helper inside the retained Python source package during coexistence;
+P5 must move this asset and its manifest reference before removing that package. The TS controller
+uses the current bundled Node 24.21.0 with the same fixed permission flags, private temporary directory,
+resource ceilings and empty credential environment. It kills the owned POSIX process group on timeout
+or cancellation and waits for `close` before releasing admission or removing temporary files. This is
+ordinary-JavaScript confinement around trusted native parser dependencies, not an OS sandbox claim.
+The [pinned Node child-process reference](https://github.com/nodejs/node/blob/v24.21.0/doc/api/child_process.md)
+and [permission limits](https://github.com/nodejs/node/blob/v24.21.0/doc/api/permissions.md) confirm these
+lifetime and security boundaries. No new dependency, copied upstream implementation or parser fork.
+
+Audio processing uses the already reviewed OpenAI 7.28.0 SDK's actual multipart API with fixed
+`whisper-1`, official `/v1/audio/transcriptions`, no retries/redirects/ambient headers, a 90-second
+lifetime and a 2 MiB raw-response bound. Owner, live channel, attachment digest/deletion and selected
+credential revision/key are checked before transfer. Derived text has the retained 262144 UTF-16-unit
+limit; original bytes/passwords are not persisted into its metadata. Both parser and SDK admission
+remain occupied until actual work settles. Qualification uses synthetic files and a constructor-only
+SDK transport fixture; no live provider call or model charge is claimed.

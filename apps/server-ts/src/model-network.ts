@@ -40,7 +40,10 @@ function boundedHeaders(status: number, headers: Headers, maximum: number, disco
   const length = headers.get("content-length");
   if (length !== null && (!/^\d+$/.test(length) || Number(length) > maximum)) unavailable();
 }
-export const directModelTransport: ModelTransport = async (input) => {
+export type ByteProviderTransport = (
+  input: Omit<ProviderRequest, "body"> & { body?: string | Buffer; responseKind?: "transcription" },
+) => ReturnType<ModelTransport>;
+export const directByteProviderTransport: ByteProviderTransport = async (input) => {
   // A private agent plus explicit TLS verification avoids ambient proxy agents and TLS-disable env.
   const agent = new Agent({ keepAlive: false, maxSockets: 1, rejectUnauthorized: true });
   try {
@@ -60,12 +63,22 @@ export const directModelTransport: ModelTransport = async (input) => {
             if (value !== undefined)
               headers.set(name, Array.isArray(value) ? value.join(",") : value);
           try {
-            boundedHeaders(
-              response.statusCode ?? 0,
-              headers,
-              input.maximum,
-              input.method === "GET",
-            );
+            if (input.responseKind === "transcription") {
+              if ((response.statusCode ?? 0) < 200 || (response.statusCode ?? 0) >= 300)
+                refuse(503, "transcription_provider_unavailable");
+              const length = headers.get("content-length");
+              if (length !== null && (!/^[0-9]+$/.test(length) || Number(length) > input.maximum))
+                refuse(413, "transcription_response_limit");
+              if ((headers.get("content-encoding") ?? "identity").toLowerCase() !== "identity")
+                refuse(503, "transcription_provider_unavailable");
+            } else {
+              boundedHeaders(
+                response.statusCode ?? 0,
+                headers,
+                input.maximum,
+                input.method === "GET",
+              );
+            }
           } catch (error) {
             response.destroy();
             reject(error);
@@ -77,7 +90,13 @@ export const directModelTransport: ModelTransport = async (input) => {
             size += chunk.length;
             if (size > input.maximum) {
               response.destroy();
-              reject(new Error("Provider response limit."));
+              if (input.responseKind === "transcription") {
+                try {
+                  refuse(413, "transcription_response_limit");
+                } catch (error) {
+                  reject(error);
+                }
+              } else reject(new Error("Provider response limit."));
             } else chunks.push(chunk);
           });
           response.once("error", reject);
@@ -94,6 +113,8 @@ export const directModelTransport: ModelTransport = async (input) => {
     agent.destroy();
   }
 };
+export const directModelTransport: ModelTransport = directByteProviderTransport;
+
 function json(bytes: Buffer, maximum: number) {
   if (bytes.length > maximum) return unavailable();
   try {

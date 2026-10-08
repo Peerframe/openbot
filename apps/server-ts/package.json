@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run src",
+    "test": "npm run build && vitest run src",
     "start": "node dist/serve.js"
   },
   "devDependencies": {

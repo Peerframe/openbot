@@ -12,5 +12,11 @@ MODEL_ROUTES = (
     ('PUT', '/api/v1/settings/transcription'),
 )
 
+READ_ROUTES = (('GET','/api/v1/audit'),('GET','/api/v1/audit/export'),('GET','/api/v1/runs/[^/]+/progress'))
+
+FILE_ROUTES = tuple((method, base + suffix) for base in ('/api/v1/task-attachments', '/api/v1/channels/[^/]+/attachments') for method,suffix in (('GET',''),('POST',''),('GET','/[^/]+'),('GET','/[^/]+/content'),('DELETE','/[^/]+'),('POST','/[^/]+/restore'),('POST','/[^/]+/process'))) + (('GET','/api/v1/channels/[^/]+/attachments/[^/]+/references'),('GET','/api/v1/artifacts/[^/]+/content'))
+
+STORAGE_ROUTES = (('GET','/api/v1/storage'),('GET','/api/v1/settings/storage'),('PUT','/api/v1/settings/storage'),('POST','/api/v1/storage/trash/cleanup'),('POST','/api/v1/channels/[^/]+/attachments/cleanup'),('DELETE','/api/v1/channels/[^/]+/attachments/[^/]+/purge'))
+
 def owns(method, path, group='identity'):
-    return any(method == verb and re.fullmatch(pattern, path) for verb, pattern in (ROUTES + MODEL_ROUTES if group == 'identity-models' else ROUTES))
+    return any(method == verb and re.fullmatch(pattern, path) for verb, pattern in (ROUTES + MODEL_ROUTES + READ_ROUTES + FILE_ROUTES + STORAGE_ROUTES if group == 'p3' else ROUTES + MODEL_ROUTES if group == 'identity-models' else ROUTES))

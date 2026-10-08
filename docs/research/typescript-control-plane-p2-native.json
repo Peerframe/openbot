@@ -2808,39 +2808,123 @@
     "sourceParentHead": "bdadf851ee247d0951d02ce422431dc0785721f2",
     "phaseComplete": false,
     "authorization": "Complete all P3 before Claude handoff; retain drafts against main, no merge before evaluation. No application installation or production-data mutation.",
-    "scope": "Model/settings cohort adds eleven operations to the qualified identity baseline (34 of121 default operations). Audit/progress implementations are unselected work in progress; remaining P3 groups are not complete.",
+    "scope": "59 of 121 default operations selected in the explicit P3 development composition: prior model/settings and identity groups, audit/export/progress, attachments, storage/maintenance, document extraction/OCR/transcription. Full P3 remains incomplete. Native v6 is still the earlier 34-operation model candidate.",
     "checks": {
-      "httpAll": {
-        "passed": 270,
-        "additionalArtifactChecks": 19,
+      "productReads": {
+        "qualificationPassed": 7,
+        "lifecycleContractPassed": 21,
         "exitCode": 0,
-        "log": "/private/tmp/openbot-p3-model-all.log"
+        "log": "/private/tmp/openbot-p3-reads-focused.log",
+        "finding": "Fixed JSON parameter double serialization in native Postgres.js; paired Python and Python-stopped checks pass."
       },
-      "httpsControl": {
-        "passed": 50,
-        "ownershipCounts": {
-          "read": 14,
-          "primaryBot": 17,
-          "auth": 13,
-          "channelRead": 9,
-          "identity": 10,
-          "models": 7
+      "filePrimitives": {
+        "passed": 15,
+        "exitCode": 0,
+        "log": "/private/tmp/openbot-p3-files-tests.log",
+        "scope": "Protected attachments and directory enumeration, shared lock/journal interoperability, strict integer evidence and abort settlement."
+      },
+      "credentialScan": {
+        "status": "pending-explicit-authorization",
+        "reason": "Automatic approval review twice refused full repository/history exposure to the pinned third-party TruffleHog container, including the offline/read-only retry. No scan executed."
+      },
+      "hosted": {
+        "head": "bdadf851ee247d0951d02ce422431dc0785721f2",
+        "passed": 17,
+        "run": "https://github.com/Peerframe/openbot/actions/runs/37747409393",
+        "scope": "Published identity baseline only; no push/CI for local model or later changes."
+      },
+      "modelCandidateEvidence": {
+        "httpAll": {
+          "passed": 270,
+          "additionalArtifactChecks": 19,
+          "exitCode": 0,
+          "log": "/private/tmp/openbot-p3-model-all.log"
         },
-        "exitCode": 0,
-        "log": "/private/tmp/openbot-p3-model-tls.log"
+        "httpsControl": {
+          "passed": 50,
+          "ownershipCounts": {
+            "read": 14,
+            "primaryBot": 17,
+            "auth": 13,
+            "channelRead": 9,
+            "identity": 10,
+            "models": 7
+          },
+          "exitCode": 0,
+          "log": "/private/tmp/openbot-p3-model-tls.log"
+        },
+        "models": {
+          "passed": 18,
+          "discoveries": 10,
+          "probes": 4,
+          "liveProviderCalls": 0,
+          "exitCode": 0,
+          "node": "24.21.0",
+          "log": "/private/tmp/openbot-p3-model-http-node24.log"
+        },
+        "focused": {
+          "passed": 18,
+          "log": "/private/tmp/openbot-p3-model-focused.log"
+        },
+        "ui": {
+          "passed": 12,
+          "responses": 104,
+          "unexpected": 0,
+          "pageErrors": 0,
+          "workspace503": 0,
+          "receipt": "/private/tmp/openbot-ui-acceptance-1791453860893/receipt.json"
+        },
+        "fullCheck": {
+          "exitCode": 0,
+          "log": "/private/tmp/openbot-p3-model-check-final.log",
+          "serverTsPassed": 79,
+          "includesUnselectedAuditProgressTests": 5,
+          "desktopPassed": 578,
+          "desktopPlatformSkipped": 3,
+          "webPassed": 692,
+          "turboTasks": [
+            {
+              "stage": "prerequisite-build",
+              "successful": 10,
+              "cached": 10
+            },
+            {
+              "stage": "typecheck",
+              "successful": 33,
+              "cached": 31
+            },
+            {
+              "stage": "test",
+              "successful": 27,
+              "cached": 25
+            },
+            {
+              "stage": "build",
+              "successful": 19,
+              "cached": 17
+            }
+          ]
+        }
       },
-      "models": {
-        "passed": 18,
-        "discoveries": 10,
-        "probes": 4,
-        "liveProviderCalls": 0,
+      "fileProcessing": {
+        "passed": 8,
         "exitCode": 0,
-        "node": "24.21.0",
-        "log": "/private/tmp/openbot-p3-model-http-node24.log"
+        "log": "/private/tmp/openbot-p3-processing-tests.log",
+        "scope": "Real released PDF/Office/offline OCR engines plus real OpenAI SDK with synthetic transport; zero paid/live provider calls."
       },
-      "focused": {
-        "passed": 18,
-        "log": "/private/tmp/openbot-p3-model-focused.log"
+      "resourceHttp": {
+        "passed": 34,
+        "exitCode": 0,
+        "log": "/private/tmp/openbot-p3-processing-http.log",
+        "actualWebDesktopConsumers": true
+      },
+      "fileOwnershipHttp": {
+        "passed": 9,
+        "readsPassed": 7,
+        "lifecyclePassed": 21,
+        "exitCode": 0,
+        "log": "/private/tmp/openbot-p3-processing-ownership.log",
+        "scope": "Paired reverse, Python stopped, actual PDF/Office output, wrong PDF password, SQL rollback, concurrent new reference, durable SQL-receipt recovery and default-off automatic maintenance."
       },
       "ui": {
         "passed": 12,
@@ -2848,37 +2932,28 @@
         "unexpected": 0,
         "pageErrors": 0,
         "workspace503": 0,
-        "receipt": "/private/tmp/openbot-ui-acceptance-1791453860893/receipt.json"
+        "receipt": "/private/var/folders/mk/04lk3njj0nv3hhwsxq0328sc0000gn/T/openbot-ui-acceptance-1791459907191/receipt.json",
+        "log": "/private/tmp/openbot-p3-processing-ui.log"
       },
       "fullCheck": {
         "exitCode": 0,
-        "log": "/private/tmp/openbot-p3-model-check-final.log",
-        "serverTsPassed": 79,
-        "includesUnselectedAuditProgressTests": 5,
-        "desktopPassed": 578,
-        "desktopPlatformSkipped": 3,
-        "webPassed": 692,
-        "turboTasks": [
-          {
-            "stage": "prerequisite-build",
-            "successful": 10,
-            "cached": 10
-          },
-          {
-            "stage": "typecheck",
-            "successful": 33,
-            "cached": 31
-          },
-          {
-            "stage": "test",
-            "successful": 27,
-            "cached": 25
-          },
-          {
-            "stage": "build",
-            "successful": 19,
-            "cached": 17
-          }
+        "serverTsPassed": 97,
+        "log": "/private/tmp/openbot-p3-files-check.log",
+        "turboSuccessful": [
+          10,
+          33,
+          27,
+          19
+        ],
+        "turboCached": [
+          0,
+          10,
+          12,
+          12
+        ],
+        "resolvedFailures": [
+          "Test-only PDF fixture importer renamed with .test.ts; oracle boundary preserved.",
+          "Explicit local variable types and shared pending-file cleanup corrected lint errors."
         ]
       }
     },
@@ -2898,16 +2973,17 @@
     "remainingP3": [
       "Bot creation/deletion and member removal",
       "approval settings/decisions",
-      "workspace/SSE/progress/audit",
-      "files/storage and background maintenance",
+      "workspace/bootstrap/SSE",
       "Employee knowledge and portability",
       "automations",
       "plugins",
       "Node identity and browser product groups"
     ],
     "pending": [
+      "Carry all migrated cohorts through final HTTPS/native packaging/security/hosted CI; qualify remaining cohorts incrementally",
       "Complete remaining P3 implementations and ownership transfer",
-      "Exact final candidate UI12/12 and required local/hosted checks",
+      "Credential scan authorization or user-selected hosted-only validation",
+      "Exact final candidate UI 12/12 and required local/native/hosted checks",
       "Full P3 report for Claude and evaluation before merge"
     ],
     "sourceFingerprints": [
@@ -2956,6 +3032,9 @@
       "originalCheckoutDirtyEntries": 172,
       "installedAsarSha256": "e1effed06195fed8bd9269b2a7c8447562156ac8a216ae4b81ae35cc316432e0",
       "claudeUiUntouched": true
-    }
+    },
+    "localHead": "03b56f2420ba1c00899e418f7f1f6438274ebb48",
+    "checkout": "/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot",
+    "uncommittedOwnership": "Sole implementation by this chat of audit/progress and file/storage/processing cohort with tests; being saved as the next local checkpoint. No other writer."
   }
 }

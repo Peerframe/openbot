@@ -17,7 +17,7 @@ export function clientDigest(address: string | undefined): string {
 }
 
 // A rejected request cannot free a slot still occupied by native work or a SQL transaction.
-export function boundedAdmission(limit: number) {
+export function boundedAdmission(limit: number, waitForSettlement = false) {
   let active = 0;
   return async <T>(
     signal: AbortSignal,
@@ -50,6 +50,8 @@ export function boundedAdmission(limit: number) {
       check();
       return result;
     } catch (error) {
+      // File owners cannot release an inode lock or restore bytes while SQL can still commit.
+      if (waitForSettlement) await work.catch(() => undefined);
       throw error instanceof WriteFailure ? error : writeUnavailable();
     } finally {
       clearTimeout(timer);

@@ -19,17 +19,18 @@ export function ownerTransactions(databaseUrl: string) {
       timezone: "UTC",
     },
   });
-  const admit = boundedAdmission(4);
+  const admit = boundedAdmission(4, true);
   async function run<T>(
     token: string | undefined,
     signal: AbortSignal,
     operation: (db: postgres.TransactionSql) => Promise<T>,
     lock = true,
+    isolation: "read committed" | "repeatable read" = "read committed",
   ): Promise<T> {
     if (!token || !/^[A-Za-z0-9_-]{43}$/.test(token)) refuse(401, "Authentication required.");
     const hash = digest(token!);
     return admit(signal, async (check) => {
-      const result = await sql.begin("isolation level read committed", async (db) => {
+      const result = await sql.begin("isolation level " + isolation, async (db) => {
         const authorize = async (locked: boolean) => {
           const rows = await db.unsafe(
             "SELECT id FROM auth_sessions WHERE token_digest=$1 AND owner_id='owner' " +

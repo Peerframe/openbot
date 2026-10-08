@@ -1,3 +1,4 @@
+import { qualifyFileOwnership } from "./ts-files-acceptance.test.ts";
 import assert from "node:assert/strict";
 import type { ChildProcess } from "node:child_process";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
@@ -28,6 +29,7 @@ import {
   startControlPostgres,
 } from "./python-acceptance-fixture.ts";
 import { qualifyChannelReads } from "./ts-channel-read-acceptance.ts";
+import { qualifyProductReads } from "./ts-product-reads-acceptance.ts";
 import { qualifyModelOwnership } from "./ts-model-acceptance.ts";
 import { qualifyOwnerAuth } from "./ts-owner-auth-acceptance.ts";
 import { qualifyPrimaryBotWrite } from "./ts-primary-bot-acceptance.ts";
@@ -237,7 +239,7 @@ try {
               OPENBOT_CONTROL_TS_READ_GROUP: readGroup ? "transcription" : "none",
               OPENBOT_CONTROL_TS_WRITE_GROUP: readGroup ? "primary-bot" : "none",
               OPENBOT_CONTROL_TS_AUTH_GROUP: readGroup ? "owner" : "none",
-              OPENBOT_CONTROL_TS_PRODUCT_GROUP: readGroup ? "identity-models" : "none",
+              OPENBOT_CONTROL_TS_PRODUCT_GROUP: readGroup ? "p3" : "none",
               OPENBOT_CONTROL_TS_CHANNEL_READ_GROUP: readGroup ? "channels" : "none",
               OPENBOT_CONTROL_PUBLIC_ORIGIN: baseUrl,
             }
@@ -270,7 +272,9 @@ try {
         OPENBOT_TS_READ_GROUP: readGroup ? "transcription" : "none",
         OPENBOT_TS_WRITE_GROUP: readGroup ? "primary-bot" : "none",
         OPENBOT_TS_AUTH_GROUP: readGroup ? "owner" : "none",
-        OPENBOT_TS_PRODUCT_GROUP: readGroup ? "identity-models" : "none",
+        OPENBOT_TS_PRODUCT_GROUP: readGroup ? "p3" : "none",
+        OPENBOT_TS_OBJECT_ROOT: join(directory, "objects"),
+        OPENBOT_TS_ARTIFACT_ROOT: join(directory, "artifacts"),
         OPENBOT_TS_MODEL_CONNECTION_KEY_PATH: join(directory, "objects", "model-connections.key"),
         OPENBOT_TS_CHANNEL_READ_GROUP: readGroup ? "channels" : "none",
         OPENBOT_TS_OWNER_PASSWORD: password,
@@ -449,7 +453,7 @@ try {
       "Mixed → direct Python → mixed switch retained the public URL, SQL Bot and issued Owner session; one writer at each step.",
     );
   }
-  if (entry === "ts" && ["all", "control", "resources"].includes(selectedSuite)) {
+  if (entry === "ts" && ["all", "control", "resources", "lifecycle"].includes(selectedSuite)) {
     const ownershipAcceptance = {
       databaseUrl: dsn,
       origin: baseUrl,
@@ -479,12 +483,20 @@ try {
         await waitReady();
       },
     };
-    await qualifyTranscriptionRead(ownershipAcceptance);
-    await qualifyPrimaryBotWrite(ownershipAcceptance);
-    cookie = await qualifyOwnerAuth({ ...ownershipAcceptance, password });
-    await qualifyChannelReads({ ...ownershipAcceptance, cookie });
-    await qualifyProductIdentity({ ...ownershipAcceptance, cookie });
-    await qualifyModelOwnership({ ...ownershipAcceptance, cookie });
+    if (selectedSuite !== "lifecycle") {
+      await qualifyTranscriptionRead(ownershipAcceptance);
+      await qualifyPrimaryBotWrite(ownershipAcceptance);
+      cookie = await qualifyOwnerAuth({ ...ownershipAcceptance, password });
+      await qualifyChannelReads({ ...ownershipAcceptance, cookie });
+      await qualifyProductIdentity({ ...ownershipAcceptance, cookie });
+      await qualifyModelOwnership({ ...ownershipAcceptance, cookie });
+    }
+    await qualifyProductReads({ ...ownershipAcceptance, cookie });
+    await qualifyFileOwnership({
+      ...ownershipAcceptance,
+      cookie,
+      objectRoot: join(directory, "objects"),
+    });
   }
   // This owned database has no Worker. Seed publication states so HTTP decision/unread
   // contracts exercise real transactions without claiming execution by a production Host.

@@ -1,3 +1,5 @@
+import { fileURLToPath } from "node:url";
+import type { ByteProviderTransport } from "./model-network.js";
 import { isIP } from "node:net";
 import { isAbsolute } from "node:path";
 import type { ModelTransport } from "./model-network.js";
@@ -14,6 +16,13 @@ export interface EntryOptions {
     allowedOrigins?: readonly string[];
     models?: { keyPath: string; customBaseUrls: readonly string[] };
     modelTransport?: ModelTransport;
+    attachmentTransport?: ByteProviderTransport;
+    controlReads?: boolean;
+    files?: {
+      objectRoot: string;
+      artifactRoot?: string;
+      parser?: { worker: string; modules: string };
+    };
   };
   channelRead?: { databaseUrl: string; allowedOrigins?: readonly string[] };
   transcriptionRead?: { databaseUrl: string; allowedOrigins?: readonly string[] };
@@ -40,6 +49,13 @@ function origin(value: string): URL {
 
 export function validateOptions(options: EntryOptions): EntryOptions {
   if (options.product) {
+    if (
+      options.product.files &&
+      [options.product.files.objectRoot, options.product.files.artifactRoot]
+        .filter((path) => path !== undefined)
+        .some((path) => !isAbsolute(path) || path.includes("\0") || path.length > 4096)
+    )
+      throw new Error("Explicit protected storage roots required.");
     if (
       options.product.models &&
       (!isAbsolute(options.product.models.keyPath) ||
@@ -160,7 +176,7 @@ export function validateOptions(options: EntryOptions): EntryOptions {
 
 export function entryOptions(environment: NodeJS.ProcessEnv): EntryOptions {
   const productGroup = environment.OPENBOT_TS_PRODUCT_GROUP ?? "none";
-  if (!["none", "identity", "identity-models"].includes(productGroup))
+  if (!["none", "identity", "identity-models", "p3"].includes(productGroup))
     throw new Error("Unknown TS product group.");
   if (productGroup !== "none" && !environment.OPENBOT_TS_DATABASE_URL)
     throw new Error("Product routes require an explicit PostgreSQL URL.");
@@ -192,7 +208,31 @@ export function entryOptions(environment: NodeJS.ProcessEnv): EntryOptions {
     ...(productGroup !== "none"
       ? {
           product: {
-            ...(productGroup === "identity-models"
+            ...(productGroup === "p3"
+              ? {
+                  controlReads: true,
+                  files: {
+                    objectRoot: environment.OPENBOT_TS_OBJECT_ROOT ?? "",
+                    parser: {
+                      worker:
+                        environment.OPENBOT_TS_PARSER_WORKER_PATH ??
+                        fileURLToPath(
+                          new URL(
+                            "../../server-python/src/openbot_server/parser_worker.ts",
+                            import.meta.url,
+                          ),
+                        ),
+                      modules:
+                        environment.OPENBOT_TS_NODE_MODULE_ROOT ??
+                        fileURLToPath(new URL("../../../node_modules", import.meta.url)),
+                    },
+                    ...(environment.OPENBOT_TS_ARTIFACT_ROOT
+                      ? { artifactRoot: environment.OPENBOT_TS_ARTIFACT_ROOT }
+                      : {}),
+                  },
+                }
+              : {}),
+            ...(productGroup === "identity-models" || productGroup === "p3"
               ? {
                   models: {
                     keyPath: environment.OPENBOT_TS_MODEL_CONNECTION_KEY_PATH ?? "",

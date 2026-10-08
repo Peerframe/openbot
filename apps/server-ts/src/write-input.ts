@@ -1,3 +1,4 @@
+import { parseJsonInput } from "./json-input.js";
 import type { Readable } from "node:stream";
 import { WriteFailure } from "./primary-bot-write.js";
 
@@ -68,7 +69,7 @@ export async function boundedJson(
     if (signal.aborted) abort();
   });
   try {
-    return JSON.parse(new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(body));
+    return parseJsonInput(new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(body));
   } catch {
     throw new WriteFailure(422, { error: "Invalid JSON input." });
   }

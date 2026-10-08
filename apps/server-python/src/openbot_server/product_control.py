@@ -57,6 +57,7 @@ class OwnerProduct:
         self.write_routes = []
         self.revision = 0
         self.ts_invalidations = None
+        self.storage_owned_by_ts = False
         from .legacy_approvals import PostgresLegacyApprovals
         self.approvals=PostgresLegacyApprovals(dsn)
         from .identity_lifecycle import PostgresIdentityLifecycle
@@ -84,7 +85,7 @@ class OwnerProduct:
 
     async def start(self):
         if self.ts_invalidations is not None: await self.ts_invalidations.start()
-        await self.storage.start()
+        if not self.storage_owned_by_ts: await self.storage.start()
         if self.work_runtime is not None: await self.work_runtime.start()
 
     def permits_write(self,request):

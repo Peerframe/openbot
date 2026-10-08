@@ -45,7 +45,7 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
                run_commands: RunCommandStore | None = None, work=None, product=None,
                proxy_address: str | None = None, public_origin: str | None = None,
                ts_read_group: str = "none", ts_write_group: str = "none", ts_auth_group: str = "none", ts_channel_read_group: str = "none", ts_product_group: str = "none") -> FastAPI:
-    if ts_product_group not in ("none", "identity", "identity-models") or (ts_product_group != "none" and (product is None or proxy_address is None)):
+    if ts_product_group not in ("none", "identity", "identity-models", "p3") or (ts_product_group != "none" and (product is None or proxy_address is None)):
         raise ValueError("TS product ownership requires an explicit private product proxy.")
     if ts_channel_read_group not in ("none", "channels") or (ts_channel_read_group != "none" and
             (product is None or proxy_address is None or public_origin is None)):
@@ -66,6 +66,7 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
     if ts_product_group != "none":
         from .ts_product_events import ProductInvalidations
         product.ts_invalidations = ProductInvalidations(product.transactions._dsn)
+        product.storage_owned_by_ts = ts_product_group == "p3"
     cookie_name = "__Host-openbot_session" if secure_cookies else "openbot_session"
     cookie = APIKeyCookie(name=cookie_name, auto_error=False)
 

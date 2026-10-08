@@ -1,3 +1,11 @@
+import { AttachmentProcessing, processingRoutes } from "./attachment-processing.js";
+import { NodeAttachmentParser } from "./attachment-parser.js";
+import { AttachmentTranscription } from "./attachment-transcription.js";
+import { StorageService } from "./storage-service.js";
+import { storageRoutes } from "./product-storage.js";
+import { join } from "node:path";
+import { OwnerFiles } from "./owner-files.js";
+import { attachmentRoutes } from "./product-attachments.js";
 import type { Readable } from "node:stream";
 import {
   controlHttpOperations,
@@ -12,6 +20,8 @@ import { ModelNetwork, modelNetworkRoutes } from "./model-network.js";
 import { ownerTransactions, refuse } from "./owner-transaction.js";
 import { WriteFailure, writeUnavailable } from "./primary-bot-write.js";
 import { identityError, identityRoutes } from "./product-identity.js";
+import { productReadRoutes } from "./product-reads.js";
+import { ProductBytes } from "./product-response.js";
 import { ownerCookie } from "./transcription-read.js";
 import { boundedJson } from "./write-input.js";
 
@@ -31,8 +41,33 @@ export function productHandler(
     ? new ModelConnections(options.models.keyPath, options.models.customBaseUrls)
     : undefined;
   const network = models ? new ModelNetwork(models, options.modelTransport) : undefined;
+  const files = options.files
+    ? new OwnerFiles(join(options.files.objectRoot, "attachments"))
+    : undefined;
+  const storage = files
+    ? new StorageService(
+        options.databaseUrl,
+        files,
+        options.files!.objectRoot,
+        options.files!.artifactRoot,
+      )
+    : undefined;
+  const processing =
+    files && options.files?.parser
+      ? new AttachmentProcessing(
+          files,
+          new NodeAttachmentParser(options.files.parser.worker, options.files.parser.modules),
+          models
+            ? new AttachmentTranscription(models, files, options.attachmentTransport)
+            : undefined,
+        )
+      : undefined;
   const routes = [
     ...identityRoutes,
+    ...(processing ? processingRoutes(processing) : []),
+    ...(storage ? storageRoutes(storage) : []),
+    ...(files ? attachmentRoutes(files, options.files!.objectRoot) : []),
+    ...(options.controlReads ? productReadRoutes : []),
     ...(models ? modelRoutes(models) : []),
     ...(network ? modelNetworkRoutes(network) : []),
   ].map((route) => {
@@ -51,9 +86,16 @@ export function productHandler(
   const match = (method: string, path: string) =>
     routes.find((route) => route.method === method && route.pattern.test(path));
   return {
-    verify: () => store.verify(models ? (db) => models.initialize(db) : undefined),
+    verify: async () => {
+      files?.verify();
+      await store.verify(models ? (db) => models.initialize(db) : undefined);
+      await storage?.verify();
+      storage?.start();
+    },
     close: async () => {
       network?.close();
+      await processing?.close();
+      await storage?.close();
       await store.close();
     },
     owns: (method: string, path: string) => Boolean(match(method, path)),
@@ -94,31 +136,55 @@ export function productHandler(
             request.headers["content-type"],
             request.headers["content-length"],
             abort.signal,
-            route.maxBytes ?? 8192,
+            route.maxBytes ?? (route.kind === "product" ? 32768 : 8192),
           );
+        const context = {
+          query: new URLSearchParams((request.raw.url ?? "").split("?").slice(1).join("?")),
+          payload: request.body as Readable,
+          headers: request.headers,
+        };
         const result = route.remote
           ? await route.remote(
-              (operation) => store.run(token, abort.signal, operation),
+              (operation, signal) =>
+                store.run(
+                  token,
+                  signal ? AbortSignal.any([abort.signal, signal]) : abort.signal,
+                  operation,
+                ),
               ids,
               body,
               abort.signal,
+              context,
             )
-          : await store.run(token, abort.signal, async (db) => {
-              try {
-                const value = await route.execute(db, ids, body);
-                // Empty committed invalidation only: Python owns the SSE projection during coexistence.
-                if (route.kind === "product" && request.method !== "GET")
-                  await db`SELECT pg_notify('openbot_product_changed','')`;
-                return value;
-              } catch (error) {
-                return identityError(error, route);
-              }
-            });
+          : await store.run(
+              token,
+              abort.signal,
+              async (db) => {
+                try {
+                  const value = await route.execute(db, ids, body, context);
+                  // Empty committed invalidation only: Python owns the SSE projection during coexistence.
+                  if (route.kind === "product" && request.method !== "GET")
+                    await db`SELECT pg_notify('openbot_product_changed','')`;
+                  return value;
+                } catch (error) {
+                  return identityError(error, route);
+                }
+              },
+              true,
+              route.isolation,
+            );
         if (route.remote && request.method !== "GET")
           await store.run(token, abort.signal, async (db) => {
             await db`SELECT pg_notify('openbot_product_changed','')`;
           });
-        if (!reply.raw.destroyed) return reply.code(route.status ?? 200).send(result);
+        if (!reply.raw.destroyed) {
+          if (result instanceof ProductBytes)
+            return reply
+              .headers(result.headers)
+              .code(route.status ?? 200)
+              .send(result.bytes);
+          return reply.code(route.status ?? 200).send(result);
+        }
       } catch (error) {
         if (reply.raw.destroyed) return;
         const failure = error instanceof WriteFailure ? error : writeUnavailable();

@@ -65,6 +65,30 @@ describe("Owner authentication boundary", () => {
     await new Promise((resolve) => setImmediate(resolve));
     assert.equal(await admit(new AbortController().signal, async () => 7), 7);
   });
+  it("settles SQL work before returning an aborted file-owning transaction", async () => {
+    const admit = boundedAdmission(1, true),
+      abort = new AbortController();
+    let finish!: () => void,
+      returned = false;
+    const work = admit(
+      abort.signal,
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const result = work.catch(() => {
+      returned = true;
+    });
+    await Promise.resolve();
+    abort.abort();
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(returned, false);
+    await assert.rejects(admit(new AbortController().signal, async () => undefined));
+    finish();
+    await result;
+    assert.equal(returned, true);
+  });
   it("uses 8192-byte auth JSON with retained MIME, UTF8, JSON and cancellation semantics", async () => {
     const read = (body: Buffer, type = "APPLICATION/JSON") =>
       boundedJson(Readable.from([body]), type, undefined, new AbortController().signal);

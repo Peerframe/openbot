@@ -655,3 +655,12 @@ Python 保留签发/撤销、写入和模型解析。不增加版本、持久化
 复用 Node 内置异步 scrypt 和既有 PostgreSQL 会话合同，不新增密码学依赖、不迁移数据、不复制源码。
 Node22.22.2 与 @noble/hashes2.4.0 的评估见[对应决策](research/typescript-control-plane-p0.zh-CN.md)。
 六个操作必须显式成组选择，并通过真实并发、反向切换和界面验收。
+
+
+### P3 模型、附件与存储（2026-10-08）
+
+模型调用复用 OpenAI 7.28.0、Anthropic SDK 0.131.0；私有文件使用 Koffi 3.3.2 的固定 POSIX
+接口，保留原有密钥格式、跨进程锁和 SQL 清理凭据。目录遍历只读取已核对的 ABI 字段，不复制
+原生头文件。文档识别复用未改动的 Node 解析辅助程序及固定解析器/语言包；转写使用相同 OpenAI
+版本的 multipart 接口。不增加解析器分叉，也不安装应用或系统服务。具体边界和来源见
+[迁移决策](research/typescript-control-plane-p0.zh-CN.md#p3-附件与存储接管扩展2026-10-08进行中)。

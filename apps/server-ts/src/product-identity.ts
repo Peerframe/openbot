@@ -1,3 +1,4 @@
+import type { Readable } from "node:stream";
 import { randomUUID } from "node:crypto";
 import {
   botAppearanceResultSchema,
@@ -282,13 +283,23 @@ async function setReaction(db: DB, id: string, messageId: string, body: unknown)
     ),
   };
 }
-export type AuthorizedProductOperation = <T>(operation: (db: DB) => Promise<T>) => Promise<T>;
+export type AuthorizedProductOperation = <T>(
+  operation: (db: DB) => Promise<T>,
+  signal?: AbortSignal,
+) => Promise<T>;
+export type ProductRequest = {
+  query: URLSearchParams;
+  payload?: Readable;
+  headers: Record<string, unknown>;
+};
 export type ProductRoute = {
+  isolation?: "repeatable read";
   remote?: (
     owner: AuthorizedProductOperation,
     ids: string[],
     body: unknown,
     signal: AbortSignal,
+    request: ProductRequest,
   ) => Promise<unknown>;
   method: string;
   path: string;
@@ -296,7 +307,7 @@ export type ProductRoute = {
   maxBytes?: number;
   status?: number;
   error?: string;
-  execute: (db: DB, ids: string[], body: unknown) => Promise<unknown>;
+  execute: (db: DB, ids: string[], body: unknown, request: ProductRequest) => Promise<unknown>;
 };
 export const identityRoutes: readonly ProductRoute[] = [
   {
