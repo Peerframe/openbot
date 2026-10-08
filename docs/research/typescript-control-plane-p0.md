@@ -1609,3 +1609,11 @@ credential revision/key are checked before transfer. Derived text has the retain
 limit; original bytes/passwords are not persisted into its metadata. Both parser and SDK admission
 remain occupied until actual work settles. Qualification uses synthetic files and a constructor-only
 SDK transport fixture; no live provider call or model charge is claimed.
+
+### P3 Employee knowledge reuse extension (2026-10-08)
+
+Reuse the accepted [reviewed skill content](reviewed-skill-content.md) decision and its pinned yaml 2.9.0, unchanged Agent Skills parser and local sensitive-text scanner from the retained Employee publisher package. Two explicit pure exports avoid another parser or copied implementation; no publisher keyring or CLI is imported by knowledge routes. Dependency versions and grants are unchanged. The existing Python knowledge store defines the same Owner transactions, immutable skill definitions, digest review, dependency state, revision CAS and content-free events. The learning direction remains inspired by Hermes Agent.
+
+Native proposal review shares the retained P4 source/channel or native-root lock, root-to-leaf Task order and source/profile/scope/digest checks before Bot and proposal locks. It only reviews completed source facts; it never admits, executes or schedules Work. The TS adapter preserves those checks locally; P4 execution stays in Python/Temporal. Existing SQL projection limits apply before rows leave PostgreSQL. Cross-language HTTP, stopped-Python ownership and stale/digest/rollback tests qualify this candidate before further migration. No new upstream source copied.
+
+The source-integrity tests exposed a driver precision boundary: infer PostgreSQL timestamp parameters through `text` before casting, so microsecond deadline comparisons do not pass through JavaScript `Date`. Native scope/claim integers retain raw JSON token checks. During paired reverse, native review's retained WorkConflict/WorkNotFound exceptions now map to the declared 409/404 product errors instead of escaping as an unhandled 500; authority and SQL rollback are unchanged.

@@ -2808,7 +2808,7 @@
     "sourceParentHead": "bdadf851ee247d0951d02ce422431dc0785721f2",
     "phaseComplete": false,
     "authorization": "Complete all P3 before Claude handoff; retain drafts against main, no merge before evaluation. No application installation or production-data mutation.",
-    "scope": "59 of 121 default operations selected in the explicit P3 development composition: prior model/settings and identity groups, audit/export/progress, attachments, storage/maintenance, document extraction/OCR/transcription. Full P3 remains incomplete. Native v6 is still the earlier 34-operation model candidate.",
+    "scope": "68 of 121 default operations selected in the explicit P3 development composition. The Employee profile/skills/memories/proposal group adds 9 operations after the 59-operation protected-files checkpoint. Full P3 remains incomplete; native v6 remains the earlier 34-operation model candidate.",
     "checks": {
       "productReads": {
         "qualificationPassed": 7,
@@ -2926,16 +2926,7 @@
         "log": "/private/tmp/openbot-p3-processing-ownership.log",
         "scope": "Paired reverse, Python stopped, actual PDF/Office output, wrong PDF password, SQL rollback, concurrent new reference, durable SQL-receipt recovery and default-off automatic maintenance."
       },
-      "ui": {
-        "passed": 12,
-        "responses": 104,
-        "unexpected": 0,
-        "pageErrors": 0,
-        "workspace503": 0,
-        "receipt": "/private/var/folders/mk/04lk3njj0nv3hhwsxq0328sc0000gn/T/openbot-ui-acceptance-1791459907191/receipt.json",
-        "log": "/private/tmp/openbot-p3-processing-ui.log"
-      },
-      "fullCheck": {
+      "filesCheckpointFullCheck": {
         "exitCode": 0,
         "serverTsPassed": 97,
         "log": "/private/tmp/openbot-p3-files-check.log",
@@ -2955,6 +2946,59 @@
           "Test-only PDF fixture importer renamed with .test.ts; oracle boundary preserved.",
           "Explicit local variable types and shared pending-file cleanup corrected lint errors."
         ]
+      },
+      "filesCheckpointUi": {
+        "passed": 12,
+        "responses": 104,
+        "unexpected": 0,
+        "pageErrors": 0,
+        "workspace503": 0,
+        "receipt": "/private/var/folders/mk/04lk3njj0nv3hhwsxq0328sc0000gn/T/openbot-ui-acceptance-1791459907191/receipt.json",
+        "log": "/private/tmp/openbot-p3-processing-ui.log"
+      },
+      "employee": {
+        "http": {
+          "ownershipPassed": 10,
+          "contractPassed": 34,
+          "exitCode": 0,
+          "log": "/private/tmp/openbot-p3-employee-ownership.log"
+        },
+        "https": {
+          "ownershipPassed": 10,
+          "contractPassed": 34,
+          "exitCode": 0,
+          "log": "/private/tmp/openbot-p3-employee-https.log"
+        },
+        "inputBoundaries": {
+          "passed": 4,
+          "exitCode": 0,
+          "log": "/private/tmp/openbot-p3-employee-input-tests.log"
+        },
+        "scope": "Actual PostgreSQL, Python stopped, bidirectional latest-data parity, digest-reviewed text, sensitive/merged memory rules, source scope/ancestry, microsecond deadline and history failure rollback. Synthetic task publication; not Temporal execution."
+      },
+      "fullCheck": {
+        "exitCode": 0,
+        "log": "/private/tmp/openbot-p3-employee-check.log",
+        "serverTsPassed": 101,
+        "desktopPassed": 578,
+        "desktopPlatformSkipped": 3,
+        "webPassed": 692,
+        "testTasks": 28,
+        "cachedTestTasks": 26,
+        "buildTasks": 19,
+        "cachedBuildTasks": 13,
+        "resolvedFailures": [
+          "Production dependency graph and mixed-native graph exact expectations now include the retained Employee pure parser workspace."
+        ]
+      },
+      "ui": {
+        "passed": 12,
+        "responses": 105,
+        "unexpected": 0,
+        "pageErrors": 0,
+        "workspace503": 0,
+        "receipt": "/private/var/folders/mk/04lk3njj0nv3hhwsxq0328sc0000gn/T/openbot-ui-acceptance-1791461516968/receipt.json",
+        "log": "/private/tmp/openbot-p3-employee-ui.log"
       }
     },
     "native": {
@@ -2974,7 +3018,7 @@
       "Bot creation/deletion and member removal",
       "approval settings/decisions",
       "workspace/bootstrap/SSE",
-      "Employee knowledge and portability",
+      "Employee portability",
       "automations",
       "plugins",
       "Node identity and browser product groups"
@@ -3033,8 +3077,8 @@
       "installedAsarSha256": "e1effed06195fed8bd9269b2a7c8447562156ac8a216ae4b81ae35cc316432e0",
       "claudeUiUntouched": true
     },
-    "localHead": "03b56f2420ba1c00899e418f7f1f6438274ebb48",
+    "localHead": "214ea7cf",
     "checkout": "/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot",
-    "uncommittedOwnership": "Sole implementation by this chat of audit/progress and file/storage/processing cohort with tests; being saved as the next local checkpoint. No other writer."
+    "uncommittedOwnership": "This chat alone owns the Employee knowledge cohort being saved. No other writer. Next automation/approval drafts exist only in /private/tmp/openbot-p3-employee-prep and are not integrated or qualified."
   }
 }

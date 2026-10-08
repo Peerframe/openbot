@@ -18,5 +18,7 @@ FILE_ROUTES = tuple((method, base + suffix) for base in ('/api/v1/task-attachmen
 
 STORAGE_ROUTES = (('GET','/api/v1/storage'),('GET','/api/v1/settings/storage'),('PUT','/api/v1/settings/storage'),('POST','/api/v1/storage/trash/cleanup'),('POST','/api/v1/channels/[^/]+/attachments/cleanup'),('DELETE','/api/v1/channels/[^/]+/attachments/[^/]+/purge'))
 
+KNOWLEDGE_ROUTES = tuple((method, '/api/v1/bots/[^/]+' + suffix) for method,suffix in (('GET','/profile'),('POST','/skills'),('POST','/skills/import'),('POST','/skills/[^/]+/state'),('POST','/memories'),('PATCH','/memories/[^/]+'),('DELETE','/memories/[^/]+'),('GET','/knowledge-proposals'),('POST','/knowledge-proposals/[^/]+/review')))
+
 def owns(method, path, group='identity'):
-    return any(method == verb and re.fullmatch(pattern, path) for verb, pattern in (ROUTES + MODEL_ROUTES + READ_ROUTES + FILE_ROUTES + STORAGE_ROUTES if group == 'p3' else ROUTES + MODEL_ROUTES if group == 'identity-models' else ROUTES))
+    return any(method == verb and re.fullmatch(pattern, path) for verb, pattern in (ROUTES + MODEL_ROUTES + READ_ROUTES + FILE_ROUTES + STORAGE_ROUTES + KNOWLEDGE_ROUTES if group == 'p3' else ROUTES + MODEL_ROUTES if group == 'identity-models' else ROUTES))

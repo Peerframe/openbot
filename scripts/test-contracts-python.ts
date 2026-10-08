@@ -29,6 +29,7 @@ import {
   startControlPostgres,
 } from "./python-acceptance-fixture.ts";
 import { qualifyChannelReads } from "./ts-channel-read-acceptance.ts";
+import { qualifyEmployeeOwnership } from "./ts-employee-acceptance.ts";
 import { qualifyProductReads } from "./ts-product-reads-acceptance.ts";
 import { qualifyModelOwnership } from "./ts-model-acceptance.ts";
 import { qualifyOwnerAuth } from "./ts-owner-auth-acceptance.ts";
@@ -453,7 +454,10 @@ try {
       "Mixed → direct Python → mixed switch retained the public URL, SQL Bot and issued Owner session; one writer at each step.",
     );
   }
-  if (entry === "ts" && ["all", "control", "resources", "lifecycle"].includes(selectedSuite)) {
+  if (
+    entry === "ts" &&
+    ["all", "control", "resources", "lifecycle", "employee"].includes(selectedSuite)
+  ) {
     const ownershipAcceptance = {
       databaseUrl: dsn,
       origin: baseUrl,
@@ -483,7 +487,7 @@ try {
         await waitReady();
       },
     };
-    if (selectedSuite !== "lifecycle") {
+    if (!["lifecycle", "employee"].includes(selectedSuite)) {
       await qualifyTranscriptionRead(ownershipAcceptance);
       await qualifyPrimaryBotWrite(ownershipAcceptance);
       cookie = await qualifyOwnerAuth({ ...ownershipAcceptance, password });
@@ -491,12 +495,16 @@ try {
       await qualifyProductIdentity({ ...ownershipAcceptance, cookie });
       await qualifyModelOwnership({ ...ownershipAcceptance, cookie });
     }
-    await qualifyProductReads({ ...ownershipAcceptance, cookie });
-    await qualifyFileOwnership({
-      ...ownershipAcceptance,
-      cookie,
-      objectRoot: join(directory, "objects"),
-    });
+    if (selectedSuite !== "employee") {
+      await qualifyProductReads({ ...ownershipAcceptance, cookie });
+      await qualifyFileOwnership({
+        ...ownershipAcceptance,
+        cookie,
+        objectRoot: join(directory, "objects"),
+      });
+    }
+    if (["all", "employee"].includes(selectedSuite))
+      await qualifyEmployeeOwnership({ ...ownershipAcceptance, cookie });
   }
   // This owned database has no Worker. Seed publication states so HTTP decision/unread
   // contracts exercise real transactions without claiming execution by a production Host.

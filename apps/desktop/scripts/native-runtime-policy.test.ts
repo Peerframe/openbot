@@ -95,6 +95,7 @@ it("adds the pinned TS entry to the Python closure without WS tests or the retir
     "apps/server-ts",
     "packages/db",
     "packages/domain",
+    "packages/employee-publisher",
     "packages/protocol",
   ]);
   for (const key of python.packageKeys) expect(mixed.packageKeys).toContain(key);

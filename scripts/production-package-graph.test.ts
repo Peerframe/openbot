@@ -21,10 +21,10 @@ test("TS entry production closure includes reviewed adapters, model SDKs and nat
     await readFile(new URL("../package-lock.json", import.meta.url), "utf8"),
   );
   const graph = collectProductionPackageGraph(source, "apps/server-ts");
-  assert.deepEqual(graph.workspaceKeys, ["apps/server-ts", "packages/domain", "packages/protocol"]);
+  assert.deepEqual(graph.workspaceKeys, ["apps/server-ts", "packages/domain", "packages/employee-publisher", "packages/protocol"]);
   assert(graph.packageKeys.includes("node_modules/fastify"));
   assert(graph.packageKeys.includes("node_modules/@fastify/reply-from"));
-  for (const name of ["openai", "@anthropic-ai/sdk", "koffi", "@koromix/koffi-darwin-arm64"]) {
+  for (const name of ["openai", "@anthropic-ai/sdk", "koffi", "@koromix/koffi-darwin-arm64", "yaml"]) {
     assert(graph.packageKeys.includes(`node_modules/${name}`), `${name} must be staged`);
   }
   assert(!graph.packageKeys.includes("node_modules/ws"));

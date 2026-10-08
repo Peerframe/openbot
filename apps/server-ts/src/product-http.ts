@@ -1,3 +1,4 @@
+import { employeeKnowledgeRoutes } from "./employee-knowledge.js";
 import { AttachmentProcessing, processingRoutes } from "./attachment-processing.js";
 import { NodeAttachmentParser } from "./attachment-parser.js";
 import { AttachmentTranscription } from "./attachment-transcription.js";
@@ -67,7 +68,7 @@ export function productHandler(
     ...(processing ? processingRoutes(processing) : []),
     ...(storage ? storageRoutes(storage) : []),
     ...(files ? attachmentRoutes(files, options.files!.objectRoot) : []),
-    ...(options.controlReads ? productReadRoutes : []),
+    ...(options.controlReads ? [...productReadRoutes, ...employeeKnowledgeRoutes] : []),
     ...(models ? modelRoutes(models) : []),
     ...(network ? modelNetworkRoutes(network) : []),
   ].map((route) => {
