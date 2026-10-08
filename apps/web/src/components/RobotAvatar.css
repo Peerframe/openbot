@@ -45,7 +45,7 @@
   stroke-width: 0;
   stroke-linejoin: round;
 }
-.robot-avatar :is(.robot-eyes, .robot-ball).is-micro {
+.robot-avatar :is(.robot-eyes, .robot-ball, .robot-crown-at).is-micro {
   display: none;
 }
 @container (width < 32px) {
@@ -56,10 +56,10 @@
     stroke-width: 4;
   }
   .robot-head-art .robot-ear-light,
-  .robot-head-art :is(.robot-eyes, .robot-ball).is-standard {
+  .robot-head-art :is(.robot-eyes, .robot-ball, .robot-crown-at).is-standard {
     display: none;
   }
-  .robot-head-art :is(.robot-eyes, .robot-ball).is-micro {
+  .robot-head-art :is(.robot-eyes, .robot-ball, .robot-crown-at).is-micro {
     display: inline;
   }
 }
@@ -241,5 +241,11 @@
   opacity: 0;
 }
 .robot-avatar .robot-ghost {
+  display: none;
+}
+
+/* 主 Bot crown (PrimaryBot artboard). Static unless motion.css plays it; a crown that is leaving
+   for another Bot only shows while it fades. */
+.robot-avatar .robot-crown.is-leaving {
   display: none;
 }

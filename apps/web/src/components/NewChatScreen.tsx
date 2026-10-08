@@ -35,12 +35,15 @@ type Option = { kind: "create-bot" } | { kind: "create-channel" } | { kind: "bot
  */
 export function NewChatScreen({
   bots,
+  primaryBotId,
   initialChannelMode = false,
   onCreateBot,
   onStart,
   onClose,
 }: {
   bots: Bot[];
+  /** 主 Bot leads the recipients, crowned (PrimaryBot artboard). */
+  primaryBotId?: string | null | undefined;
   initialChannelMode?: boolean;
   onCreateBot(): void | Promise<void>;
   onStart(start: NewChatStart): Promise<void>;
@@ -63,11 +66,13 @@ export function NewChatScreen({
   const optionsList = useRef<HTMLDivElement | null>(null);
   const botById = useMemo(() => new Map(bots.map((bot) => [bot.id, bot])), [bots]);
   const term = query.trim().toLocaleLowerCase();
-  const candidates = bots.filter(
-    (bot) =>
-      !selected.includes(bot.id) &&
-      (!term || `${bot.name} ${bot.role}`.toLocaleLowerCase().includes(term)),
-  );
+  const candidates = bots
+    .filter(
+      (bot) =>
+        !selected.includes(bot.id) &&
+        (!term || `${bot.name} ${bot.role}`.toLocaleLowerCase().includes(term)),
+    )
+    .sort((a, b) => Number(b.id === primaryBotId) - Number(a.id === primaryBotId));
   // The two actions lead the list only before anything is chosen (New artboard); afterwards the
   // list holds the remaining Bots, numbered from ⌘1 (NewGroup artboard).
   const showActions = selected.length === 0 && !channelMode && !term;
@@ -308,7 +313,11 @@ export function NewChatScreen({
               );
             return (
               <button {...common} key={option.bot.id}>
-                <RobotAvatar bot={option.bot} className="new-chat-option-avatar" />
+                <RobotAvatar
+                  bot={option.bot}
+                  className="new-chat-option-avatar"
+                  crown={option.bot.id === primaryBotId}
+                />
                 <span>
                   <span className="new-chat-bot-name">
                     <Match text={option.bot.name} query={query} />

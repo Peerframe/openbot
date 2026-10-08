@@ -135,7 +135,8 @@ export function createPreviewFetch(origin: string, world: PreviewWorld = createW
     updatedAt: "2026-09-30T01:30:00.000Z",
   };
   let transcriptionConnectionId: string | null = null;
-  let primaryBotId: string | null = null;
+  // A new workspace's first Bot becomes 主 Bot (PrimaryBot artboard).
+  let primaryBotId: string | null = (world.bots[0]?.id as string | undefined) ?? null;
   let workspaceRevision = 1;
   const routes: Array<[string, RegExp, Handler]> = [
     [

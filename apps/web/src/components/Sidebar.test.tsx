@@ -286,3 +286,62 @@ it("holds a 「创建中…」 row while a quick-created Bot is on its way", asy
     await view.unmount();
   }
 });
+
+it("leads with the crowned 主 Bot and offers 设为主 Bot to the others", async () => {
+  const helper: Bot = { ...(bots[0] as Bot), id: "helper", name: "Helper", role: "Ops" };
+  const setPrimary = vi.fn(async () => undefined);
+  const props = {
+    bots: [...bots, helper],
+    channels,
+    runs: [],
+    ownerName: "Owner",
+    onSelectChannel: vi.fn(),
+    onSelectBot: vi.fn(),
+    onCreateBot: vi.fn(),
+    onCreateChannel: vi.fn(),
+    onRenameItem: vi.fn(async () => undefined),
+    onDeleteItem: vi.fn(async () => undefined),
+    onSetPrimaryBot: setPrimary,
+  };
+  const view = await renderComponent(<Sidebar {...props} primaryBotId="helper" />);
+  const menuItems = () =>
+    Array.from(
+      view.container.querySelectorAll<HTMLButtonElement>(
+        '[role="menu"][aria-label$="的操作"] [role="menuitem"]',
+      ),
+    ).map((item) => item.textContent?.trim());
+  const openMenu = async (row: Element | null | undefined) =>
+    interact(() =>
+      row?.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true })),
+    );
+  try {
+    const all = view.container.querySelectorAll(".sb-row");
+    const lead = all[0];
+    expect(lead?.classList).toContain("is-primary");
+    expect(lead?.querySelector(".sb-name")?.textContent).toBe("Helper");
+    expect(lead?.querySelector('[role="img"][aria-label="主 Bot"]')).not.toBeNull();
+    expect(lead?.querySelector(".robot-avatar.is-crowned")).not.toBeNull();
+    // It is listed once, and nobody else wears the crown.
+    expect(view.container.querySelectorAll('.sb-row[data-kind="bot"]')).toHaveLength(2);
+    expect(view.container.querySelectorAll(".robot-avatar.is-crowned")).toHaveLength(1);
+
+    await openMenu(lead);
+    expect(menuItems()).not.toContain("设为主 Bot");
+    await interact(() =>
+      document.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })),
+    );
+    const reviewer = Array.from(view.container.querySelectorAll(".sb-row")).find(
+      (row) => row.querySelector(".sb-name")?.textContent === "Reviewer",
+    );
+    await openMenu(reviewer);
+    expect(menuItems()[0]).toBe("设为主 Bot");
+    const item = Array.from(
+      view.container.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'),
+    ).find((button) => button.textContent?.trim() === "设为主 Bot");
+    await interact(() => item?.click());
+    expect(setPrimary).toHaveBeenCalledWith("reviewer");
+    expect(view.container.querySelector('[role="menu"][aria-label$="的操作"]')).toBeNull();
+  } finally {
+    await view.unmount();
+  }
+});

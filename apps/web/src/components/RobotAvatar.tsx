@@ -8,7 +8,15 @@ import type {
   BotStatus,
   RunStatus,
 } from "@openbot/domain";
-import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from "react";
+import {
+  type CSSProperties,
+  type ReactNode,
+  useEffect,
+  useId,
+  useReducer,
+  useRef,
+  useState,
+} from "react";
 import "./RobotAvatar.css";
 
 type RobotStatus = BotStatus | RunStatus;
@@ -152,6 +160,108 @@ function useAvatarTransition(bot: Bot, appearance: BotAppearance) {
   return { phase, ghost };
 }
 
+const CROWN_DROP_MS = 700;
+const CROWN_LEAVE_MS = 300;
+const CROWN_OUTLINE = "M1 15.5L3 3.5L8.5 9L12 1L15.5 9L21 3.5L23 15.5Z";
+/**
+ * Where the crown sits on each head (PrimaryBot artboard): beside Round's antenna, centred on
+ * Relay's flat top, between Scout's ears. The micro drawing wears it a little larger.
+ */
+const CROWN_AT: Record<BotHeadShape, string> = {
+  round: "translate(46 13.5) rotate(9 12 15)",
+  square: "translate(36 10.5) rotate(-4 12 15)",
+  cat: "translate(36 15)",
+};
+
+/** The last crown each Bot was seen with, and when that changed (-Infinity: first sighting). */
+const crownSeen = new Map<string, { crown: boolean; at: number }>();
+
+function crownPhase(botId: string, crown: boolean, now: number) {
+  let seen = crownSeen.get(botId);
+  if (!seen) crownSeen.set(botId, { crown, at: Number.NEGATIVE_INFINITY });
+  else if (seen.crown !== crown) {
+    seen = { crown, at: now };
+    crownSeen.set(botId, seen);
+  }
+  const age = now - (seen?.at ?? Number.NEGATIVE_INFINITY);
+  if (crown && age < CROWN_DROP_MS)
+    return { phase: "crowning" as const, left: CROWN_DROP_MS - age };
+  if (!crown && age < CROWN_LEAVE_MS)
+    return { phase: "uncrowning" as const, left: CROWN_LEAVE_MS - age };
+  return undefined;
+}
+
+/**
+ * Drops the crown on when this Bot becomes 主 Bot, and fades it out when another Bot takes over.
+ * The change is remembered per Bot rather than per avatar: the 主 Bot row moves to the top of the
+ * sidebar, which mounts a new avatar, and every avatar of that Bot mounted during the change plays
+ * the rest of it. A Bot first seen crowned plays nothing. Only avatars that show 主 Bot (`crown`
+ * set either way) report to it; the others would read as a change on every render. Reduced
+ * motion turns both off in CSS.
+ */
+function useCrownTransition(botId: string, crown: boolean | undefined) {
+  const [, rerender] = useReducer((count: number) => count + 1, 0);
+  const current = crown === undefined ? undefined : crownPhase(botId, crown, Date.now());
+  const left = current?.left;
+  useEffect(() => {
+    if (left === undefined) return;
+    const timer = window.setTimeout(rerender, left);
+    return () => window.clearTimeout(timer);
+  }, [left]);
+  return current?.phase;
+}
+
+function Crown({ head, leaving }: { head: BotHeadShape; leaving: boolean }) {
+  const clip = useId();
+  const art = (
+    <g className="robot-crown-drop">
+      <g className="robot-crown-tilt">
+        <clipPath id={clip}>
+          <path d={CROWN_OUTLINE} />
+        </clipPath>
+        <path
+          d={CROWN_OUTLINE}
+          fill="#F5B83D"
+          stroke="#B9801A"
+          strokeWidth="1.3"
+          strokeLinejoin="round"
+        />
+        <rect x="1.6" y="13" width="20.8" height="3.4" rx="1.2" fill="#E3A12A" />
+        <g clipPath={`url(#${clip})`}>
+          <rect
+            className="robot-crown-shine"
+            x="2"
+            y="-4"
+            width="5"
+            height="24"
+            fill="#FFFFFF"
+            opacity=".55"
+            transform="skewX(-18)"
+          />
+        </g>
+        <g fill="#FFF6D6">
+          <circle className="robot-crown-gem" cx="3" cy="3.5" r="1.7" />
+          <circle className="robot-crown-gem" cx="12" cy="1.2" r="1.9" />
+          <circle className="robot-crown-gem" cx="21" cy="3.5" r="1.7" />
+        </g>
+      </g>
+    </g>
+  );
+  return (
+    <g className={`robot-crown${leaving ? " is-leaving" : ""}`}>
+      <g className="robot-crown-at is-standard" transform={CROWN_AT[head]}>
+        {art}
+      </g>
+      <g
+        className="robot-crown-at is-micro"
+        transform={`${CROWN_AT[head]} translate(-4 -5) scale(1.32)`}
+      >
+        {art}
+      </g>
+    </g>
+  );
+}
+
 function Head({ appearance, accent }: { appearance: BotAppearance; accent: string }): ReactNode {
   return appearance.head === "square" ? (
     <RelayHead accent={accent} />
@@ -169,6 +279,7 @@ export function RobotAvatar({
   status = bot.status,
   presence,
   cutout = false,
+  crown,
 }: {
   bot: Bot;
   className?: string;
@@ -176,6 +287,11 @@ export function RobotAvatar({
   status?: RobotStatus;
   presence?: "dot" | "motion" | undefined;
   cutout?: boolean;
+  /**
+   * 主 Bot wears a crown with its own motion (PrimaryBot artboard). Surfaces that show who is
+   * 主 Bot pass it either way; leaving it out shows no crown and plays no change.
+   */
+  crown?: boolean | undefined;
 }) {
   const appearance = bot.appearance ?? appearanceForBot(bot);
   const visualState = robotVisualState(status);
@@ -183,6 +299,7 @@ export function RobotAvatar({
   const state = presence ? avatarPresence(status) : undefined;
   const { phase, ghost } = useAvatarTransition(bot, appearance);
   const ghostAccent = ghost ? (accentColors[ghost.accent] ?? accent) : accent;
+  const crownState = useCrownTransition(bot.id, crown);
 
   return (
     <span
@@ -194,11 +311,13 @@ export function RobotAvatar({
         `robot-state-${visualState}`,
         state === "working" ? "is-working" : undefined,
         phase ? `is-${phase}` : undefined,
+        crown ? "is-crowned" : undefined,
+        crownState ? `is-${crownState}` : undefined,
       ]
         .filter(Boolean)
         .join(" ")}
       role="img"
-      aria-label={`${bot.name}，${robotStatusLabel(status)}`}
+      aria-label={`${bot.name}${crown ? "，主 Bot" : ""}，${robotStatusLabel(status)}`}
       data-head={appearance.head}
       data-body={appearance.body}
       data-mobility={appearance.mobility}
@@ -214,6 +333,9 @@ export function RobotAvatar({
         <g className="robot-bloom">
           <g className="robot-head">
             <Head appearance={appearance} accent={accent} />
+            {crown || crownState === "uncrowning" ? (
+              <Crown head={appearance.head} leaving={!crown} />
+            ) : null}
           </g>
         </g>
         {phase === "morph" ? <Particles accent={ghostAccent} mode="burst" /> : null}

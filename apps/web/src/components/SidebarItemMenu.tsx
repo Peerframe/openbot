@@ -48,6 +48,7 @@ export function SidebarItemMenu({
   onMarkRead,
   addableBots = [],
   onAddBot,
+  onSetPrimary,
   onClose,
 }: {
   target: SidebarMenuTarget;
@@ -58,6 +59,8 @@ export function SidebarItemMenu({
   onMarkRead?: (() => void) | undefined;
   addableBots?: Bot[];
   onAddBot?: ((botId: string) => Promise<void>) | undefined;
+  /** Offered for a Bot that is not 主 Bot yet; the Server write is the caller's. */
+  onSetPrimary?: (() => Promise<void>) | undefined;
   onClose(): void;
 }) {
   const menu = useRef<HTMLDivElement>(null);
@@ -192,6 +195,33 @@ export function SidebarItemMenu({
     >
       {mode === "menu" ? (
         <>
+          {isBot && onSetPrimary ? (
+            <>
+              <Item
+                icon={<CrownGlyph />}
+                disabled={busy}
+                onClick={async () => {
+                  setBusy(true);
+                  setError(undefined);
+                  try {
+                    await onSetPrimary();
+                    onClose();
+                  } catch {
+                    setError("无法设为主 Bot，请稍后重试。");
+                    setBusy(false);
+                  }
+                }}
+              >
+                设为主 Bot
+              </Item>
+              {error ? (
+                <p className="form-error" role="alert">
+                  {error}
+                </p>
+              ) : null}
+              <span className="ob-menu-separator" aria-hidden="true" />
+            </>
+          ) : null}
           <Item
             icon={<PinIcon />}
             onClick={() => run(() => sidebarOrganization.setPinned(key, !pinned))}
@@ -444,6 +474,29 @@ function NameForm({
         {submitLabel}
       </button>
     </form>
+  );
+}
+
+/** The 主 Bot crown as a small glyph, in its own gold (PrimaryBot artboard). */
+export function CrownGlyph({ label }: { label?: string }) {
+  return (
+    <svg
+      className="ob-crown-glyph"
+      width="15"
+      height="11"
+      viewBox="0 0 24 17"
+      role={label ? "img" : undefined}
+      aria-label={label}
+      aria-hidden={label ? undefined : true}
+    >
+      <path
+        d="M1 15.5L3 3.5L8.5 9L12 1L15.5 9L21 3.5L23 15.5Z"
+        fill="#F5B83D"
+        stroke="#B9801A"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
 

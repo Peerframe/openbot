@@ -20,6 +20,7 @@ import {
   removeChannelMember,
   renameBot,
   renameChannel,
+  setWorkspacePrimaryBot,
   subscribeToUnauthorized,
   subscribeToWorkspaceEvents,
 } from "./api";
@@ -879,6 +880,17 @@ export function AuthenticatedWorkspace({
     await refresh();
   }
 
+  /** 主 Bot is a Server setting guarded by the workspace revision; a stale one re-reads first. */
+  async function handleSetPrimaryBot(botId: string) {
+    const revision = workspace?.revision;
+    if (revision === undefined) return;
+    try {
+      await setWorkspacePrimaryBot({ botId, expectedRevision: revision });
+    } finally {
+      await refresh();
+    }
+  }
+
   async function handleAddBotToChannel(channelId: string, botId: string) {
     const channel = await joinBotToChannel(channelId, botId);
     projectChannel(channel);
@@ -1096,6 +1108,8 @@ export function AuthenticatedWorkspace({
           onRenameItem={handleRenameItem}
           onDeleteItem={handleDeleteItem}
           onAddBotToChannel={handleAddBotToChannel}
+          primaryBotId={workspace.primaryBotId}
+          onSetPrimaryBot={workspace.revision === undefined ? undefined : handleSetPrimaryBot}
           onNewChat={() => navigation.navigate({ kind: "new" })}
           newChatActive={location.kind === "new"}
           onCreateBot={quickCreateBot}
@@ -1151,6 +1165,7 @@ export function AuthenticatedWorkspace({
         <NewChatScreen
           key={location.channel ? "new-channel" : "new-chat"}
           bots={workspace.bots}
+          primaryBotId={workspace.primaryBotId}
           initialChannelMode={location.channel === true}
           onCreateBot={handleQuickCreateBot}
           onStart={handleStartChat}

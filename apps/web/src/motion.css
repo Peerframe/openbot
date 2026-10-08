@@ -44,6 +44,56 @@
     background-position: 0 0;
   }
 }
+/* 主 Bot crown (PrimaryBot artboard). */
+@keyframes robot-crown-glint {
+  0%,
+  78% {
+    transform: skewX(-18deg) translateX(-30px);
+  }
+  100% {
+    transform: skewX(-18deg) translateX(34px);
+  }
+}
+@keyframes robot-crown-drop {
+  0% {
+    transform: translateY(-18px) rotate(-14deg);
+    opacity: 0;
+  }
+  55% {
+    transform: translateY(2px) rotate(4deg);
+    opacity: 1;
+  }
+  75% {
+    transform: translateY(-2px) rotate(-2deg);
+  }
+  100% {
+    transform: none;
+  }
+}
+@keyframes robot-crown-tilt {
+  0%,
+  100% {
+    transform: rotate(-5deg);
+  }
+  50% {
+    transform: rotate(5deg);
+  }
+}
+@keyframes robot-crown-gem {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+@keyframes robot-crown-leave {
+  to {
+    transform: translateY(-6px);
+    opacity: 0;
+  }
+}
 /* A Bot's head: born from gathering points, or bursting and regathering into a new look. */
 @keyframes robot-bloom {
   0% {
@@ -226,6 +276,34 @@
   }
   :root:not([data-reduced-motion="true"]) .robot-avatar.is-morph .robot-particles.is-gather circle {
     animation: robot-particles-gather 420ms var(--ob-ease-out) calc(var(--i) * 25ms + 300ms) both;
+  }
+  /* 主 Bot crown: a glint every 5s, a drop with a bounce when crowned, a sway with blinking
+     gems while working (it already bobs with the head), and a fade when it moves away. */
+  :root:not([data-reduced-motion="true"]) .robot-avatar .robot-crown-shine {
+    animation: robot-crown-glint 5s ease-in-out infinite;
+  }
+  :root:not([data-reduced-motion="true"]) .robot-avatar :is(.robot-crown-drop, .robot-crown-tilt) {
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+  }
+  :root:not([data-reduced-motion="true"]) .robot-avatar.is-crowning .robot-crown-drop {
+    animation: robot-crown-drop 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  :root:not([data-reduced-motion="true"]) .robot-avatar.is-working .robot-crown-tilt {
+    animation: robot-crown-tilt 1.4s ease-in-out infinite;
+  }
+  :root:not([data-reduced-motion="true"]) .robot-avatar.is-working .robot-crown-gem {
+    animation: robot-crown-gem 1s ease-in-out infinite;
+  }
+  :root:not([data-reduced-motion="true"]) .robot-avatar.is-working .robot-crown-gem:nth-child(2) {
+    animation-delay: 0.33s;
+  }
+  :root:not([data-reduced-motion="true"]) .robot-avatar.is-working .robot-crown-gem:nth-child(3) {
+    animation-delay: 0.66s;
+  }
+  :root:not([data-reduced-motion="true"]) .robot-avatar .robot-crown.is-leaving {
+    display: inline;
+    animation: robot-crown-leave 300ms ease-in both;
   }
   :root:not([data-reduced-motion="true"]) .new-bot-setup-answered {
     transform-origin: top left;
