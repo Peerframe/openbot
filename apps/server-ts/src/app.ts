@@ -26,6 +26,7 @@ import { entryTls } from "./tls.js";
 import { ownerCookie, ReadFailure, transcriptionReader } from "./transcription-read.js";
 import { primaryBotWriter, WriteFailure, writeUnavailable } from "./primary-bot-write.js";
 import { primaryBotJson } from "./write-input.js";
+import { ownerAuthentication } from "./owner-auth.js";
 import { workerTunnel } from "./worker-tunnel.js";
 
 // This inventory is shared with P1. Only the explicitly enabled read operation changes owner.
@@ -101,6 +102,18 @@ export async function createEntry(input: EntryOptions) {
       throw new Error("The primary Bot write schema is unavailable.");
     }
   }
+  const auth = options.ownerAuth
+    ? ownerAuthentication(options.ownerAuth, options.publicOrigin, Boolean(options.tls))
+    : undefined;
+  if (auth) {
+    app.addHook("onClose", () => auth.close());
+    try {
+      await auth.verify();
+    } catch {
+      await app.close();
+      throw new Error("The Owner authentication schema is unavailable.");
+    }
+  }
   if (options.tls) {
     // Bound TCP/TLS admission too, before HTTP and Worker limits can see a request.
     app.server.maxConnections = 192;
@@ -161,6 +174,8 @@ export async function createEntry(input: EntryOptions) {
     reply.code(400).send({ error: "Invalid entry request." });
   });
   app.all("/*", (request, reply) => {
+    if (auth?.owns(request.method, decodeURIComponent((request.raw.url ?? "").split("?")[0] ?? "")))
+      return auth.handle(request, reply);
     if (
       writes &&
       request.method.toLowerCase() === primaryBotOperation.method &&

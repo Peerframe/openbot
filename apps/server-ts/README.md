@@ -99,7 +99,7 @@ occurs at the entry. Source integration evidence is in the linked record; licens
 The isolated macOS arm64 candidate uses one PostgreSQL supervisor/migrator, private Python and public
 TS. The strict `ts-control.json` resource marker selects the pair; malformed/incomplete TS resources
 refuse startup. Either child's exit stops its partner, and inherited parent pipes stop both when
-Desktop exits. TS receives transport configuration only. The retained Node runtime is still required.
+Desktop exits. TS receives the selected groups' explicit database and Owner bootstrap configuration; no model keys. The retained Node runtime is still required.
 Build and review the unsigned candidate without replacing an installed application:
 
 ```sh
@@ -186,3 +186,29 @@ Real mixed/HTTPS contracts include primary-Bot failures, concurrency, expiry/rev
 rollback, client-abort SQL cleanup, Python-stop and paired reverse. Run the required exact-candidate
 TS UI12/12 before any operation switch; qualify native staging and the actual uninstalled package.
 See [the decision](../../docs/research/typescript-control-plane-p0.md#p3-primary-bot-selection-decision-2026-10-08).
+
+## Owner authentication candidate
+
+The explicit `owner` group owns GET session/sessions and POST login/logout/password/revoke-others.
+Set `OPENBOT_TS_AUTH_GROUP=owner` and private Python `OPENBOT_CONTROL_TS_AUTH_GROUP=owner` together.
+Use the same database and `OPENBOT_TS_OWNER_PASSWORD` as Python's explicit bootstrap password,
+`OPENBOT_OWNER_NAME` (default Owner), `OPENBOT_TS_SESSION_TTL_HOURS` (default12, range1–168), and
+`OPENBOT_TS_AUTH_ALLOWED_ORIGINS` (default public origin). Keep TTL/identity/origin/cookie mode equal
+on both sides. Persisted credentials override bootstrap; Python CLI recovery retains its authority.
+The six exact private routes refuse503 while selected; other methods and OPTIONS still forward.
+
+The native v3 marker fixes `authGroup:owner` in addition to the read/write selections. Native launch
+passes only its existing bootstrap credential to the TS issuer, alongside the shared database.
+Two asynchronous native KDFs and four SQL transactions may run concurrently; overflow fails closed503.
+Slots remain occupied until actual work settles, including abort/timeout. JSON is bounded to8192 bytes
+and5s; each KDF/SQL operation has a6s deadline. Passwords remain the exact UTF-8 scalar/code-point
+contract and fixed scrypt format. Tokens never persist in plaintext. Password verification occurs
+before issuance's lock, then rechecks credential revision; cookies follow committed audit/session data.
+
+Reverse only by stopping both processes and setting both auth flags to `none`, on the same database,
+public address and cookie mode. Do not restore old credential/session rows. Retain the prior qualified
+package during the rollback window; Python routes retire after this full cohort is accepted and the
+window closes. Require real SQL/HTTP/HTTPS concurrency and reverse-switch checks, UI12/12, full checks,
+and native stage/package qualification before selection. Native smoke explicitly submits the changed
+password after restart; this does not claim automatic Desktop bootstrap login after a user changes it.
+See [the auth decision](../../docs/research/typescript-control-plane-p0.md#p3-owner-authentication-decision-2026-10-08).

@@ -32,6 +32,9 @@ const resources = [
   "apps/server-ts/dist/transcription-read.js",
   "apps/server-ts/dist/primary-bot-write.js",
   "apps/server-ts/dist/write-input.js",
+  "apps/server-ts/dist/owner-auth.js",
+  "apps/server-ts/dist/owner-auth-crypto.js",
+  "apps/server-ts/dist/owner-auth-store.js",
   "node_modules/postgres/package.json",
   "node_modules/fastify/package.json",
   "node_modules/@fastify/reply-from/package.json",
@@ -138,6 +141,8 @@ it("keeps absent selection on Python and refuses malformed, symlink or unmatched
     { ...TS_CANDIDATE, fastifyVersion: "5.12.4" },
     { ...TS_CANDIDATE, format: "openbot.desktop.ts-control/v1" },
     { ...TS_CANDIDATE, writeGroup: "none" },
+    { ...TS_CANDIDATE, authGroup: "none" },
+    { ...TS_CANDIDATE, format: "openbot.desktop.ts-control/v2" },
   ]) {
     await writeFile(join(f.root, "ts-control.json"), JSON.stringify(value));
     await expect(launchDesktopProductServer(f.root, f.env)).rejects.toThrow("composition");
@@ -149,7 +154,7 @@ it("keeps absent selection on Python and refuses malformed, symlink or unmatched
   expect(mocks.spawn).not.toHaveBeenCalled();
 });
 
-it("owns one private Python writer and public TS entry, passes only the shared database credential to TS, and stops TS first", async () => {
+it("owns one private Python writer and public TS entry, passes only the database and Owner bootstrap credentials to TS, and stops TS first", async () => {
   const f = await fixture();
   const managed = await launchDesktopProductServer(f.root, f.env);
   expect(mocks.python).toHaveBeenCalledExactlyOnceWith(
@@ -158,6 +163,7 @@ it("owns one private Python writer and public TS entry, passes only the shared d
     39002,
     "transcription",
     "primary-bot",
+    "owner",
   );
   const [executable, args, options] = mocks.spawn.mock.calls[0]!;
   expect(executable).toBe(join(f.root, "node/bin/node"));
@@ -168,6 +174,9 @@ it("owns one private Python writer and public TS entry, passes only the shared d
     LC_ALL: "C.UTF-8",
     OPENBOT_TS_READ_GROUP: "transcription",
     OPENBOT_TS_WRITE_GROUP: "primary-bot",
+    OPENBOT_TS_AUTH_GROUP: "owner",
+    OPENBOT_TS_OWNER_PASSWORD: f.env.OPENBOT_OWNER_PASSWORD,
+    OPENBOT_TS_AUTH_ALLOWED_ORIGINS: "http://127.0.0.1:39001",
     OPENBOT_TS_WRITE_ALLOWED_ORIGINS: "http://127.0.0.1:39001",
     OPENBOT_TS_READ_ALLOWED_ORIGINS: "http://127.0.0.1:39001",
     OPENBOT_TS_DATABASE_URL: f.env.OPENBOT_DATABASE_URL,

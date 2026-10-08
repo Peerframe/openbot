@@ -4,8 +4,11 @@ This is the accepted ADR-0050 P2 entry candidate, not the retired Server or an a
 Read [README](README.md), [adapter evidence](../../docs/research/typescript-control-plane-p0.md#p2-forwarding-adapter-review-2026-10-06)
 and the [shared protocol rules](../../packages/protocol/AGENTS.md).
 
-Python remains the session issuer and background owner; Temporal owns
-recovery. The explicitly selected P3 `transcription` group owns only its shared-inventory GET and
+Python remains the default session issuer and background owner; Temporal owns
+recovery. The explicitly selected `owner` auth candidate owns all six auth/session operations,
+using the existing credential/session/throttle tables and auth-before-session lock order.
+Its retained Python routes refuse while selected; paired reverse keeps the newer SQL facts.
+Read the [auth decision](../../docs/research/typescript-control-plane-p0.md#p3-owner-authentication-decision-2026-10-08). The explicitly selected P3 `transcription` group owns only its shared-inventory GET and
 validates the existing Owner session inside the same bounded PostgreSQL transaction. Read
 [the scoped decision](../../docs/research/typescript-control-plane-p0.md#p3-transcription-read-decision-and-security-review-2026-10-07).
 Default forwarding and explicit paired reverse selection remain supported; no automatic fallback. Forward bytes to one explicit private upstream without parsing bodies, retry, reconnect,

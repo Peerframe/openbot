@@ -1,3 +1,4 @@
+import { scalarText } from "./owner-auth-crypto.js";
 import { isIP } from "node:net";
 import { isAbsolute } from "node:path";
 
@@ -8,6 +9,13 @@ export interface EntryOptions {
   port: number;
   tls?: { certificatePath: string; privateKeyPath: string };
   transcriptionRead?: { databaseUrl: string; allowedOrigins?: readonly string[] };
+  ownerAuth?: {
+    databaseUrl: string;
+    allowedOrigins?: readonly string[];
+    password: string;
+    ownerName: string;
+    ttlHours: number;
+  };
   primaryBotWrite?: { databaseUrl: string; allowedOrigins?: readonly string[] };
 }
 
@@ -45,11 +53,39 @@ export function validateOptions(options: EntryOptions): EntryOptions {
       throw new Error("The primary Bot write group requires an explicit PostgreSQL URL.");
     }
   }
-  if (
-    options.transcriptionRead &&
-    options.primaryBotWrite &&
-    options.transcriptionRead.databaseUrl !== options.primaryBotWrite.databaseUrl
-  )
+  if (options.ownerAuth) {
+    const auth = options.ownerAuth;
+    try {
+      const database = new URL(auth.databaseUrl);
+      if (!["postgres:", "postgresql:"].includes(database.protocol) || !database.hostname)
+        throw new Error();
+      const origins = auth.allowedOrigins ?? [options.publicOrigin];
+      if (!origins.length) throw new Error();
+      for (const value of origins) origin(value);
+      if (
+        typeof auth.password !== "string" ||
+        !scalarText(auth.password) ||
+        [...auth.password].length < 15 ||
+        [...auth.password].length > 1024 ||
+        auth.password === "replace-with-a-long-random-owner-password" ||
+        typeof auth.ownerName !== "string" ||
+        !auth.ownerName.trim() ||
+        [...auth.ownerName].length > 80 ||
+        !Number.isInteger(auth.ttlHours) ||
+        auth.ttlHours < 1 ||
+        auth.ttlHours > 168
+      )
+        throw new Error();
+    } catch {
+      throw new Error(
+        "Owner authentication requires explicit valid database, credentials, identity, TTL and origins.",
+      );
+    }
+  }
+  const databases = [options.transcriptionRead, options.primaryBotWrite, options.ownerAuth]
+    .filter((group) => group !== undefined)
+    .map((group) => group.databaseUrl);
+  if (new Set(databases).size > 1)
     throw new Error("Selected TS groups require the same explicit PostgreSQL URL.");
   const upstream = origin(options.upstream);
   if (upstream.protocol !== "http:" || upstream.hostname !== "127.0.0.1") {
@@ -93,6 +129,11 @@ export function entryOptions(environment: NodeJS.ProcessEnv): EntryOptions {
   if (!["none", "primary-bot"].includes(writeGroup)) throw new Error("Unknown TS write group.");
   if (writeGroup === "primary-bot" && !environment.OPENBOT_TS_DATABASE_URL)
     throw new Error("The primary Bot write group requires an explicit PostgreSQL URL.");
+  const authGroup = environment.OPENBOT_TS_AUTH_GROUP ?? "none";
+  if (!["none", "owner"].includes(authGroup)) throw new Error("Unknown TS auth group.");
+  const ttl = environment.OPENBOT_TS_SESSION_TTL_HOURS ?? "12";
+  if (authGroup === "owner" && !/^[0-9]{1,3}$/.test(ttl))
+    throw new Error("Invalid Owner session TTL.");
   const port = environment.OPENBOT_TS_PORT ?? "3101";
   if (!/^[0-9]{1,5}$/.test(port)) throw new Error("Invalid TS listener port.");
   const certificatePath = environment.OPENBOT_TS_TLS_CERT_PATH;
@@ -104,6 +145,23 @@ export function entryOptions(environment: NodeJS.ProcessEnv): EntryOptions {
     publicOrigin: environment.OPENBOT_TS_PUBLIC_ORIGIN ?? "",
     host: (environment.OPENBOT_TS_HOST ?? "127.0.0.1") as EntryOptions["host"],
     port: Number(port),
+    ...(authGroup === "owner"
+      ? {
+          ownerAuth: {
+            databaseUrl: environment.OPENBOT_TS_DATABASE_URL ?? "",
+            password: environment.OPENBOT_TS_OWNER_PASSWORD ?? "",
+            ownerName: environment.OPENBOT_OWNER_NAME ?? "Owner",
+            ttlHours: Number(ttl),
+            ...(environment.OPENBOT_TS_AUTH_ALLOWED_ORIGINS !== undefined
+              ? {
+                  allowedOrigins: environment.OPENBOT_TS_AUTH_ALLOWED_ORIGINS.split(",").map(
+                    (value) => value.trim(),
+                  ),
+                }
+              : {}),
+          },
+        }
+      : {}),
     ...(group === "transcription"
       ? {
           transcriptionRead: {

@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import assert from "node:assert/strict";
 import { channel } from "node:diagnostics_channel";
 import { lstat, mkdtemp, readFile, realpath, rm, symlink, writeFile } from "node:fs/promises";
@@ -25,6 +26,8 @@ export async function smokePythonProduct(runtimeRoot: string) {
   let cookie: string | undefined;
   let base: string | undefined;
   let testParentExit = false;
+  let bootstrapPassword: string | undefined;
+  let changedPassword: string | undefined;
   let productIds: readonly number[] = [];
   const tsSelected = await lstat(join(runtimeRoot, "ts-control.json"))
     .then(() => true)
@@ -41,12 +44,13 @@ export async function smokePythonProduct(runtimeRoot: string) {
   };
   diagnostics.subscribe(observer);
   const authenticate = async (url: string, password: string) => {
+    bootstrapPassword ??= password;
     const health = await fetch(`${url}/health`, { signal: AbortSignal.timeout(3000) });
     assert.equal(((await health.json()) as { phase: unknown }).phase, "python-product-candidate");
     const result = await fetch(`${url}/api/v1/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Origin: url },
-      body: JSON.stringify({ password }),
+      body: JSON.stringify({ password: changedPassword ?? password }),
       signal: AbortSignal.timeout(5000),
     });
     assert.equal(result.status, 200);
@@ -128,6 +132,19 @@ export async function smokePythonProduct(runtimeRoot: string) {
     const processId = Number(
       (await readFile(join(dataRoot, "postgres/postmaster.pid"), "utf8")).split("\n")[0],
     );
+    if (tsSelected) {
+      changedPassword = `Synthetic-native-${randomBytes(24).toString("hex")}`;
+      const changed = await fetch(`${base}/api/v1/auth/password`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ currentPassword: bootstrapPassword, newPassword: changedPassword }),
+        signal: AbortSignal.timeout(8000),
+      });
+      assert.equal(changed.status, 200);
+      assert.deepEqual(await changed.json(), { changed: true, reauthenticationRequired: true });
+      const expired = await fetch(`${base}/api/v1/auth/session`, { headers: { Cookie: cookie } });
+      assert.deepEqual(await expired.json(), { authenticated: false });
+    }
     await controller.stop();
     assert.equal(controller.getState().status, "idle");
     await confirmProcessesStopped(productIds);
@@ -192,6 +209,9 @@ export async function smokePythonProduct(runtimeRoot: string) {
       tsReadGroup: tsSelected ? "transcription" : "none",
       primaryBotWriteRestartVerified: true,
       tsWriteGroup: tsSelected ? "primary-bot" : "none",
+      tsAuthGroup: tsSelected ? "owner" : "none",
+      passwordRotationRestartVerified: tsSelected,
+      restartLoginUsedChangedPassword: tsSelected,
       eitherProductExitStoppedPair: tsSelected,
       unsafeDirectoryRefusedAndPostgresStopped: true,
       executionConfigurationWithoutEngineRefusedAndPostgresStopped: true,

@@ -372,6 +372,36 @@ only for this bounded reverse-switch window; retire it when the whole transcript
 write/consumer gates pass, then remove the forwarding adapter in P5. The marked, uninstalled native
 candidate uses this reviewed cohort and refuses old/incomplete resource selection.
 
+### P3 Owner authentication decision (2026-10-08)
+
+PR206 is merged at `41a1a5b57b258e5b34d9c4ef80096b69b376930f`; its tree matches the qualified
+primary-Bot candidate. The next local candidate moves all six Owner auth/session operations
+together, behind explicit paired `owner` selection. Other Python authority and CLI recovery remain.
+This is implementation in progress, not a qualified ownership switch or P3 completion.
+
+Reuse Node's built-in asynchronous `crypto.scrypt`, `randomBytes` and `timingSafeEqual`, the existing
+Postgres.js3.4.9/PostgreSQL17.11 boundary, and shared TS schemas. Reviewed Node22.22.2 commit
+[2645dc73720b1b4f27c49f395d3c66025ce126cc](https://github.com/nodejs/node/blob/2645dc73720b1b4f27c49f395d3c66025ce126cc/doc/api/crypto.md),
+[RFC7914](https://www.rfc-editor.org/rfc/rfc7914.html), and
+[OWASP password storage guidance](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html).
+Retain the exact salted scrypt format, N32768/r8/p3, 64MiB maxmem, 32-byte output and UTF-8 scalar
+input. Persisted credentials override bootstrap configuration; no schema or credential rewrite.
+Native work uses libuv; admission remains occupied until actual completion after disconnect/timeout.
+
+Compared maintained MIT [@noble/hashes2.4.0](https://github.com/paulmillr/noble-hashes/releases/tag/2.4.0),
+commit `663c2aeeffc308ac0cded59bd32f7c212adacfc2`: no production dependencies, Node>=20.19,
+KDF/ACVP/fuzz tests; reviewed its release, README/security guidance and open UTF-8/async-loop issues.
+Its historical independent audit does not establish audit of this release. The built-in API avoids
+another crypto dependency and JS scheduling adapter while preserving the existing storage contract.
+No upstream implementation is copied or substantially adapted; no new dependency is installed.
+
+Security acceptance requires the existing global auth-before-session lock order, shared client-network
+throttles, post-KDF credential-revision recheck, commit-before-cookie, expiry/revocation checks, atomic
+audit rollback, bounded body/KDF/SQL admission, and no fallback or retry. Invalid attempts must commit.
+Qualify real PostgreSQL HTTP and verified-CA HTTPS, concurrent stale-password issuance, shared
+Python/TS credentials and sessions across reverse switch, UI12/12, full checks and staged/packaged
+native startup/restart. Record results in the existing receipt only after execution.
+
 ### P3 primary Bot selection decision (2026-10-08)
 
 The next finite candidate moves only Owner `PUT /api/v1/workspace/primary-bot`, on top of qualified

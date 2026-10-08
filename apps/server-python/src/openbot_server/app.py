@@ -44,13 +44,16 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
                profiles: ProfileStore | None = None, tasks: TaskStore | None = None,
                run_commands: RunCommandStore | None = None, work=None, product=None,
                proxy_address: str | None = None, public_origin: str | None = None,
-               ts_read_group: str = "none", ts_write_group: str = "none") -> FastAPI:
+               ts_read_group: str = "none", ts_write_group: str = "none", ts_auth_group: str = "none") -> FastAPI:
     if ts_read_group not in ("none", "transcription") or (ts_read_group != "none" and
             (product is None or proxy_address is None or public_origin is None)):
         raise ValueError("TS read ownership requires explicit private product proxy mode.")
     if ts_write_group not in ("none", "primary-bot") or (ts_write_group != "none" and
             (product is None or proxy_address is None or public_origin is None)):
         raise ValueError("TS write ownership requires explicit private product proxy mode.")
+    if ts_auth_group not in ("none", "owner") or (ts_auth_group != "none" and
+            (product is None or proxy_address is None or public_origin is None or auth is None)):
+        raise ValueError("TS auth ownership requires explicit private product proxy mode.")
     if not owner_name or any(origin == "*" or origin == "null" for origin in allowed_origins):
         raise ValueError("An Owner name and explicit origins are required.")
     if auth is not None and auth.owner_name != owner_name:
@@ -170,6 +173,8 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
     @app.get("/api/v1/auth/session", response_model=AuthSession,
              response_model_exclude_none=True, operation_id="getOwnerSession")
     async def session(request: Request):
+        if ts_auth_group == "owner":
+            return JSONResponse({"error": "operation_owned_by_ts"}, status_code=503)
         result = await read(request, "session", required=False)
         if result.expires_at is None:
             return {"authenticated": False}
@@ -224,7 +229,7 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
             raise StoreUnavailable("invalid_projection") from None
 
     if auth is not None:
-        register_auth_routes(app, auth, secure_cookies=secure_cookies, allowed_origins=allowed_origins)
+        register_auth_routes(app, auth, secure_cookies=secure_cookies, allowed_origins=allowed_origins, ts_owned=ts_auth_group == "owner")
 
     input_definitions = register_identity_routes(
         app, identity, store, secure_cookies=secure_cookies, allowed_origins=allowed_origins,

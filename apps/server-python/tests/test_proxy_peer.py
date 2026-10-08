@@ -139,3 +139,9 @@ def test_ts_read_ownership_requires_private_product(group, proxy, origin):
 def test_ts_write_selection_requires_private_product_composition(group):
     with pytest.raises(ValueError, match="TS write ownership"):
         create_app(object(), owner_name="Owner", ts_write_group=group)
+
+
+@pytest.mark.parametrize("group", ["owner", "all"])
+def test_ts_auth_selection_requires_private_product_composition(group):
+    with pytest.raises(ValueError, match="TS auth ownership"):
+        create_app(object(), owner_name="Owner", ts_auth_group=group)

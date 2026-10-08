@@ -151,3 +151,22 @@ SQL 和会话恢复服务，不还原旧数据。有界回退窗口保留此前�
 实际混合/HTTPS 契约覆盖主 Bot 失败、并发、过期/撤销、审计回滚、断开后 SQL 清理、Python 停止
 及双边反向切换。每次接口归属切换前仍须准确候选的 TS 界面12/12，并验收 staging 和实际未安装包。
 见[限定决策](../../docs/research/typescript-control-plane-p0.zh-CN.md#p3-主-bot-选择决策2026-10-08)。
+
+## Owner 身份认证候选
+
+显式 `owner` 组接管 GET session/sessions 和 POST login/logout/password/revoke-others 六个操作。
+两端同时设置 `OPENBOT_TS_AUTH_GROUP=owner` 和 `OPENBOT_CONTROL_TS_AUTH_GROUP=owner`。
+共用数据库，并将 `OPENBOT_TS_OWNER_PASSWORD` 配为 Python 相同的启动密码；保持 Owner 名称
+（`OPENBOT_OWNER_NAME`，默认 Owner）、会话寿命（`OPENBOT_TS_SESSION_TTL_HOURS`，默认12小时，范围1–168）、
+允许来源（`OPENBOT_TS_AUTH_ALLOWED_ORIGINS`，默认公开入口）和 Cookie 模式一致。数据库已保存密码优先，
+Python CLI 恢复权限保留。被选中的六个 Python 私有路由返回503，其他方法及 OPTIONS 继续转发。
+
+原生 v3 标记在已有读写组之外固定 `authGroup:owner`；仅向 TS 传入现有数据库和 Owner 启动凭据，不传模型密钥。
+最多同时执行两个原生异步 KDF、四个 SQL 事务，超量返回503。断连/超时后名额仍保留到实际工作结束。
+JSON 限8192字节/5秒，每个 KDF/SQL 操作限6秒；保持 UTF-8 标量/码点长度及固定 scrypt 存储格式，
+不保存明文令牌。发会话前重新检查密码版本，审计和会话提交后才返回 Cookie。
+
+反向切换需停止两端进程、同时将认证组设为 `none`，保留相同数据库、地址和 Cookie 模式，不恢复旧凭证或旧会话。
+回退窗口内保留上个已验收安装包；整组验收且窗口关闭后才删除 Python 旧路由。真实 SQL HTTP/HTTPS 并发与
+反向切换、UI12/12、完整检查及原生暂存/打包均须通过。原生探针在改密重启后显式提交新密码，不代表桌面
+旧启动凭据能自动登录。决策和实际结果见[研究记录](../../docs/research/typescript-control-plane-p0.zh-CN.md)。

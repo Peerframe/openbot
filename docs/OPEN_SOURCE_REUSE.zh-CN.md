@@ -649,3 +649,9 @@ Python 保留签发/撤销、写入和模型解析。不增加版本、持久化
 行锁和现有审计。Fastify5.12.5 原始请求体入口只在 Origin/会话校验后解析本接口1024字节/5秒 JSON。
 不增加依赖、结构、凭证访问或复制源码；保留 Python 身份生命周期和明确双边回退。
 见[决策](research/typescript-control-plane-p0.zh-CN.md#p3-主-bot-选择决策2026-10-08)。
+
+### P3 Owner 身份认证（2026-10-08）
+
+复用 Node 内置异步 scrypt 和既有 PostgreSQL 会话合同，不新增密码学依赖、不迁移数据、不复制源码。
+Node22.22.2 与 @noble/hashes2.4.0 的评估见[对应决策](research/typescript-control-plane-p0.zh-CN.md)。
+六个操作必须显式成组选择，并通过真实并发、反向切换和界面验收。

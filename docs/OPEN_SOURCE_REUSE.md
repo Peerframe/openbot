@@ -1148,3 +1148,10 @@ Python workspace-first locks and existing audit payload. Fastify5.12.5's raw con
 adds only this1024-byte/5s JSON input after Origin/session preflight. No new dependency, schema,
 credential access or source copy. Retain Python identity lifecycle and explicit paired rollback;
 see [decision](research/typescript-control-plane-p0.md#p3-primary-bot-selection-decision-2026-10-08).
+
+### P3 Owner authentication (2026-10-08)
+
+Reuse Node's native asynchronous scrypt and existing PostgreSQL/session contracts without a new
+crypto dependency, data migration or source copy. Reviewed Node22.22.2 and @noble/hashes2.4.0 as
+recorded in the [scoped decision](research/typescript-control-plane-p0.md#p3-owner-authentication-decision-2026-10-08).
+Six operations remain explicitly selected and require real concurrency, reverse-switch and UI gates.

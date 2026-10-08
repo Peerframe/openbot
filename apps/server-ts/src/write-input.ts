@@ -9,11 +9,21 @@ export async function primaryBotJson(
 ): Promise<unknown> {
   // Retain the Python registrar's content-type branch and exact read_json envelope.
   if (!contentType?.startsWith("application/json")) return null;
-  if (contentType.split(";", 1)[0]?.trim().toLowerCase() !== "application/json")
+  return boundedJson(payload, contentType, contentLength, signal, 1024);
+}
+
+export async function boundedJson(
+  payload: Readable | undefined,
+  contentType: string | undefined,
+  contentLength: string | undefined,
+  signal: AbortSignal,
+  maxBytes = 8192,
+): Promise<unknown> {
+  if (contentType?.split(";", 1)[0]?.trim().toLowerCase() !== "application/json")
     throw new WriteFailure(422, { error: "Request requires JSON." });
   if (
     contentLength !== undefined &&
-    (!/^[0-9]{1,4}$/.test(contentLength) || Number(contentLength) > 1024)
+    (!/^[0-9]{1,4}$/.test(contentLength) || Number(contentLength) > maxBytes)
   )
     throw new WriteFailure(413, { error: "Request is too large." });
   if (!payload) throw new WriteFailure(422, { error: "Invalid JSON input." });
@@ -36,7 +46,7 @@ export async function primaryBotJson(
     };
     const data = (chunk: Buffer) => {
       length += chunk.length;
-      if (length > 1024) finish(new WriteFailure(413, { error: "Request is too large." }));
+      if (length > maxBytes) finish(new WriteFailure(413, { error: "Request is too large." }));
       else chunks.push(chunk);
     };
     const end = () => finish();
