@@ -45,7 +45,7 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
                run_commands: RunCommandStore | None = None, work=None, product=None,
                proxy_address: str | None = None, public_origin: str | None = None,
                ts_read_group: str = "none", ts_write_group: str = "none", ts_auth_group: str = "none", ts_channel_read_group: str = "none", ts_product_group: str = "none") -> FastAPI:
-    if ts_product_group not in ("none", "identity") or (ts_product_group != "none" and (product is None or proxy_address is None)):
+    if ts_product_group not in ("none", "identity", "identity-models") or (ts_product_group != "none" and (product is None or proxy_address is None)):
         raise ValueError("TS product ownership requires an explicit private product proxy.")
     if ts_channel_read_group not in ("none", "channels") or (ts_channel_read_group != "none" and
             (product is None or proxy_address is None or public_origin is None)):
@@ -63,7 +63,7 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
         raise ValueError("An Owner name and explicit origins are required.")
     if auth is not None and auth.owner_name != owner_name:
         raise ValueError("Owner-auth and read identity must match.")
-    if ts_product_group == "identity":
+    if ts_product_group != "none":
         from .ts_product_events import ProductInvalidations
         product.ts_invalidations = ProductInvalidations(product.transactions._dsn)
     cookie_name = "__Host-openbot_session" if secure_cookies else "openbot_session"
@@ -109,7 +109,7 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
     @app.middleware("http")
     async def private_response(request: Request, call_next):
         from .ts_product_ownership import owns as ts_product_owns
-        if ts_product_group == "identity" and ts_product_owns(request.method, request.url.path):
+        if ts_product_group != "none" and ts_product_owns(request.method, request.url.path, ts_product_group):
             return JSONResponse({"error": "operation_owned_by_ts"}, status_code=503, headers={"Cache-Control":"no-store","X-Content-Type-Options":"nosniff","X-Frame-Options":"DENY"})
         auth_write = auth is not None and request.method == "POST" and request.url.path in (
             "/api/v1/auth/login", "/api/v1/auth/logout", "/api/v1/auth/password",

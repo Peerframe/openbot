@@ -27,10 +27,11 @@ import {
   OwnedDockerFixture,
   startControlPostgres,
 } from "./python-acceptance-fixture.ts";
-import { qualifyProductIdentity } from "./ts-product-identity-acceptance.ts";
 import { qualifyChannelReads } from "./ts-channel-read-acceptance.ts";
+import { qualifyModelOwnership } from "./ts-model-acceptance.ts";
 import { qualifyOwnerAuth } from "./ts-owner-auth-acceptance.ts";
 import { qualifyPrimaryBotWrite } from "./ts-primary-bot-acceptance.ts";
+import { qualifyProductIdentity } from "./ts-product-identity-acceptance.ts";
 import { qualifyTranscriptionRead } from "./ts-transcription-acceptance.ts";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
@@ -236,7 +237,7 @@ try {
               OPENBOT_CONTROL_TS_READ_GROUP: readGroup ? "transcription" : "none",
               OPENBOT_CONTROL_TS_WRITE_GROUP: readGroup ? "primary-bot" : "none",
               OPENBOT_CONTROL_TS_AUTH_GROUP: readGroup ? "owner" : "none",
-              OPENBOT_CONTROL_TS_PRODUCT_GROUP: readGroup ? "identity" : "none",
+              OPENBOT_CONTROL_TS_PRODUCT_GROUP: readGroup ? "identity-models" : "none",
               OPENBOT_CONTROL_TS_CHANNEL_READ_GROUP: readGroup ? "channels" : "none",
               OPENBOT_CONTROL_PUBLIC_ORIGIN: baseUrl,
             }
@@ -255,29 +256,36 @@ try {
       },
     );
   const startEntry = (readGroup = true) =>
-    processes.start(process.execPath, ["apps/server-ts/dist/serve.js"], {
-      ...allowlistedEnvironment(["PATH", "HOME", "TMPDIR"]),
-      OPENBOT_TS_PYTHON_ORIGIN: `http://127.0.0.1:${pythonPort}`,
-      OPENBOT_TS_PUBLIC_ORIGIN: baseUrl,
-      OPENBOT_TS_HOST: "127.0.0.1",
-      OPENBOT_TS_PORT: String(port),
-      OPENBOT_TS_READ_GROUP: readGroup ? "transcription" : "none",
-      OPENBOT_TS_WRITE_GROUP: readGroup ? "primary-bot" : "none",
-      OPENBOT_TS_AUTH_GROUP: readGroup ? "owner" : "none",
-      OPENBOT_TS_PRODUCT_GROUP: readGroup ? "identity" : "none",
-      OPENBOT_TS_CHANNEL_READ_GROUP: readGroup ? "channels" : "none",
-      OPENBOT_TS_OWNER_PASSWORD: password,
-      OPENBOT_TS_AUTH_ALLOWED_ORIGINS: `${baseUrl},https://secondary.example.test`,
-      OPENBOT_TS_WRITE_ALLOWED_ORIGINS: `${baseUrl},https://secondary.example.test`,
-      OPENBOT_TS_READ_ALLOWED_ORIGINS: `${baseUrl},https://secondary.example.test`,
-      OPENBOT_TS_DATABASE_URL: dsn,
-      ...(tlsDirectory
-        ? {
-            OPENBOT_TS_TLS_CERT_PATH: join(tlsDirectory, "server.pem"),
-            OPENBOT_TS_TLS_KEY_PATH: join(tlsDirectory, "server.key"),
-          }
-        : {}),
-    });
+    processes.start(
+      process.execPath,
+      selectedSuite === "models"
+        ? ["scripts/ts-model-fixture.ts", modelReceipt]
+        : ["apps/server-ts/dist/serve.js"],
+      {
+        ...allowlistedEnvironment(["PATH", "HOME", "TMPDIR"]),
+        OPENBOT_TS_PYTHON_ORIGIN: `http://127.0.0.1:${pythonPort}`,
+        OPENBOT_TS_PUBLIC_ORIGIN: baseUrl,
+        OPENBOT_TS_HOST: "127.0.0.1",
+        OPENBOT_TS_PORT: String(port),
+        OPENBOT_TS_READ_GROUP: readGroup ? "transcription" : "none",
+        OPENBOT_TS_WRITE_GROUP: readGroup ? "primary-bot" : "none",
+        OPENBOT_TS_AUTH_GROUP: readGroup ? "owner" : "none",
+        OPENBOT_TS_PRODUCT_GROUP: readGroup ? "identity-models" : "none",
+        OPENBOT_TS_MODEL_CONNECTION_KEY_PATH: join(directory, "objects", "model-connections.key"),
+        OPENBOT_TS_CHANNEL_READ_GROUP: readGroup ? "channels" : "none",
+        OPENBOT_TS_OWNER_PASSWORD: password,
+        OPENBOT_TS_AUTH_ALLOWED_ORIGINS: `${baseUrl},https://secondary.example.test`,
+        OPENBOT_TS_WRITE_ALLOWED_ORIGINS: `${baseUrl},https://secondary.example.test`,
+        OPENBOT_TS_READ_ALLOWED_ORIGINS: `${baseUrl},https://secondary.example.test`,
+        OPENBOT_TS_DATABASE_URL: dsn,
+        ...(tlsDirectory
+          ? {
+              OPENBOT_TS_TLS_CERT_PATH: join(tlsDirectory, "server.pem"),
+              OPENBOT_TS_TLS_KEY_PATH: join(tlsDirectory, "server.key"),
+            }
+          : {}),
+      },
+    );
   let child = startPython(entry === "ts");
   let entryChild = entry === "ts" ? startEntry() : undefined;
   const waitReady = async () => {
@@ -476,6 +484,7 @@ try {
     cookie = await qualifyOwnerAuth({ ...ownershipAcceptance, password });
     await qualifyChannelReads({ ...ownershipAcceptance, cookie });
     await qualifyProductIdentity({ ...ownershipAcceptance, cookie });
+    await qualifyModelOwnership({ ...ownershipAcceptance, cookie });
   }
   // This owned database has no Worker. Seed publication states so HTTP decision/unread
   // contracts exercise real transactions without claiming execution by a production Host.

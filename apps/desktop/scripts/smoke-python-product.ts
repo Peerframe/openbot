@@ -6,6 +6,8 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import {
+  modelServicesSnapshotSchema,
+  modelConnectionResponseSchema,
   transcriptionSettingsSchema,
   workspacePrimaryBotSchema,
   workspaceSnapshotSchema,
@@ -151,6 +153,30 @@ export async function smokePythonProduct(runtimeRoot: string) {
       return values;
     };
     const firstChannelReads = await readChannelGroup();
+    const readModels = async () => {
+      const response = await fetch(`${base}/api/v1/model-services`, {
+        headers: { Cookie: cookie! },
+        signal: AbortSignal.timeout(8000),
+      });
+      assert.equal(response.status, 200);
+      return modelServicesSnapshotSchema.parse(await response.json());
+    };
+    if (tsSelected) {
+      const response = await fetch(`${base}/api/v1/model-connections`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          presetId: "openai",
+          name: "Native encryption fixture",
+          baseUrl: "https://api.openai.com/v1",
+          apiKey: "Synthetic-native-offline-credential",
+        }),
+        signal: AbortSignal.timeout(8000),
+      });
+      assert.equal(response.status, 201);
+      modelConnectionResponseSchema.parse(await response.json());
+    }
+    const firstModels = await readModels();
     const bootstrap = await readFile(join(dataRoot, "bootstrap.json"));
     const key = await readFile(join(dataRoot, "model-connections.key"));
     assert.equal(key.length, 32);
@@ -191,6 +217,7 @@ export async function smokePythonProduct(runtimeRoot: string) {
     assert.deepEqual(await readSettings(), firstSettings);
     assert.deepEqual(await readChannelGroup(), firstChannelReads);
     assert.deepEqual(await readPrimary(), primarySaved);
+    assert.deepEqual(await readModels(), firstModels);
     const nodes = await fetch(`${base}/api/v1/nodes`, { headers: { Cookie: cookie } });
     assert.equal(nodes.status, 200);
     assert.deepEqual(((await nodes.json()) as { nodes: unknown }).nodes, []);
@@ -239,7 +266,9 @@ export async function smokePythonProduct(runtimeRoot: string) {
       tsAuthGroup: tsSelected ? "owner" : "none",
       tsChannelReadGroup: tsSelected ? "channels" : "none",
       channelReadRestartVerified: true,
-      tsProductGroup: tsSelected ? "identity" : "none",
+      tsProductGroup: tsSelected ? "identity-models" : "none",
+      modelConnectionRestartVerified: tsSelected,
+      modelNetworkCalls: 0,
       productIdentityRestartVerified: true,
       passwordRotationRestartVerified: tsSelected,
       restartLoginUsedChangedPassword: tsSelected,

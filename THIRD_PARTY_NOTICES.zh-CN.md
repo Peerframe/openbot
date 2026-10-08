@@ -17,6 +17,9 @@
 | `write-file-atomic` | 8.0.0 | 2015 Rebecca Turner；ISC |
 | `signal-exit` | 4.1.0 | 2015–2023 Benjamin Coe、Isaac Z. Schlueter 与贡献者；ISC |
 | `@modelcontextprotocol/sdk` | 1.32.1 | 2024 Anthropic, PBC；MIT |
+| Koffi 与对应平台可选包 | 3.3.2 | 2026 Niels Martignène；MIT；仅用于 P3 私有 POSIX 文件调用 |
+| `openai` | 7.28.0 | 2026 OpenAI；Apache-2.0 |
+| `@anthropic-ai/sdk` | 0.131.0 | 2023 Anthropic, PBC；MIT；P3 使用明确凭据、受限传输、零重试 |
 | Fastify | 5.12.5 | 2016-present Fastify 团队；MIT |
 | `@fastify/reply-from` | 12.6.5 | 2017-present Matteo Collina 与 Fastify 团队；MIT；使用发布 API，没有复制源码 |
 | Vercel AI SDK `ai` | 7.0.93 | 2023 Vercel, Inc.；Apache-2.0 |

@@ -344,31 +344,71 @@ same-scope resource comparison. See ADR-0050 for the detailed gates and Owner ap
 
 ## Current migration checkpoint (2026-10-08)
 
-Active worktree: `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`, branch
-`codex/ts-control-plane-p3-completion`, based on qualified channel-read head `9afef0f0` and
-Owner authentication head `df99396876b2fb4308fb60705076e6804d7fe3bd`.
-[PR208](https://github.com/Peerframe/openbot/pull/208) remains a draft against `main`.
-The Owner now authorizes pushing this migration branch, explicitly without merging.
-Main remains `41a1a5b57b258e5b34d9c4ef80096b69b376930f`; no installed application is changed.
+The active worktree is `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`, branch
+`codex/ts-control-plane-p3-completion`. [PR209](https://github.com/Peerframe/openbot/pull/209) and
+[PR208](https://github.com/Peerframe/openbot/pull/208) remain drafts targeting `main`. Published
+head `bdadf851` passed all17 hosted checks in [run37747409393](https://github.com/Peerframe/openbot/actions/runs/37747409393).
+The Owner requests all P3 completed before a Claude report, then evaluation before merging.
+No application installation or production-data change is authorized.
 
-The current additional candidate moves eleven conversation/identity operations: channel creation,
-direct conversation, membership join, profile and appearance editing, Bot/channel rename, mark-read,
-unread counts, and reaction read/write. It preserves existing Origin/session precedence, SQL locks,
-revision CAS, audit atomicity and newer-data reverse switching. This raises selected TS operations
-from12 to23 of the121-operation default inventory. It is **not P3 completion**: remaining product,
-model, identity creation/deletion, file, plugin and Employee groups still need migration and their
-gates; Work/harness/Temporal remain P4 and Python retirement remains P5.
+The local model/settings candidate adds eleven operations to the identity baseline: model-service
+listing, connection CRUD/verification/discovery/probe, Employee model selection, general settings
+and transcription PUT. It owns34 of121 default operations. Paired Python quarantine, SQL CAS/audit,
+Python-stopped operation and bidirectional encrypted-credential reverse switching pass. This is
+**not P3 completion**. Identity creation/deletion, approvals, workspace/SSE/progress/audit, files,
+Employee knowledge/portability, automation, plugins and Node/browser groups remain. Work execution,
+harness and Temporal stay P4; Python retirement stays P5. Claude's Step43 UI remains outside this work.
 
-Real HTTP and verified-CA HTTPS control50 plus read14/write17/auth13/channel-read9/product-identity10
-pass. The complete mixed HTTP suite passes270 plus19 artifact checks. Python focused60 and the exact
-candidate's UI12/12 pass:103 responses (96×200,7×201), no unexpected response, page error or workspace503.
-Full `npm run check` passes (TS56, Desktop578 with3 platform skips, Web692). Staged and actual packaged
-Preview restart/cleanup probes pass;254 source/compiled files match both closures. Offline scanning
-of implementation `df4bb350` passes20 exact historical fixtures with no new finding or exception.
-Source fingerprints and publication status are recorded under
-`currentP3IdentityProductCandidate` in the [single receipt](typescript-control-plane-p2-native.json).
-The previous channel-read implementation `5c2190cb` retains its original evidence in that receipt;
-those earlier results are not relabeled as new runs. Claude's Step43 UI is outside this change.
+Node24 real HTTP270 plus19 artifact checks, verified-CA HTTPS control50 and ownership qualifications
+pass; real SDK/synthetic-transport models18 pass (10 discoveries,4 probes,zero live-provider calls).
+The exact model candidate passes UI12/12 with104 responses,zero unexpected responses/page errors or
+workspace503. Both staged and packaged v6 Preview probes preserve the encryption key, model settings
+and Owner password across restart and clean up owned processes. Full `npm run check` passes after correcting the dependency graph expectation and script type error
+(TS79 including5 unselected audit/progress tests; Desktop578 with3 platform skips). Earlier CI
+is not evidence for these local changes. All current status lives in `currentP3CompletionCandidate`
+of the [single receipt](typescript-control-plane-p2-native.json); former checkpoints retain dated evidence.
+
+### P3 protected files and model credentials decision (2026-10-08)
+
+The current Python key and attachment stores use descriptor-relative `openat`/`mkdirat`/`linkat`,
+`O_NOFOLLOW` on every path component, kernel `flock` shared with other Python processes, and fsync.
+Node24 core does not expose openat or flock. Path-only lstat/open sequences and lock directories
+would weaken race protection or create a second lock protocol during coexistence. Retaining a
+Python file helper would prevent P5 retirement. Rejected fs-ext2.1.1 (MIT, `aded976099c2b06c944f0897a9b004dbf266e234`):
+it provides flock but not descriptor-relative operations and uses NAN. A custom Node-API addon
+would require an additional source/build/release boundary for the same narrow system calls.
+
+Choose released MIT **Koffi3.3.2**, upstream tag `koffi/3.3.2`, commit
+`390a0abb8b240188695084fb5662b965783e4e78`, published2026-09-25. Review covers the immutable npm
+source tarball, native loader/FFI prototypes, release fixes, MIT license, platform matrix, upstream
+C/JS ABI tests and open issues. The package has no mandatory runtime JS dependency; optional
+platform packages are pinned3.3.2. Darwin-arm64 adds about1.2MiB of native binary payload. Existing
+production package-graph staging must include the applicable optional binary and its notices.
+No upstream source is copied or substantially adapted. No app or system service is installed.
+
+Expose only fixed private libc signatures to trusted Server code. Never accept a library path,
+symbol, signature, pointer or flag from HTTP, model, plugin or renderer input. Support this adapter
+only on the existing Linux/macOS64-bit Server targets; Windows remains a remote client. Keep the
+raw32-byte0600 key, directory lock, no-replacement hard-link publication, stable opened-inode and
+nanosecond metadata checks, canonical v1 AES-256-GCM envelope and ordered JSON AAD. Node built-in
+crypto provides encryption; Koffi is only the missing POSIX adapter. Refuse unsupported platforms
+and corrupt/missing keys with existing ciphertext. Do not weaken Python rollback compatibility.
+
+Sources: [Node24 fs API](https://nodejs.org/docs/latest-v24.x/api/fs.html),
+[Koffi source location and tests](https://koffi.dev/contribute),
+[pinned source](https://codeberg.org/Koromix/rygel/src/commit/390a0abb8b240188695084fb5662b965783e4e78/src/koffi),
+[release history](https://koffi.dev/changelog), [load/prototype API](https://koffi.dev/load),
+[fs-ext source](https://github.com/baudehlo/node-fs-ext/tree/aded976099c2b06c944f0897a9b004dbf266e234),
+[Darwin flags](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/sys/fcntl.h),
+[Linux6.12 flags](https://github.com/torvalds/linux/blob/v6.12/include/uapi/asm-generic/fcntl.h).
+[Koffi issue274](https://github.com/Koromix/koffi/issues/274) concerns a Go library spawning threads
+inside a Node Worker; its threadless libc case does not reproduce. Our fixed system-call adapter
+uses no foreign background threads or callbacks, but process-exit and packaging tests remain required.
+
+This decision is implementation evidence, not qualification: require real Python/TS ciphertext
+interchange and concurrent initializers, bad permissions/symlinks/path replacement/lock timeout,
+Linux/macOS checks, bounded model transport parity, mixed HTTP/HTTPS, UI12/12 and native closure
+qualification before selecting the next public cohort. No paid provider calls are authorized.
 
 ### P3 conversation and identity editing decision (2026-10-08)
 
@@ -1502,3 +1542,28 @@ bundles remain in `apps/desktop/out`; no Applications install or persistent serv
 backend/native local candidate is ready; required hosted CI and Claude's overall interface acceptance
 remain distinct outstanding evidence. The next checkpoint is to reconcile those existing gates and
 prepare one P3 settings/read group with real forward/reverse SQL evidence; no P3 writer is active yet.
+
+### P3 model and settings ownership (2026-10-08)
+
+Reuse the ADR0050 OpenAI7.28.0 and Anthropic0.131.0 SDK decisions and current Python SQL/DTO behavior.
+`identity-models` is an explicit cumulative selector paired on both services. No schema migration,
+credential re-encryption or environment-key fallback is introduced. Connection mutations retain the
+existing advisory namespace, revision CAS, Bot-before-connection lock order and atomic audit.
+Owner authorization is checked before sending and again before publishing a remote result. Two
+checks may be in flight; cancellation never releases capacity until the underlying operation settles.
+SDK retry, redirect, logging, ambient headers, organization/project selection and proxy fallback are
+disabled. Fixed HTTPS transport bounds headers/bytes and validates actual provider response shapes;
+only a private constructor used by the disposable test process can supply a synthetic transport.
+
+The protected-file decision above preserves Python's AES-GCM envelope/AAD and raw32-byte key, not a
+second secret store. The v6 desktop manifest pins both SDKs and Koffi and refuses missing native
+binaries before starting either service. Libraries are staged inside the candidate; no system apps
+are installed. The timezone validator uses the reviewed POSIX system TZif roots with exact component
+case rather than `Intl.supportedValuesOf`, which omits retained aliases. This matches the existing
+[Python ZoneInfo system-data contract](https://docs.python.org/3.12/library/zoneinfo.html#data-sources)
+on the qualified POSIX targets; the local Server does not claim Windows support.
+
+Implementation is a port of current OpenBot Python behavior and use of released SDK APIs. No upstream
+source was copied. The real model18 contract, encrypted-key interoperability/concurrent initializer
+checks, final-authority/CAS/audit-failure tests and native restart probes are recorded in the current
+receipt. Remaining P3 modules and final hosted qualification are still required before phase completion.

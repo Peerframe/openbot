@@ -222,22 +222,24 @@ P5 核对安装/CI 依赖清单，并同口径比较最终资源。
 
 ## 当前迁移检查点（2026-10-08）
 
-工作目录 `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`，分支
-`codex/ts-control-plane-p3-completion`，基于已验收频道读取提交 `9afef0f0` 和认证提交 `df993968`。
-[PR208](https://github.com/Peerframe/openbot/pull/208) 仍为面向 main 的草稿。用户现已授权推送迁移分支，
-明确暂不合并。main 保持 `41a1a5b57b258e5b34d9c4ef80096b69b376930f`，不修改已安装应用。
+目录 `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`，分支
+`codex/ts-control-plane-p3-completion`。[PR209](https://github.com/Peerframe/openbot/pull/209)和
+[PR208](https://github.com/Peerframe/openbot/pull/208)均保留面向 main 的草稿。已发布 `bdadf851`
+在[运行37747409393](https://github.com/Peerframe/openbot/actions/runs/37747409393)通过17项托管检查。
+用户要求全部P3完成后再整理给Claude的汇报，评估后统一合并；不安装应用、不修改生产数据。
 
-当前新增候选接管11个操作：创建频道、打开私聊、加入成员、编辑资料与外观、重命名 Bot/频道、
-标记已读、未读数、读取/修改消息反应。保留来源与会话检查顺序、数据库锁、版本冲突保护、原子审计和
-基于新数据的反切换。121个默认接口中，TS选择范围从12个增至23个。**P3尚未完成**：其他产品、模型、
-身份创建/删除、文件、插件和 Employee 组仍需迁移与验收；Work/harness/Temporal 属于P4，退役Python属于P5。
+本地模型/设置候选新增11个操作：模型服务列表、连接增改删/验证/发现/探针、Employee模型选择、
+通用设置与转写设置PUT。TS选择范围为121个默认操作中的34个。Python对应入口隔离、版本冲突与原子
+审计、停止Python后的操作及双向密钥反切换均通过。**P3尚未完成**：身份创建/删除、审批、工作区/
+SSE/进度/审计、文件、Employee知识与导入导出、自动化、插件、Node/浏览器仍需完成。执行/harness/
+Temporal属于P4，退役Python属于P5。Claude第43步界面不在本轮范围。
 
-真实 HTTP 与受信 CA HTTPS control50通过，两种传输上的读取14、主Bot写入17、认证13、频道读取9、
-本组10项均通过；完整混合 HTTP270及额外附件19通过。Python定向60项通过；精确候选界面PASS12/12，
-103次响应（96×200、7×201），异常响应、页面错误、workspace503均为0。完整 `npm run check` 通过（TS56、Desktop578及3项平台跳过、Web692）。
-运行资源与实际Preview包重启/清理探针均通过，254个源码/编译文件与两份资源一致。实现 `df4bb350`
-离线扫描仅20条已审核历史示例，无新增发现或例外。源码指纹及推送状态统一记录在[单一收据](typescript-control-plane-p2-native.json)的 `currentP3IdentityProductCandidate`。
-前一频道读取实现 `5c2190cb` 的历史证据保留，不冒充本轮新执行。Claude第43步界面不在本次改动范围。
+Node24真实HTTP270及额外附件19、受信CA HTTPS control50与各组所有权检查通过；模型SDK合成传输
+18项通过（10次发现、4次显式探针、零外部模型调用）。精确模型候选界面12/12，104次响应，异常响应、
+页面错误、workspace503均为0。v6运行资源和实际预览包均通过重启、密钥/配置/密码保留及进程清理。
+修复打包依赖断言及脚本类型后完整 `npm run check` 通过（TS79含5项未选择的审计/进度测试，
+Desktop578及3项平台跳过）；已发布CI不代表这些本地代码。当前状态统一维护在
+[收据](typescript-control-plane-p2-native.json)的 `currentP3CompletionCandidate`，旧检查点只保留历史证据。
 
 ### P3 会话与身份编辑决策（2026-10-08）
 
@@ -1120,3 +1122,25 @@ P2 后端/原生本机候选已准备好；必需托管 CI 与 Claude 的整体�
 只读 READ COMMITTED 事务在查询后复查会话，消息游标保留微秒精度、重复键拒绝和频道绑定，
 保留 SQL 与最终响应大小上限。通过真实 HTTP/HTTPS、撤销并发、较新数据反向切换、Python 停机读取、
 UI12/12 和原生包验证后才可认定候选合格；本轮不推送、不合并。
+
+### P3 受保护文件与模型凭证决定（2026-10-08）
+
+沿用 Python 的逐段禁止符号链接、文件描述符相对访问、进程间 flock、0600 原始32字节密钥和 v1 AES-256-GCM 格式。Node24 核心没有 openat/flock；fs-ext2.1.1 只有锁，另写 Node-API 扩展会增加构建维护成本。采用 MIT 的 Koffi3.3.2（提交390a0abb8b240188695084fb5662b965783e4e78，2026-09-25发布）作为固定私有 libc 调用的窄适配器，密码算法仍用 Node 内置 crypto。HTTP、模型、插件和网页都不能提供库路径、符号、指针或调用签名。仅限现有 Linux/macOS64位服务端，Windows 仍是远程客户端，不安装应用或系统服务。
+
+已审阅发布源码、许可证、加载方式、ABI 测试、平台预编译包及 issue274；该问题涉及会启动后台线程的 Go 库，我们仅绑定系统文件调用，仍须验证真实退出。生产包必须带入对应平台可选二进制和许可声明。没有复制上游源码。原始密钥禁止覆盖，有密文却没有有效密钥时拒绝启动；锁和密文均须与 Python 互通。
+
+本决定还不是验收通过。选用新接口组前，必须通过双语言并发初始化、权限和符号链接拒绝、路径替换、锁超时、Linux/macOS、受限模型传输、混合 HTTP/HTTPS、界面12/12及原生包验收。来源、备选方案和边界详见[英文记录](typescript-control-plane-p0.md#p3-protected-files-and-model-credentials-decision-2026-10-08)。不调用付费模型。
+
+### P3 模型与设置所有权（2026-10-08）
+
+复用ADR0050已审核的OpenAI7.28.0、Anthropic0.131.0和当前Python事务/DTO。双方显式配对选择
+`identity-models`，不迁移表、不重新加密旧数据、不引入环境密钥回退。保留advisory锁、CAS、Bot先于
+连接的锁顺序和原子审计；远程发送前及结果发布前都重查权限。最多2个检查，取消后要等实际传输结束才
+释放名额。SDK重试、跳转、日志、环境头、组织/项目和代理回退均禁用；固定HTTPS传输限制头和正文大小并
+验证提供商响应。合成传输仅存在于一次性测试进程的私有构造参数。
+
+保护文件层保留Python的AES-GCM格式/AAD及32字节密钥。v6桌面标记固定SDK和Koffi版本，启动双方前
+检查原生二进制完整性；依赖仅放在候选目录。时区使用POSIX系统TZif目录并精确核对大小写，以兼容
+`Intl.supportedValuesOf`未列出的旧别名；依据[Python ZoneInfo系统数据约定](https://docs.python.org/3.12/library/zoneinfo.html#data-sources)，不声称本地Server支持Windows。
+移植当前OpenBot Python行为并调用发行SDK，没有复制上游源码。模型18项、密钥互通/并发初始化、权限/
+CAS/审计失败及原生重启证据写入当前收据；其余P3与最终托管检查仍是完成条件。

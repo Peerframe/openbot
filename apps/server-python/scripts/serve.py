@@ -41,7 +41,7 @@ def main():
     if authority not in ("read-only", "owner-auth", "identity", "tasks", "work", "product"):
         raise SystemExit("Unknown control-plane authority mode.")
     ts_product_group = os.environ.get("OPENBOT_CONTROL_TS_PRODUCT_GROUP", "none")
-    if ts_product_group not in ("none", "identity") or (ts_product_group != "none" and (authority != "product" or proxy_address is None)):
+    if ts_product_group not in ("none", "identity", "identity-models") or (ts_product_group != "none" and (authority != "product" or proxy_address is None)):
         raise ValueError("TS product ownership requires an explicit private product proxy.")
     ts_channel_read_group = os.environ.get("OPENBOT_CONTROL_TS_CHANNEL_READ_GROUP", "none")
     if ts_channel_read_group not in ("none", "channels") or (ts_channel_read_group != "none" and

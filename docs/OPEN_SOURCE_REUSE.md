@@ -1170,3 +1170,12 @@ empty PostgreSQL transactional NOTIFY bridges TS generic mutations to the sole P
 Reviewed PostgreSQL17 semantics and locked Psycopg3.3.6 source; shutdown, failure, no-op and rollback
 are explicit. No upstream code copied; remove the listener when SSE moves. See the
 [decision](research/typescript-control-plane-p0.md#p3-conversation-and-identity-editing-decision-2026-10-08).
+
+### P3 protected POSIX files (2026-10-08)
+
+Koffi3.3.2, MIT, upstream `390a0abb8b240188695084fb5662b965783e4e78`, adds fixed private libc
+openat/mkdirat/linkat/unlinkat/flock calls missing from Node core. Preserve Python inode locks and
+key publication/encryption bytes; no public FFI, foreign callbacks, copied source or installed app.
+Reject fs-ext2.1.1 (no openat), path-only core adapters (race gap), and an additional custom addon
+(build/maintenance cost). Exact sources, platform/packaging constraints and required interchange
+checks are in the [P3 decision](research/typescript-control-plane-p0.md#p3-protected-files-and-model-credentials-decision-2026-10-08).

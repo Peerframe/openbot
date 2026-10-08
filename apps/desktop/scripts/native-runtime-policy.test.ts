@@ -91,7 +91,12 @@ it("adds the pinned TS entry to the Python closure without WS tests or the retir
   );
   const python = pythonCandidateGraph(lock);
   const mixed = mixedCandidateGraph(lock);
-  expect(mixed.workspaceKeys).toEqual(["apps/server-ts", "packages/db", "packages/protocol"]);
+  expect(mixed.workspaceKeys).toEqual([
+    "apps/server-ts",
+    "packages/db",
+    "packages/domain",
+    "packages/protocol",
+  ]);
   for (const key of python.packageKeys) expect(mixed.packageKeys).toContain(key);
   expect(new Set(mixed.packageKeys).size).toBe(mixed.packageKeys.length);
   expect(mixed.packageKeys).toContain("node_modules/fastify");

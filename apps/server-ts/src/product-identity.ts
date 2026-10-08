@@ -1,18 +1,18 @@
 import { randomUUID } from "node:crypto";
-import type postgres from "postgres";
-import { z } from "zod";
 import {
+  botAppearanceResultSchema,
   createChannelInputSchema,
+  employeeProfileMutationSchema,
   joinChannelBotInputSchema,
+  reactionEmojiSchema,
   renameBotInputSchema,
   renameChannelInputSchema,
-  updateEmployeeProfileDetailsInputSchema,
-  updateBotAppearanceInputSchema,
-  employeeProfileMutationSchema,
-  botAppearanceResultSchema,
   setMessageReactionSchema,
-  reactionEmojiSchema,
+  updateBotAppearanceInputSchema,
+  updateEmployeeProfileDetailsInputSchema,
 } from "@openbot/protocol";
+import type postgres from "postgres";
+import { z } from "zod";
 import { botProjection, channelProjection } from "./channel-read-projection.js";
 import { refuse } from "./owner-transaction.js";
 import { WriteFailure } from "./primary-bot-write.js";
@@ -282,7 +282,14 @@ async function setReaction(db: DB, id: string, messageId: string, body: unknown)
     ),
   };
 }
+export type AuthorizedProductOperation = <T>(operation: (db: DB) => Promise<T>) => Promise<T>;
 export type ProductRoute = {
+  remote?: (
+    owner: AuthorizedProductOperation,
+    ids: string[],
+    body: unknown,
+    signal: AbortSignal,
+  ) => Promise<unknown>;
   method: string;
   path: string;
   kind: "typed" | "product";

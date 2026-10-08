@@ -1535,7 +1535,7 @@
       "noTemporalOrLiveProviderCalls": true
     }
   },
-  "currentCheckpointKey": "currentP3IdentityProductCandidate",
+  "currentCheckpointKey": "currentP3CompletionCandidate",
   "currentP3Candidate": {
     "date": "2026-10-07 (Asia/Singapore)",
     "branch": "codex/ts-control-plane-p3-settings",
@@ -2581,7 +2581,7 @@
     }
   },
   "currentP3IdentityProductCandidate": {
-    "status": "locally-qualified-ready-to-push",
+    "status": "published-ci-passed",
     "branch": "codex/ts-control-plane-p3-completion",
     "baseHead": "9afef0f0",
     "phaseComplete": false,
@@ -2655,9 +2655,7 @@
         "log": "/private/tmp/openbot-p3-completion-identity-research.log"
       }
     },
-    "pending": [
-      "push and hosted CI"
-    ],
+    "pending": [],
     "remainingP3": "Model services and credentials; Bot creation/deletion and member removal; settings; workspace/SSE/progress/audit; files/storage and maintenance; Employee knowledge and portability; automations; plugins; Node identity and browser product groups.",
     "previousRunnablePreview": {
       "path": "apps/desktop/out/ts-product-channel-read-baseline/OpenBot TS Preview-darwin-arm64/OpenBot TS Preview.app",
@@ -2794,6 +2792,170 @@
         "path": "scripts/ui-acceptance.ts",
         "sha256": "afa57c0337faa9bdc74b10bc2dbabd9ff9015dd0aa460c1ad72ca90dff300606"
       }
-    ]
+    ],
+    "publication": {
+      "head": "bdadf851ee247d0951d02ce422431dc0785721f2",
+      "pullRequest": "https://github.com/Peerframe/openbot/pull/209",
+      "draft": true,
+      "base": "main",
+      "checksPassed": 17,
+      "run": "https://github.com/Peerframe/openbot/actions/runs/37747409393"
+    }
+  },
+  "currentP3CompletionCandidate": {
+    "status": "in-progress",
+    "branch": "codex/ts-control-plane-p3-completion",
+    "sourceParentHead": "bdadf851ee247d0951d02ce422431dc0785721f2",
+    "phaseComplete": false,
+    "authorization": "Complete all P3 before Claude handoff; retain drafts against main, no merge before evaluation. No application installation or production-data mutation.",
+    "scope": "Model/settings cohort adds eleven operations to the qualified identity baseline (34 of121 default operations). Audit/progress implementations are unselected work in progress; remaining P3 groups are not complete.",
+    "checks": {
+      "httpAll": {
+        "passed": 270,
+        "additionalArtifactChecks": 19,
+        "exitCode": 0,
+        "log": "/private/tmp/openbot-p3-model-all.log"
+      },
+      "httpsControl": {
+        "passed": 50,
+        "ownershipCounts": {
+          "read": 14,
+          "primaryBot": 17,
+          "auth": 13,
+          "channelRead": 9,
+          "identity": 10,
+          "models": 7
+        },
+        "exitCode": 0,
+        "log": "/private/tmp/openbot-p3-model-tls.log"
+      },
+      "models": {
+        "passed": 18,
+        "discoveries": 10,
+        "probes": 4,
+        "liveProviderCalls": 0,
+        "exitCode": 0,
+        "node": "24.21.0",
+        "log": "/private/tmp/openbot-p3-model-http-node24.log"
+      },
+      "focused": {
+        "passed": 18,
+        "log": "/private/tmp/openbot-p3-model-focused.log"
+      },
+      "ui": {
+        "passed": 12,
+        "responses": 104,
+        "unexpected": 0,
+        "pageErrors": 0,
+        "workspace503": 0,
+        "receipt": "/private/tmp/openbot-ui-acceptance-1791453860893/receipt.json"
+      },
+      "fullCheck": {
+        "exitCode": 0,
+        "log": "/private/tmp/openbot-p3-model-check-final.log",
+        "serverTsPassed": 79,
+        "includesUnselectedAuditProgressTests": 5,
+        "desktopPassed": 578,
+        "desktopPlatformSkipped": 3,
+        "webPassed": 692,
+        "turboTasks": [
+          {
+            "stage": "prerequisite-build",
+            "successful": 10,
+            "cached": 10
+          },
+          {
+            "stage": "typecheck",
+            "successful": 33,
+            "cached": 31
+          },
+          {
+            "stage": "test",
+            "successful": 27,
+            "cached": 25
+          },
+          {
+            "stage": "build",
+            "successful": 19,
+            "cached": 17
+          }
+        ]
+      }
+    },
+    "native": {
+      "stageExitCode": 0,
+      "stagedProbe": "/private/tmp/openbot-p3-model-native-smoke.json",
+      "packageExitCode": 0,
+      "packagedProbe": "/private/tmp/openbot-p3-model-packaged-smoke.json",
+      "manifest": "openbot.desktop.ts-control/v6",
+      "preview": "apps/desktop/out/ts-product/OpenBot TS Preview-darwin-arm64/OpenBot TS Preview.app",
+      "asarSha256": "947dccd90f58960f64f333cdb14d59374c215aaaa20da99f4e97ff6fd62355f0",
+      "scope": "unsigned macOS arm64 API-only Preview; temporary data and synthetic encryption; no installation, Keychain, GUI, Worker or Temporal qualification",
+      "previousRunnablePreview": "apps/desktop/out/ts-product-identity-baseline/OpenBot TS Preview-darwin-arm64/OpenBot TS Preview.app",
+      "matchingSourceAndPackageFiles": 312,
+      "fingerprints": "/private/tmp/openbot-p3-model-closure-fingerprints.json"
+    },
+    "remainingP3": [
+      "Bot creation/deletion and member removal",
+      "approval settings/decisions",
+      "workspace/SSE/progress/audit",
+      "files/storage and background maintenance",
+      "Employee knowledge and portability",
+      "automations",
+      "plugins",
+      "Node identity and browser product groups"
+    ],
+    "pending": [
+      "Complete remaining P3 implementations and ownership transfer",
+      "Exact final candidate UI12/12 and required local/hosted checks",
+      "Full P3 report for Claude and evaluation before merge"
+    ],
+    "sourceFingerprints": [
+      {
+        "path": "apps/server-ts/src/config.ts",
+        "sha256": "6397f9733ee543e0518b9d16bec8e3e2337f9a6873f81cd4268eb5895767f8b2"
+      },
+      {
+        "path": "apps/server-ts/src/product-http.ts",
+        "sha256": "693a4bd9723417ce737f95d18b5bbc8392ad6e96ad4c0ea1a1253065a508ed86"
+      },
+      {
+        "path": "apps/server-ts/src/model-connections.ts",
+        "sha256": "596f5bce6e97b89bbe7cc3743220769825d9089489883dfb5c24d552b1d0d962"
+      },
+      {
+        "path": "apps/server-ts/src/model-network.ts",
+        "sha256": "34c44b9e4240e86b0de5fb902b7427a7cec6a142fc64c2a4d106ec26433ffc38"
+      },
+      {
+        "path": "apps/server-ts/src/model-credential-cipher.ts",
+        "sha256": "85374fb59e18e77dd5042a924a86bfec8032bc2619cece6739682d2255039bb0"
+      },
+      {
+        "path": "apps/server-ts/src/posix-files.ts",
+        "sha256": "9c042bcf4473762921d9f1280f52624ee0e373a25f1d1f61115fe4833aba893b"
+      },
+      {
+        "path": "apps/desktop/src/ts-product-manifest.ts",
+        "sha256": "1db761300bb9f513eec87319ed35afd57f7dc50e294892e9ec612fedce08b07a"
+      },
+      {
+        "path": "apps/desktop/src/ts-server.ts",
+        "sha256": "fff61907cae08e87552fa09108ac8362f140dad2204e994241ee09b0a0034181"
+      },
+      {
+        "path": "apps/server-python/src/openbot_server/ts_product_ownership.py",
+        "sha256": "b1145adc9d51a2af3c54e051099001471d0df42a3ea51055441075ade59b404a"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "df0df90fb76019ad783b5b537754d1f9b6a19cab015135ea15b8421c6689feba"
+      }
+    ],
+    "preserved": {
+      "originalCheckoutDirtyEntries": 172,
+      "installedAsarSha256": "e1effed06195fed8bd9269b2a7c8447562156ac8a216ae4b81ae35cc316432e0",
+      "claudeUiUntouched": true
+    }
   }
 }

@@ -280,7 +280,7 @@ export async function launchPythonProductServer(
   tsWriteGroup?: "primary-bot",
   tsAuthGroup?: "owner",
   tsChannelReadGroup?: "channels",
-  tsProductGroup?: "identity",
+  tsProductGroup?: "identity" | "identity-models",
 ): Promise<
   ManagedServerProcess & {
     readonly closed: Promise<void>;

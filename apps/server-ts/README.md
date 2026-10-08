@@ -100,7 +100,7 @@ occurs at the entry. Source integration evidence is in the linked record; licens
 The isolated macOS arm64 candidate uses one PostgreSQL supervisor/migrator, private Python and public
 TS. The strict `ts-control.json` resource marker selects the pair; malformed/incomplete TS resources
 refuse startup. Either child's exit stops its partner, and inherited parent pipes stop both when
-Desktop exits. TS receives the selected groups' explicit database and Owner bootstrap configuration; no model keys. The retained Node runtime is still required.
+Desktop exits. TS receives the selected groups' explicit database and Owner bootstrap configuration; only the explicit shared protected key-file path, never model API keys in its environment. The retained Node runtime is still required.
 Build and review the unsigned candidate without replacing an installed application:
 
 ```sh
@@ -249,3 +249,15 @@ Owner SHARE locks, final expiry, CAS and audit remain one bounded SQL transactio
 mutations send empty committed PostgreSQL invalidations to Python's sole SSE publisher; typed
 appearance no-ops remain silent. The listener owns no facts or work and is removed when SSE moves.
 See the [current evidence and remaining P3 scope](../../docs/research/typescript-control-plane-p0.md#current-migration-checkpoint-2026-10-08).
+
+## P3 model/settings candidate
+
+Pair `OPENBOT_TS_PRODUCT_GROUP=identity-models` with
+`OPENBOT_CONTROL_TS_PRODUCT_GROUP=identity-models`. Set
+`OPENBOT_TS_MODEL_CONNECTION_KEY_PATH` to the same absolute file as Python's
+`OPENBOT_CONTROL_MODEL_CONNECTION_KEY_PATH`. Optional `OPENBOT_TS_MODEL_CUSTOM_BASE_URLS` is a
+JSON array of exact reviewed HTTPS bases, matching Python's configured allowlist. This adds eleven
+model/settings operations to `identity`; default `none` and paired reverse remain supported.
+The packaged v6 candidate requires the fixed SDK/native versions and complete native payload.
+See the [decision and current evidence](../../docs/research/typescript-control-plane-p0.md#p3-model-and-settings-ownership-2026-10-08).
+This candidate does not complete P3 or move task execution from Python/Temporal.

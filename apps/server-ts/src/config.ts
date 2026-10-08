@@ -1,6 +1,7 @@
-import { scalarText } from "./owner-auth-crypto.js";
 import { isIP } from "node:net";
 import { isAbsolute } from "node:path";
+import type { ModelTransport } from "./model-network.js";
+import { scalarText } from "./owner-auth-crypto.js";
 
 export interface EntryOptions {
   upstream: string;
@@ -8,7 +9,12 @@ export interface EntryOptions {
   host: "127.0.0.1" | "0.0.0.0";
   port: number;
   tls?: { certificatePath: string; privateKeyPath: string };
-  product?: { databaseUrl: string; allowedOrigins?: readonly string[] };
+  product?: {
+    databaseUrl: string;
+    allowedOrigins?: readonly string[];
+    models?: { keyPath: string; customBaseUrls: readonly string[] };
+    modelTransport?: ModelTransport;
+  };
   channelRead?: { databaseUrl: string; allowedOrigins?: readonly string[] };
   transcriptionRead?: { databaseUrl: string; allowedOrigins?: readonly string[] };
   ownerAuth?: {
@@ -34,6 +40,13 @@ function origin(value: string): URL {
 
 export function validateOptions(options: EntryOptions): EntryOptions {
   if (options.product) {
+    if (
+      options.product.models &&
+      (!isAbsolute(options.product.models.keyPath) ||
+        options.product.models.keyPath.length > 4096 ||
+        options.product.models.keyPath.includes("\0"))
+    )
+      throw new Error("Model credentials require an explicit absolute key path.");
     const database = new URL(options.product.databaseUrl);
     if (!["postgres:", "postgresql:"].includes(database.protocol) || !database.hostname)
       throw new Error("Product routes require explicit PostgreSQL configuration.");
@@ -147,8 +160,9 @@ export function validateOptions(options: EntryOptions): EntryOptions {
 
 export function entryOptions(environment: NodeJS.ProcessEnv): EntryOptions {
   const productGroup = environment.OPENBOT_TS_PRODUCT_GROUP ?? "none";
-  if (!["none", "identity"].includes(productGroup)) throw new Error("Unknown TS product group.");
-  if (productGroup === "identity" && !environment.OPENBOT_TS_DATABASE_URL)
+  if (!["none", "identity", "identity-models"].includes(productGroup))
+    throw new Error("Unknown TS product group.");
+  if (productGroup !== "none" && !environment.OPENBOT_TS_DATABASE_URL)
     throw new Error("Product routes require an explicit PostgreSQL URL.");
   const channelGroup = environment.OPENBOT_TS_CHANNEL_READ_GROUP ?? "none";
   if (!["none", "channels"].includes(channelGroup))
@@ -175,9 +189,19 @@ export function entryOptions(environment: NodeJS.ProcessEnv): EntryOptions {
   if ((certificatePath === undefined) !== (privateKeyPath === undefined))
     throw new Error("TLS certificate and private key must be configured together.");
   return validateOptions({
-    ...(productGroup === "identity"
+    ...(productGroup !== "none"
       ? {
           product: {
+            ...(productGroup === "identity-models"
+              ? {
+                  models: {
+                    keyPath: environment.OPENBOT_TS_MODEL_CONNECTION_KEY_PATH ?? "",
+                    customBaseUrls: JSON.parse(
+                      environment.OPENBOT_TS_MODEL_CUSTOM_BASE_URLS ?? "[]",
+                    ) as string[],
+                  },
+                }
+              : {}),
             databaseUrl: environment.OPENBOT_TS_DATABASE_URL!,
             ...(environment.OPENBOT_TS_READ_ALLOWED_ORIGINS !== undefined
               ? {

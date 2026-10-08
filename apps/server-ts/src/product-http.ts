@@ -1,38 +1,61 @@
-import type { FastifyReply, FastifyRequest } from "fastify";
 import type { Readable } from "node:stream";
 import {
   controlHttpOperations,
   employeeHttpOperations,
   lifecycleHttpOperations,
+  resourceHttpOperations,
 } from "@openbot/protocol";
-import { identityRoutes, identityError } from "./product-identity.js";
+import type { FastifyReply, FastifyRequest } from "fastify";
+import type { EntryOptions } from "./config.js";
+import { ModelConnections, modelRoutes } from "./model-connections.js";
+import { ModelNetwork, modelNetworkRoutes } from "./model-network.js";
 import { ownerTransactions, refuse } from "./owner-transaction.js";
+import { WriteFailure, writeUnavailable } from "./primary-bot-write.js";
+import { identityError, identityRoutes } from "./product-identity.js";
 import { ownerCookie } from "./transcription-read.js";
 import { boundedJson } from "./write-input.js";
-import { WriteFailure, writeUnavailable } from "./primary-bot-write.js";
 
-const inventory = [...controlHttpOperations, ...employeeHttpOperations, ...lifecycleHttpOperations];
-const routes = identityRoutes.map((route) => {
-  if (
-    !inventory.some(
-      (item) => item.method.toUpperCase() === route.method && item.path === route.path,
-    )
-  )
-    throw new Error("Product route is absent from the shared inventory.");
-  return { ...route, pattern: new RegExp("^" + route.path.replace(/\{[^}]+\}/g, "([^/]+)") + "$") };
-});
+const inventory = [
+  ...controlHttpOperations,
+  ...employeeHttpOperations,
+  ...lifecycleHttpOperations,
+  ...resourceHttpOperations,
+];
 export function productHandler(
-  options: { databaseUrl: string; allowedOrigins?: readonly string[] },
+  options: NonNullable<EntryOptions["product"]>,
   publicOrigin: string,
   secure: boolean,
 ) {
   const store = ownerTransactions(options.databaseUrl);
+  const models = options.models
+    ? new ModelConnections(options.models.keyPath, options.models.customBaseUrls)
+    : undefined;
+  const network = models ? new ModelNetwork(models, options.modelTransport) : undefined;
+  const routes = [
+    ...identityRoutes,
+    ...(models ? modelRoutes(models) : []),
+    ...(network ? modelNetworkRoutes(network) : []),
+  ].map((route) => {
+    if (
+      !inventory.some(
+        (item) => item.method.toUpperCase() === route.method && item.path === route.path,
+      )
+    )
+      throw new Error("Product route is absent from the shared inventory.");
+    return {
+      ...route,
+      pattern: new RegExp("^" + route.path.replace(/\{[^}]+\}/g, "([^/]+)") + "$"),
+    };
+  });
   const origins = options.allowedOrigins ?? [publicOrigin];
   const match = (method: string, path: string) =>
     routes.find((route) => route.method === method && route.pattern.test(path));
   return {
-    verify: store.verify,
-    close: store.close,
+    verify: () => store.verify(models ? (db) => models.initialize(db) : undefined),
+    close: async () => {
+      network?.close();
+      await store.close();
+    },
     owns: (method: string, path: string) => Boolean(match(method, path)),
     async handle(request: FastifyRequest, reply: FastifyReply) {
       const path = decodeURIComponent((request.raw.url ?? "").split("?")[0]!);
@@ -73,17 +96,28 @@ export function productHandler(
             abort.signal,
             route.maxBytes ?? 8192,
           );
-        const result = await store.run(token, abort.signal, async (db) => {
-          try {
-            const value = await route.execute(db, ids, body);
-            // Empty committed invalidation only: Python owns the SSE projection during coexistence.
-            if (route.kind === "product" && request.method !== "GET")
-              await db`SELECT pg_notify('openbot_product_changed','')`;
-            return value;
-          } catch (error) {
-            return identityError(error, route);
-          }
-        });
+        const result = route.remote
+          ? await route.remote(
+              (operation) => store.run(token, abort.signal, operation),
+              ids,
+              body,
+              abort.signal,
+            )
+          : await store.run(token, abort.signal, async (db) => {
+              try {
+                const value = await route.execute(db, ids, body);
+                // Empty committed invalidation only: Python owns the SSE projection during coexistence.
+                if (route.kind === "product" && request.method !== "GET")
+                  await db`SELECT pg_notify('openbot_product_changed','')`;
+                return value;
+              } catch (error) {
+                return identityError(error, route);
+              }
+            });
+        if (route.remote && request.method !== "GET")
+          await store.run(token, abort.signal, async (db) => {
+            await db`SELECT pg_notify('openbot_product_changed','')`;
+          });
         if (!reply.raw.destroyed) return reply.code(route.status ?? 200).send(result);
       } catch (error) {
         if (reply.raw.destroyed) return;

@@ -53,8 +53,9 @@ export function ownerTransactions(databaseUrl: string) {
     run,
     preflight: (token: string | undefined, signal: AbortSignal) =>
       run(token, signal, async () => undefined, false),
-    verify: async () => {
+    verify: async (initialize?: (db: postgres.TransactionSql) => Promise<void>) => {
       await sql`SELECT id,token_digest,owner_id,revoked_at,expires_at FROM auth_sessions LIMIT 0`;
+      if (initialize) await sql.begin(async (db) => initialize(db));
     },
     close: () => sql.end({ timeout: 1 }),
   };
