@@ -8,6 +8,7 @@ export interface EntryOptions {
   host: "127.0.0.1" | "0.0.0.0";
   port: number;
   tls?: { certificatePath: string; privateKeyPath: string };
+  product?: { databaseUrl: string; allowedOrigins?: readonly string[] };
   channelRead?: { databaseUrl: string; allowedOrigins?: readonly string[] };
   transcriptionRead?: { databaseUrl: string; allowedOrigins?: readonly string[] };
   ownerAuth?: {
@@ -32,12 +33,19 @@ function origin(value: string): URL {
 }
 
 export function validateOptions(options: EntryOptions): EntryOptions {
+  if (options.product) {
+    const database = new URL(options.product.databaseUrl);
+    if (!["postgres:", "postgresql:"].includes(database.protocol) || !database.hostname)
+      throw new Error("Product routes require explicit PostgreSQL configuration.");
+    for (const value of options.product.allowedOrigins ?? [options.publicOrigin]) origin(value);
+  }
   if (options.channelRead) {
     try {
       const database = new URL(options.channelRead.databaseUrl);
       if (!["postgres:", "postgresql:"].includes(database.protocol) || !database.hostname)
         throw new Error();
-      for (const value of options.channelRead.allowedOrigins ?? [options.publicOrigin]) origin(value);
+      for (const value of options.channelRead.allowedOrigins ?? [options.publicOrigin])
+        origin(value);
     } catch {
       throw new Error("Channel reads require explicit valid PostgreSQL and origin configuration.");
     }
@@ -98,6 +106,7 @@ export function validateOptions(options: EntryOptions): EntryOptions {
     options.primaryBotWrite,
     options.ownerAuth,
     options.channelRead,
+    options.product,
   ]
     .filter((group) => group !== undefined)
     .map((group) => group.databaseUrl);
@@ -137,6 +146,10 @@ export function validateOptions(options: EntryOptions): EntryOptions {
 }
 
 export function entryOptions(environment: NodeJS.ProcessEnv): EntryOptions {
+  const productGroup = environment.OPENBOT_TS_PRODUCT_GROUP ?? "none";
+  if (!["none", "identity"].includes(productGroup)) throw new Error("Unknown TS product group.");
+  if (productGroup === "identity" && !environment.OPENBOT_TS_DATABASE_URL)
+    throw new Error("Product routes require an explicit PostgreSQL URL.");
   const channelGroup = environment.OPENBOT_TS_CHANNEL_READ_GROUP ?? "none";
   if (!["none", "channels"].includes(channelGroup))
     throw new Error("Unknown TS channel read group.");
@@ -162,6 +175,20 @@ export function entryOptions(environment: NodeJS.ProcessEnv): EntryOptions {
   if ((certificatePath === undefined) !== (privateKeyPath === undefined))
     throw new Error("TLS certificate and private key must be configured together.");
   return validateOptions({
+    ...(productGroup === "identity"
+      ? {
+          product: {
+            databaseUrl: environment.OPENBOT_TS_DATABASE_URL!,
+            ...(environment.OPENBOT_TS_READ_ALLOWED_ORIGINS !== undefined
+              ? {
+                  allowedOrigins: environment.OPENBOT_TS_READ_ALLOWED_ORIGINS.split(",").map(
+                    (value) => value.trim(),
+                  ),
+                }
+              : {}),
+          },
+        }
+      : {}),
     ...(channelGroup === "channels"
       ? {
           channelRead: {

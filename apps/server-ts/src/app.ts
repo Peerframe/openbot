@@ -27,6 +27,7 @@ import { ownerCookie, ReadFailure, transcriptionReader } from "./transcription-r
 import { primaryBotWriter, WriteFailure, writeUnavailable } from "./primary-bot-write.js";
 import { primaryBotJson } from "./write-input.js";
 import { ownerAuthentication } from "./owner-auth.js";
+import { productHandler } from "./product-http.js";
 import { channelReader } from "./channel-read.js";
 import { workerTunnel } from "./worker-tunnel.js";
 
@@ -127,6 +128,18 @@ export async function createEntry(input: EntryOptions) {
       throw new Error("The channel read schema is unavailable.");
     }
   }
+  const product = options.product
+    ? productHandler(options.product, options.publicOrigin, Boolean(options.tls))
+    : undefined;
+  if (product) {
+    app.addHook("onClose", () => product.close());
+    try {
+      await product.verify();
+    } catch {
+      await app.close();
+      throw new Error("Product schema is unavailable.");
+    }
+  }
   if (options.tls) {
     // Bound TCP/TLS admission too, before HTTP and Worker limits can see a request.
     app.server.maxConnections = 192;
@@ -187,6 +200,10 @@ export async function createEntry(input: EntryOptions) {
     reply.code(400).send({ error: "Invalid entry request." });
   });
   app.all("/*", (request, reply) => {
+    if (
+      product?.owns(request.method, decodeURIComponent((request.raw.url ?? "").split("?")[0] ?? ""))
+    )
+      return product.handle(request, reply);
     if (
       channels?.owns(
         request.method,

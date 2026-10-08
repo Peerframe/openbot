@@ -125,6 +125,14 @@ export async function smokePythonProduct(runtimeRoot: string) {
     });
     assert.equal(created.status, 201);
     const channelId = ((await created.json()) as { channel: { id: unknown } }).channel.id;
+    const identityRename = await fetch(`${base}/api/v1/channels/${channelId}`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ name: "TS identity restart fixture" }),
+      signal: AbortSignal.timeout(8000),
+    });
+    assert.equal(identityRename.status, 200);
+    await identityRename.arrayBuffer();
     const readChannelGroup = async () => {
       const values = [];
       for (const path of [
@@ -231,6 +239,8 @@ export async function smokePythonProduct(runtimeRoot: string) {
       tsAuthGroup: tsSelected ? "owner" : "none",
       tsChannelReadGroup: tsSelected ? "channels" : "none",
       channelReadRestartVerified: true,
+      tsProductGroup: tsSelected ? "identity" : "none",
+      productIdentityRestartVerified: true,
       passwordRotationRestartVerified: tsSelected,
       restartLoginUsedChangedPassword: tsSelected,
       eitherProductExitStoppedPair: tsSelected,

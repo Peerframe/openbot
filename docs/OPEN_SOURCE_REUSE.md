@@ -1162,3 +1162,11 @@ Reuse Fastify5.12.5, Postgres.js3.4.9 and PostgreSQL17.11 for the four public Bo
 reads. Preserve Python's read-only READ COMMITTED session recheck, SQL bounds and ordering. Cursor
 parameters stay text until PostgreSQL conversion to retain microseconds. No new dependency, schema,
 upstream source copy or execution authority; see [decision](research/typescript-control-plane-p0.md#p3-channel-read-decision-2026-10-08).
+
+### P3 conversation and identity editing (2026-10-08)
+
+Reuse the current Python SQL contracts and ADR0050 pins; no new dependency or schema. A temporary
+empty PostgreSQL transactional NOTIFY bridges TS generic mutations to the sole Python SSE owner.
+Reviewed PostgreSQL17 semantics and locked Psycopg3.3.6 source; shutdown, failure, no-op and rollback
+are explicit. No upstream code copied; remove the listener when SSE moves. See the
+[decision](research/typescript-control-plane-p0.md#p3-conversation-and-identity-editing-decision-2026-10-08).

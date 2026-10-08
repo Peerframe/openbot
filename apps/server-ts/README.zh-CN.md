@@ -187,3 +187,15 @@ TS 使用有容量上限的只读 READ COMMITTED 事务，返回数据或频道�
 v4 macOS arm64 未签名 Preview 标记包含 `channelReadGroup:channels`，启动前校验 3 个编译模块。
 契约和界面驱动与既有组一起选择它。真实 HTTP/HTTPS 对照覆盖分页、读取阻塞时撤销、容量、异常及超大记录、
 Python 停机可用性和反向切换。当前状态见[迁移检查点](../../docs/research/typescript-control-plane-p0.zh-CN.md#当前迁移检查点2026-10-08)。
+
+## P3 会话与身份编辑候选
+
+`OPENBOT_TS_PRODUCT_GROUP=identity` 选择11个接口：创建频道、打开私聊、加入成员、资料/外观编辑、
+Bot/频道重命名、标记已读、未读数及消息反应。私有Python产品必须配对
+`OPENBOT_CONTROL_TS_PRODUCT_GROUP=identity`。默认 `none`；反切换同时关闭两端选择，读取同一个最新数据库。
+本组不含Bot创建/删除、移除成员或任务执行权限。v5 Preview标记要求 `productGroup:identity`，
+启动任一子进程前检查3个新增编译模块。
+
+Owner SHARE锁、最终过期检查、版本冲突保护与审计保留在一个有界SQL事务内。通用产品写入提交后发送
+空载荷PostgreSQL刷新通知，Python仍是唯一SSE发布者；外观无变化时保持静默。监听器不持有业务事实或执行任务，
+SSE迁走后移除。参见[当前证据与P3剩余范围](../../docs/research/typescript-control-plane-p0.zh-CN.md#当前迁移检查点2026-10-08)。

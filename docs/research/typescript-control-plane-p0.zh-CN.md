@@ -222,29 +222,39 @@ P5 核对安装/CI 依赖清单，并同口径比较最终资源。
 
 ## 当前迁移检查点（2026-10-08）
 
-当前工作树为 `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`，分支
-`codex/ts-control-plane-p3-channel-reads`，基于认证组提交 `df99396876b2fb4308fb60705076e6804d7fe3bd`。
-用户明确要求 [#208](https://github.com/Peerframe/openbot/pull/208) 保留为面向 main 的草稿，本轮只继续本地迁移。
-其[托管 CI](https://github.com/Peerframe/openbot/actions/runs/37715428319) 已17/17通过，但不能替代新读取组的验证。
-#206 已合并到 main `41a1a5b57b258e5b34d9c4ef80096b69b376930f`。
+工作目录 `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`，分支
+`codex/ts-control-plane-p3-completion`，基于已验收频道读取提交 `9afef0f0` 和认证提交 `df993968`。
+[PR208](https://github.com/Peerframe/openbot/pull/208) 仍为面向 main 的草稿。用户现已授权推送迁移分支，
+明确暂不合并。main 保持 `41a1a5b57b258e5b34d9c4ef80096b69b376930f`，不修改已安装应用。
 
-本地候选已在实现提交 `5c2190cb0468e07b7c3a514df7438a9d9df69659` 完成验收，接管 Bot 列表、频道列表、
-消息分页和运行列表。完整 `npm run check` 通过；受影响测试实际执行 TS53、Desktop578（3项平台跳过）、
-Web692；Python 定向53项。真实混合 HTTP 全套270及额外附件19、受信 CA HTTPS control50通过，
-两种传输上均通过读取14、主 Bot 写入17、认证13和本组9项验证。
-最终界面 PASS12/12，100次响应（93×200、7×201），异常响应、页面错误、workspace503均为0。
-报告、截图、缓存与实际执行区分、源码指纹集中记录在
-[单一收据](typescript-control-plane-p2-native.json)的 `currentP3ChannelReadCandidate`。
+当前新增候选接管11个操作：创建频道、打开私聊、加入成员、编辑资料与外观、重命名 Bot/频道、
+标记已读、未读数、读取/修改消息反应。保留来源与会话检查顺序、数据库锁、版本冲突保护、原子审计和
+基于新数据的反切换。121个默认接口中，TS选择范围从12个增至23个。**P3尚未完成**：其他产品、模型、
+身份创建/删除、文件、插件和 Employee 组仍需迁移与验收；Work/harness/Temporal 属于P4，退役Python属于P5。
 
-已准备运行资源及实际未签名 macOS arm64 Preview 包的探针均通过：重启后4个读取接口、改密码后登录、
-数据保留、任一子进程退出或父管道关闭时成对停止、数据库清理。游标兼容修正后刷新了最终编译模块，
-保留未变的锁定依赖；探针和打包均在刷新之后运行。合成加密不代表 Keychain、GUI、Worker 或 Temporal 验收。
-离线固定版本凭证扫描覆盖实现提交完整分支历史，20条既有已审核示例，无新增发现或例外。
-实现代理的固定差异审阅无剩余阻断；不是独立外部安全审计。
+真实 HTTP 与受信 CA HTTPS control50通过，两种传输上的读取14、主Bot写入17、认证13、频道读取9、
+本组10项均通过；完整混合 HTTP270及额外附件19通过。Python定向60项通过；精确候选界面PASS12/12，
+103次响应（96×200、7×201），异常响应、页面错误、workspace503均为0。整仓检查、桌面包验证、源码指纹
+及推送状态统一记录在[单一收据](typescript-control-plane-p2-native.json)的 `currentP3IdentityProductCandidate`。
+前一频道读取实现 `5c2190cb` 的历史证据保留，不冒充本轮新执行。Claude第43步界面不在本次改动范围。
 
-上一份合格认证组包保留在 `apps/desktop/out/ts-product-owner-auth-baseline`；原工作区172项改动、
-已安装应用指纹及 Claude 第43步界面未变。没有遗留写入者。本轮仅本地候选，未推送、未创建新PR、未合并、
-未安装；将来如获准发布，仍需该候选自己的托管CI。其他P3组、P4任务/harness/Temporal及P5退役Python尚未完成。
+### P3 会话与身份编辑决策（2026-10-08）
+
+复用ADR0050已审阅的Fastify5.12.5、Postgres.js3.4.9、PostgreSQL17.11及P1契约，移植当前Python事务，
+不恢复冻结旧服务。保留Unicode码点限制、同一事务内的更新/审计/最终过期检查及阻止撤销越过写入的SHARE锁。
+不新增数据库结构或依赖。
+
+第一轮真实控制契约复现了TS重命名后SSE缺失刷新的问题：原Python通用产品路由只更新本进程版本。
+立即迁移整个工作区事件流会耦合Node在线状态与Work进度；新建共享计数表会增加持久化迁移状态。
+选择PostgreSQL事务NOTIFY：仅迁走的通用产品写操作发送空载荷 `openbot_product_changed`，提交才通知，
+回滚不通知。资料、外观和创建等独立路由继续依赖快照变化，保留无变化外观更新的静默行为。
+Python仍是唯一SSE发布者，一个随产品启动/关闭的自动提交监听器只触发现有轮询刷新；监听失效则流失败关闭。
+它不授予权限、不执行任务、不重放写入、不传业务数据；SSE迁入TS后移除。Python显式停止期间TS写入仍可用，
+重连读取最新事实。没有复制或大幅改编上游源码。
+
+核对了[PostgreSQL17 NOTIFY文档](https://www.postgresql.org/docs/17/sql-notify.html)的提交、合并和队列语义，
+以及已锁定[Psycopg3.3.6异步连接源码](https://github.com/psycopg/psycopg/blob/3.3.6/psycopg/psycopg/connection_async.py)
+的通知生成器和取消行为。沿用现有许可证声明。真实SSE慢消费、无变化及重连契约与监听失效单测共同验证。
 
 ### P3 主 Bot 选择决策（2026-10-08）
 

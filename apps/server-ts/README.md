@@ -235,3 +235,17 @@ three compiled read modules before launching the pair. The contract and UI drive
 with prior qualified groups. Real HTTP/HTTPS comparisons include pagination, revocation during blocked
 reads, bounded admission, malformed/oversized records, Python-down availability and reverse switching.
 See [current qualification](../../docs/research/typescript-control-plane-p0.md#current-migration-checkpoint-2026-10-08).
+
+## P3 conversation and identity editing candidate
+
+`OPENBOT_TS_PRODUCT_GROUP=identity` selects eleven routes: channel creation, direct conversation,
+member join, profile/appearance edits, Bot/channel rename, mark-read, unread counts and reactions.
+Pair it with `OPENBOT_CONTROL_TS_PRODUCT_GROUP=identity` on the private Python product. The default
+is `none`; reverse both selections together against the same newer database. This group does not
+include Bot creation/deletion, member removal or any execution authority. The v5 Preview marker
+requires `productGroup:identity` and its three compiled modules before either child starts.
+
+Owner SHARE locks, final expiry, CAS and audit remain one bounded SQL transaction. Generic product
+mutations send empty committed PostgreSQL invalidations to Python's sole SSE publisher; typed
+appearance no-ops remain silent. The listener owns no facts or work and is removed when SSE moves.
+See the [current evidence and remaining P3 scope](../../docs/research/typescript-control-plane-p0.md#current-migration-checkpoint-2026-10-08).

@@ -196,6 +196,7 @@ try {
           OPENBOT_CONTROL_TS_READ_GROUP: "transcription",
           OPENBOT_CONTROL_TS_WRITE_GROUP: "primary-bot",
           OPENBOT_CONTROL_TS_AUTH_GROUP: "owner",
+          OPENBOT_CONTROL_TS_PRODUCT_GROUP: "identity",
           OPENBOT_CONTROL_TS_CHANNEL_READ_GROUP: "channels",
         }
       : {}),
@@ -210,6 +211,7 @@ try {
     OPENBOT_TS_READ_GROUP: "transcription",
     OPENBOT_TS_WRITE_GROUP: "primary-bot",
     OPENBOT_TS_AUTH_GROUP: "owner",
+    OPENBOT_TS_PRODUCT_GROUP: "identity",
     OPENBOT_TS_CHANNEL_READ_GROUP: "channels",
     OPENBOT_TS_OWNER_PASSWORD: ownerPassword,
     OPENBOT_TS_AUTH_ALLOWED_ORIGINS: origin,

@@ -345,34 +345,52 @@ same-scope resource comparison. See ADR-0050 for the detailed gates and Owner ap
 ## Current migration checkpoint (2026-10-08)
 
 Active worktree: `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`, branch
-`codex/ts-control-plane-p3-channel-reads`, based on Owner auth head
-`df99396876b2fb4308fb60705076e6804d7fe3bd`. [PR208](https://github.com/Peerframe/openbot/pull/208)
-remains a draft against `main`, by the Owner's explicit instruction to continue local migration only.
-Its [hosted CI](https://github.com/Peerframe/openbot/actions/runs/37715428319) passes17/17;
-that qualifies the authentication cohort, not this new four-operation read candidate.
-PR206 is merged at main `41a1a5b57b258e5b34d9c4ef80096b69b376930f`.
+`codex/ts-control-plane-p3-completion`, based on qualified channel-read head `9afef0f0` and
+Owner authentication head `df99396876b2fb4308fb60705076e6804d7fe3bd`.
+[PR208](https://github.com/Peerframe/openbot/pull/208) remains a draft against `main`.
+The Owner now authorizes pushing this migration branch, explicitly without merging.
+Main remains `41a1a5b57b258e5b34d9c4ef80096b69b376930f`; no installed application is changed.
 
-The four-operation channel read candidate is locally qualified at implementation
-`5c2190cb0468e07b7c3a514df7438a9d9df69659`. Full `npm run check` passes (affected executed tests:
-TS53, Desktop578 with3 platform skips, Web692); focused Python53 passes. Mixed real HTTP all270 plus19
-artifact checks and HTTPS control50 pass, with read14/write17/auth13/channel-read9 on both transports.
-Exact-candidate UI is PASS12/12:100 responses (93×200,7×201), zero unexpected responses, page errors
-or workspace503. Reports/screenshots, executed/cached tasks and exact source fingerprints are in
-`currentP3ChannelReadCandidate` of the [single receipt](typescript-control-plane-p2-native.json).
+The current additional candidate moves eleven conversation/identity operations: channel creation,
+direct conversation, membership join, profile and appearance editing, Bot/channel rename, mark-read,
+unread counts, and reaction read/write. It preserves existing Origin/session precedence, SQL locks,
+revision CAS, audit atomicity and newer-data reverse switching. This raises selected TS operations
+from12 to23 of the121-operation default inventory. It is **not P3 completion**: remaining product,
+model, identity creation/deletion, file, plugin and Employee groups still need migration and their
+gates; Work/harness/Temporal remain P4 and Python retirement remains P5.
 
-Staged and actual unsigned macOS arm64 Preview probes pass all four reads after restart,
-changed-password login, retained data, either-child/parent-EOF shutdown and PostgreSQL cleanup.
-The final compiled TS closure was refreshed into the unchanged locked staged dependencies before
-both probes and packaging. Synthetic encryption does not qualify Keychain, GUI, Worker or Temporal.
-Offline pinned scanning of the implementation's complete branch ancestry passes20 exact historical
-fixtures, zero new findings/exceptions. The implementing agent's fixed-diff review found no remaining
-blocker; it is not an independent external audit.
+Real HTTP and verified-CA HTTPS control50 plus read14/write17/auth13/channel-read9/product-identity10
+pass. The complete mixed HTTP suite passes270 plus19 artifact checks. Python focused60 and the exact
+candidate's UI12/12 pass:103 responses (96×200,7×201), no unexpected response, page error or workspace503.
+Full checks, native qualification, source fingerprints and publication status are recorded under
+`currentP3IdentityProductCandidate` in the [single receipt](typescript-control-plane-p2-native.json).
+The previous channel-read implementation `5c2190cb` retains its original evidence in that receipt;
+those earlier results are not relabeled as new runs. Claude's Step43 UI is outside this change.
 
-The previous qualified Owner auth package remains runnable at `apps/desktop/out/ts-product-owner-auth-baseline`.
-The original172 dirty entries, installed app fingerprint and Claude's Step43 UI are unchanged.
-No writers remain. This is a local-only candidate: no new remote branch, PR, merge or installation;
-new hosted CI is still required if publication is later authorized. Other P3 cohorts, Work/harness/
-Temporal P4 and Python retirement P5 remain outstanding. Keep this candidate separate from draft208.
+### P3 conversation and identity editing decision (2026-10-08)
+
+Reuse ADR0050's Fastify5.12.5/Postgres.js3.4.9/PostgreSQL17.11 and the current P1 TS validators;
+port the current Python transactions, not the frozen oracle. Unicode code-point adapters retain
+Python creation/profile limits. Keep one Owner transaction through the actual mutation, audit and
+final expiry check; SHARE locks continue to serialize revocation. No schema or dependency changes.
+
+The first real control suite exposed missing SSE invalidation after a TS channel rename. Python's
+product registrar previously incremented a process-local revision. Compare: moving the entire SSE
+workspace composition immediately would couple this group to live Node registry and Work progress;
+a new shared counter table adds persistent migration state; reusing PostgreSQL transactional
+`NOTIFY` adds no schema and preserves rollback semantics. Choose a temporary empty-payload
+`openbot_product_changed` notification for the migrated **generic product mutations only**.
+Typed appearance/profile/creation routes retain their existing snapshot-change behavior, including
+appearance no-op silence. Python remains the sole SSE publisher; one autocommit listener invalidates
+its existing poll state, closes with the product and fails streams closed on listener loss.
+It does not issue authority, dispatch, replay writes or expose data. Remove it when SSE ownership
+moves to TS. Mutations continue safely while Python is explicitly stopped; reconnect fetches current
+facts. No upstream source is copied or substantially adapted.
+
+Reviewed [PostgreSQL17 NOTIFY](https://www.postgresql.org/docs/17/sql-notify.html) commit delivery,
+coalescing and queue limits, and installed [Psycopg3.3.6 async connection source](https://github.com/psycopg/psycopg/blob/3.3.6/psycopg/psycopg/connection_async.py)
+(notifies generator and cancellation). The existing PostgreSQL and Psycopg licenses/notices remain
+unchanged. Real SSE slow-consumer/no-op/reconnect tests supplement the listener failure unit test.
 
 ### P3 channel read decision (2026-10-08)
 

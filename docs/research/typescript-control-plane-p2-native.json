@@ -1535,7 +1535,7 @@
       "noTemporalOrLiveProviderCalls": true
     }
   },
-  "currentCheckpointKey": "currentP3ChannelReadCandidate",
+  "currentCheckpointKey": "currentP3IdentityProductCandidate",
   "currentP3Candidate": {
     "date": "2026-10-07 (Asia/Singapore)",
     "branch": "codex/ts-control-plane-p3-settings",
@@ -2578,6 +2578,97 @@
       "pr208": "Still OPEN/draft at df993968, base main; rechecked after local qualification",
       "hostedCi": "Not run for this unpublished cohort. PR208 results do not qualify it.",
       "remaining": "Owner has explicitly deferred remote publication/merge. Preserve this local candidate; future publication must target main after approved base integration and require its own hosted CI."
+    }
+  },
+  "currentP3IdentityProductCandidate": {
+    "status": "qualification-in-progress",
+    "branch": "codex/ts-control-plane-p3-completion",
+    "baseHead": "9afef0f0",
+    "phaseComplete": false,
+    "scope": "Eleven conversation and identity editing operations; TS total23/default inventory121. Other P3 groups and P4/P5 remain.",
+    "authorization": "Owner now authorizes push; no merge. PR208 remains draft; no installation or production-data mutation.",
+    "checks": {
+      "httpAll": "/private/tmp/openbot-p3-completion-identity-all.log",
+      "httpsControl": "/private/tmp/openbot-p3-completion-identity-tls.log",
+      "ownershipCounts": {
+        "read": 14,
+        "primaryBot": 17,
+        "auth": 13,
+        "channelRead": 9,
+        "productIdentity": 10
+      },
+      "python": {
+        "passed": 60,
+        "warnings": 1,
+        "log": "/private/tmp/openbot-p3-completion-identity-python.log"
+      },
+      "ui": {
+        "passed": 12,
+        "responses": 103,
+        "unexpected": 0,
+        "pageErrors": 0,
+        "workspace503": 0,
+        "receipt": "/private/tmp/openbot-p3-completion-identity-ui/openbot-ui-acceptance-1791443733557/receipt.json"
+      },
+      "fullCheck": {
+        "exitCode": 0,
+        "log": "/private/tmp/openbot-p3-completion-identity-check-final.log",
+        "executedAffectedTests": {
+          "serverTs": 56,
+          "desktop": 578,
+          "desktopPlatformSkipped": 3,
+          "web": 692
+        },
+        "turboTasks": [
+          {
+            "stage": "prerequisite-build",
+            "successful": 10,
+            "cached": 0
+          },
+          {
+            "stage": "typecheck",
+            "successful": 33,
+            "cached": 10
+          },
+          {
+            "stage": "test",
+            "successful": 27,
+            "cached": 12
+          },
+          {
+            "stage": "build",
+            "successful": 19,
+            "cached": 12
+          }
+        ]
+      },
+      "documentation": {
+        "exitCode": 0,
+        "tests": 12,
+        "markdownFiles": 601,
+        "log": "/private/tmp/openbot-p3-completion-identity-docs.log"
+      },
+      "research": {
+        "exitCode": 0,
+        "tests": 27,
+        "pullRequestEventGate": "skipped locally",
+        "log": "/private/tmp/openbot-p3-completion-identity-research.log"
+      }
+    },
+    "pending": [
+      "staged and packaged native smoke",
+      "offline credential scan",
+      "push and hosted CI"
+    ],
+    "remainingP3": "Model services and credentials; Bot creation/deletion and member removal; settings; workspace/SSE/progress/audit; files/storage and maintenance; Employee knowledge and portability; automations; plugins; Node identity and browser product groups.",
+    "previousRunnablePreview": {
+      "path": "apps/desktop/out/ts-product-channel-read-baseline/OpenBot TS Preview-darwin-arm64/OpenBot TS Preview.app",
+      "asarSha256": "6ff4df8e306ebd2cd8fc0193bb1e563d0580a86b9036e686d5036a5509b2360b"
+    },
+    "preserved": {
+      "originalCheckoutDirtyEntries": 172,
+      "installedAsarSha256": "e1effed06195fed8bd9269b2a7c8447562156ac8a216ae4b81ae35cc316432e0",
+      "claudeUiUntouched": true
     }
   }
 }

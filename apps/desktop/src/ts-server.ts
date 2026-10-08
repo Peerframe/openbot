@@ -69,6 +69,9 @@ export async function launchTsProductServer(
     "apps/server-ts/dist/owner-auth.js",
     "apps/server-ts/dist/owner-auth-crypto.js",
     "apps/server-ts/dist/owner-auth-store.js",
+    "apps/server-ts/dist/owner-transaction.js",
+    "apps/server-ts/dist/product-http.js",
+    "apps/server-ts/dist/product-identity.js",
     "apps/server-ts/dist/channel-read.js",
     "apps/server-ts/dist/channel-read-query.js",
     "apps/server-ts/dist/channel-read-projection.js",
@@ -90,6 +93,7 @@ export async function launchTsProductServer(
     TS_CANDIDATE.writeGroup,
     TS_CANDIDATE.authGroup,
     TS_CANDIDATE.channelReadGroup,
+    TS_CANDIDATE.productGroup,
   );
   let child: ChildProcessByStdio<Writable, null, null>;
   try {
@@ -102,6 +106,7 @@ export async function launchTsProductServer(
         OPENBOT_TS_READ_GROUP: TS_CANDIDATE.readGroup,
         OPENBOT_TS_WRITE_GROUP: TS_CANDIDATE.writeGroup,
         OPENBOT_TS_AUTH_GROUP: TS_CANDIDATE.authGroup,
+        OPENBOT_TS_PRODUCT_GROUP: TS_CANDIDATE.productGroup,
         OPENBOT_TS_CHANNEL_READ_GROUP: TS_CANDIDATE.channelReadGroup,
         OPENBOT_TS_OWNER_PASSWORD: env.OPENBOT_CONTROL_OWNER_PASSWORD as string,
         OPENBOT_TS_AUTH_ALLOWED_ORIGINS: env.OPENBOT_CONTROL_ALLOWED_ORIGINS as string,

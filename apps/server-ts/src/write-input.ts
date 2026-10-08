@@ -23,7 +23,9 @@ export async function boundedJson(
     throw new WriteFailure(422, { error: "Request requires JSON." });
   if (
     contentLength !== undefined &&
-    (!/^[0-9]{1,4}$/.test(contentLength) || Number(contentLength) > maxBytes)
+    (!/^[0-9]+$/.test(contentLength) ||
+      contentLength.length > String(maxBytes).length ||
+      Number(contentLength) > maxBytes)
   )
     throw new WriteFailure(413, { error: "Request is too large." });
   if (!payload) throw new WriteFailure(422, { error: "Invalid JSON input." });

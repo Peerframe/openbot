@@ -24,5 +24,14 @@ The explicitly selected `primary-bot` write candidate owns only shared-inventory
 selection. Its Owner transaction commits preference/revision and existing audit together; Python
 retains identity creation/import/deletion and automatic preference lifecycle updates with the same
 workspace-first locks. Read the [scoped decision](../../docs/research/typescript-control-plane-p0.md#p3-primary-bot-selection-decision-2026-10-08).
-Origin/session preflight precedes bounded JSON; every other request body still forwards unchanged.
+Origin/session preflight precedes bounded JSON; unselected operations still forward unchanged.
 No model credentials, automatic retry or fallback. Default/paired reverse remain Python-owned.
+
+The selected `identity` product candidate owns the eleven operations listed in `product-identity.ts`
+and [its decision](../../docs/research/typescript-control-plane-p0.md#p3-conversation-and-identity-editing-decision-2026-10-08).
+Keep Owner SHARE/final-expiry, revision CAS and audit in the same bounded transaction. Its paired
+Python quarantine only disables public entry points. Generic product mutations invalidate the sole
+Python SSE owner through empty transactional PostgreSQL notifications; typed appearance no-ops stay
+silent. Remove that coexistence listener when SSE moves. Bot creation/deletion, member removal,
+files, model secrets and task execution are not owned by this cohort. Keep the P3 phase explicitly
+incomplete until all remaining groups and their gates finish.
