@@ -368,7 +368,7 @@ Python regression passed1075 with2 recorded skips; Worker/Temporal qualification
 UI initially recorded workspace/reactions503 during the second Bot. Real SQL reproduced an immediate
 admission refusal at the fifth request. The fixed pool retains four SQL connections with at most
 twelve bounded waiting requests. Its deterministic regression passes; the final whole-interface
-receipt is PASS12/12,110 responses,zero unexpected responses/page errors/workspace503. The v7 staged
+receipt is PASS12/12,111 responses,zero unexpected responses/page errors/workspace503. The v7 staged
 and actual packaged macOS arm64 API-only Preview both pass resource34 and portability13 contracts,
 restart/persistence and owned process cleanup.641 compiled/source files match both closures; v6 is
 retained as rollback. This is unsigned, uninstalled and uses synthetic encryption, without new
@@ -386,6 +386,16 @@ prerequisite, and Python-only contracts load no TS qualification modules. With T
 Python control50 and a full cold `npm run check` pass; the restored mixed boundary8/browser14 also
 pass. All641 product fingerprints are unchanged, preserving the native/UI evidence. The repaired
 HEAD still requires its own complete hosted result.
+
+The next hosted HEAD `da12a8a2` exposed an intermittent packed-Preview `ECONNRESET` while sending
+an import body just above2MiB. The early413/Connection-close raced the unfinished upload. Review of
+[Node22.22.2 response completion](https://github.com/nodejs/node/blob/v22.22.2/lib/_http_server.js#L1007-L1039)
+confirmed that response completion can start socket destruction without waiting for unread input.
+Reuse the existing streaming parser: reject unchanged, discard no more than the operation limit
+plus64KiB without retaining/parsing rejected content, and retain its existing5s deadline/cancellation.
+Bodies beyond that discard bound still stop immediately. No retry, body-limit expansion, dependency
+change or copied upstream source. The before/after regression covers declared and streaming overflow,
+the byte cap and cancellation; actual packaged portability contracts requalify the failing entry.
 
 
 ### P3 protected files and model credentials decision (2026-10-08)

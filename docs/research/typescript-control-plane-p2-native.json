@@ -24,7 +24,10 @@
     "restartRecoveredOwnerAndBot": true,
     "bootstrapAndConnectionKeyUnchanged": true,
     "realSafeStorageEncryptDecrypt": true,
-    "twoMenuQuitExitCodes": [0, 0],
+    "twoMenuQuitExitCodes": [
+      0,
+      0
+    ],
     "ownedProductAndDatabaseProcessesGone": true,
     "liveModelCalls": 0,
     "finalBundleRecovery": {
@@ -374,7 +377,10 @@
       "encryptedBootstrap": true,
       "initialExitCode": 0,
       "restartExitCode": 0,
-      "ownedProcessesStoppedPerLaunch": [13, 13],
+      "ownedProcessesStoppedPerLaunch": [
+        13,
+        13
+      ],
       "profileRemoved": true,
       "modelConfigured": false,
       "liveModelCalls": 0,
@@ -489,7 +495,11 @@
       },
       "nativePackageVersionsVerified": 91,
       "unchangedCompiledWorkspaceFilesVerified": 192,
-      "workspacePackages": ["apps/server-ts", "packages/db", "packages/protocol"],
+      "workspacePackages": [
+        "apps/server-ts",
+        "packages/db",
+        "packages/protocol"
+      ],
       "pythonAndNodeArchivesUnchanged": true,
       "profileTouched": false
     },
@@ -962,7 +972,10 @@
     "productSourceHead": "37e8d7fe65a7b4e588861dee0b2770bdda23e9f0",
     "sourceDirty": false,
     "acceptedMain": "8a50575aa89e9c6ab35a6e90440d46a5ac7e4abe",
-    "acceptedUi": ["PR194", "PR198"],
+    "acceptedUi": [
+      "PR194",
+      "PR198"
+    ],
     "pageImplementation": "automatic integration only; Claude owns overall interface acceptance",
     "mcpSdk": {
       "version": "1.32.1",
@@ -1085,7 +1098,9 @@
       "packagedNode": "24.21.0",
       "packagedPython": "3.12.13",
       "previousSourceHead": "76579bbe37a58bb0213eca563124d0c6fe114430",
-      "onlyNativeProductInputChange": ["apps/server-python/src/openbot_server/plugin_catalog.json"],
+      "onlyNativeProductInputChange": [
+        "apps/server-python/src/openbot_server/plugin_catalog.json"
+      ],
       "implementationDependencyAndNoticeDiffEmpty": true,
       "stageAndPackagedNativeRegularFilesMatched": 27820,
       "stageAndPackagedNativeSymlinksMatched": 32,
@@ -1159,7 +1174,10 @@
           "hashPreserved": true
         }
       ],
-      "qualifiedMenuQuitExitCodes": [0, 0],
+      "qualifiedMenuQuitExitCodes": [
+        0,
+        0
+      ],
       "installedAppPreserved": true,
       "installedAsarSha256": "e1effed06195fed8bd9269b2a7c8447562156ac8a216ae4b81ae35cc316432e0",
       "disposableProfileRemoved": true,
@@ -1186,7 +1204,10 @@
       "actualBase": "8a50575aa89e9c6ab35a6e90440d46a5ac7e4abe",
       "completed": true,
       "successfulJobs": 15,
-      "failedJobs": ["security", "check"],
+      "failedJobs": [
+        "security",
+        "check"
+      ],
       "cause": "newly ingested SDK production advisory; credential scan and Python audit skipped",
       "currentSdkFixNotQualifiedByThisRun": true
     },
@@ -1241,13 +1262,20 @@
     "productSourceHead": "dc0bf05ad12ac2cea4d4d4a2994c6ab4981143ed",
     "sourceDirty": false,
     "acceptedMain": "3bb6365c660fd40be5dbc181fe1da92093352877",
-    "acceptedUi": ["PR194", "PR198", "PR203"],
+    "acceptedUi": [
+      "PR194",
+      "PR198",
+      "PR203"
+    ],
     "pageImplementation": "Scoped review corrections only; Step43 sidebar/crown/avatar animation belongs to Claude after PR200 merge.",
     "claudeWholeInterfaceAcceptance": {
       "source": "23a2916d2aa141e1fa4f52391f21b90c2184a520",
       "passed": true,
       "comment": "https://github.com/Peerframe/openbot/pull/200#issuecomment-6024172791",
-      "themes": ["dark", "light"],
+      "themes": [
+        "dark",
+        "light"
+      ],
       "viewport": "1440x900",
       "excludes": [
         "paid model replies",
@@ -1347,7 +1375,16 @@
         "sourceHead": "a848917270e447d735f042577407be79189da459",
         "actualPackagedPythonTs": true,
         "builtProductionWeb": true,
-        "viewports": [[1440, 900], [640, 900]],
+        "viewports": [
+          [
+            1440,
+            900
+          ],
+          [
+            640,
+            900
+          ]
+        ],
         "botNamesShown": true,
         "keyboardFocus": true,
         "messageAndQueuedRunRestoredAfterReload": true,
@@ -1390,7 +1427,12 @@
     "date": "2026-10-07 (Asia/Singapore)",
     "productSourceHead": "2c3dd553ec9d465749fbce6a014373285d169c4f",
     "acceptedMain": "44d13f963e1e4b029746b7aa32a611234a531f7a",
-    "acceptedUi": ["PR194", "PR198", "PR203", "PR204"],
+    "acceptedUi": [
+      "PR194",
+      "PR198",
+      "PR203",
+      "PR204"
+    ],
     "priorReviewCorrectionSource": "dc0bf05ad12ac2cea4d4d4a2994c6ab4981143ed",
     "priorQualificationRecord": "beforeUiAutomationIntegration; exact native/CI scope retained",
     "pageImplementation": "Integrate Claude PR204 fixes; Step43 sidebar/crown/avatar animation remains Claude-owned after PR200 merge.",
@@ -1411,7 +1453,10 @@
       "entry": "ts",
       "actualPythonAndDisposablePostgres": true,
       "browser": "installed Chrome",
-      "viewport": [1440, 900],
+      "viewport": [
+        1440,
+        900
+      ],
       "theme": "light",
       "applicationInstalled": false,
       "sourceHead": "2c3dd553ec9d465749fbce6a014373285d169c4f",
@@ -1419,7 +1464,10 @@
       "dirtyScopeDuringRun": "ADR and CONTRIBUTING migration-gate documentation only",
       "outputDirectory": "/private/tmp/openbot-p2-ui204-acceptance/openbot-ui-acceptance-1791339492444",
       "receipt": "receipt.json",
-      "screenshots": ["screenshots/settings.png", "screenshots/final.png"],
+      "screenshots": [
+        "screenshots/settings.png",
+        "screenshots/final.png"
+      ],
       "publicEntryRestartAndOwnerSessionPassed": true,
       "fixtureDataContainerBrowserAndServicesRemoved": true,
       "scopeExcludes": [
@@ -1537,10 +1585,22 @@
       "webTests": 692,
       "protocolTests": 461,
       "turbo": {
-        "lint": [10, 2],
-        "typecheck": [33, 12],
-        "test": [27, 12],
-        "build": [19, 14]
+        "lint": [
+          10,
+          2
+        ],
+        "typecheck": [
+          33,
+          12
+        ],
+        "test": [
+          27,
+          12
+        ],
+        "build": [
+          19,
+          14
+        ]
       },
       "turboCountMeaning": "[successful tasks, cached tasks]; not all checks were re-executed. Hosted PR research gate skipped outside PR event."
     },
@@ -1711,10 +1771,22 @@
         "exitCode": 0,
         "log": "/private/tmp/openbot-p3-mcp-full-check.log",
         "turbo": {
-          "lint": [10, 10],
-          "types": [33, 33],
-          "test": [27, 27],
-          "build": [19, 19]
+          "lint": [
+            10,
+            10
+          ],
+          "types": [
+            33,
+            33
+          ],
+          "test": [
+            27,
+            27
+          ],
+          "build": [
+            19,
+            19
+          ]
         },
         "scope": "Turbo tasks all cached from qualified read-group source; documentation/research/prerequisites executed. New Python lifecycle22 and real HTTP checks recorded separately."
       },
@@ -1863,10 +1935,22 @@
       "exitCode": 0,
       "log": "/private/tmp/openbot-p3-primary-final-check.log",
       "turboSuccessfulAndCached": {
-        "upstreamBuild": [10, 2],
-        "types": [33, 10],
-        "tests": [27, 12],
-        "build": [19, 13]
+        "upstreamBuild": [
+          10,
+          2
+        ],
+        "types": [
+          33,
+          10
+        ],
+        "tests": [
+          27,
+          12
+        ],
+        "build": [
+          19,
+          13
+        ]
       },
       "existingExecutedEvidence": "Earlier successful run on the same product source executed TS41, Desktop578+3 skips, Web692, protocol461. Final run retains executed/cached distinctions."
     },
@@ -2090,10 +2174,22 @@
       "exitCode": 0,
       "log": "/private/tmp/openbot-p3-auth-check.log",
       "turboSuccessfulAndCached": {
-        "upstreamBuild": [10, 2],
-        "types": [33, 10],
-        "tests": [27, 12],
-        "build": [19, 12]
+        "upstreamBuild": [
+          10,
+          2
+        ],
+        "types": [
+          33,
+          10
+        ],
+        "tests": [
+          27,
+          12
+        ],
+        "build": [
+          19,
+          12
+        ]
       },
       "executedAffectedTests": {
         "serverTs": 46,
@@ -2285,7 +2381,12 @@
     "worktree": "/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot",
     "branch": "codex/ts-control-plane-p3-channel-reads",
     "baseCommit": "df99396876b2fb4308fb60705076e6804d7fe3bd",
-    "scope": ["listBots", "listChannels", "listMessages", "listRuns"],
+    "scope": [
+      "listBots",
+      "listChannels",
+      "listMessages",
+      "listRuns"
+    ],
     "authorization": "Local migration only; retain draft PR208, no push/new PR/merge/install",
     "pending": [],
     "remainingMigration": "Other P3 cohorts, P4 Work/harness/Temporal, P5 Python retirement",
@@ -2600,7 +2701,11 @@
       "scope": "fixed implementation diff from9afef0f0, shared contracts, actual consumers and acceptance",
       "reviewer": "implementing agent; not independent external audit",
       "remainingActionableFindings": 0,
-      "limitations": ["remaining P3 groups", "hosted CI", "native scope above"]
+      "limitations": [
+        "remaining P3 groups",
+        "hosted CI",
+        "native scope above"
+      ]
     },
     "sourceFingerprints": [
       {
@@ -2725,7 +2830,7 @@
         "contracts": 270,
         "additionalArtifactChecks": 19,
         "boundaryChecks": 8,
-        "log": "/private/tmp/openbot-p3-completion-https.log",
+        "log": "/private/tmp/openbot-p3-completion-upload-https.log",
         "ownership": "Real SQL, authorization, rollback, Python-stopped ownership and explicit same-data reverse qualifications executed."
       },
       "publisherHttps": {
@@ -2744,8 +2849,8 @@
       },
       "fullCheck": {
         "exitCode": 0,
-        "log": "/private/tmp/openbot-p3-completion-final-check.log",
-        "ts": 124,
+        "log": "/private/tmp/openbot-p3-completion-upload-check.log",
+        "ts": 126,
         "desktopPassed": 578,
         "desktopPlatformSkipped": 3,
         "web": 692,
@@ -2754,23 +2859,23 @@
         "tasks": [
           {
             "stage": "prerequisite-build",
-            "successful": 10,
-            "cached": 0
+            "successful": 13,
+            "cached": 12
           },
           {
             "stage": "typecheck",
             "successful": 34,
-            "cached": 10
+            "cached": 33
           },
           {
             "stage": "test",
             "successful": 28,
-            "cached": 13
+            "cached": 27
           },
           {
             "stage": "build",
             "successful": 19,
-            "cached": 13
+            "cached": 19
           }
         ]
       },
@@ -2785,16 +2890,16 @@
         "exitCode": 0,
         "passed": 12,
         "total": 12,
-        "responses": 110,
+        "responses": 111,
         "byStatus": {
-          "200": 103,
+          "200": 104,
           "201": 7
         },
         "unexpected": 0,
         "pageErrors": 0,
         "workspace503": 0,
-        "receipt": "/private/var/folders/mk/04lk3njj0nv3hhwsxq0328sc0000gn/T/openbot-ui-acceptance-1791470612929/receipt.json",
-        "log": "/private/tmp/openbot-p3-completion-ui-fixed.log"
+        "receipt": "/private/var/folders/mk/04lk3njj0nv3hhwsxq0328sc0000gn/T/openbot-ui-acceptance-1791473162892/receipt.json",
+        "log": "/private/tmp/openbot-p3-completion-upload-ui.log"
       },
       "uiRegression": {
         "failedReceipt": "/private/var/folders/mk/04lk3njj0nv3hhwsxq0328sc0000gn/T/openbot-ui-acceptance-1791470315013/receipt.json",
@@ -2818,7 +2923,10 @@
         "cause": "CI started without apps/server-ts/dist: root script typecheck did not build its TS acceptance dependencies, and Python-only contracts eagerly imported compiled TS qualification modules.",
         "failedHead": "b913c01a0c5f01abeb8cc50051080a74f3f3669d",
         "failedRun": "https://github.com/Peerframe/openbot/actions/runs/37796544028",
-        "failedJobs": ["validate", "Installed harness, Python quality and Work contract"],
+        "failedJobs": [
+          "validate",
+          "Installed harness, Python quality and Work contract"
+        ],
         "repair": "Build server-ts before script typecheck and load TS qualification modules only in the selected TS path. No product runtime source changed.",
         "coldPython": {
           "exitCode": 0,
@@ -2859,13 +2967,83 @@
           "log": "/private/tmp/openbot-p3-completion-cold-mixed.log"
         },
         "productFingerprintsUnchanged": 641
+      },
+      "httpsBeforeUploadRepair": {
+        "exitCode": 0,
+        "contracts": 270,
+        "additionalArtifactChecks": 19,
+        "boundaryChecks": 8,
+        "log": "/private/tmp/openbot-p3-completion-https.log",
+        "ownership": "Real SQL, authorization, rollback, Python-stopped ownership and explicit same-data reverse qualifications executed."
+      },
+      "uiBeforeUploadRepair": {
+        "exitCode": 0,
+        "passed": 12,
+        "total": 12,
+        "responses": 110,
+        "byStatus": {
+          "200": 103,
+          "201": 7
+        },
+        "unexpected": 0,
+        "pageErrors": 0,
+        "workspace503": 0,
+        "receipt": "/private/var/folders/mk/04lk3njj0nv3hhwsxq0328sc0000gn/T/openbot-ui-acceptance-1791470612929/receipt.json",
+        "log": "/private/tmp/openbot-p3-completion-ui-fixed.log"
+      },
+      "fullCheckBeforeUploadRepair": {
+        "exitCode": 0,
+        "log": "/private/tmp/openbot-p3-completion-final-check.log",
+        "ts": 124,
+        "desktopPassed": 578,
+        "desktopPlatformSkipped": 3,
+        "web": 692,
+        "nodePassed": 129,
+        "nodePlatformSkipped": 3,
+        "tasks": [
+          {
+            "stage": "prerequisite-build",
+            "successful": 10,
+            "cached": 0
+          },
+          {
+            "stage": "typecheck",
+            "successful": 34,
+            "cached": 10
+          },
+          {
+            "stage": "test",
+            "successful": 28,
+            "cached": 13
+          },
+          {
+            "stage": "build",
+            "successful": 19,
+            "cached": 13
+          }
+        ]
+      },
+      "rejectedUploadRepair": {
+        "failedHead": "da12a8a2cb1560ab791683d241fa77e69872f140",
+        "failedRun": "https://github.com/Peerframe/openbot/actions/runs/37798201281",
+        "failedJob": "Python and mixed TS Desktop Preview (macOS arm64)",
+        "cause": "Early 413/Connection-close raced a still-uploading near-limit2MiB request and produced ECONNRESET in the packaged portability contract.",
+        "repair": "Discard rejected JSON without parsing/retaining it, at most the operation limit plus64KiB, with the unchanged5s deadline and cancellation. Larger bodies still stop immediately.",
+        "beforeRegression": "/private/tmp/openbot-p3-rejected-upload-before.log",
+        "afterRegression": "/private/tmp/openbot-p3-rejected-upload-after.log",
+        "focusedPassed": 12,
+        "finalFullCheckExitCode": 0,
+        "finalHttpsExitCode": 0,
+        "finalUiExitCode": 0,
+        "stagedAndPackagedExitCode": 0,
+        "source": "https://github.com/nodejs/node/blob/v22.22.2/lib/_http_server.js#L1007-L1039"
       }
     },
     "native": {
       "stageExitCode": 0,
-      "stagedProbe": "/private/tmp/openbot-p3-completion-native-smoke.json",
+      "stagedProbe": "/private/tmp/openbot-p3-completion-upload-native.json",
       "packageExitCode": 0,
-      "packagedProbe": "/private/tmp/openbot-p3-completion-packaged-smoke.json",
+      "packagedProbe": "/private/tmp/openbot-p3-completion-upload-packaged.json",
       "manifest": "openbot.desktop.ts-control/v7",
       "preview": "apps/desktop/out/ts-product/OpenBot TS Preview-darwin-arm64/OpenBot TS Preview.app",
       "asarSha256": "9735ac442de5a7b4660fb56b80512439aef7cdc33e6a78ee5bc70a238a43fa65",
@@ -2873,10 +3051,10 @@
       "resourceChecksEach": 34,
       "portabilityChecksEach": 13,
       "matchingSourceAndPackageFiles": 641,
-      "fingerprints": "/private/tmp/openbot-p3-completion-closure-fingerprints.json",
+      "fingerprints": "/private/tmp/openbot-p3-completion-upload-fingerprints.json",
       "previousRunnablePreview": "apps/desktop/out/ts-product-model-baseline/OpenBot TS Preview-darwin-arm64/OpenBot TS Preview.app",
       "previousRuntime": "apps/desktop/out/ts-product-model-runtime-baseline",
-      "incrementalStaging": "After normal v7 staging, synchronized the two changed compiled product modules and their three source maps; all641 files matched source/stage/package. Both actual payload probes passed."
+      "incrementalStaging": "Synchronized the single changed write-input compiled module and two source maps; all641 source/stage/package fingerprints verified. Both actual payload probes pass after the repair."
     },
     "sourceFingerprints": [
       {
@@ -3152,6 +3330,10 @@
         "sha256": "9c042bcf4473762921d9f1280f52624ee0e373a25f1d1f61115fe4833aba893b"
       },
       {
+        "path": "apps/server-ts/src/primary-bot-write.test.ts",
+        "sha256": "744238f3cffe5192aab4313697af627f9154c86bc51dff06d9677cb109e6463c"
+      },
+      {
         "path": "apps/server-ts/src/primary-bot-write.ts",
         "sha256": "7d0c0ceb538ea23b152eee6bf3ead2a83123cbfccc12d3d3c5f10cd899a710da"
       },
@@ -3229,7 +3411,7 @@
       },
       {
         "path": "apps/server-ts/src/write-input.ts",
-        "sha256": "a4392cb2a9d8306e26a8be9fcc49d554cf2cfc334fdf8c194f3358b4deaf92b7"
+        "sha256": "f91e25196e18eae5041851e36ff1d7e78e91c70233d48f3353bcc6484a0c30c5"
       },
       {
         "path": "package-lock.json",
@@ -3309,8 +3491,26 @@
       "installedAsarSha256": "e1effed06195fed8bd9269b2a7c8447562156ac8a216ae4b81ae35cc316432e0",
       "claudeUiUntouched": true
     },
-    "uncommittedOwnership": "This chat is the sole implementer; no product writers remain. productImplementationHead identifies unchanged packaged runtime code. Cold-build workflow repair and these updated fingerprints are recorded together. Use the actual PR HEAD for hosted acceptance. No merge authorized before unified evaluation.",
-    "productImplementationHead": "704dd4dbd5c10e11322859e2d2b35f5edf50e49c",
-    "qualificationRepairParentHead": "b913c01a0c5f01abeb8cc50051080a74f3f3669d"
+    "uncommittedOwnership": "This chat is the sole implementer; no product writers remain. Product base, cold-build repair and rejected-upload repair are recorded together with exact source fingerprints. Use the actual PR HEAD for hosted acceptance. No merge authorized before unified evaluation.",
+    "qualificationRepairParentHead": "b913c01a0c5f01abeb8cc50051080a74f3f3669d",
+    "productImplementationBaseHead": "704dd4dbd5c10e11322859e2d2b35f5edf50e49c",
+    "uploadRepairParentHead": "da12a8a2cb1560ab791683d241fa77e69872f140",
+    "nativeBeforeUploadRepair": {
+      "stageExitCode": 0,
+      "stagedProbe": "/private/tmp/openbot-p3-completion-native-smoke.json",
+      "packageExitCode": 0,
+      "packagedProbe": "/private/tmp/openbot-p3-completion-packaged-smoke.json",
+      "manifest": "openbot.desktop.ts-control/v7",
+      "preview": "apps/desktop/out/ts-product/OpenBot TS Preview-darwin-arm64/OpenBot TS Preview.app",
+      "asarSha256": "9735ac442de5a7b4660fb56b80512439aef7cdc33e6a78ee5bc70a238a43fa65",
+      "scope": "unsigned macOS arm64 API-only Preview; disposable data and synthetic encryption. No installation, Keychain, GUI or live Worker/Temporal/browser qualification.",
+      "resourceChecksEach": 34,
+      "portabilityChecksEach": 13,
+      "matchingSourceAndPackageFiles": 641,
+      "fingerprints": "/private/tmp/openbot-p3-completion-closure-fingerprints.json",
+      "previousRunnablePreview": "apps/desktop/out/ts-product-model-baseline/OpenBot TS Preview-darwin-arm64/OpenBot TS Preview.app",
+      "previousRuntime": "apps/desktop/out/ts-product-model-runtime-baseline",
+      "incrementalStaging": "After normal v7 staging, synchronized the two changed compiled product modules and their three source maps; all641 files matched source/stage/package. Both actual payload probes passed."
+    }
   }
 }
