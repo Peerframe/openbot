@@ -2581,7 +2581,7 @@
     }
   },
   "currentP3IdentityProductCandidate": {
-    "status": "qualification-in-progress",
+    "status": "locally-qualified-ready-to-push",
     "branch": "codex/ts-control-plane-p3-completion",
     "baseHead": "9afef0f0",
     "phaseComplete": false,
@@ -2656,8 +2656,6 @@
       }
     },
     "pending": [
-      "staged and packaged native smoke",
-      "offline credential scan",
       "push and hosted CI"
     ],
     "remainingP3": "Model services and credentials; Bot creation/deletion and member removal; settings; workspace/SSE/progress/audit; files/storage and maintenance; Employee knowledge and portability; automations; plugins; Node identity and browser product groups.",
@@ -2669,6 +2667,133 @@
       "originalCheckoutDirtyEntries": 172,
       "installedAsarSha256": "e1effed06195fed8bd9269b2a7c8447562156ac8a216ae4b81ae35cc316432e0",
       "claudeUiUntouched": true
-    }
+    },
+    "implementationHead": "df4bb350c63f1b3c9a129c882b15e4686837160c",
+    "native": {
+      "stageExitCode": 0,
+      "stageLog": "/private/tmp/openbot-p3-completion-identity-stage.log",
+      "stageHostNode": "26 (repository-supported build host); product Node24.21.0",
+      "stagedProbe": {
+        "exitCode": 0,
+        "receipt": "/private/tmp/openbot-p3-completion-identity-native-smoke.json"
+      },
+      "packageExitCode": 0,
+      "packageLog": "/private/tmp/openbot-p3-completion-identity-package.log",
+      "packagedProbe": {
+        "exitCode": 0,
+        "receipt": "/private/tmp/openbot-p3-completion-identity-packaged-smoke.json"
+      },
+      "matchingSourceAndPackageFiles": 254,
+      "fingerprints": "/private/tmp/openbot-p3-completion-identity-closure-fingerprints.json",
+      "preview": "apps/desktop/out/ts-product/OpenBot TS Preview-darwin-arm64/OpenBot TS Preview.app",
+      "asarSha256": "8d57f42606ca5e128922df117632440e6f6cf58f34b544b3c534c4fe760fc457",
+      "scope": "unsigned macOS arm64 API-only Preview; disposable data/synthetic encryption; no Keychain/GUI/Worker/Temporal claim"
+    },
+    "credentialScan": {
+      "sourceHead": "df4bb350c63f1b3c9a129c882b15e4686837160c",
+      "scope": "single local branch entire ancestry; offline; no remote verification",
+      "scannerExitCode": 183,
+      "checkerExitCode": 0,
+      "exactHistoricalFixtures": 20,
+      "newFindings": 0,
+      "newExceptions": 0,
+      "log": "/private/tmp/openbot-p3-completion-identity-credential-check.log"
+    },
+    "review": {
+      "scope": "fixed implementation diff from9afef0f0, shared contracts, actual consumers and acceptance",
+      "reviewer": "implementing agent; not independent external audit",
+      "remainingActionableFindings": 0,
+      "limitations": [
+        "remaining P3 groups",
+        "hosted CI",
+        "native scope above"
+      ]
+    },
+    "sourceFingerprints": [
+      {
+        "path": "apps/desktop/scripts/smoke-python-product.ts",
+        "sha256": "fc56e358d2d7373866947edb84d744af7bc443cefd9b6c79ca952c5bc280a872"
+      },
+      {
+        "path": "apps/desktop/src/python-server.ts",
+        "sha256": "7595ff34d96cf9fb25d0a1dd48857949a78c2fff478dfe5e0b09f3f1c7e84f45"
+      },
+      {
+        "path": "apps/desktop/src/ts-product-manifest.ts",
+        "sha256": "2b15980fbe545480623dc6eb8dd9cf2b5cd6365c617d463679bb4edf2ee0aaf3"
+      },
+      {
+        "path": "apps/desktop/src/ts-server.test.ts",
+        "sha256": "705ecfd061d26f8ff6c292986b2029e94024612cd6b19a9bcba5bc6e9542f7ce"
+      },
+      {
+        "path": "apps/desktop/src/ts-server.ts",
+        "sha256": "7426fef7c2e148410e168d122ae166173b5d97a9ed8b2fe585226f27968f98b0"
+      },
+      {
+        "path": "apps/server-python/scripts/serve.py",
+        "sha256": "c8ce8c42f5d96460106ae8a0da90c7ea53d591f25dfb0edcbfc72962be431bd6"
+      },
+      {
+        "path": "apps/server-python/src/openbot_server/app.py",
+        "sha256": "a9bae8ccbb4fe1efe2f35eaee5442252b10db5eeb00bd469e73718f37cfc6a6d"
+      },
+      {
+        "path": "apps/server-python/src/openbot_server/product_control.py",
+        "sha256": "940339facb540530fc72d6e3b9ea02e4a138f357dea6205e6f6a438a9c6f2899"
+      },
+      {
+        "path": "apps/server-python/src/openbot_server/ts_product_events.py",
+        "sha256": "9a5197b3e05b8ab97c609d6e769517a50101660b9a5403190a13f12b87278b5e"
+      },
+      {
+        "path": "apps/server-python/src/openbot_server/ts_product_ownership.py",
+        "sha256": "e42879e1b68c01b37b8a1e39832fcf2b4f5ca9078443cc45fb5bdd21e919aecb"
+      },
+      {
+        "path": "apps/server-python/tests/test_ts_product_events.py",
+        "sha256": "b7ed46c27182130fe05383eaf18aaa71deefe4c6db90a00625fab76ea915486a"
+      },
+      {
+        "path": "apps/server-ts/src/app.ts",
+        "sha256": "30a3fa449c34b070f7e262db3bc1cceedc6b58145a53e0eadd90fe662b04d8c2"
+      },
+      {
+        "path": "apps/server-ts/src/config.ts",
+        "sha256": "2c4b07d7d8a40ebdf41f6238b6b2b231d4e180b6f1b69469d658d81560d5e65c"
+      },
+      {
+        "path": "apps/server-ts/src/owner-transaction.ts",
+        "sha256": "423ea62befef8ddad0e22c67861b5d346ed996dced28a2e21f013a4f2c3e307f"
+      },
+      {
+        "path": "apps/server-ts/src/product-http.ts",
+        "sha256": "302920addca90f6f3901262d28eecea0f08b6086a0da42d6fdbfabdb2b75f7f8"
+      },
+      {
+        "path": "apps/server-ts/src/product-identity.test.ts",
+        "sha256": "20d6f4e87d78658f1f5e7b4d93983e1127bac244f2e50aa30910ff42fd8857fc"
+      },
+      {
+        "path": "apps/server-ts/src/product-identity.ts",
+        "sha256": "0fc4e34765089f6e95579fb861d0d3927fce8b1c92fa6a2780d611132f5a5ec4"
+      },
+      {
+        "path": "apps/server-ts/src/write-input.ts",
+        "sha256": "ee01fb88dfee6b5d7e4ee8faadf9e1662485c23aeb016f565314f7c910951aa9"
+      },
+      {
+        "path": "scripts/test-contracts-python.ts",
+        "sha256": "958254f3eba8cecb4e7de2f6e9b0af6d455a6a12981b1fcacd09ec3525bb4765"
+      },
+      {
+        "path": "scripts/ts-product-identity-acceptance.ts",
+        "sha256": "f47b5f061e5e20fc88a2e1bb4681289326b5cac903c3fa7534e9fe57024b4073"
+      },
+      {
+        "path": "scripts/ui-acceptance.ts",
+        "sha256": "afa57c0337faa9bdc74b10bc2dbabd9ff9015dd0aa460c1ad72ca90dff300606"
+      }
+    ]
   }
 }

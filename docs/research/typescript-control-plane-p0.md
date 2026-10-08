@@ -362,7 +362,10 @@ gates; Work/harness/Temporal remain P4 and Python retirement remains P5.
 Real HTTP and verified-CA HTTPS control50 plus read14/write17/auth13/channel-read9/product-identity10
 pass. The complete mixed HTTP suite passes270 plus19 artifact checks. Python focused60 and the exact
 candidate's UI12/12 pass:103 responses (96×200,7×201), no unexpected response, page error or workspace503.
-Full checks, native qualification, source fingerprints and publication status are recorded under
+Full `npm run check` passes (TS56, Desktop578 with3 platform skips, Web692). Staged and actual packaged
+Preview restart/cleanup probes pass;254 source/compiled files match both closures. Offline scanning
+of implementation `df4bb350` passes20 exact historical fixtures with no new finding or exception.
+Source fingerprints and publication status are recorded under
 `currentP3IdentityProductCandidate` in the [single receipt](typescript-control-plane-p2-native.json).
 The previous channel-read implementation `5c2190cb` retains its original evidence in that receipt;
 those earlier results are not relabeled as new runs. Claude's Step43 UI is outside this change.

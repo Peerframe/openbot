@@ -234,8 +234,9 @@ P5 核对安装/CI 依赖清单，并同口径比较最终资源。
 
 真实 HTTP 与受信 CA HTTPS control50通过，两种传输上的读取14、主Bot写入17、认证13、频道读取9、
 本组10项均通过；完整混合 HTTP270及额外附件19通过。Python定向60项通过；精确候选界面PASS12/12，
-103次响应（96×200、7×201），异常响应、页面错误、workspace503均为0。整仓检查、桌面包验证、源码指纹
-及推送状态统一记录在[单一收据](typescript-control-plane-p2-native.json)的 `currentP3IdentityProductCandidate`。
+103次响应（96×200、7×201），异常响应、页面错误、workspace503均为0。完整 `npm run check` 通过（TS56、Desktop578及3项平台跳过、Web692）。
+运行资源与实际Preview包重启/清理探针均通过，254个源码/编译文件与两份资源一致。实现 `df4bb350`
+离线扫描仅20条已审核历史示例，无新增发现或例外。源码指纹及推送状态统一记录在[单一收据](typescript-control-plane-p2-native.json)的 `currentP3IdentityProductCandidate`。
 前一频道读取实现 `5c2190cb` 的历史证据保留，不冒充本轮新执行。Claude第43步界面不在本次改动范围。
 
 ### P3 会话与身份编辑决策（2026-10-08）
