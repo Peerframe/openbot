@@ -64,6 +64,8 @@ export async function launchTsProductServer(
     "apps/server-ts/dist/app.js",
     "apps/server-ts/dist/tls.js",
     "apps/server-ts/dist/transcription-read.js",
+    "apps/server-ts/dist/primary-bot-write.js",
+    "apps/server-ts/dist/write-input.js",
     "node_modules/postgres/package.json",
     "node_modules/fastify/package.json",
     "node_modules/@fastify/reply-from/package.json",
@@ -79,6 +81,7 @@ export async function launchTsProductServer(
     source,
     privatePort,
     TS_CANDIDATE.readGroup,
+    TS_CANDIDATE.writeGroup,
   );
   let child: ChildProcessByStdio<Writable, null, null>;
   try {
@@ -89,6 +92,8 @@ export async function launchTsProductServer(
         LANG: "C.UTF-8",
         LC_ALL: "C.UTF-8",
         OPENBOT_TS_READ_GROUP: TS_CANDIDATE.readGroup,
+        OPENBOT_TS_WRITE_GROUP: TS_CANDIDATE.writeGroup,
+        OPENBOT_TS_WRITE_ALLOWED_ORIGINS: env.OPENBOT_CONTROL_ALLOWED_ORIGINS as string,
         OPENBOT_TS_READ_ALLOWED_ORIGINS: env.OPENBOT_CONTROL_ALLOWED_ORIGINS as string,
         OPENBOT_TS_DATABASE_URL: env.OPENBOT_CONTROL_DATABASE_URL as string,
         OPENBOT_TS_HOST: "127.0.0.1",

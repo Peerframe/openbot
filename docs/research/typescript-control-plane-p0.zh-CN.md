@@ -224,24 +224,74 @@ P5 核对安装/CI 依赖清单，并同口径比较最终资源。
 
 
 工作树为 `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`，当前分支
-`codex/ts-control-plane-p3-settings`，基于已合并 main
-`d747a327d2fce77df02cd9a1e7455ea4d311efcc`。按所有者“继续”的授权合并了 PR200；
+`codex/ts-control-plane-p3-primary-bot`，在另行批准 PR205 合并后，已整合最新 main
+`fe1520dcf997ed31452ea63c37ef5ea488cd7187`。新 main 的文件树与已验收 PR205 的 `b62c22fe`
+及托管测试合并树相同。按所有者“继续”的授权合并了 PR200；
 其树 `a0fc4e6ed0baa011f9b0829b9c78edb8538f161a` 与已验收候选相同，
 [CI37561911353](https://github.com/Peerframe/openbot/actions/runs/37561911353) 的17项任务全通过。
 main [CI37613802756](https://github.com/Peerframe/openbot/actions/runs/37613802756) 首次运行在直接
 Python 的 MCP 资源/提示词契约遇到10秒超时。第二次的直接 Python all/publisher/models 已通过，
 随后 TS 混合入口在同一普通 MCP 内容读取循环（`plugins.ts:296`）超时；原断言和期限未改变。
-两种入口的观测不能证明 TS 转发是原因。本地直接与混合 all 组通过，托管差异仍未解决，不再盲目重跑。这与此前 workspace503
+两种入口的观测不能证明 TS 转发是原因。PR205 修复共享 HTTP watcher 生命周期后，在 `b62c22fe` 的
+[CI37661699512](https://github.com/Peerframe/openbot/actions/runs/37661699512) 通过全部17项任务；此前失败保持为历史证据。这与此前 workspace503
 是两份独立证据。第43步侧栏王冠、头像和动画仍归 Claude；本轮没有发送消息或改动这些界面。
 保留原 dirty 工作区、已安装应用和用户数据。
 
-本轮 P3 候选只把 `GET /api/v1/settings/transcription` 交给 TS。PUT、会话签发/密码/撤销、设置与
+此前已发布的 PR205 候选只把 `GET /api/v1/settings/transcription` 交给 TS。PUT、会话签发/密码/撤销、设置与
 审计写入、模型解析、文档处理和 Temporal 继续归 Python。两边读取同一现有 PostgreSQL，共用严格
 响应契约；不改数据或结构，不加读取缓存、第二套身份来源或自动回退。配置默认 `none`；两边明确
 选择 `transcription` 时，Python 私有 GET 以 `operation_owned_by_ts` 拒绝。两边同时切回 `none`，
 同一地址/数据库/会话恢复转发，保留更新后的数据。Python 原实现仅保留在这段可反向切换的窗口，
 完整转写组的写入/消费者门槛通过后退役，P5 再删转发。带明确标记的原生候选使用该组，拒绝旧标记
 或缺失资源；候选不安装。
+
+### P3 主 Bot 选择决策（2026-10-08）
+
+下一候选仅迁移 Owner `PUT /api/v1/workspace/primary-bot`，承接 PR205 的 `b62c22fe`。
+PR205 在托管17/17与界面12/12通过后，所有者另行批准合并；2026-10-08 已合入 main `fe1520dc`。转写 PUT 依赖现有模型凭证解析，
+留到模型组一起迁移；本轮不增加模型密钥/凭证访问，也不改 Claude 负责的第43步界面。
+
+复用严格共享主 Bot 命令/投影、Python 的 Origin→会话→请求体校验顺序、Postgres.js3.4.9，
+以及 Owner READ COMMITTED、会话 SHARE 锁和提交前过期复查。保留 workspace-settings FOR UPDATE
+先于 Bot SHARE 的锁顺序、版本冲突/无变化/耗尽处理和原子 `SETTINGS_PRIMARY_BOT_UPDATED` 审计。
+身份创建/导入/删除仍由 Python 写入，遵循同一工作区优先顺序；主收件人选择不授予权限。
+[PostgreSQL17 行锁](https://www.postgresql.org/docs/17/explicit-locking.html)与
+[Fastify 请求体生命周期](https://fastify.dev/docs/v5.6.x/Reference/ContentTypeParser/)支持现有事务顺序和
+原始流入口。只有这一接口在 Origin/会话校验后解析最多1024字节 JSON，其他请求体原样转发。
+不增加依赖、结构/数据迁移或复制上游源码。
+
+继续转发 Python PUT 无法交付这一迁移；另加偏好服务/缓存会增加权限与失效成本。因此在现有 TS
+入口增加限定 SQL 写入方。两边明确选定 `primary-bot` 写入组后，私有 Python 拒绝手动保存；默认和
+成对反向切换保留 Python 原实现与更新后的事实。正反例、并发/回滚/审计、真实 TS 界面12/12和原生
+候选门槛通过前，不公开切换；不自动回退、重试或启动新后台写入方。整合验收和有界回退窗口后退役
+Python 手动接口，身份生命周期中的自动更新保留到对应接口组迁移。
+
+主 Bot 候选本地验收：Node24.21.0 下 `npm run check` 以0退出。最终 Turbo 成功/缓存数为
+前置构建10/2、类型33/10、测试27/12、构建19/13；此前同一产品源码的成功运行实际执行
+TS41、Desktop578（3项跳过）、Web692、protocol461，不把缓存输出当作新执行。
+私有代理22和 Desktop 资源选择5通过。混合 all 通过270契约+19制品+14读取+17写入，包含
+MCP30和实际 Web/Desktop 主 Bot PUT。临时 CA 的 HTTPS control 通过50+14+17。最终 control
+补充真实未配对代理字符/NUL 拒绝，仍通过50+14+17，产品代码没有改变。
+
+真实 TS 整体界面12/12通过，共101响应（94×200、7×201），豁免、未预期响应、页面错误及
+workspace503均为0。使用现有下拉框保存另一个主 Bot，并在 TS 入口重启后读回一致。
+报告和截图：`/private/tmp/openbot-p3-primary-ui/openbot-ui-acceptance-1791400019338`。
+此前10/12暴露新增保存按钮定位保留了外层 dialog 前缀；保留失败报告，改成已观察的最近 section
+后重新运行，未放宽错误门槛。没有改产品界面文件，也不宣称此前间歇 workspace503 已修复。
+
+staging 与实际未签名、未安装 macOS arm64 API Preview 均通过主 Bot 保存/重启、原转写读取、
+父进程 EOF/任一子进程失败时成对退出及 PostgreSQL 清理。59个 Python 锁定分发与 pip 完整性通过。
+v2 标记明确选择写入方，staging/包内模块逐字节相同；ASAR SHA256 为
+`5b1b63b8962d037d1a85c9b32296c9f1f2fcdc26e4d98172dd9157eef02c95e8`。
+先核验 PR205 HTTP 模块指纹，再把其完整 API 预览保留到 `apps/desktop/out/ts-product-read-baseline`；
+完整 P2 Worker-companion 基线另存保留。已安装应用、原 dirty 文件、Claude 第43步、用户配置及系统信任未改。
+
+[唯一收据](typescript-control-plane-p2-native.json)当前指向 `currentP3PrimaryBotCandidate`，含源码指纹和
+准确报告。这是本地已验收、待发布候选，不代表阶段完成。所有者已明确批准新分支推送、以
+`main` 为目标创建草稿 PR，并另行批准先合并 PR205。整合提交 `ed568b80` 与本地已验收
+`a0189dc0` 的文件树完全相同，21份源码指纹再次核验通过；随后只更新本检查点与授权记录，
+原 HTTP/界面/包内证据仍保持其准确范围。新候选仍需托管检查，合并新 PR 须另行授权；Python
+手动写接口保留在有界反向切换窗口。准确托管源码与运行结果记录在新 PR 检查及正文。其他 P3 接口组及 P4/P5 继续待迁。
 
 ### P3 转写读取决策与安全检查（2026-10-07）
 

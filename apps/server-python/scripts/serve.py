@@ -44,6 +44,10 @@ def main():
     if ts_read_group not in ("none", "transcription") or (ts_read_group != "none" and
             (authority != "product" or proxy_address is None)):
         raise SystemExit("TS read ownership requires explicit private product proxy mode.")
+    ts_write_group = os.environ.get("OPENBOT_CONTROL_TS_WRITE_GROUP", "none")
+    if ts_write_group not in ("none", "primary-bot") or (ts_write_group != "none" and
+            (authority != "product" or proxy_address is None)):
+        raise SystemExit("TS write ownership requires explicit private product proxy mode.")
     owner_name = os.environ.get("OPENBOT_OWNER_NAME", "Owner")
     auth = None
     origins = ()
@@ -185,7 +189,7 @@ def main():
                                                       automations=product.automations)
     app = create_app(PostgresReadStore(dsn), owner_name=owner_name,
                      secure_cookies=cookie_mode == "secure", allowed_origins=origins, auth=auth,
-                     proxy_address=proxy_address, public_origin=public_origin, ts_read_group=ts_read_group,
+                     proxy_address=proxy_address, public_origin=public_origin, ts_read_group=ts_read_group, ts_write_group=ts_write_group,
                      identity=PostgresIdentityStore(dsn,model_connections=product.model_connections if product else None) if authority in ("identity", "tasks", "work", "product") else None, conversations=conversations, profiles=profiles, tasks=tasks, run_commands=run_commands, work=work, product=product)
     web_root = os.environ.get("OPENBOT_CONTROL_WEB_ROOT")
     if web_root:

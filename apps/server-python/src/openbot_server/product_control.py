@@ -143,7 +143,7 @@ class OwnerProduct:
 
 
 
-def register_product_routes(app,product,read_store,*,secure_cookies,allowed_origins,ts_read_group="none"):
+def register_product_routes(app,product,read_store,*,secure_cookies,allowed_origins,ts_read_group="none",ts_write_group="none"):
     if product.browser is not None:
         from .browser_routes import BROWSER_WRITE_ROUTES, register_browser_routes
         register_browser_routes(app,product.browser,secure_cookies=secure_cookies,allowed_origins=allowed_origins)
@@ -181,6 +181,7 @@ def register_product_routes(app,product,read_store,*,secure_cookies,allowed_orig
     async def workspace(value,_path,_body,_request): return await product.workspace.snapshot(value)
     route('/api/v1/workspace','GET',workspace)
     async def primary_bot(value,_path,body,_request):
+        if ts_write_group == "primary-bot": raise ControlError(503,"operation_owned_by_ts")
         return await product.workspace_settings.update(value,body)
     route('/api/v1/workspace/primary-bot','PUT',primary_bot,limit=1024)
     from .run_progress import PostgresRunProgress, selected_steps

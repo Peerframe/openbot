@@ -346,20 +346,22 @@ same-scope resource comparison. See ADR-0050 for the detailed gates and Owner ap
 
 
 Active worktree: `/Users/yxflc/.codex/worktrees/ts-control-plane-p2/openbot`, branch
-`codex/ts-control-plane-p3-settings`, based on merged main
-`d747a327d2fce77df02cd9a1e7455ea4d311efcc`. PR200 was merged after the Owner's continuation
+`codex/ts-control-plane-p3-primary-bot`, integrated with latest main
+`fe1520dcf997ed31452ea63c37ef5ea488cd7187` after the separately authorized PR205 merge.
+The new main tree equals qualified PR205 head `b62c22fe` and the hosted tested merge tree. PR200 was merged after the Owner's continuation
 approval. Its tree `a0fc4e6ed0baa011f9b0829b9c78edb8538f161a` is identical to the qualified
 PR candidate: all17 jobs at [CI37561911353](https://github.com/Peerframe/openbot/actions/runs/37561911353).
 Main [CI37613802756](https://github.com/Peerframe/openbot/actions/runs/37613802756) initially failed
 in direct Python MCP resource/prompt contracts with a10-second timeout. Attempt2 passed direct
 Python all/publisher/models, then timed out at the same normal MCP content-read loop through the
 mixed TS entry (`plugins.ts:296`). Assertions/timeouts are unchanged. The two entry observations do
-not establish a TS-forwarding cause; no further blind rerun is made. Local direct and mixed all
-contracts pass, so the hosted difference remains unresolved. This is separate from the previously reported workspace503.
+not establish a TS-forwarding cause. The shared HTTP watcher correction in PR205 later passes all17
+[CI37661699512](https://github.com/Peerframe/openbot/actions/runs/37661699512) jobs at head `b62c22fe`;
+the previous failed runs remain historical evidence. This is separate from the previously reported workspace503.
 Step43's sidebar crown/avatar/animation remains Claude-owned; no messages or UI edits are made here.
 The original dirty checkout, installed app and user profiles remain preserved.
 
-The finite P3 candidate transfers only `GET /api/v1/settings/transcription` to TS. Python retains
+The preceding published PR205 candidate transfers only `GET /api/v1/settings/transcription` to TS. Python retains
 PUT, session issuance/password/revocation, settings/audit writes, model resolution, processing and
 Temporal. Both processes use the same existing PostgreSQL and shared strict response schema.
 No data/schema migration, read cache, secondary auth source or automatic fallback is introduced.
@@ -369,6 +371,68 @@ on the same address/database/session, including newer data. Python's implementat
 only for this bounded reverse-switch window; retire it when the whole transcription cohort's
 write/consumer gates pass, then remove the forwarding adapter in P5. The marked, uninstalled native
 candidate uses this reviewed cohort and refuses old/incomplete resource selection.
+
+### P3 primary Bot selection decision (2026-10-08)
+
+The next finite candidate moves only Owner `PUT /api/v1/workspace/primary-bot`, on top of qualified
+PR205 head `b62c22fe`. The Owner separately authorized its merge, completed on2026-10-08
+as main `fe1520dc`, after17/17 hosted checks and UI12/12. Transcription PUT stays with its existing model credential resolver until the model group;
+this checkpoint does not add credential/key access or change Claude-owned Step43 presentation.
+
+Reuse the existing strict shared primary-Bot command/projection, Python Origin-before-cookie/body
+preflight, Postgres.js3.4.9, and Owner READ COMMITTED/session SHARE/final-expiry guard. Preserve
+workspace-settings FOR UPDATE before Bot SHARE, revision/no-op/exhaustion behavior, and atomic
+`SETTINGS_PRIMARY_BOT_UPDATED` payload. Identity create/import/delete retain their Python writer
+and the same workspace-first lock order; selecting a primary recipient grants no capabilities.
+The [PostgreSQL17 row-lock contract](https://www.postgresql.org/docs/17/explicit-locking.html) and
+[Fastify content parser lifecycle](https://fastify.dev/docs/v5.6.x/Reference/ContentTypeParser/)
+confirm the retained transaction order and raw-stream seam. Use that seam only for this bounded
+1024-byte JSON operation after Origin/session preflight; forward every other body unchanged.
+No new dependency, schema/data migration or upstream source copy.
+
+A forwarded Python PUT would keep the operation unmigrated. A separate preference service or
+cache would add authority and invalidation costs. Select a narrow SQL writer inside the existing
+TS entry. Both services must explicitly select `primary-bot` write ownership; private Python
+quarantines that manual operation. Default and explicit paired reverse keep Python's runnable
+implementation and newer SQL facts. No automatic fallback, retry, new background owner or public
+switch occurs before positive/negative, concurrency/rollback/audit, actual TS UI12/12 and native
+candidate gates. The retained Python manual writer exits after accepted integration and a bounded
+reverse window; automatic identity lifecycle updates remain until their own cohort migrates.
+
+Current primary-Bot candidate qualification: `npm run check` exits0 under Node24.21.0. Final
+Turbo successful/cached counts are upstream10/2, types33/10, tests27/12, build19/13. The earlier
+successful run on the same product source executes TS41, Desktop578 with3 skips, Web692 and
+protocol461; do not count cached text as a new execution. Focused private-proxy22 and Desktop
+selection5 pass. Mixed all passes270 contracts+19 artifact+14 read+17 write checks, including MCP30
+and actual Web/Desktop primary-Bot PUT. Verified-CA HTTPS control passes50+14+17. Final control
+adds real invalid-surrogate/NUL refusal and passes50+14+17 without changing product code.
+
+Actual TS whole-interface acceptance passes12/12 with101 responses (94×200,7×201), no allowlisted
+or unexpected responses, page errors or workspace503. It saves another primary Bot through the
+existing dropdown and verifies the same selection after TS-entry restart. Report/screenshots:
+`/private/tmp/openbot-p3-primary-ui/openbot-ui-acceptance-1791400019338`. An earlier10/12 run exposed
+an incorrect relative save-button locator; retain its report, fix the observed nearest-section
+lookup, and rerun unchanged error gates. No product UI files are changed. The older intermittent
+workspace503 is not claimed fixed.
+
+Native staging and the actual unsigned/uninstalled macOS arm64 API Preview both pass primary-Bot
+save/restart, existing transcription read, parent-EOF/paired child-exit and PostgreSQL cleanup.
+The59-distribution Python closure/pip integrity pass. The v2 marker explicitly selects the writer;
+stage/package modules match, ASAR SHA256 is
+`5b1b63b8962d037d1a85c9b32296c9f1f2fcdc26e4d98172dd9157eef02c95e8`.
+Preserve PR205's complete API Preview at `apps/desktop/out/ts-product-read-baseline`; its qualified
+HTTP module hash is verified before moving. Keep the full P2 Worker-companion baseline separately.
+No installed application, original dirty work, Claude Step43, user profile or OS trust is changed.
+
+The [single receipt](typescript-control-plane-p2-native.json) points to `currentP3PrimaryBotCandidate`
+with source fingerprints and exact reports. This is a local unpublished candidate, not a phase exit.
+The Owner explicitly approved this new branch push and draft PR against `main`, and separately
+authorized merging PR205 first. Integration commit `ed568b80` has the identical tree to locally
+qualified `a0189dc0`; all21 recorded source fingerprints were reverified. Subsequent edits update
+only these checkpoint/authorization records, so local HTTP/UI/native evidence retains its original
+scope. New hosted checks and separate authorization to merge the new PR remain; retain the Python
+manual writer for the bounded reverse window. Exact hosted source/run results will live in the new
+PR checks and body. P3's other groups and P4/P5 remain.
 
 ### P3 transcription read decision and security review (2026-10-07)
 

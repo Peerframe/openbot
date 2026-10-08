@@ -4,7 +4,11 @@ import { lstat, mkdtemp, readFile, realpath, rm, symlink, writeFile } from "node
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { transcriptionSettingsSchema } from "@openbot/protocol";
+import {
+  transcriptionSettingsSchema,
+  workspacePrimaryBotSchema,
+  workspaceSnapshotSchema,
+} from "@openbot/protocol";
 import {
   confirmProcessesStopped,
   launchThroughDisposableParent,
@@ -82,6 +86,34 @@ export async function smokePythonProduct(runtimeRoot: string) {
     const firstSettings = await readSettings();
     const firstPort = new URL(base).port;
     const headers = { Cookie: cookie, Origin: base, "Content-Type": "application/json" };
+    const readPrimary = async () => {
+      const response = await fetch(`${base}/api/v1/workspace`, {
+        headers: { Cookie: cookie! },
+        signal: AbortSignal.timeout(8000),
+      });
+      assert.equal(response.status, 200);
+      const snapshot = workspaceSnapshotSchema.parse(await response.json());
+      return { primaryBotId: snapshot.primaryBotId, revision: snapshot.revision };
+    };
+    const botResponse = await fetch(`${base}/api/v1/bots`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ name: "Native primary fixture", role: "assistant" }),
+      signal: AbortSignal.timeout(8000),
+    });
+    assert.equal(botResponse.status, 201);
+    const primaryBefore = await readPrimary();
+    assert(primaryBefore.primaryBotId);
+    const primarySave = await fetch(`${base}/api/v1/workspace/primary-bot`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({ botId: null, expectedRevision: primaryBefore.revision }),
+      signal: AbortSignal.timeout(8000),
+    });
+    assert.equal(primarySave.status, 200);
+    const primarySaved = workspacePrimaryBotSchema.parse(await primarySave.json());
+    assert.deepEqual(primarySaved, { primaryBotId: null, revision: primaryBefore.revision + 1 });
+
     const created = await fetch(`${base}/api/v1/channels`, {
       method: "POST",
       headers,
@@ -114,6 +146,7 @@ export async function smokePythonProduct(runtimeRoot: string) {
       ),
     );
     assert.deepEqual(await readSettings(), firstSettings);
+    assert.deepEqual(await readPrimary(), primarySaved);
     const nodes = await fetch(`${base}/api/v1/nodes`, { headers: { Cookie: cookie } });
     assert.equal(nodes.status, 200);
     assert.deepEqual(((await nodes.json()) as { nodes: unknown }).nodes, []);
@@ -157,6 +190,8 @@ export async function smokePythonProduct(runtimeRoot: string) {
       tsForwardingEntry: tsSelected,
       transcriptionReadRestartVerified: true,
       tsReadGroup: tsSelected ? "transcription" : "none",
+      primaryBotWriteRestartVerified: true,
+      tsWriteGroup: tsSelected ? "primary-bot" : "none",
       eitherProductExitStoppedPair: tsSelected,
       unsafeDirectoryRefusedAndPostgresStopped: true,
       executionConfigurationWithoutEngineRefusedAndPostgresStopped: true,
