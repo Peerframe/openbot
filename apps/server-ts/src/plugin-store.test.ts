@@ -1,3 +1,4 @@
+import { WorkConflict } from "@openbot/work";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { randomUUID } from "node:crypto";
@@ -203,4 +204,30 @@ it("retains public address bounds and refuses credentials, ambiguous numeric and
     "https://service.internal/mcp",
   ])
     expect(() => normalizePluginEndpoint(endpoint)).toThrow();
+});
+
+it("preserves a trusted read caller's control refusal while redacting corrupt store bytes", async () => {
+  const root = realpathSync(mkdtempSync(join(tmpdir(), "openbot-plugin-read-")));
+  try {
+    const path = join(root, "state.json"),
+      store = new PluginStore(path);
+    await store.verify();
+    const conflict = new WorkConflict("corrections_changed");
+    await expect(
+      store.withRead(async () => {
+        throw conflict;
+      }),
+    ).rejects.toBe(conflict);
+    expect(await store.withRead(async (s) => s.plugins.length)).toBe(0);
+    writeFileSync(path, "synthetic invalid private contents", { mode: 0o600 });
+    let called = false;
+    await expect(
+      store.withRead(async () => {
+        called = true;
+      }),
+    ).rejects.toMatchObject({ status: 503 });
+    expect(called).toBe(false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });

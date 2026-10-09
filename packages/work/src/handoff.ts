@@ -1,16 +1,16 @@
 import {
   boundedText,
   EngineAlreadyStarted,
+  type EnginePort,
+  type EngineSettings,
   engineReference,
+  type HandoffPort,
   validAttempt,
-  workIdentity,
   WORKFLOW_ID_PREFIX,
   WORKFLOW_TYPE,
   WorkConflict,
-  type EnginePort,
-  type EngineSettings,
-  type HandoffPort,
   type WorkIdentity,
+  workIdentity,
 } from "./contracts.js";
 
 export type DispatchResult = {

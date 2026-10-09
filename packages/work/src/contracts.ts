@@ -68,3 +68,22 @@ export function engineReference(namespace: string, runId: string): string {
   boundedText(runId, 128);
   return `temporal:${namespace}:${WORKFLOW_ID_PREFIX}${runId}`;
 }
+
+export const REPAIR_TYPE = "OpenBotClosedRepairTsV1";
+export const REPAIR_ID_PREFIX = "openbot-closed-repair-ts-v1-";
+export type RepairStart = WorkIdentity & { actionId: string; commandId: string };
+export function repairStart(value: unknown): RepairStart {
+  if (
+    !value ||
+    typeof value !== "object" ||
+    Array.isArray(value) ||
+    Object.keys(value).sort().join(",") !== "actionId,commandId,runId,taskId"
+  )
+    throw new WorkConflict("invalid_repair_start");
+  const input = value as RepairStart;
+  return {
+    ...workIdentity(input),
+    actionId: boundedText(input.actionId, 128),
+    commandId: boundedText(input.commandId, 128),
+  };
+}

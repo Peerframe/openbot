@@ -1,51 +1,55 @@
-import { BrowserSessions, browserRoutes } from "./product-browser.js";
-import { digest } from "./owner-auth-crypto.js";
-import { WorkerIdentities, nodeRoutes } from "./product-nodes.js";
-import { loadEmployeePublisher } from "./employee-publisher.js";
-import { portabilityRoutes } from "./employee-portability.js";
-import { workspaceRoutes } from "./product-workspace.js";
-import { ProductInvalidations, ProductStream, eventRoutes } from "./product-events.js";
-import { RuntimePort } from "./runtime-port.js";
-import { BotGreetings } from "./bot-greeting.js";
-import { creationRoutes } from "./identity-create.js";
-import { lifecycleRoutes } from "./identity-lifecycle.js";
-import { Plugins, pluginRoutes } from "./product-plugins.js";
-import { approvalRoutes } from "./product-approvals.js";
-import { automationRoutes } from "./product-automations.js";
-import { employeeKnowledgeRoutes } from "./employee-knowledge.js";
-import { AttachmentProcessing, processingRoutes } from "./attachment-processing.js";
-import { NodeAttachmentParser } from "./attachment-parser.js";
-import { AttachmentTranscription } from "./attachment-transcription.js";
-import { StorageService } from "./storage-service.js";
-import { storageRoutes } from "./product-storage.js";
 import { join } from "node:path";
-import { OwnerFiles } from "./owner-files.js";
-import { attachmentRoutes } from "./product-attachments.js";
 import type { Readable } from "node:stream";
 import {
-  browserHttpOperations,
-  nodeHttpOperations,
-  portabilityHttpOperations,
-  pluginHttpOperations,
   automationHttpOperations,
+  browserHttpOperations,
   controlHttpOperations,
   employeeHttpOperations,
   lifecycleHttpOperations,
+  nodeHttpOperations,
+  pluginHttpOperations,
+  portabilityHttpOperations,
   resourceHttpOperations,
+  workHttpOperations,
 } from "@openbot/protocol";
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { NodeAttachmentParser } from "./attachment-parser.js";
+import { AttachmentProcessing, processingRoutes } from "./attachment-processing.js";
+import { AttachmentTranscription } from "./attachment-transcription.js";
+import { BotGreetings } from "./bot-greeting.js";
 import type { EntryOptions } from "./config.js";
+import { employeeKnowledgeRoutes } from "./employee-knowledge.js";
+import { portabilityRoutes } from "./employee-portability.js";
+import { loadEmployeePublisher } from "./employee-publisher.js";
+import { creationRoutes } from "./identity-create.js";
+import { lifecycleRoutes } from "./identity-lifecycle.js";
 import { ModelConnections, modelRoutes } from "./model-connections.js";
 import { ModelNetwork, modelNetworkRoutes } from "./model-network.js";
+import { digest } from "./owner-auth-crypto.js";
+import { OwnerFiles } from "./owner-files.js";
 import { ownerTransactions, refuse } from "./owner-transaction.js";
 import { WriteFailure, writeUnavailable } from "./primary-bot-write.js";
+import { approvalRoutes } from "./product-approvals.js";
+import { attachmentRoutes } from "./product-attachments.js";
+import { automationRoutes } from "./product-automations.js";
+import { BrowserSessions, browserRoutes } from "./product-browser.js";
+import { eventRoutes, ProductInvalidations, ProductStream } from "./product-events.js";
 import { identityError, identityRoutes } from "./product-identity.js";
+import { nodeRoutes, WorkerIdentities } from "./product-nodes.js";
+import { Plugins, pluginRoutes } from "./product-plugins.js";
 import { productReadRoutes } from "./product-reads.js";
 import { ProductBytes, ProductJson } from "./product-response.js";
+import { storageRoutes } from "./product-storage.js";
+import { workspaceRoutes } from "./product-workspace.js";
+import { RuntimePort } from "./runtime-port.js";
+import { StorageService } from "./storage-service.js";
 import { ownerCookie } from "./transcription-read.js";
+import { workRoutes } from "./work-public.js";
+import { WorkService } from "./work-service.js";
 import { boundedJson } from "./write-input.js";
 
 const inventory = [
+  ...workHttpOperations,
   ...browserHttpOperations,
   ...nodeHttpOperations,
   ...portabilityHttpOperations,
@@ -100,6 +104,17 @@ export function productHandler(
         options.plugins.catalogPath,
       )
     : undefined;
+  const work =
+    options.work && models
+      ? new WorkService(
+          options.databaseUrl,
+          options.work,
+          models,
+          options.modelTransport,
+          files,
+          plugins,
+        )
+      : undefined;
   const greetings =
     options.controlReads && models
       ? new BotGreetings(options.databaseUrl, models, options.modelTransport)
@@ -108,6 +123,7 @@ export function productHandler(
   const workerIdentities = runtime ? new WorkerIdentities(options.databaseUrl) : undefined;
   const publisher = options.publisher ? loadEmployeePublisher(options.publisher) : undefined;
   const routes = [
+    ...(work ? workRoutes(work.files, files) : []),
     ...(browsers ? browserRoutes(browsers) : []),
     ...(workerIdentities ? nodeRoutes(workerIdentities) : []),
     ...(runtime ? portabilityRoutes(publisher) : []),
@@ -149,10 +165,12 @@ export function productHandler(
       files?.verify();
       await plugins?.verify();
       await store.verify(models ? (db) => models.initialize(db) : undefined);
+      await work?.start();
       await storage?.verify();
       storage?.start();
     },
     close: async () => {
+      await work?.close();
       runtime?.close();
       await browsers?.close();
       await workerIdentities?.close();

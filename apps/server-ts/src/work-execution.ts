@@ -1,18 +1,20 @@
 import { createHash } from "node:crypto";
 import {
+  type ActivityBinding,
+  assertEngineClosure,
+  type EngineClosure,
   EXECUTION_OWNER,
+  engineReference,
   HandoffPending,
   WorkConflict,
-  engineReference,
-  type ActivityBinding,
 } from "@openbot/work";
 import {
   activeWorkTask,
   lockWorkTask,
-  workEvent,
   type WorkDb,
-  type WorkTransactions,
   type WorkTaskRow,
+  type WorkTransactions,
+  workEvent,
 } from "./work-handoff.js";
 
 export type WorkFence = { runId: string; claimId: string; epoch: number };
@@ -21,6 +23,18 @@ export async function acceptedWork(
   db: WorkDb,
   binding: ActivityBinding,
   historical = false,
+): Promise<WorkTaskRow> {
+  return acceptedExecution(db, binding, historical);
+}
+/** Engine history proves closure, never a permission to dispatch an Activity effect. */
+export async function acceptedClosedWork(db: WorkDb, proof: EngineClosure) {
+  assertEngineClosure(proof);
+  return acceptedExecution(db, proof, true);
+}
+async function acceptedExecution(
+  db: WorkDb,
+  binding: Pick<ActivityBinding, "input" | "namespace" | "firstRunId">,
+  historical: boolean,
 ): Promise<WorkTaskRow> {
   const { input } = binding;
   const task = await lockWorkTask(db, input.taskId);
@@ -57,6 +71,11 @@ export async function checkWorkFence(db: WorkDb, fence: WorkFence): Promise<void
     Number(row.execution_epoch) !== fence.epoch
   )
     throw new WorkConflict("execution_claim_stale");
+  // This final clock check also runs after a transaction writes its own completed status.
+  const expired =
+    await db`SELECT 1 FROM work_collaborations c JOIN work_runs r ON r.id=${fence.runId}
+    WHERE (c.child_task_id=r.task_id OR c.root_task_id=r.task_id) AND c.deadline_at<=clock_timestamp() LIMIT 1`;
+  if (expired.length) throw new WorkConflict("collaboration_deadline_expired");
 }
 export class WorkExecution {
   constructor(readonly transactions: WorkTransactions) {}

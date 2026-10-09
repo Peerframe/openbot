@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { dispatchOne } from "./handoff.js";
 import {
   EngineAlreadyStarted,
-  WORKFLOW_TYPE,
-  workStart,
+  type EnginePort,
   type EngineStart,
   type HandoffPort,
-  type EnginePort,
+  WORKFLOW_TYPE,
   type WorkStart,
+  workStart,
 } from "./contracts.js";
+import { dispatchOne } from "./handoff.js";
 
 const identity = { taskId: "task", runId: "run" };
 const settings = { namespace: "fixture", taskQueue: "ts-only", executionTimeoutMs: 60_000 };

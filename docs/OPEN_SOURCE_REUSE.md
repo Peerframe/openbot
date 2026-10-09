@@ -1211,4 +1211,16 @@ New TS admissions have immutable ownership; Python histories remain Python-owned
 loading brings the existing `source-map-js` into the production closure: its BSD-3-Clause 1.2.2
 patch fixes CVE-2026-93749. Exact upstream, license, security and qualification evidence is in the
 [P4 record](research/typescript-control-plane-p4.md). Product runtime integration and full drain
-remain incomplete; synthetic control Activities do not establish product Task completion.
+remain incomplete. The local native report/attachment/knowledge/plugin/web candidate now exercises real product
+HTTP and Temporal Activities with deterministic provider transports; this evidence is distinct from
+the historical synthetic control probe and from installed-app/full-P4 acceptance. Model SDK, private
+receipt, resource revalidation and closed-repair decisions are recorded in the same P4 record. Native collaboration reuses the Python0039/0040
+contracts and P3 source lock order. The same record documents immutable child recovery, narrowed
+grants, aggregate root admission and the Workflow-owned deadline with SDK heartbeat/cancellation;
+no alternate scheduling framework or upstream source is added.
+
+P4 public-source extraction directly uses MIT htmlparser2 10.1.0, commit
+`57ace50bf6eb3bfab0468deafe10d0a8a2f233aa`, with a bounded event adapter in a restricted Node child.
+No upstream source copied; keep the package and transitive MIT/BSD notices in the native closure.
+Reviewed parser alternatives, open issues, exact source and hostile-input/HTTPS evidence are in
+[the P4 extraction decision](research/typescript-control-plane-p4.md#public-source-extraction-decision-2026-10-09).

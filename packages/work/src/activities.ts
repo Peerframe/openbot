@@ -1,12 +1,12 @@
 import { Context } from "@temporalio/activity";
 import {
-  WorkConflict,
+  type EnginePort,
+  type EngineSettings,
   WORKFLOW_ID_PREFIX,
   WORKFLOW_TYPE,
-  workStart,
-  type EngineSettings,
-  type EnginePort,
+  WorkConflict,
   type WorkStart,
+  workStart,
 } from "./contracts.js";
 
 export type ActivityBinding = {

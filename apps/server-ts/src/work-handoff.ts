@@ -1,21 +1,25 @@
 import { randomBytes } from "node:crypto";
-import postgres from "postgres";
 import {
   EXECUTION_OWNER,
   HandoffPending,
-  WorkConflict,
-  validAttempt,
-  workIdentity,
   type HandoffPort,
   type PriorSubmission,
   type Reservation,
+  validAttempt,
+  WorkConflict,
   type WorkIdentity,
+  workIdentity,
 } from "@openbot/work";
+import postgres from "postgres";
 import { boundedAdmission } from "./owner-auth-crypto.js";
+import { activeWorkTree, lockWorkTree } from "./work-tree.js";
 
 export type WorkDb = postgres.TransactionSql;
 export type WorkTaskRow = {
   id: string;
+  bot_id: string;
+  objective: string;
+  result_summary: string | null;
   status: string;
   authority_active: boolean;
   cancel_requested: boolean;
@@ -23,16 +27,9 @@ export type WorkTaskRow = {
   token_limit: string;
   revision: string;
 };
-export async function lockWorkTask(db: WorkDb, taskId: string): Promise<WorkTaskRow> {
-  // The initial TS runtime accepts root native Tasks only. Reject a child instead of taking
-  // its lock ahead of ancestors; the full collaboration port must preserve root-first order.
-  const child = await db`SELECT 1 FROM work_collaborations WHERE child_task_id=${taskId}`;
-  if (child.length) throw new WorkConflict("work_collaboration_not_migrated");
-  const rows = await db<WorkTaskRow[]>`SELECT * FROM work_tasks WHERE id=${taskId} FOR UPDATE`;
-  if (!rows[0]) throw new WorkConflict("work_not_found");
-  return rows[0];
-}
+export const lockWorkTask = lockWorkTree;
 export function activeWorkTask(task: WorkTaskRow): void {
+  activeWorkTree(task);
   if (
     !task.authority_active ||
     task.cancel_requested ||
@@ -50,7 +47,7 @@ export async function workEvent(
   const rows =
     await db`UPDATE work_tasks SET revision=revision+1 WHERE id=${taskId} RETURNING revision`;
   if (!rows[0]) throw new WorkConflict("work_not_found");
-  await db`INSERT INTO work_events(task_id,revision,kind,payload) VALUES (${taskId},${rows[0].revision},${kind},${JSON.stringify(payload)}::jsonb)`;
+  await db`INSERT INTO work_events(task_id,revision,kind,payload) VALUES (${taskId},${rows[0].revision},${kind},${db.json(payload)}::jsonb)`;
 }
 export function workTransactions(databaseUrl: string) {
   const sql = postgres(databaseUrl, {
@@ -114,8 +111,15 @@ async function admission(db: WorkDb, identity: WorkIdentity): Promise<Admission>
 }
 export class WorkHandoff implements HandoffPort {
   constructor(readonly transactions: WorkTransactions) {}
-  async pending(limit = 32): Promise<WorkIdentity[]> {
-    if (!Number.isInteger(limit) || limit < 1 || limit > 128)
+  async pending(limit = 32, after = ""): Promise<WorkIdentity[]> {
+    if (
+      !Number.isInteger(limit) ||
+      limit < 1 ||
+      limit > 128 ||
+      typeof after !== "string" ||
+      after.length > 128 ||
+      after.includes("\0")
+    )
       throw new WorkConflict("invalid_handoff_limit");
     return this.transactions.run(async (db) => {
       const rows =
@@ -123,18 +127,25 @@ export class WorkHandoff implements HandoffPort {
         JOIN work_admissions a ON a.run_id=r.id WHERE a.execution_owner=${EXECUTION_OWNER}
         AND t.authority_active AND NOT t.cancel_requested AND t.status IN ('queued','open')
         AND r.status IN ('queued','running') AND a.state='pending' AND a.submission_attempted_at IS NULL
-        ORDER BY t.created_at,t.id,r.ordinal,r.id LIMIT ${limit}`;
+        AND r.id>${after} ORDER BY r.id LIMIT ${limit}`;
       return rows.map((r) => ({ taskId: r.task_id, runId: r.run_id }));
     });
   }
-  async unconfirmedBatch(limit = 32): Promise<WorkIdentity[]> {
-    if (!Number.isInteger(limit) || limit < 1 || limit > 128)
+  async unconfirmedBatch(limit = 32, after = ""): Promise<WorkIdentity[]> {
+    if (
+      !Number.isInteger(limit) ||
+      limit < 1 ||
+      limit > 128 ||
+      typeof after !== "string" ||
+      after.length > 128 ||
+      after.includes("\0")
+    )
       throw new WorkConflict("invalid_handoff_limit");
     return this.transactions.run(async (db) => {
       const rows =
         await db`SELECT r.task_id,r.id AS run_id FROM work_admissions a JOIN work_runs r ON r.id=a.run_id
         WHERE a.execution_owner=${EXECUTION_OWNER} AND a.state='pending' AND a.submission_attempted_at IS NOT NULL
-        ORDER BY a.submission_attempted_at,r.id LIMIT ${limit}`;
+        AND r.id>${after} ORDER BY r.id LIMIT ${limit}`;
       return rows.map((r) => ({ taskId: r.task_id, runId: r.run_id }));
     });
   }

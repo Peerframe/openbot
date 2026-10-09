@@ -1,9 +1,9 @@
-import { fileURLToPath } from "node:url";
-import type { ByteProviderTransport } from "./model-network.js";
 import { isIP } from "node:net";
 import { isAbsolute } from "node:path";
-import type { ModelTransport } from "./model-network.js";
+import { fileURLToPath } from "node:url";
+import type { ByteProviderTransport, ModelTransport } from "./model-network.js";
 import { scalarText } from "./owner-auth-crypto.js";
+import { validateWorkOptions, type WorkOptions } from "./work-service.js";
 
 export interface EntryOptions {
   upstream: string;
@@ -13,6 +13,7 @@ export interface EntryOptions {
   tls?: { certificatePath: string; privateKeyPath: string };
   product?: {
     databaseUrl: string;
+    work?: WorkOptions;
     allowedOrigins?: readonly string[];
     models?: { keyPath: string; customBaseUrls: readonly string[] };
     modelTransport?: ModelTransport;
@@ -51,6 +52,10 @@ function origin(value: string): URL {
 
 export function validateOptions(options: EntryOptions): EntryOptions {
   if (options.product) {
+    if (options.product.work) {
+      if (!options.product.models) throw new Error("Work requires model connection composition.");
+      validateWorkOptions(options.product.work);
+    }
     if (
       options.product.publisher &&
       Object.values(options.product.publisher).some(
@@ -197,6 +202,9 @@ export function validateOptions(options: EntryOptions): EntryOptions {
 
 export function entryOptions(environment: NodeJS.ProcessEnv): EntryOptions {
   const productGroup = environment.OPENBOT_TS_PRODUCT_GROUP ?? "none";
+  const workGroup = environment.OPENBOT_TS_WORK_GROUP ?? "none";
+  if (!["none", "reports"].includes(workGroup) || (workGroup !== "none" && productGroup !== "p3"))
+    throw new Error("Unknown or incomplete TS Work composition.");
   if (!["none", "identity", "identity-models", "p3"].includes(productGroup))
     throw new Error("Unknown TS product group.");
   if (productGroup !== "none" && !environment.OPENBOT_TS_DATABASE_URL)
@@ -229,6 +237,27 @@ export function entryOptions(environment: NodeJS.ProcessEnv): EntryOptions {
     ...(productGroup !== "none"
       ? {
           product: {
+            ...(workGroup === "reports"
+              ? {
+                  work: {
+                    address: environment.OPENBOT_TS_TEMPORAL_ADDRESS ?? "",
+                    namespace: environment.OPENBOT_TS_TEMPORAL_NAMESPACE ?? "default",
+                    taskQueue:
+                      environment.OPENBOT_TS_TEMPORAL_QUEUE ?? "openbot-work-ts-v1-product",
+                    executionTimeoutMs: 3600000,
+                    fileRoot: environment.OPENBOT_TS_WORK_FILE_ROOT ?? "",
+                    ...(environment.TAVILY_API_KEY !== undefined
+                      ? { web: { tavilyKey: environment.TAVILY_API_KEY } }
+                      : {}),
+                    tls: {
+                      ca: environment.OPENBOT_TS_TEMPORAL_CA ?? "",
+                      certificate: environment.OPENBOT_TS_TEMPORAL_CERT ?? "",
+                      key: environment.OPENBOT_TS_TEMPORAL_KEY ?? "",
+                      serverName: environment.OPENBOT_TS_TEMPORAL_SERVER_NAME ?? "",
+                    },
+                  },
+                }
+              : {}),
             ...(productGroup === "p3"
               ? {
                   controlReads: true,

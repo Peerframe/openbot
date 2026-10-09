@@ -1,42 +1,39 @@
 // Real Temporal/mTLS + disposable PostgreSQL qualification. The Activity below is an explicit
 // synthetic control probe: it verifies handoff/recovery/fences, not product model/tool completion.
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
 import { randomBytes, randomUUID } from "node:crypto";
-import { fileURLToPath } from "node:url";
+import { readFile } from "node:fs/promises";
 import { setTimeout as delay } from "node:timers/promises";
+import { fileURLToPath } from "node:url";
+import { bundleWorkflowCode, NativeConnection, Worker } from "@temporalio/worker";
 import {
-  Worker,
-  NativeConnection,
-  Runtime,
-  DefaultLogger,
-  bundleWorkflowCode,
-} from "@temporalio/worker";
+  acceptedWork,
+  checkWorkFence,
+  WorkExecution,
+  type WorkFence,
+} from "../apps/server-ts/dist/work-execution.js";
+import { WorkHandoff, workTransactions } from "../apps/server-ts/dist/work-handoff.js";
+import { createDatabase } from "../packages/db/dist/index.js";
 import {
   Client,
   Connection,
-  TemporalEngine,
   currentBinding,
   dispatchOne,
+  installWorkRuntime,
+  observeEngineClosure,
+  TemporalEngine,
   WORKFLOW_ID_PREFIX,
   type WorkStart,
 } from "../packages/work/dist/index.js";
-import { createDatabase } from "../packages/db/dist/index.js";
-import { WorkHandoff, workTransactions } from "../apps/server-ts/dist/work-handoff.js";
 import {
-  WorkExecution,
-  acceptedWork,
-  checkWorkFence,
-  type WorkFence,
-} from "../apps/server-ts/dist/work-execution.js";
-import {
-  OwnedDockerFixture,
   allowlistedEnvironment,
-  startControlPostgres,
   cleanupOnTerminationSignals,
+  OwnedDockerFixture,
+  startControlPostgres,
 } from "./python-acceptance-fixture.ts";
+import { qualifyWorkProduct } from "./ts-work-product-acceptance.ts";
 
-Runtime.install({ logger: new DefaultLogger("WARN") });
+await installWorkRuntime();
 const root = fileURLToPath(new URL("../", import.meta.url));
 const input = process.argv[2];
 assert(input, "The owned Temporal fixture must supply its private receipt path.");
@@ -108,6 +105,37 @@ try {
   assert.equal(racers.filter((r) => r.shouldStart).length, 1);
   assert.equal(racers[0]!.attemptId, racers[1]!.attemptId);
   console.log("PASS ownership isolation, immutable owner and concurrent single reservation");
+  const paging = await Promise.all(Array.from({ length: 7 }, () => seed()));
+  const pages = async (
+    read: (limit: number, after: string) => Promise<{ taskId: string; runId: string }[]>,
+  ) => {
+    const found = new Set<string>();
+    let after = "";
+    for (let page = 0; page < 10; page++) {
+      const rows = await read(2, after);
+      for (const row of rows) {
+        assert(!found.has(row.runId));
+        found.add(row.runId);
+      }
+      if (rows.length < 2) return found;
+      after = rows.at(-1)!.runId;
+    }
+    assert.fail("Handoff paging failed to end");
+  };
+  const pendingIds = await pages(handoff.pending.bind(handoff));
+  assert(paging.every((row) => pendingIds.has(row.runId)));
+  for (const row of paging) await handoff.reserve(row, "fixture-unconfirmed-" + row.runId);
+  const uncertainIds = await pages(handoff.unconfirmedBatch.bind(handoff));
+  assert(paging.every((row) => uncertainIds.has(row.runId)));
+  await sql.begin(async (db) => {
+    await db`DELETE FROM work_admissions WHERE run_id IN ${db(paging.map((row) => row.runId))}`;
+    await db`DELETE FROM work_events WHERE task_id IN ${db(paging.map((row) => row.taskId))}`;
+    await db`DELETE FROM work_runs WHERE id IN ${db(paging.map((row) => row.runId))}`;
+    await db`DELETE FROM work_tasks WHERE id IN ${db(paging.map((row) => row.taskId))}`;
+  });
+  console.log(
+    "PASS complete pending/unconfirmed keyset scans reach rows beyond an unchanged first page",
+  );
 
   connection = await Connection.connect({
     address: fixture.address,
@@ -159,6 +187,7 @@ try {
   let pendingTask: string | undefined;
   let oldFence: WorkFence | undefined;
   const activities = {
+    inspectWorkTree: async () => ({ watch: false, deadline: null }),
     awaitWorkAdmission: async (start: WorkStart) => {
       if (start.taskId === pendingTask) admissionCalls++;
       const binding = await currentBinding(engine, settings, start);
@@ -241,7 +270,7 @@ try {
   chainTask = continued.taskId;
   await dispatchOne(continued, settings, handoff, engine);
   const continuedRow = (
-    await sql`SELECT engine_first_run_id FROM work_admissions WHERE run_id=${continued.runId}`
+    await sql`SELECT engine_first_run_id,submission_attempt_id FROM work_admissions WHERE run_id=${continued.runId}`
   )[0]!;
   const third = await makeWorker();
   await third.runUntil(async () => {
@@ -267,7 +296,17 @@ try {
     ),
     65,
   );
-  console.log("PASS Continue-As-New retains accepted chain and exact input; both histories replay");
+  const continuedClosure = await observeEngineClosure(
+    client,
+    settings,
+    { ...continued, attemptId: continuedRow.submission_attempt_id },
+    continuedRow.engine_first_run_id,
+  );
+  assert.equal(continuedClosure?.state, "COMPLETED");
+  assert.notEqual(continuedClosure?.engineRunId, continuedClosure?.firstRunId);
+  console.log(
+    "PASS Continue-As-New retains accepted chain and exact input; both histories replay; immutable chain closure verified",
+  );
 
   const pending = await seed();
   pendingTask = pending.taskId;
@@ -297,6 +336,7 @@ try {
   console.log(
     "PASS early Activity waits for durable acknowledgement without failing or gaining authority",
   );
+  await qualifyWorkProduct(dsn, fixture);
 } finally {
   const closed = await Promise.allSettled([
     native?.close(),
