@@ -150,7 +150,7 @@ class OwnerProduct:
 
 
 
-def register_product_routes(app,product,read_store,*,secure_cookies,allowed_origins,ts_read_group="none",ts_write_group="none"):
+def register_product_routes(app,product,read_store,*,secure_cookies,allowed_origins,ts_read_group="none",ts_write_group="none",ts_work_group="none"):
     if product.browser is not None:
         from .browser_routes import BROWSER_WRITE_ROUTES, register_browser_routes
         register_browser_routes(app,product.browser,secure_cookies=secure_cookies,allowed_origins=allowed_origins)
@@ -241,7 +241,7 @@ def register_product_routes(app,product,read_store,*,secure_cookies,allowed_orig
     register_attachment_routes(route,product,service)
     from .product_extensions import register_extensions
     register_extensions(route, service)
-    if product.worker_registry is not None:
+    if product.worker_registry is not None and ts_work_group != "p4":
         from .worker_host_routes import register_worker_host_routes
         register_worker_host_routes(app,product.worker_identity,product.worker_registry,
             secure_cookies=secure_cookies,allowed_origins=allowed_origins)

@@ -218,12 +218,14 @@ async def _assert_workflow(store, identity, facts, *, expected_namespace, expect
         task = await store._task(connection, task_id, read=True)
         cursor = await connection.execute(
             'SELECT r.status AS run_status,a.state,a.engine_reference,a.submission_reference,'
-            'a.submission_attempt_id,a.engine_first_run_id '
+            'a.submission_attempt_id,a.engine_first_run_id,a.execution_owner '
             'FROM work_runs r JOIN work_admissions a ON a.run_id=r.id '
             'WHERE r.task_id=%s AND r.id=%s', (task_id, run_id))
         admission = await cursor.fetchone()
         if admission is None:
             raise WorkNotFound()
+        if admission['execution_owner'] != 'python-v1':
+            raise WorkConflict('handoff_execution_owner_mismatch')
         if completed or failed:
             status = 'failed' if failed else 'completed'
             if task['status'] != status or admission['run_status'] != status:

@@ -1,19 +1,20 @@
-import { runResourceContracts } from "../../../packages/contract-tests/src/resources.ts";
-import { runPortabilityContracts } from "../../../packages/contract-tests/src/portability.ts";
-import { randomBytes } from "node:crypto";
 import assert from "node:assert/strict";
+import { randomBytes } from "node:crypto";
 import { channel } from "node:diagnostics_channel";
 import { lstat, mkdtemp, readFile, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import {
-  modelServicesSnapshotSchema,
   modelConnectionResponseSchema,
+  modelServicesSnapshotSchema,
   transcriptionSettingsSchema,
   workspacePrimaryBotSchema,
   workspaceSnapshotSchema,
 } from "@openbot/protocol";
+import { runPortabilityContracts } from "../../../packages/contract-tests/src/portability.ts";
+import { runResourceContracts } from "../../../packages/contract-tests/src/resources.ts";
+import { configureNativeWorkFixture, runNativeWorkFixture } from "./native-work-fixture.ts";
 import {
   confirmProcessesStopped,
   launchThroughDisposableParent,
@@ -41,6 +42,7 @@ export async function smokePythonProduct(runtimeRoot: string) {
       if (error.code === "ENOENT") return false;
       throw error;
     });
+  if (tsSelected) await configureNativeWorkFixture(dataRoot);
   const problems: string[] = [];
   const diagnostics = channel("openbot.desktop.native-startup");
   // Do not collect child stderr, bootstrap data or any submitted credential.
@@ -52,7 +54,10 @@ export async function smokePythonProduct(runtimeRoot: string) {
   const authenticate = async (url: string, password: string) => {
     bootstrapPassword ??= password;
     const health = await fetch(`${url}/health`, { signal: AbortSignal.timeout(3000) });
-    assert.equal(((await health.json()) as { phase: unknown }).phase, "python-product-candidate");
+    assert.equal(
+      ((await health.json()) as { phase: unknown }).phase,
+      tsSelected ? "typescript-product-candidate" : "python-product-candidate",
+    );
     const result = await fetch(`${url}/api/v1/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Origin: url },
@@ -253,7 +258,7 @@ export async function smokePythonProduct(runtimeRoot: string) {
       }
     }
     for (const name of ["browser.json", "command.json"]) {
-      // A present execution configuration without Temporal must refuse API-only fallback.
+      // Malformed execution configuration must refuse an API-only fallback.
       await writeFile(join(dataRoot, name), "{}", { mode: 0o600 });
       assert.equal((await controller.start()).status, "failed");
       await assert.rejects(readFile(join(dataRoot, "postgres/postmaster.pid")), { code: "ENOENT" });
@@ -277,6 +282,8 @@ export async function smokePythonProduct(runtimeRoot: string) {
       tsChannelReadGroup: tsSelected ? "channels" : "none",
       channelReadRestartVerified: true,
       tsProductGroup: tsSelected ? "p3" : "none",
+      tsWorkGroup: tsSelected ? "p4" : "none",
+      nativeEngine: tsSelected ? "Temporal1.32.0/SQLite/mTLS" : "none",
       modelConnectionRestartVerified: tsSelected,
       modelNetworkCalls: 0,
       p3NativeResourceChecks: resourceChecks,
@@ -286,7 +293,7 @@ export async function smokePythonProduct(runtimeRoot: string) {
       restartLoginUsedChangedPassword: tsSelected,
       eitherProductExitStoppedPair: tsSelected,
       unsafeDirectoryRefusedAndPostgresStopped: true,
-      executionConfigurationWithoutEngineRefusedAndPostgresStopped: true,
+      invalidExecutionConfigurationRefusedAndPostgresStopped: true,
       pythonProductHealth: true,
       ownerLogin: true,
       postgresInitialized: true,
@@ -305,5 +312,13 @@ export async function smokePythonProduct(runtimeRoot: string) {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   if (process.argv.length !== 3 || !process.argv[2])
     throw new Error("Usage: smoke-python-product <candidate-native-runtime>");
-  console.log(JSON.stringify(await smokePythonProduct(resolve(process.argv[2]))));
+  const runtime = resolve(process.argv[2]);
+  const selected = await lstat(join(runtime, "ts-control.json"))
+    .then(() => true)
+    .catch((error: NodeJS.ErrnoException) => {
+      if (error.code === "ENOENT") return false;
+      throw error;
+    });
+  if (!selected || !(await runNativeWorkFixture("smoke", runtime)))
+    console.log(JSON.stringify(await smokePythonProduct(runtime)));
 }

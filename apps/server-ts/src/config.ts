@@ -1,9 +1,11 @@
-import { fileURLToPath } from "node:url";
-import type { ByteProviderTransport } from "./model-network.js";
 import { isIP } from "node:net";
 import { isAbsolute } from "node:path";
-import type { ModelTransport } from "./model-network.js";
+import { fileURLToPath } from "node:url";
+import type { ByteProviderTransport, ModelTransport } from "./model-network.js";
 import { scalarText } from "./owner-auth-crypto.js";
+import { loadWorkInstallation } from "./work-installation.js";
+import { validateWorkOptions, type WorkOptions } from "./work-service.js";
+import type { WorkerRuntimeOptions } from "./worker-runtime.js";
 
 export interface EntryOptions {
   upstream: string;
@@ -13,6 +15,8 @@ export interface EntryOptions {
   tls?: { certificatePath: string; privateKeyPath: string };
   product?: {
     databaseUrl: string;
+    work?: WorkOptions;
+    workerRuntime?: WorkerRuntimeOptions;
     allowedOrigins?: readonly string[];
     models?: { keyPath: string; customBaseUrls: readonly string[] };
     modelTransport?: ModelTransport;
@@ -51,6 +55,12 @@ function origin(value: string): URL {
 
 export function validateOptions(options: EntryOptions): EntryOptions {
   if (options.product) {
+    if (options.product.workerRuntime && (!options.product.work || !options.product.controlReads))
+      throw new Error("The sole Worker registry requires the complete Work/product composition.");
+    if (options.product.work) {
+      if (!options.product.models) throw new Error("Work requires model connection composition.");
+      validateWorkOptions(options.product.work);
+    }
     if (
       options.product.publisher &&
       Object.values(options.product.publisher).some(
@@ -197,6 +207,17 @@ export function validateOptions(options: EntryOptions): EntryOptions {
 
 export function entryOptions(environment: NodeJS.ProcessEnv): EntryOptions {
   const productGroup = environment.OPENBOT_TS_PRODUCT_GROUP ?? "none";
+  const workGroup = environment.OPENBOT_TS_WORK_GROUP ?? "none";
+  if (
+    workGroup !== "none" &&
+    !/^[0-9]{1,10}$/.test(environment.OPENBOT_CONTROL_WORK_TOKEN_LIMIT ?? "100000")
+  )
+    throw new Error("Product Work token limit must be an explicit bounded integer.");
+  if (
+    !["none", "reports", "p4"].includes(workGroup) ||
+    (workGroup !== "none" && productGroup !== "p3")
+  )
+    throw new Error("Unknown or incomplete TS Work composition.");
   if (!["none", "identity", "identity-models", "p3"].includes(productGroup))
     throw new Error("Unknown TS product group.");
   if (productGroup !== "none" && !environment.OPENBOT_TS_DATABASE_URL)
@@ -216,6 +237,28 @@ export function entryOptions(environment: NodeJS.ProcessEnv): EntryOptions {
     throw new Error("The primary Bot write group requires an explicit PostgreSQL URL.");
   const authGroup = environment.OPENBOT_TS_AUTH_GROUP ?? "none";
   if (!["none", "owner"].includes(authGroup)) throw new Error("Unknown TS auth group.");
+  if (
+    workGroup === "p4" &&
+    (authGroup !== "owner" ||
+      channelGroup !== "channels" ||
+      group !== "transcription" ||
+      writeGroup !== "primary-bot")
+  )
+    throw new Error("P4 requires all accepted product groups and the sole TS Owner authority.");
+  const installedWork =
+    workGroup === "p4"
+      ? loadWorkInstallation({
+          temporal: environment.OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH ?? "",
+          fileRoot: environment.OPENBOT_TS_WORK_FILE_ROOT ?? "",
+          tokenLimit: Number(environment.OPENBOT_CONTROL_WORK_TOKEN_LIMIT ?? "100000"),
+          ...(environment.OPENBOT_CONTROL_BROWSER_CONFIG_PATH === undefined
+            ? {}
+            : { browser: environment.OPENBOT_CONTROL_BROWSER_CONFIG_PATH }),
+          ...(environment.OPENBOT_CONTROL_COMMAND_CONFIG_PATH === undefined
+            ? {}
+            : { command: environment.OPENBOT_CONTROL_COMMAND_CONFIG_PATH }),
+        })
+      : undefined;
   const ttl = environment.OPENBOT_TS_SESSION_TTL_HOURS ?? "12";
   if (authGroup === "owner" && !/^[0-9]{1,3}$/.test(ttl))
     throw new Error("Invalid Owner session TTL.");
@@ -229,6 +272,39 @@ export function entryOptions(environment: NodeJS.ProcessEnv): EntryOptions {
     ...(productGroup !== "none"
       ? {
           product: {
+            ...(installedWork
+              ? {
+                  workerRuntime: installedWork.workerRuntime,
+                  work: {
+                    ...installedWork.work,
+                    ...(environment.TAVILY_API_KEY === undefined
+                      ? {}
+                      : { web: { tavilyKey: environment.TAVILY_API_KEY } }),
+                  },
+                }
+              : {}),
+            ...(workGroup === "reports"
+              ? {
+                  work: {
+                    address: environment.OPENBOT_TS_TEMPORAL_ADDRESS ?? "",
+                    namespace: environment.OPENBOT_TS_TEMPORAL_NAMESPACE ?? "default",
+                    taskQueue:
+                      environment.OPENBOT_TS_TEMPORAL_QUEUE ?? "openbot-work-ts-v1-product",
+                    executionTimeoutMs: 3600000,
+                    tokenLimit: Number(environment.OPENBOT_CONTROL_WORK_TOKEN_LIMIT ?? "100000"),
+                    fileRoot: environment.OPENBOT_TS_WORK_FILE_ROOT ?? "",
+                    ...(environment.TAVILY_API_KEY !== undefined
+                      ? { web: { tavilyKey: environment.TAVILY_API_KEY } }
+                      : {}),
+                    tls: {
+                      ca: environment.OPENBOT_TS_TEMPORAL_CA ?? "",
+                      certificate: environment.OPENBOT_TS_TEMPORAL_CERT ?? "",
+                      key: environment.OPENBOT_TS_TEMPORAL_KEY ?? "",
+                      serverName: environment.OPENBOT_TS_TEMPORAL_SERVER_NAME ?? "",
+                    },
+                  },
+                }
+              : {}),
             ...(productGroup === "p3"
               ? {
                   controlReads: true,

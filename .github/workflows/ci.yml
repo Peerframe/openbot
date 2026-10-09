@@ -335,6 +335,15 @@ jobs:
         run: npm exec -- turbo run build --filter=@openbot/server-ts
       - name: Stage the exact mixed TS product runtime
         run: node apps/desktop/scripts/prepare-native-server.ts --ts-product
+      - name: Fetch the pinned native P4 qualification engine
+        shell: bash
+        run: |
+          curl --proto '=https' --tlsv1.2 --fail --location --silent --show-error \
+            --max-time 180 --max-filesize 96287042 \
+            --output "$RUNNER_TEMP/temporal_1.32.0_darwin_arm64.tar.gz" \
+            https://github.com/temporalio/temporal/releases/download/v1.32.0/temporal_1.32.0_darwin_arm64.tar.gz
+          # The owned fixture verifies archive and regular-member sizes/hashes before execution.
+          echo "OPENBOT_NATIVE_TEMPORAL_ARCHIVE=$RUNNER_TEMP/temporal_1.32.0_darwin_arm64.tar.gz" >> "$GITHUB_ENV"
       - name: Verify the staged TS entry and paired Python/PostgreSQL lifecycle
         shell: bash
         run: |
@@ -356,7 +365,7 @@ jobs:
         shell: bash
         run: |
           umask 077
-          env -i PATH="$PATH" LANG=en_US.UTF-8 \
+          env -i PATH="$PATH" LANG=en_US.UTF-8 OPENBOT_NATIVE_TEMPORAL_ARCHIVE="$OPENBOT_NATIVE_TEMPORAL_ARCHIVE" \
             apps/desktop/out/ts-product-runtime/node/bin/node apps/desktop/scripts/measure-ts-product.ts apps/desktop/out/ts-product-runtime \
             > "$RUNNER_TEMP/ts-preview-overhead.json"
       - name: Retain synthetic TS Preview lifecycle and performance evidence
@@ -472,6 +481,10 @@ jobs:
           packages/harness/scripts/install-wheel.sh "$RUNNER_TEMP/openbot-work-reference/bin/python"
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -m pip check
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -I apps/server-python/scripts/verify_environment.py --worker
+      - name: Qualify TS Work ownership, recovery and replay with mutual TLS
+        run: npm run test:work:ts
+        env:
+          OPENBOT_TEMPORAL_TEST_PYTHON: ${{ runner.temp }}/openbot-work-reference/bin/python
       - name: Qualify adjacent Temporal release recovery with PostgreSQL and mutual TLS
         shell: bash
         env:
@@ -522,7 +535,7 @@ jobs:
         run: |
           npm install --global --ignore-scripts npm@10.9.9
           npm ci --ignore-scripts --audit=false
-          npm exec -- turbo run build --filter=@openbot/node^... --filter=@openbot/db
+          npm exec -- turbo run build --filter=@openbot/node^... --filter=@openbot/db --filter=@openbot/server-ts
       - name: Prepare the exact product Worker environment
         shell: bash
         run: |
@@ -547,6 +560,41 @@ jobs:
           python3.12 -B experiments/work-journey/product_browser_upstream.py "$RUNNER_TEMP/openbot-browser-upstream"
           npm ci --ignore-scripts --prefix "$RUNNER_TEMP/openbot-browser-upstream"
           node "$RUNNER_TEMP/openbot-browser-upstream/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Prepare a fresh root-private Linux/runsc P4 qualification packet
+        timeout-minutes: 15
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends nftables skopeo=1.13.3+ds1-2ubuntu0.24.04.3
+          node_modules/.bin/esbuild experiments/work-journey/product_command_node.ts \
+            --bundle --platform=node --format=cjs --target=node22 \
+            --outfile="$RUNNER_TEMP/openbot-command-node.cjs"
+          sudo env GITHUB_ACTIONS=true "$RUNNER_TEMP/openbot-work-reference/bin/python" -B \
+            experiments/work-journey/p4_native_ci.py \
+            --worker "$RUNNER_TEMP/openbot-work-reference/bin/python" \
+            --upstream "$RUNNER_TEMP/openbot-browser-upstream" \
+            --bun "$(command -v bun)" --node "$(command -v node)" \
+            --node-bundle "$RUNNER_TEMP/openbot-command-node.cjs" \
+            --output "$RUNNER_TEMP/openbot-native-command.json"
+          sudo chown "$(id -u):$(id -g)" "$RUNNER_TEMP/openbot-native-command.json"
+      - name: Qualify the TS approved command on the actual protected Linux/runsc Host
+        timeout-minutes: 5
+        shell: bash
+        run: |
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B \
+            experiments/work-journey/product_command_probe.py --entry ts --claim-approval-race \
+            --native-ci-config "$RUNNER_TEMP/openbot-native-command.json" \
+            --output "$RUNNER_TEMP/openbot-command-ts-native" \
+            --node-bundle "$RUNNER_TEMP/openbot-command-node.cjs"
+      - name: Qualify the TS isolated Linux browser, profile replacement and original native expiry
+        timeout-minutes: 15
+        shell: bash
+        run: |
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B \
+            experiments/work-journey/p4_native_browser.py \
+            --output "$RUNNER_TEMP/openbot-browser-ts-native" \
+            --upstream "$RUNNER_TEMP/openbot-browser-upstream" \
+            --browsers "$RUNNER_TEMP/openbot-browser-binaries"
       - name: Qualify approved page input across an actual Worker restart
         timeout-minutes: 8
         shell: bash
@@ -573,6 +621,35 @@ jobs:
               --browsers "$RUNNER_TEMP/openbot-browser-binaries" \
               --recovery "$recovery"
           done
+      - name: Qualify TS P4 page execution and lost click response on actual Chromium
+        timeout-minutes: 12
+        shell: bash
+        run: |
+          for recovery in pages response-loss; do
+            "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/product_browser_probe.py \
+              --entry ts --recovery "$recovery" \
+              --output "$RUNNER_TEMP/openbot-browser-ts-$recovery" \
+              --upstream "$RUNNER_TEMP/openbot-browser-upstream" \
+              --browsers "$RUNNER_TEMP/openbot-browser-binaries"
+          done
+      - name: Retain content-free P4 native product results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: p4-native-product-results
+          path: |
+            ${{ runner.temp }}/openbot-command-ts-native/result.json
+            ${{ runner.temp }}/openbot-command-ts-native/remote-result.json
+            ${{ runner.temp }}/openbot-command-ts-native/native-*.failure.json
+            ${{ runner.temp }}/openbot-browser-ts-native/RESULT.json
+          if-no-files-found: ignore
+      - name: Retain content-free TS browser qualification results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: browser-ts-results
+          path: ${{ runner.temp }}/openbot-browser-ts-*/RESULT.json
+          if-no-files-found: ignore
       - name: Retain content-free browser interruption results
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

@@ -175,6 +175,11 @@ export function selectChecks(
       broaden(`Check, contract, lock or build input: ${file}`);
       continue;
     }
+    if (file.startsWith("packages/work/")) {
+      python();
+      workspaces.add("@openbot/work");
+      continue;
+    }
     if (file.startsWith("packages/harness/")) {
       python();
       continue;

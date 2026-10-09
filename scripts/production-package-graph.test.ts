@@ -21,13 +21,30 @@ test("TS entry production closure includes reviewed adapters, model SDKs and nat
     await readFile(new URL("../package-lock.json", import.meta.url), "utf8"),
   );
   const graph = collectProductionPackageGraph(source, "apps/server-ts");
-  assert.deepEqual(graph.workspaceKeys, ["apps/server-ts", "packages/domain", "packages/employee-publisher", "packages/protocol"]);
+  assert.deepEqual(graph.workspaceKeys, [
+    "apps/server-ts",
+    "packages/domain",
+    "packages/employee-publisher",
+    "packages/protocol",
+    "packages/work",
+  ]);
   assert(graph.packageKeys.includes("node_modules/fastify"));
   assert(graph.packageKeys.includes("node_modules/@fastify/reply-from"));
-  for (const name of ["openai", "@anthropic-ai/sdk", "koffi", "@koromix/koffi-darwin-arm64", "yaml"]) {
+  for (const name of [
+    "openai",
+    "@anthropic-ai/sdk",
+    "koffi",
+    "@koromix/koffi-darwin-arm64",
+    "yaml",
+    "@temporalio/worker",
+    "@temporalio/core-bridge",
+    "@temporalio/client",
+    "source-map-js",
+    "ws",
+  ]) {
     assert(graph.packageKeys.includes(`node_modules/${name}`), `${name} must be staged`);
   }
-  assert(!graph.packageKeys.includes("node_modules/ws"));
+  assert.equal(source.packages["apps/server-ts"].dependencies.ws, "8.21.3");
   assert(!graph.workspaceKeys.includes("tests/oracles/legacy-server"));
   assert.throws(() => collectProductionPackageGraph(source, "apps/server-ts/other"), /Unsupported/);
 });

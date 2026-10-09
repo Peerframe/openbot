@@ -1201,3 +1201,85 @@ Employee publisher format/signature functions. The finite private port keeps the
 registry in P4 while TS owns public P3 policy, sessions and audit. No new dependency or copied source.
 Pinned evidence, rejected duplicate-registry approach, single-use dispatch and listener behavior are
 in the [boundary decision](research/typescript-control-plane-p0.md#p3-remaining-product-boundary-decision-2026-10-08).
+
+### P4 Work engine integration (2026-10-09)
+
+`packages/work` uses the ADR-0050 approved official Temporal TypeScript SDK 1.24.0 (MIT), commit
+`1fd1c81a0383f5f5c7923dd735472c7d1ffdc867`, without copied upstream implementation. It reuses
+Postgres.js3.4.9, the existing SQL Work ledger/claims and pinned PostgreSQL/Temporal mTLS fixtures.
+New TS admissions have immutable ownership; Python histories remain Python-owned. SDK source-map
+loading brings the existing `source-map-js` into the production closure: its BSD-3-Clause 1.2.2
+patch fixes CVE-2026-93749. Exact upstream, license, security and qualification evidence is in the
+[P4 record](research/typescript-control-plane-p4.md). Product runtime integration and full drain
+remain incomplete. The local native report/attachment/knowledge/plugin/web candidate now exercises real product
+HTTP and Temporal Activities with deterministic provider transports; this evidence is distinct from
+the historical synthetic control probe and from installed-app/full-P4 acceptance. Model SDK, private
+receipt, resource revalidation and closed-repair decisions are recorded in the same P4 record. Native collaboration reuses the Python0039/0040
+contracts and P3 source lock order. The same record documents immutable child recovery, narrowed
+grants, aggregate root admission and the Workflow-owned deadline with SDK heartbeat/cancellation;
+no alternate scheduling framework or upstream source is added.
+
+P4 public-source extraction directly uses MIT htmlparser2 10.1.0, commit
+`57ace50bf6eb3bfab0468deafe10d0a8a2f233aa`, with a bounded event adapter in a restricted Node child.
+No upstream source copied; keep the package and transitive MIT/BSD notices in the native closure.
+Reviewed parser alternatives, open issues, exact source and hostile-input/HTTPS evidence are in
+[the P4 extraction decision](research/typescript-control-plane-p4.md#public-source-extraction-decision-2026-10-09).
+
+Channel and media integration reuses the retained message/Run admission,0039/0040 collaboration,
+automation occurrence claim and original-media contracts. The current pinned OpenAI/Anthropic
+SDKs carry bounded inline originals; source/identity reuse is confined to one read-only validation
+pass under its existing SQL locks. See the [combined evidence and remaining gates](research/typescript-control-plane-p4.md#channel-admission-schedules-and-media-integration-2026-10-09).
+
+P4's explicit native Worker/browser Task composition promotes the already reviewed MIT ws8.21.3
+into the server's production closure without changing its pin. It reuses existing shared schemas,
+PostgreSQL identity/human gates and retained Python browser profile/approval/receipt contracts;
+no browser manager, new persistence schema or copied upstream source is introduced. The
+[P4 integration record](research/typescript-control-plane-p4.md#native-worker-and-approved-browser-task-integration-2026-10-09)
+distinguishes actual product transport/engine checks from synthetic browser peers and outstanding
+Linux/installed-app acceptance.
+
+P4 原生 Worker/浏览器任务将已审核的 ws8.21.3 提升为生产依赖，版本不变；复用共享契约、
+身份/人工接管锁及 Python 原有审批/回执语义，不新增浏览器管理器或数据库结构。详见上述记录，
+真实传输/引擎证据与可控浏览器 peer、待验收 Linux/已安装环境明确区分。
+
+
+P4's approved command adapter promotes the already reviewed jose6.2.12 and canonicalize5.0.0
+releases into the TS Server production closure. It ports the retained OpenBot v2 contract,
+preparation clock, SQL admission/consumption and product adapter over those released libraries;
+no copied upstream source, new version, custom JOSE/JCS or alternate execution engine. Python/TS
+interop uses production APIs. See the [command integration record](research/typescript-control-plane-p4.md#approved-command-integration-2026-10-09).
+
+P4 审批命令复用已审核的 jose6.2.12/canonicalize5.0.0，增加 TS Server 生产依赖边；沿用原
+v2 契约、准备时钟、SQL 单次许可和产品适配，真实 Python/TS API 互验，不新增版本或自写密码算法。
+
+
+The P4 native package gate reuses the pinned Temporal1.32.0 macOS arm64 Server as an owned
+SQLite/mTLS fixture only; production stays PostgreSQL/mTLS. It is not a bundled application or
+new product dependency. Reviewed release/archive/member hashes and alternatives are recorded in
+[the P4 native qualification decision](research/typescript-control-plane-p4.md#macos-native-qualification-engine-2026-10-09).
+
+
+The remaining P4 native CI journey reuses the protected Linux/runsc Host and the existing
+Squid7.7/Playwright1.62.1 composition with the same reviewed runtime members, image configs and
+seccomp. Root-private fixture copies rebind fresh paths and measured offline export identities;
+Bun1.3.14, Node22.22.2 and the Ubuntu NSS3.98 builder remain existing reviewed tooling. The
+120-second command claim also covers pending approval that commits during its Activity, while
+approval, original expiry and native bounds remain independent. No product dependency, persistent
+Host service or upstream source copy is added. See [the current decision and proof](research/typescript-control-plane-p4.md#fresh-native-ci-qualification-and-approval-race-2026-10-09).
+
+P4 原生 CI 沿用保护 Linux/runsc Host 与既有 Squid7.7/Playwright1.62.1 composition，
+运行时成员、镜像 config、seccomp 固定；只在 root 私有验收副本重绑定新路径和测得的离线导出身份。
+工具沿用既有 Bun1.3.14/Node22.22.2/NSS3.98。命令120秒 claim 同时覆盖 Activity 内提交待审批动作
+的时序，审批、原始到期及 native 期限独立保留；不新增产品依赖、持久 Host 服务或复制上游源码。
+
+P4 disposable native CI additionally uses Ubuntu24.04 Skopeo1.13.3 security package
+`1.13.3+ds1-2ubuntu0.24.04.3`, upstream commit `9e29e4cede9bdaa4a54aa5b0af86efedb823bde4`
+(Apache-2.0), only for anonymous TLS-verified OCI image copying. Original registry/config digests,
+platform and archive hashes remain checked; no upstream source is copied or product closure added.
+The [P4 preparation decision](research/typescript-control-plane-p4.md#native-preparation-failures-and-closure-acknowledgement-correction)
+also records the SQL-closure/Activity-acknowledgement race, official SDK ordering/replay regression,
+rejected legacy Docker archive/custom-client paths and exact qualification limits.
+
+P4 一次性原生 CI 仅用固定 Ubuntu Skopeo 安全维护包复制 OCI 镜像；匿名 TLS 校验和原始
+manifest/config、平台、归档指纹不变，不复制上游源码或新增产品依赖。上述决定记录关闭回执竞态、
+真实 SDK 排序/重放正反例和仍待完成的实际原生验收。

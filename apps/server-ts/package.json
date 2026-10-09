@@ -10,9 +10,6 @@
     "test": "npm run build && vitest run src",
     "start": "node dist/serve.js"
   },
-  "devDependencies": {
-    "ws": "8.21.3"
-  },
   "dependencies": {
     "@anthropic-ai/sdk": "0.131.0",
     "@fastify/reply-from": "12.6.5",
@@ -20,12 +17,17 @@
     "@openbot/domain": "0.0.0",
     "@openbot/employee-publisher": "0.0.0",
     "@openbot/protocol": "0.0.0",
+    "@openbot/work": "0.0.0",
     "ajv": "8.20.0",
+    "canonicalize": "5.0.0",
     "entities": "8.0.0",
     "fastify": "5.12.5",
+    "htmlparser2": "10.1.0",
+    "jose": "6.2.12",
     "koffi": "3.3.2",
     "openai": "7.28.0",
     "postgres": "3.4.9",
+    "ws": "8.21.3",
     "zod": "4.6.2"
   }
 }
