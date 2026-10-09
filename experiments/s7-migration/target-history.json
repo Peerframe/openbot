@@ -1,5 +1,5 @@
 {
-  "commit": "a4c1fdc6478350edecd3e94e5b162477b90b56fc",
+  "commit": "c077601bc9e5aed6ff0ae81f34d944ea1c758fb3",
   "commitRole": "integration-base-with-uncommitted-migration-suffix",
   "migrations": [
     {
@@ -343,23 +343,25 @@
       "tag": "0056_work_ts_model_receipts",
       "timestamp": 1791213344749,
       "sha256": "e27b1f7585910214c4a4a15800bad2665a60f698ae008d849291551e07a9bbbf"
+    },
+    {
+      "index": 57,
+      "tag": "0057_work_failure_projection",
+      "timestamp": 1791556751163,
+      "sha256": "a4fc87157c77e3efba97cd7749726e06d19e5875aa16f431b09f02ecd7e109c5"
     }
   ],
   "qualificationInput": {
-    "previousQualifiedTarget": "a4c1fdc6478350edecd3e94e5b162477b90b56fc",
-    "publishedMigrationCount": 55,
+    "previousQualifiedTarget": "c077601bc9e5aed6ff0ae81f34d944ea1c758fb3",
+    "publishedMigrationCount": 57,
     "journal": {
       "path": "packages/db/migrations/meta/_journal.json",
-      "sha256": "4f2bc78e72e1b79bf01fa92039f93babe2a6a0e5953ec116b39a4887f6b0e6be"
+      "sha256": "7a3299847b536cd7f7cdade8c743b8684c96ca1143d2270f87e0dfab43182f77"
     },
     "changedSql": [
       {
-        "path": "packages/db/migrations/0055_work_execution_owner.sql",
-        "sha256": "9c54411cde1c4a0779b077c956765ff4848a82998e9d1268b0ba7166895150d1"
-      },
-      {
-        "path": "packages/db/migrations/0056_work_ts_model_receipts.sql",
-        "sha256": "e27b1f7585910214c4a4a15800bad2665a60f698ae008d849291551e07a9bbbf"
+        "path": "packages/db/migrations/0057_work_failure_projection.sql",
+        "sha256": "a4fc87157c77e3efba97cd7749726e06d19e5875aa16f431b09f02ecd7e109c5"
       }
     ]
   }

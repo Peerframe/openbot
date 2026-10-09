@@ -12,6 +12,47 @@ English · [简体中文](typescript-control-plane-p4.zh-CN.md)
 - Security boundary: Server owns admission, identity, root budget, claims, approval and publication.
   Temporal is the only recovery owner. Python retains all existing histories and their dependencies.
 
+## Model configuration failure follow-up (2026-10-09)
+
+The accepted `c077601b` baseline projected every failed channel Work Task as `task_failed`.
+The follow-up now records `model_unavailable` only when the existing resolver confirms no selected
+model, a missing selected connection or a disabled selected connection before dispatch. Other
+failures retain `task_failed`; admitted or unknown effects keep their original lookup-only lifecycle.
+The existing Web mapping already recognizes `model_unavailable`; frontend translation belongs to
+its Owner and is outside this backend change.
+
+Reuse the existing [failure catalogue decision](native-failure-classification.md) and
+[P4 SDK/ledger decision](#trigger-and-existing-decision). Rechecked
+[RFC9457](https://www.rfc-editor.org/rfc/rfc9457.html) classification/detail and security principles,
+and PostgreSQL17's [CREATE OR REPLACE VIEW contract](https://www.postgresql.org/docs/17/sql-createview.html)
+for the retained17.11 database. Keep the view's column names/order/types, ownership and permissions.
+A new dependency or general error framework cannot interpret these resolver predicates. No upstream
+source copied, dependency changed, HTTP envelope added or authority/retry/deadline broadened.
+
+Append-only migration0057 changes only the read projection. It accepts the fixed public code on the
+latest Work Run's control-owned `task.failed` event; raw internal reasons, arbitrary strings and
+wrong/older Run bindings use the generic fallback. Existing Work/Run/history facts are not rewritten.
+The guarded migration history remains exact: older builds refuse a database advanced to58 entries;
+retain the pre-upgrade app/profile recovery set rather than running old code on newer schema history.
+The installed app still uses the previously accepted runtime; this follow-up does not install it or
+migrate user data. Actual acceptance results are tracked on the final PR revision and single handoff.
+
+Follow-up local qualification: `npm run test:work:ts` passed53 named checks with actual
+PostgreSQL/mTLS Temporal, including absent-selection and missing/disabled-connection channel submissions,
+Runs/workspace/progress projections, safe messages, zero model dispatch for configuration refusals,
+generic review refusal, offline history replay and five actual SIGKILL windows. Models are
+synthetic. The unchanged S7 runner passed40 cases against the58-entry pin. Separate owned-database
+checks passed57→58 and empty→58 guarded migration/repeated startup, preserved old facts and view
+columns/owner/ACL, and six positive/negative projection boundaries. `npm run check` passed:
+30 test tasks (14 cached),20 builds (16 cached), plus actual required gates. Subsequent docs/research
+gates passed; PR-event validation is skipped locally and remains a hosted duty. The Owner's UI
+acceptance and every hosted check on the new published HEAD remain pending.
+
+P5 must change `ui:acceptance` to default to TS and remove Python entry or clearly explain its
+retirement. After removing packaged Python, acceptance must cover install → first startup → login →
+restart without login → retained old data. Ask the Owner before installing an app. Preserve the
+fallback and user data until the replacement passes acceptance; P5 is not started by this follow-up.
+
 ## Integrated acceptance evidence (2026-10-09)
 
 The explicit `OPENBOT_TS_WORK_GROUP=p4` composition covers all remaining Work routes, the sole
@@ -39,10 +80,11 @@ before completion/review; this immutable evidence does not assert a future CI re
 | Python drain | Complete105-row paginated SQL/Temporal checks and concurrent-change refusals. Installed-data read-only audit found two terminal Runs and no active/unconfirmed/unknown-effect/unfinished-repair obligation; one missing terminal history is recorded separately. Startup still rechecks the full drain; the audit does not cancel or settle user Work. |
 | Web/UI | Existing12-step acceptance passed against the actual P4 engine:112 responses, zero unexpected responses, page errors or workspace503; saved primary Bot survives restart. This reuses its recorded revision because subsequent authority/native-helper changes do not change UI bytes. |
 | Package and installed app | Canonical macOS arm64 package passed34 resource/13 portability checks and real PostgreSQL/mTLS paired lifecycle; package crypto callback is synthetic. The same installed app separately passed actual Keychain workspace/realtime startup, normal Quit/service stop and restart. Latest read-only health returned200 / `typescript-v1` / running; installed product module hashes match source. User profile and all three complete app/profile rollback copies are preserved. |
-| Repository gates | Full `npm run check` passed after the final helper correction;30 test tasks/20 builds reused unchanged cache while other required gates executed. Complete focused Work-journey discovery passed208, including generated CA identity, actual local process/pipes and rejection of partial native success. Final-head hosted gates are checked independently through [draft PR212](https://github.com/Peerframe/openbot/pull/212). |
+| Repository gates | Full `npm run check` passed after the final helper correction;30 test tasks/20 builds reused unchanged cache while other required gates executed. Complete focused Work-journey discovery passed208, including generated CA identity, actual local process/pipes and rejection of partial native success. Final-head hosted gates are checked independently through [PR212](https://github.com/Peerframe/openbot/pull/212). |
 
-Product runtime bytes last changed at `45daf316931ce2e69e8872a238ccd9fe0830edf0`; later native
-packet/tests and evidence changes do not require reinstalling identical modules. Command execution
+Before the model-failure follow-up above, product runtime bytes last changed at
+`45daf316931ce2e69e8872a238ccd9fe0830edf0`; later native packet/tests and evidence changes did
+not require reinstalling identical modules. The installed app retains that accepted runtime. Command execution
 SHA-256 is `f59d018c0f539bfa317a1ee63d69bf82bfd30580f50c7d28fd1cba51d68c65b1`, Work workflow is
 `2a2a405e72dfd3dc1ce181195127da517d8432b8f1806d56928d988a400a9747` in both source build and installed payload.
 
@@ -55,7 +97,7 @@ patch was made. Later successful runs do not erase these failures.
 
 Qualification uses disposable owned fixtures and deterministic model responses. It does not prove
 paid-model quality, arbitrary external-service availability, distribution signing, new platform
-support, production-data changes or P5 Python/package retirement. PR212 remains draft and unmerged.
+support, production-data changes or P5 Python/package retirement. PR212 is ready for review and remains unmerged.
 
 The sections below preserve chronological checkpoints. Statements about a current candidate or
 remaining work describe that checkpoint; the integrated scope and evidence above supersede them.

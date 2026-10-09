@@ -12,7 +12,12 @@ import { createEntry } from "../apps/server-ts/dist/app.js";
 import type { EntryOptions } from "../apps/server-ts/dist/config.js";
 import type { ModelTransport } from "../apps/server-ts/dist/model-network.js";
 import { WorkLedger } from "../apps/server-ts/dist/work-ledger.js";
-import { workSnapshotWireSchema } from "../packages/protocol/dist/index.js";
+import {
+  runProgressDetailsSchema,
+  runSchema,
+  workSnapshotWireSchema,
+  workspaceSnapshotSchema,
+} from "../packages/protocol/dist/index.js";
 import {
   assertEngineClosure,
   Client,
@@ -70,7 +75,7 @@ export async function qualifyWorkProduct(
       throw new Error("Synthetic provider reply lost after observation");
     const answer = review
       ? JSON.stringify({
-          accepted: objective !== "Reject review",
+          accepted: !["Reject review", "Reject channel review"].includes(objective),
           reason: "Synthetic evidence reviewed",
         })
       : "Prepared the requested report.";
@@ -399,6 +404,7 @@ export async function qualifyWorkProduct(
       port,
       publicOrigin: origin,
       upstream: "http://127.0.0.1:9",
+      channelRead: { databaseUrl },
       product: {
         databaseUrl,
         controlReads: true,
@@ -471,6 +477,97 @@ export async function qualifyWorkProduct(
     });
     assert.equal(connection.status, 201, await connection.clone().text());
     const created = (await connection.json()) as { connection: { id: string } };
+    // Exercise the same channel submission and projections consumed by Web. Each refusal
+    // happens before a model Action is admitted; an uncertain dispatch stays unknown instead.
+    const failureChannel = randomUUID();
+    await sql`INSERT INTO channels(id,name) VALUES(${failureChannel},'Failure projection fixture')`;
+    const disabledResponse = await request("/api/v1/model-connections", "POST", {
+      name: "Disabled fixture provider",
+      presetId: "openai",
+      baseUrl: "https://api.openai.com/v1",
+      apiKey: randomBytes(24).toString("hex"),
+      defaultModel: "synthetic-model",
+    });
+    assert.equal(disabledResponse.status, 201, await disabledResponse.clone().text());
+    const disabledModel = (await disabledResponse.json()) as {
+      connection: { id: string; revision: number };
+    };
+    const disable = await request(
+      `/api/v1/model-connections/${disabledModel.connection.id}`,
+      "PATCH",
+      {
+        expectedRevision: disabledModel.connection.revision,
+        enabled: false,
+      },
+    );
+    assert.equal(disable.status, 200, await disable.clone().text());
+    const [preferences] =
+      await sql`SELECT default_model FROM owner_preferences WHERE owner_id='owner'`;
+    assert.equal(preferences!.default_model, null);
+    for (const [objective, connectionId] of [
+      ["Missing model selection", null],
+      ["Disabled model selection", disabledModel.connection.id],
+      ["Missing model connection", randomUUID()],
+      ["Reject channel review", created.connection.id],
+    ] as const) {
+      const failureBot = randomUUID();
+      await sql`INSERT INTO bots(id,name,role,computer_profile,configuration) VALUES(${failureBot},${objective},'Synthetic acceptance','model',
+        ${sql.json(connectionId === null ? {} : { model: { connectionId, modelId: "synthetic-model" } })}::jsonb)`;
+      await sql`INSERT INTO channel_bots(channel_id,bot_id) VALUES(${failureChannel},${failureBot})`;
+      const submitted = await request(`/api/v1/channels/${failureChannel}/messages`, "POST", {
+        content: objective,
+        botId: failureBot,
+      });
+      assert.equal(submitted.status, 201, await submitted.clone().text());
+      const { run } = (await submitted.json()) as { run: { id: string; workTaskId: string } };
+      const task = await until(
+        async () => {
+          const response = await request(`/api/v1/tasks/${run.workTaskId}`);
+          assert.equal(response.status, 200);
+          return workSnapshotWireSchema.parse(await response.json());
+        },
+        (value) => value.status === "failed",
+      );
+      const generic = objective === "Reject channel review";
+      const expectedCode = generic ? "task_failed" : "model_unavailable";
+      const expectedMessage = generic
+        ? "Task execution failed."
+        : "No usable model is configured for this task. Check the Bot model and enabled connection in Settings.";
+      const listed = await request(`/api/v1/channels/${failureChannel}/runs`);
+      assert.equal(listed.status, 200, await listed.clone().text());
+      const runs = (await listed.json()) as { runs: unknown[] };
+      const projected = runs.runs
+        .map((value) => runSchema.parse(value))
+        .find((value) => value.id === run.id)!;
+      assert.equal(projected.errorCode, expectedCode);
+      assert.equal(projected.errorMessage, expectedMessage);
+      const progressResponse = await request(`/api/v1/runs/${run.id}/progress`);
+      assert.equal(progressResponse.status, 200);
+      assert.equal(
+        runProgressDetailsSchema.parse(await progressResponse.json()).failureReasonCode,
+        expectedCode,
+      );
+      const workspace = await request("/api/v1/workspace");
+      assert.equal(workspace.status, 200);
+      const view = workspaceSnapshotSchema.parse(await workspace.json());
+      assert.equal(view.runs.find((value) => value.id === run.id)!.errorCode, expectedCode);
+      assert.equal(view.runProgress[run.id]!.failureReasonCode, expectedCode);
+      const failed = task.events.filter((event) => event.kind === "task.failed");
+      assert.equal(failed.length, 1);
+      assert.equal(failed[0]!.payload.publicCode, expectedCode);
+      assert.equal(task.artifacts.length, 0);
+      if (!generic) {
+        assert.equal(failed[0]!.payload.reason, "product_model_unconfigured");
+        assert.equal(task.actions.length, 0);
+        assert.equal(calls.get(objective), undefined);
+      } else assert.equal(failed[0]!.payload.reason, "result_review_refused");
+      const handle = engineClient.workflow.getHandle(WORKFLOW_ID_PREFIX + task.runs[0]!.id);
+      await handle.result();
+      await Worker.runReplayHistory({ workflowBundle }, await handle.fetchHistory());
+      console.log(
+        `PASS actual channel ${objective}: ${expectedCode} in Runs/workspace/progress, safe message, no publication and history replay`,
+      );
+    }
     const browserChannel = randomUUID();
     await sql`UPDATE bots SET configuration=${sql.json({ model: { connectionId: created.connection.id, modelId: "synthetic-model" } })} WHERE id=${browserBot}`;
     await sql`INSERT INTO channels(id,name) VALUES(${browserChannel},'Browser Work fixture')`;
@@ -557,11 +654,11 @@ export async function qualifyWorkProduct(
       }
       return task;
     };
-    const until = async <T>(
+    async function until<T>(
       read: () => Promise<T>,
       done: (value: T) => boolean,
       milliseconds = 40000,
-    ): Promise<T> => {
+    ): Promise<T> {
       const end = Date.now() + milliseconds;
       let value: T;
       do {
@@ -570,7 +667,7 @@ export async function qualifyWorkProduct(
         await delay(100);
       } while (Date.now() < end);
       assert.fail("Work product did not reach expected state: " + JSON.stringify(value));
-    };
+    }
     assert.equal((await request("/api/v1/tasks", "POST", {}, false)).status, 401);
     const success = await create("Publish report"),
       completed = await until(
