@@ -369,8 +369,9 @@ contain wire sends. Reconnection, process replacement or uncertain commit cannot
 preparation, ticket or permit. Process-local preparation clocks and Activity authority are released
 when the attempt ends; historical evidence cannot recreate them.
 
-The 120-second claim applies only to an already approved command action with a frozen command
-profile. Other claims remain 60 seconds. The first root deadline, Action expiry, readiness-bound
+The 120-second claim applies to a proposed command action with a frozen command profile,
+including a pending approval that can commit during the Activity. Preparation still requires fresh
+approval. Existing claims keep their expiry; other claims remain 60 seconds. The first root deadline, Action expiry, readiness-bound
 native lifetime and five-second launch window are never extended. Signed original observations and
 exact bounded UTF-8 output are verified before recording; independent review receives the full
 text before atomic publication. Local receipt recovery never re-executes the command.
@@ -544,8 +545,17 @@ codec; the attempted JSON conversion failed before replay and is not counted as 
 The local page journey passed: four independently approved operations, exactly one navigation,
 Unicode input, click and read, seven single model steps including independent report review,
 one downloaded report, independent target state and offline replay. Owned fixtures closed.
-An earlier navigation became unknown before the Node provider was called; its cause is unresolved
-and later successful runs do not erase that observation. The actual response-loss case also passed: the target
+An earlier navigation became unknown before the Node provider was called. Inspection of its
+retained private evidence identifies a clock mismatch: the database-generated model request and
+Temporal UUIDv7 place execution at07:45:37 UTC, while the model receipt was written on the Mac
+at08:00:10 UTC. The Action expired at07:50:38 UTC. `WorkBrowser.authorized` bounds its command
+by database time, but `WorkerHostRegistry.browserCommand` checks expiry against the sending
+process clock and refuses before the socket write. The existing real-WebSocket expiry/authority
+negative checks passed again (all6 registry tests); the original Node call counter and browser
+profile are empty. This explains the observed pre-dispatch refusal without extending a permit or
+retrying the Action. The exact original caught exception was not retained, so the attribution is
+an inference from these independent timestamps and the verified refusal path, not an original
+exception trace. Later successful runs do not erase that observation. The actual response-loss case also passed: the target
 recorded one click while its response socket was destroyed; cancellation removed authority, an
 explicit original-receipt lookup remained unresolved, and neither click nor model was repeated.
 No artifact was published. Per the existing TS ledger contract the unknown Task remains open and
@@ -560,3 +570,41 @@ entry/recovery combinations refused before fixture side effects. The workflow-fo
 and full `npm run check` passed; Desktop580 plus3 platform skips, Server162, Web695 and Node129
 plus3 platform skips. The final30 test tasks reused14 caches and20 build tasks reused16 caches.
 These changes affect tests, qualification and CI; the installed candidate's product bytes are unchanged.
+
+
+## Fresh native CI qualification and approval race (2026-10-09)
+
+The exact previous HEAD `3ac5e34eb75615f2a5d6a41c66f589fd247c944a` passed all17 hosted checks in
+[CI37904521785](https://github.com/Peerframe/openbot/actions/runs/37904521785). That result does not
+qualify the new edits. The remaining real executors now use the existing disposable Ubuntu24.04
+browser-product lane. `p4_native_ci.py` prepares root-private copies of the unchanged Host/native
+algorithms, fixed Docker29.8.1 and gVisor release-20260914.0 binaries. Both downloaded archive
+hashes and every reviewed runtime member match. Docker's [binary testing workflow](https://docs.docker.com/engine/install/binaries/)
+permits running directly from a fixed temporary path. No runtime is registered with the host daemon.
+
+The command retains actual SO_PEERCRED, UID62425 with no groups/capabilities, root-only signing keys,
+one original unit, no network, a bounded ext4 output disk and original expiry/cleanup. Browser
+qualification reuses the existing600-second composition, separate Squid and browser networks,
+owned HTTPS targets, thirteen socket cases, certificate refusals, graceful replacement, private
+profile continuity and established-tunnel revocation. It allocates a fresh identity; consumed
+product3/comp5 packets and SSH authority are never reused. Executor daemons have no external route.
+The ordinary runner daemon is used only to obtain/export reviewed images before execution.
+
+Offline Docker export bytes may differ from the old packet. Each new archive is hashed after its
+reviewed image config, architecture and layers are verified. Only trusted packet constants for
+transport hashes, fresh paths, copied-source hashes, rebuilt Squid and the existing CI Bun1.3.14
+are rebound, with a root-private manifest. The pinned Playwright1.62.1 image and seccomp policy stay
+unchanged. Fresh test certificates and the fixed Ubuntu NSS3.98 builder package create an empty
+container-only trust store; no personal/host trust or certificate-error bypass is used. Upstream
+source/dependency notices remain in the temporary packet. No new product dependency or copied
+third-party implementation is introduced.
+
+The TS approved-command product entry passed actual HTTP/PostgreSQL/mTLS Temporal/Node/WebSocket/Unix,
+complete CSV/report downloads, independent content review and official binary history replay.
+Native and peer identity in that local proof are explicitly synthetic. A controlled real-SDK
+interleaving then reproduced a race: an Activity claimed before Owner approval retained only
+59.8seconds, insufficient for the existing preparation/runtime/stop envelope. The new pending-command
+claim reserves the existing120-second envelope without renewing an old claim or granting approval.
+The same controlled interleaving now passes with one execution, one publication and unchanged
+counts after replay. Native CI exercises that race too.166 focused packet/remote/Host tests pass.
+Native command/browser CI and packaging of this product correction are still pending; P4 remains open.

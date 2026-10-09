@@ -20,7 +20,7 @@ from openbot_server.work_worker import OpenBotWork
 def emit(**v):print(json.dumps(v),flush=True)
 async def run(directory,upstream,browsers,recovery='worker',remote=None,entry='python'):
  os.umask(0o077)
- if entry=='ts' and recovery not in ('pages','response-loss'):raise ValueError('TS browser qualification supports pages and response-loss only')
+ if entry=='ts' and recovery not in ('pages','response-loss','linux-replacement'):raise ValueError('Unsupported TS browser recovery mode')
  if entry=='python' and recovery=='pages':raise ValueError('Python page qualification uses the worker mode')
  workflow_prefix='openbot-work-ts-v1-' if entry=='ts' else 'openbot-work-v1-'
  async def replay(history):
@@ -101,7 +101,7 @@ async def run(directory,upstream,browsers,recovery='worker',remote=None,entry='p
   issued=await asyncio.to_thread(api.call,'/api/v1/nodes/enrollment-tokens',dict(nodeId=node_id),expected=201)
   credential=(await asyncio.to_thread(api.call,'/api/v1/nodes/enroll',dict(nodeId=node_id,token=issued.pop('token')),expected=201))['credential']
   log=(directory/'node.log').open('w')
-  node=await asyncio.create_subprocess_exec('node','--import','tsx',str(PACKET/('product_browser_remote_node.ts' if remote else 'product_browser_node.ts')),cwd=ROOT,env={**CLEAN_ENV,'PLAYWRIGHT_BROWSERS_PATH':str(browsers)},stdin=asyncio.subprocess.PIPE,stdout=asyncio.subprocess.PIPE,stderr=log)
+  node=await asyncio.create_subprocess_exec('node','--import','tsx',str(PACKET/('product_browser_native_node.ts' if remote and remote.get('fixtureEnvironment')=='disposable-github-linux' else 'product_browser_remote_node.ts' if remote else 'product_browser_node.ts')),cwd=ROOT,env={**CLEAN_ENV,'PLAYWRIGHT_BROWSERS_PATH':str(browsers)},stdin=asyncio.subprocess.PIPE,stdout=asyncio.subprocess.PIPE,stderr=log)
   node.stdin.write(json.dumps(dict(nodeId=node_id,botId=bot['id'],serverUrl=api.url.replace('http:','ws:')+'/ws/nodes',credential=credential,directory=str(directory/'node'),upstream=str(upstream),recovery=connection_recovery or profile_recovery,nodeProcess=recovery in ('node','replacement'),responseLoss=recovery=='response-loss',profileRestart=profile_recovery,remote=remote)).encode());await node.stdin.drain();node.stdin.close()
   async with asyncio.timeout(20):target=json.loads(await node.stdout.readline())['targetUrl']
   state_target=remote['stateUrl'].rstrip('/') if remote else target

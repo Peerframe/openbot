@@ -20,10 +20,11 @@ import psycopg
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding,PrivateFormat,PublicFormat,NoEncryption
 from temporalio.worker import Replayer
+from temporalio.api.history.v1 import History
 from pydantic_ai.durable_exec.temporal import PydanticAIPlugin
 from active_restore_probe import ControlDatabase,private
 from postgres_server import PostgresServer
-from product_http_fixture import API,Process
+from product_http_fixture import API,Process,CLEAN_ENV
 from product_command_fixture import CSV,SUMMARY,REPORT,ARGUMENTS
 from product_command_local_host import LocalHost
 from product_command_remote import RemoteHost, RemoteOptions
@@ -33,15 +34,20 @@ from openbot_server.work_worker import OpenBotWork
 def emit(**value):print(json.dumps(value),flush=True)
 
 
-async def qualify(directory,bundle,remote_options=None):
+async def qualify(directory,bundle,remote_options=None,entry="python",native_ci_config=None,claim_approval_race=False):
+    if entry not in ("python","ts"):raise ValueError("Unsupported product entry")
+    if native_ci_config and (remote_options or entry!="ts"):raise ValueError("Native CI qualification requires the TS entry and no SSH")
     os.umask(0o077)
     if directory.exists():raise ValueError('Use a new owned output directory')
     directory.mkdir(mode=0o700)
-    for child in ('artifacts','objects','provider','host'):(directory/child).mkdir(mode=0o700)
+    for child in ('artifacts','objects','provider','host','work-files'):(directory/child).mkdir(mode=0o700)
     postgres=ControlDatabase(directory,'command-product',
         'postgres:17.11-bookworm@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0')
     engine=None;api=None;host=None;node=None;node_log=None;enrollment_issued=False
     remote=RemoteHost(remote_options,directory) if remote_options else None
+    if native_ci_config:
+        from product_command_native_host import NativeHost
+        remote=NativeHost(native_ci_config,directory)
     route=dict(nodeId='command-product-'+secrets.token_hex(6),providerId='linux-command',
         enforcementKeyId='product-enforcer-key',ledgerId=str(uuid4()))
     timing=dict(prepareBudgetMs=30000,challengeBudgetMs=5000,runtimeMaxMs=50000,stopAllowanceMs=5000,
@@ -72,12 +78,13 @@ async def qualify(directory,bundle,remote_options=None):
         engine_config=directory/'engine.json'
         private(engine_config,dict(temporal_address=engine.address,namespace='default',queue='product-command-'+secrets.token_hex(6),
             tls=engine.client_settings,interval_seconds=1,execution_timeout_seconds=600))
-        provider_config=directory/'provider.json';private(provider_config,dict(directory=str(directory/'provider')))
+        provider_config=directory/'provider.json';private(provider_config,dict(directory=str(directory/'provider'),claimApprovalRace=claim_approval_race))
         api=API(directory,postgres.dsn,directory/'artifacts')
         api.env.update(OPENBOT_CONTROL_AUTHORITY='product',OPENBOT_CONTROL_WORK_TOKEN_LIMIT='1000000',
             OPENBOT_CONTROL_OBJECT_ROOT=str(directory/'objects'),OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH=str(engine_config),
             OPENBOT_CONTROL_COMMAND_CONFIG_PATH=str(command_config),OPENBOT_COMMAND_PROBE_CONFIG=str(provider_config))
-        api.child=Process([sys.executable,'-u','-B',str(Path(__file__).with_name('product_command_server.py'))],api.directory,api.env)
+        server=["node","--import","tsx",str(Path(__file__).with_name('product_command_ts_server.ts'))] if entry=='ts' else [sys.executable,'-u','-B',str(Path(__file__).with_name('product_command_server.py'))]
+        api.child=Process(server,api.directory,api.env)
         async def until(function,seconds=75):
             deadline=time.monotonic()+seconds
             while time.monotonic()<deadline:
@@ -129,7 +136,9 @@ async def qualify(directory,bundle,remote_options=None):
         if remote:await remote.assert_unprepared()
         else:assert not host.calls
         assert action['intent']['arguments']==ARGUMENTS
+        if claim_approval_race:await until(lambda:(directory/'provider/claim-before-approval').exists(),40)
         await asyncio.to_thread(api.call,f'/api/v1/actions/{action["id"]}/decision',dict(intentDigest=action['intentDigest'],approved=True))
+        if claim_approval_race:(directory/'provider/owner-approved').touch()
         emit(stage='owner-approved-original-intent',noExecutionBeforeApproval=True)
         def completed():
             value=api.snapshot(tid)
@@ -144,8 +153,10 @@ async def qualify(directory,bundle,remote_options=None):
         if host:assert host.calls.count('execute')==1 and host.calls.count('reserve')==1
         counts=json.loads((directory/'provider/provider-count.json').read_text())
         assert counts==dict(command=1,report=1,final=1,review=1)
-        handle=client.get_workflow_handle('openbot-work-v1-'+rid)
-        result=await asyncio.wait_for(handle.result(),20);assert result['status']=='completed'
+        handle=client.get_workflow_handle(('openbot-work-ts-v1-' if entry=='ts' else 'openbot-work-v1-')+rid)
+        result=await asyncio.wait_for(handle.result(),20)
+        if entry=='python':assert result['status']=='completed'
+        else:assert result is None
         with psycopg.connect(postgres.dsn) as db:
             assert db.execute('SELECT count(*) FROM work_command_preparations WHERE task_id=%s',(tid,)).fetchone()[0]==1
             assert db.execute("SELECT count(*) FROM work_events WHERE task_id=%s AND kind='command.permit_issued'",(tid,)).fetchone()[0]==1
@@ -158,14 +169,18 @@ async def qualify(directory,bundle,remote_options=None):
                 assert all(binding[k]==v for k,v in dict(taskId=tid,runId=rid,actionId=action['id'],
                     intentDigest=action['intentDigest'],**route).items())
         history=await handle.fetch_history();(directory/'history.json').write_text(history.to_json())
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            await Replayer(workflows=[OpenBotWork],plugins=[PydanticAIPlugin()],workflow_task_executor=executor).replay_workflow(history)
+        if entry=='ts':
+            (directory/'history.bin').write_bytes(History(events=history.events).SerializeToString())
+            await asyncio.to_thread(subprocess.run,['node','--import','tsx',str(Path(__file__).with_name('product_command_ts_server.ts')),'--replay',str(directory/'history.bin')],cwd=ROOT,env=CLEAN_ENV,check=True,timeout=30)
+        else:
+            with ThreadPoolExecutor(max_workers=2) as executor:
+                await Replayer(workflows=[OpenBotWork],plugins=[PydanticAIPlugin()],workflow_task_executor=executor).replay_workflow(history)
         assert json.loads((directory/'provider/provider-count.json').read_text())==counts
         if host:assert host.calls.count('execute')==1
         if remote:
             remote_evidence=await remote.finish(binding)
             private(directory/'remote-result.json',remote_evidence)
-        record=dict(case='product-command-remote-composition' if remote else 'product-command-local-composition',actualOwnerHTTP=True,actualWorkApproval=True,
+        record=dict(entry=entry,approvalWhileOriginalClaimHeld=claim_approval_race,case='product-command-native-ci' if native_ci_config else 'product-command-remote-composition' if remote else 'product-command-local-composition',actualOwnerHTTP=True,actualWorkApproval=True,
             actualPostgres=True,canonicalMigrations=canonical_migrations,mutualTLS=True,actualProductEntry=True,actualNodeClient=True,
             actualWebSocket=True,actualUnixTransport=True,actualHostCrypto=True,syntheticNative=remote is None,syntheticPeerIdentity=remote is None,
             linuxIsolationQualified=remote is not None,oneOriginalCommand=True,fullOutputSha256=hashlib.sha256(CSV).hexdigest(),
@@ -206,6 +221,9 @@ def arguments(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output',required=True,type=Path)
     parser.add_argument('--node-bundle',required=True,type=Path)
+    parser.add_argument('--claim-approval-race',action='store_true',help='Hold an actual TS Activity claim while Owner approval commits.')
+    parser.add_argument('--entry',choices=('python','ts'),default='python')
+    parser.add_argument('--native-ci-config',type=Path,help='Explicit root-owned disposable Linux fixture only; never discovers a Host.')
     parser.add_argument('--remote-ssh-target')
     parser.add_argument('--remote-ssh-identity',type=Path)
     parser.add_argument('--remote-known-hosts',type=Path)
@@ -223,9 +241,11 @@ def arguments(argv=None):
         except ValueError as error:parser.error(str(error))
     elif any(v is not None for v in values) or options.remote_upload_authorized:
         parser.error('Remote options require an explicit --remote-ssh-target')
+    if options.native_ci_config and (remote or options.entry!='ts'):parser.error('Native CI qualification requires --entry ts and no remote options')
+    if options.claim_approval_race and options.entry!="ts":parser.error("The claim race requires --entry ts")
     return options,remote
 
 
 if __name__=='__main__':
     options,remote=arguments()
-    asyncio.run(qualify(options.output.resolve(),options.node_bundle.resolve(),remote))
+    asyncio.run(qualify(options.output.resolve(),options.node_bundle.resolve(),remote,options.entry,options.native_ci_config,options.claim_approval_race))

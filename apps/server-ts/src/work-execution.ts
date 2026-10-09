@@ -102,10 +102,11 @@ export class WorkExecution {
       const command =
         commandRuntime &&
         (
-          await db`SELECT 1 FROM work_actions a JOIN work_command_profiles p ON p.task_id=a.task_id WHERE a.run_id=${runId} AND a.status='proposed' AND a.intent->>'tool'='run_command' AND a.requires_approval AND a.decision='approved' AND a.expires_at>clock_timestamp() LIMIT 1`
+          await db`SELECT 1 FROM work_actions a JOIN work_command_profiles p ON p.task_id=a.task_id WHERE a.run_id=${runId} AND a.status='proposed' AND a.intent->>'tool'='run_command' AND a.requires_approval AND a.decision IN ('pending','approved') AND a.expires_at>clock_timestamp() LIMIT 1`
         ).length > 0;
-      // Only the approved command preparation/runtime/stop envelope needs the retained 120s claim.
-      // Existing claims keep their original expiry; this does not renew other Task Activities.
+      // A pending command can be approved while this Activity reads its state. Reserve the
+      // retained preparation/runtime/stop envelope for that claim too; approval is still
+      // independently required before preparation. Existing claims keep their original expiry.
       await db`INSERT INTO work_claims(run_id,claim_id,epoch,expires_at)
         VALUES (${runId},${claimId},${epoch},clock_timestamp()+${command ? 120 : 60}*interval '1 second')`;
       await db`UPDATE work_tasks SET status='open' WHERE id=${binding.input.taskId}`;

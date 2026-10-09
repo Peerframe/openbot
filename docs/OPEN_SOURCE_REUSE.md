@@ -1257,3 +1257,17 @@ The P4 native package gate reuses the pinned Temporal1.32.0 macOS arm64 Server a
 SQLite/mTLS fixture only; production stays PostgreSQL/mTLS. It is not a bundled application or
 new product dependency. Reviewed release/archive/member hashes and alternatives are recorded in
 [the P4 native qualification decision](research/typescript-control-plane-p4.md#macos-native-qualification-engine-2026-10-09).
+
+
+The remaining P4 native CI journey reuses the protected Linux/runsc Host and the existing
+Squid7.7/Playwright1.62.1 composition with the same reviewed runtime members, image configs and
+seccomp. Root-private fixture copies rebind fresh paths and measured offline export identities;
+Bun1.3.14, Node22.22.2 and the Ubuntu NSS3.98 builder remain existing reviewed tooling. The
+120-second command claim also covers pending approval that commits during its Activity, while
+approval, original expiry and native bounds remain independent. No product dependency, persistent
+Host service or upstream source copy is added. See [the current decision and proof](research/typescript-control-plane-p4.md#fresh-native-ci-qualification-and-approval-race-2026-10-09).
+
+P4 原生 CI 沿用保护 Linux/runsc Host 与既有 Squid7.7/Playwright1.62.1 composition，
+运行时成员、镜像 config、seccomp 固定；只在 root 私有验收副本重绑定新路径和测得的离线导出身份。
+工具沿用既有 Bun1.3.14/Node22.22.2/NSS3.98。命令120秒 claim 同时覆盖 Activity 内提交待审批动作
+的时序，审批、原始到期及 native 期限独立保留；不新增产品依赖、持久 Host 服务或复制上游源码。
