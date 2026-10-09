@@ -4,5 +4,5 @@
 # frozen in requirements.lock (dev) and requirements-runtime.lock (runtime).
 # Install the locked development closure and local wheel with scripts/bootstrap.sh.
 #
-pydantic-ai-slim==2.47.0
+pydantic-ai-slim==2.53.0
 jsonschema-rs==0.57.1
