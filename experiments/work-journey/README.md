@@ -499,6 +499,11 @@ isolation closure. The repository does not select a personal SSH host or provisi
 
 ## TS P4 native disposable CI
 
+The disposable runner uses fixed Ubuntu Skopeo1.13.3 (`1.13.3+ds1-2ubuntu0.24.04.3`) for
+anonymous TLS-verified OCI copies. Registry manifests/configs are verified separately; legacy
+Docker save archives cannot establish the original native repository digest. The temporary tool
+is outside the product closure. Failed native preparation is never an executor pass.
+
 The existing browser-product Ubuntu24.04 job prepares `p4_native_ci.py` from the reviewed fixed
 Docker/runsc binaries and image contents. This is a single-use root-private test packet, never a
 Host installer. It records new offline export hashes, copies the existing protected Host algorithms,

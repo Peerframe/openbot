@@ -1271,3 +1271,15 @@ P4 原生 CI 沿用保护 Linux/runsc Host 与既有 Squid7.7/Playwright1.62.1 c
 运行时成员、镜像 config、seccomp 固定；只在 root 私有验收副本重绑定新路径和测得的离线导出身份。
 工具沿用既有 Bun1.3.14/Node22.22.2/NSS3.98。命令120秒 claim 同时覆盖 Activity 内提交待审批动作
 的时序，审批、原始到期及 native 期限独立保留；不新增产品依赖、持久 Host 服务或复制上游源码。
+
+P4 disposable native CI additionally uses Ubuntu24.04 Skopeo1.13.3 security package
+`1.13.3+ds1-2ubuntu0.24.04.3`, upstream commit `9e29e4cede9bdaa4a54aa5b0af86efedb823bde4`
+(Apache-2.0), only for anonymous TLS-verified OCI image copying. Original registry/config digests,
+platform and archive hashes remain checked; no upstream source is copied or product closure added.
+The [P4 preparation decision](research/typescript-control-plane-p4.md#native-preparation-failures-and-closure-acknowledgement-correction)
+also records the SQL-closure/Activity-acknowledgement race, official SDK ordering/replay regression,
+rejected legacy Docker archive/custom-client paths and exact qualification limits.
+
+P4 一次性原生 CI 仅用固定 Ubuntu Skopeo 安全维护包复制 OCI 镜像；匿名 TLS 校验和原始
+manifest/config、平台、归档指纹不变，不复制上游源码或新增产品依赖。上述决定记录关闭回执竞态、
+真实 SDK 排序/重放正反例和仍待完成的实际原生验收。

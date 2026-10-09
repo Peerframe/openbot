@@ -560,6 +560,41 @@ jobs:
           python3.12 -B experiments/work-journey/product_browser_upstream.py "$RUNNER_TEMP/openbot-browser-upstream"
           npm ci --ignore-scripts --prefix "$RUNNER_TEMP/openbot-browser-upstream"
           node "$RUNNER_TEMP/openbot-browser-upstream/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Prepare a fresh root-private Linux/runsc P4 qualification packet
+        timeout-minutes: 15
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends nftables skopeo=1.13.3+ds1-2ubuntu0.24.04.3
+          node_modules/.bin/esbuild experiments/work-journey/product_command_node.ts \
+            --bundle --platform=node --format=cjs --target=node22 \
+            --outfile="$RUNNER_TEMP/openbot-command-node.cjs"
+          sudo env GITHUB_ACTIONS=true "$RUNNER_TEMP/openbot-work-reference/bin/python" -B \
+            experiments/work-journey/p4_native_ci.py \
+            --worker "$RUNNER_TEMP/openbot-work-reference/bin/python" \
+            --upstream "$RUNNER_TEMP/openbot-browser-upstream" \
+            --bun "$(command -v bun)" --node "$(command -v node)" \
+            --node-bundle "$RUNNER_TEMP/openbot-command-node.cjs" \
+            --output "$RUNNER_TEMP/openbot-native-command.json"
+          sudo chown "$(id -u):$(id -g)" "$RUNNER_TEMP/openbot-native-command.json"
+      - name: Qualify the TS approved command on the actual protected Linux/runsc Host
+        timeout-minutes: 5
+        shell: bash
+        run: |
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B \
+            experiments/work-journey/product_command_probe.py --entry ts --claim-approval-race \
+            --native-ci-config "$RUNNER_TEMP/openbot-native-command.json" \
+            --output "$RUNNER_TEMP/openbot-command-ts-native" \
+            --node-bundle "$RUNNER_TEMP/openbot-command-node.cjs"
+      - name: Qualify the TS isolated Linux browser, profile replacement and original native expiry
+        timeout-minutes: 15
+        shell: bash
+        run: |
+          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B \
+            experiments/work-journey/p4_native_browser.py \
+            --output "$RUNNER_TEMP/openbot-browser-ts-native" \
+            --upstream "$RUNNER_TEMP/openbot-browser-upstream" \
+            --browsers "$RUNNER_TEMP/openbot-browser-binaries"
       - name: Qualify approved page input across an actual Worker restart
         timeout-minutes: 8
         shell: bash
@@ -597,41 +632,6 @@ jobs:
               --upstream "$RUNNER_TEMP/openbot-browser-upstream" \
               --browsers "$RUNNER_TEMP/openbot-browser-binaries"
           done
-      - name: Prepare a fresh root-private Linux/runsc P4 qualification packet
-        timeout-minutes: 15
-        shell: bash
-        run: |
-          sudo apt-get update
-          sudo apt-get install --yes --no-install-recommends nftables
-          node_modules/.bin/esbuild experiments/work-journey/product_command_node.ts \
-            --bundle --platform=node --format=cjs --target=node22 \
-            --outfile="$RUNNER_TEMP/openbot-command-node.cjs"
-          sudo env GITHUB_ACTIONS=true "$RUNNER_TEMP/openbot-work-reference/bin/python" -B \
-            experiments/work-journey/p4_native_ci.py \
-            --worker "$RUNNER_TEMP/openbot-work-reference/bin/python" \
-            --upstream "$RUNNER_TEMP/openbot-browser-upstream" \
-            --bun "$(command -v bun)" --node "$(command -v node)" \
-            --node-bundle "$RUNNER_TEMP/openbot-command-node.cjs" \
-            --output "$RUNNER_TEMP/openbot-native-command.json"
-          sudo chown "$(id -u):$(id -g)" "$RUNNER_TEMP/openbot-native-command.json"
-      - name: Qualify the TS approved command on the actual protected Linux/runsc Host
-        timeout-minutes: 5
-        shell: bash
-        run: |
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B \
-            experiments/work-journey/product_command_probe.py --entry ts --claim-approval-race \
-            --native-ci-config "$RUNNER_TEMP/openbot-native-command.json" \
-            --output "$RUNNER_TEMP/openbot-command-ts-native" \
-            --node-bundle "$RUNNER_TEMP/openbot-command-node.cjs"
-      - name: Qualify the TS isolated Linux browser, profile replacement and original native expiry
-        timeout-minutes: 15
-        shell: bash
-        run: |
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B \
-            experiments/work-journey/p4_native_browser.py \
-            --output "$RUNNER_TEMP/openbot-browser-ts-native" \
-            --upstream "$RUNNER_TEMP/openbot-browser-upstream" \
-            --browsers "$RUNNER_TEMP/openbot-browser-binaries"
       - name: Retain content-free P4 native product results
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

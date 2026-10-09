@@ -431,3 +431,36 @@ TS 命令入口已通过真实 HTTP/PostgreSQL/mTLS Temporal/Node/WebSocket/Unix
 预算。修复让新建的待审批命令 claim 预留既有120秒预算，不续期旧 claim，也不授予审批权限。
 相同时序回归现已通过，执行和发布各一次，重放不改变计数；原生 CI 同时覆盖该竞态。
 166项包完整性/远程边界/Host聚焦检查通过。原生命令/浏览器 CI 及此次产品修正的打包仍待验证，P4未完成。
+
+### 原生准备失败与关闭回执竞态修正
+
+`15203a45` 的首轮原生尝试在 [CI37914182843](https://github.com/Peerframe/openbot/actions/runs/37914182843)
+执行前停止：归档读取把 Docker 顶层目录误认为二进制。修复后逐个检查普通成员、长度和哈希；
+Worker 解释器保留软链接所在 venv 前缀。`57520ba9` 的下一轮在
+[CI37915993633](https://github.com/Peerframe/openbot/actions/runs/37915993633) 的原生准备处停止：
+混淆了 Python manifest `6e13e65c…` 与 config `64d91f7b…`。官方 registry 原固定 manifest 已核验
+后者；不同 Docker 存储返回的 inspect ID 不同。两轮都不能证明真实原生命令/浏览器通过。
+
+原生 preflight 还要求离线载入后保留 registry digest。已审核
+[Skopeo 拷贝契约](https://github.com/containers/skopeo/blob/9e29e4cede9bdaa4a54aa5b0af86efedb823bde4/docs/skopeo-copy.1.md)
+支持 `--preserve-digests`、OCI 归档、明确平台和匿名 TLS 校验读取；
+[上游问题2222](https://github.com/containers/skopeo/issues/2222) 说明旧 Docker 归档无法保留原 registry digest。
+选择 Ubuntu24.04 的安全维护包 `skopeo=1.13.3+ds1-2ubuntu0.24.04.3`，上游1.13.3 commit
+`9e29e4cede9bdaa4a54aa5b0af86efedb823bde4`（Apache-2.0），仅用于一次性 CI runner。
+[官方包目录](https://archive.ubuntu.com/ubuntu/pool/universe/s/skopeo/) 保留该精确 amd64 包。
+此传输拒绝旧 `docker save`；已有 CLI 能保留所需字节，不新增自制 registry 客户端。
+独立校验 OCI manifest/config 哈希、长度与 Linux amd64，再记录归档哈希；重建 Squid 的 config
+与 manifest 均记录。不复制 Skopeo 源码、不新增产品依赖或用户安装，保留原 Host/镜像 preflight。
+同一原生通道现先于普通浏览器场景执行，尽早暴露剩余门槛的实际失败。
+
+该轮还发现产品 Workflow 竞态：SQL 关闭整棵树后，并发 Activity 可能先拒绝，早于 `closeWorkTree`
+回执。工作流现在只在原关闭已经发起时等待其结果，再判定该拒绝或取消监视器；300秒权限限制
+不变，不重发副作用。真实 SDK/mTLS 受控时序在修复前失败，修复后成功关闭通过，关闭失败仍传播，
+两份历史均可重放；此排序探针的权限回调是合成。随后完整真实 SQL/Temporal Work 套件49项通过，
+包括实际协作截止期和5个进程 SIGKILL 窗口。包/Host聚焦170项通过；完整仓库检查通过，执行受影响
+构建并复用未变化缓存。当前 HEAD 的托管与原生验收仍是必需门槛。
+
+claim 修正版的 macOS 包已通过34资源/13导入导出与双服务生命周期 smoke；同一已安装应用恢复
+Keychain 登录、工作区和实时连接，正常退出后双服务/PostgreSQL 均停止，重启再次通过。
+此证据只覆盖 claim 修正。后续 Workflow 修正再次改变产品字节，最终 P4 仍需重新打包并更新同一
+应用。原 profile 与永久回滚资源继续保留。

@@ -608,3 +608,46 @@ claim reserves the existing120-second envelope without renewing an old claim or 
 The same controlled interleaving now passes with one execution, one publication and unchanged
 counts after replay. Native CI exercises that race too.166 focused packet/remote/Host tests pass.
 Native command/browser CI and packaging of this product correction are still pending; P4 remains open.
+
+### Native preparation failures and closure acknowledgement correction
+
+The first native attempt on `15203a45` stopped before execution in
+[CI37914182843](https://github.com/Peerframe/openbot/actions/runs/37914182843): the archive reader
+mistook Docker's top-level directory for its binary. The corrected reader verifies regular members,
+size and hashes; the Worker interpreter keeps its venv prefix across its symlink. The next attempt
+on `57520ba9` stopped before native execution in
+[CI37915993633](https://github.com/Peerframe/openbot/actions/runs/37915993633): preparation confused
+Python's manifest digest `6e13e65c…` with its config digest `64d91f7b…`. The official registry's
+original immutable manifest confirms the latter; Docker stores expose different inspect IDs.
+Neither attempt establishes actual native command/browser success.
+
+The original native preflight also requires the registry digest after offline load. The reviewed
+[Skopeo copy contract](https://github.com/containers/skopeo/blob/9e29e4cede9bdaa4a54aa5b0af86efedb823bde4/docs/skopeo-copy.1.md)
+provides `--preserve-digests`, OCI archives, explicit platform and anonymous TLS-verified reads.
+Its [upstream issue2222](https://github.com/containers/skopeo/issues/2222) explains why a legacy
+Docker archive cannot retain the original registry digest. Select Ubuntu24.04's security-maintained
+`skopeo=1.13.3+ds1-2ubuntu0.24.04.3`, upstream1.13.3 commit
+`9e29e4cede9bdaa4a54aa5b0af86efedb823bde4` (Apache-2.0), only in the disposable CI runner.
+The [official package archive](https://archive.ubuntu.com/ubuntu/pool/universe/s/skopeo/) retains
+that exact amd64 package. Reject legacy `docker save` for this transport and a custom registry client
+because the released CLI already preserves the required bytes. OCI metadata is independently
+checked against manifest/config hashes, sizes and Linux amd64; all resulting archive hashes are
+recorded. Squid's rebuilt config and manifest are both recorded. No source is copied from Skopeo,
+no product dependency or user installation is added, and original Host/image preflight stays intact.
+The existing native lane now runs before ordinary browser scenarios to surface its failures first.
+
+That run also exposed a product Workflow race: SQL tree closure can make a concurrent Activity
+refuse before the `closeWorkTree` acknowledgement arrives. The Workflow now observes the original
+closure result when closure has started, before classifying that refusal or cancelling its monitor.
+It keeps the300-second authority limit and does not restart effects. A real SDK/mTLS ordering probe
+fails before the fix, passes successful closure after the fix, propagates a failed closure and
+replays both histories; its authority callbacks are synthetic. The complete actual SQL/Temporal
+Work suite then passed49 named checks, including the real collaboration deadline and five process
+SIGKILL windows. Packet/Host tests passed170; full repository checks passed with affected builds
+executed and unchanged caches reused. Current-head hosted/native qualification remains required.
+
+The claim-corrected macOS package passed34 resource/13 portability and paired lifecycle smoke;
+the same installed app restored Keychain login, workspace and realtime, normally quit with both
+services/PostgreSQL stopped, and restarted successfully. That evidence covers the claim correction.
+The subsequent Workflow correction changes product bytes and requires a fresh package and same-app
+update before final P4 acceptance. Original profile and permanent rollback remain retained.

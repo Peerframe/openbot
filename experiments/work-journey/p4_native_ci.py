@@ -26,7 +26,8 @@ DOCKER_ARCHIVE=('https://download.docker.com/linux/static/stable/x86_64/docker-2
 GVISOR_ARCHIVE=('https://github.com/google/gvisor/releases/download/release-20260914.0/gvisor-x86_64.tar.bz2','94a1b9716797efcb0b348fc3283ddaa1ee5c7898b61eeccb08ee9ac7dc903c15',166025232)
 NSS_ARCHIVE=('https://archive.ubuntu.com/ubuntu/pool/main/n/nss/libnss3-tools_3.98-1build1_amd64.deb','d8d6093edcf2206edeee40eaddd90a54bacc84cde4d8cc9c4fb50bd7aa12cf0d',615188)
 PYTHON_IMAGE='python:3.12.13-slim-bookworm'
-PYTHON_CONFIG='sha256:6e13e65c55e33adf203d77ee371cf8bf5d81bd4902ef07565721f46bf44917af'
+PYTHON_MANIFEST='sha256:6e13e65c55e33adf203d77ee371cf8bf5d81bd4902ef07565721f46bf44917af'
+PYTHON_CONFIG='sha256:64d91f7b885eed272bba87909446b12ff408d4aaa5f1a0e9ca787bbea1a020b9'
 CHROMIUM_IMAGE='mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e'
 CHROMIUM_CONFIG='sha256:fee853fafa59550d162cef52bca02d907694b44ebf6ef9fb075bcc0c65d8dedb'
 SQUID_TAG='openbot-squid77-debian-fixture:20260926'
@@ -88,14 +89,38 @@ def run(argv,timeout=600):
         'PATH':'/usr/sbin:/usr/bin:/sbin:/bin','LANG':'C.UTF-8','HOME':'/root','DOCKER_BUILDKIT':'1'})
 
 
-def export_image(image,path,expected=None):
-    run(['/usr/bin/docker','pull','--platform','linux/amd64',image])
-    metadata=json.loads(run(['/usr/bin/docker','image','inspect',image]))[0]
-    require(metadata['Architecture']=='amd64' and metadata['Os']=='linux','image_platform_changed')
-    if expected:require(metadata['Id']==expected,'reviewed_image_content_changed')
-    run(['/usr/bin/docker','save','--output',path,image]);path.chmod(0o600)
-    return dict(image=image,config=metadata['Id'],repoDigests=metadata['RepoDigests'],
-        diffIds=metadata['RootFS']['Layers'],archiveSha256=digest(path),archiveBytes=path.stat().st_size)
+def oci_identity(path,expected=None,manifest=None):
+    with tarfile.open(path) as archive:
+        def blob(name,descriptor=None):
+            member=archive.getmember(name)
+            require(member.isfile() and 0<member.size<=256*1024,'oci_metadata_type_changed')
+            raw=archive.extractfile(member).read(member.size+1)
+            require(len(raw)==member.size,'oci_metadata_size_changed')
+            if descriptor:
+                require(descriptor['digest']=='sha256:'+hashlib.sha256(raw).hexdigest()
+                    and descriptor['size']==member.size,'oci_metadata_pin_changed')
+            return json.loads(raw)
+        index=blob('index.json');require(len(index['manifests'])==1,'oci_single_image_required')
+        descriptor=index['manifests'][0]
+        if manifest:require(descriptor['digest']==manifest,'reviewed_image_manifest_changed')
+        image=blob('blobs/sha256/'+descriptor['digest'].removeprefix('sha256:'),descriptor)
+        configuration=image['config']
+        if expected:require(configuration['digest']==expected,'reviewed_image_content_changed')
+        config=blob('blobs/sha256/'+configuration['digest'].removeprefix('sha256:'),configuration)
+        require(config['architecture']=='amd64' and config['os']=='linux','image_platform_changed')
+        return dict(manifest=descriptor['digest'],config=configuration['digest'],diffIds=config['rootfs']['diff_ids'])
+
+
+def export_image(image,path,expected=None,manifest=None,*,daemon=False):
+    immutable=image+'@'+manifest if manifest else image
+    source='docker-daemon:'+image if daemon else 'docker://'+immutable
+    # The legacy Docker save format drops registry digests. OCI copying preserves the original
+    # manifest that the native no-pull preflight independently requires after offline load.
+    flags=['--dest-oci-accept-uncompressed-layers'] if daemon else ['--preserve-digests']
+    run(['/usr/bin/skopeo','--override-os','linux','--override-arch','amd64','copy',
+        '--src-no-creds','--src-tls-verify=true',*flags,source,'oci-archive:'+str(path)])
+    path.chmod(0o600)
+    return dict(image=image,**oci_identity(path,expected,manifest),archiveSha256=digest(path),archiveBytes=path.stat().st_size)
 
 
 def files(root):
@@ -132,6 +157,7 @@ def prepare(worker,upstream,bun,node,bundle,output):
     for name,expected in browser_pins.items():require(digest(LINUX/name)==expected,'reviewed_browser_helper_changed')
     require(digest(BROWSER/'seccomp_profile.json')=='d00ad84f5a67031fe2bb64de8d77a5ad9c06adb82935ebdb3c18b5f7ba60a5d0','reviewed_seccomp_changed')
     require(run([bun,'--version']).strip()==b'1.3.14','reviewed_bun_version_changed')
+    require(run(['/usr/bin/dpkg-query','-W','-f=${Version}','skopeo']).strip()==b'1.13.3+ds1-2ubuntu0.24.04.3','reviewed_skopeo_package_changed')
     for filename,pin in (('docker.tgz',DOCKER_ARCHIVE),('gvisor.tar.bz2',GVISOR_ARCHIVE),('nss.deb',NSS_ARCHIVE)):
         download(BASE/'downloads'/filename,pin)
     extra={'containerd-shim-runc-v2':'60a23e7d1d8f60b2f7ae8046cd656066c9dea065c3e0da3ce61cf2fdf173afd3','docker-init':'5ccb076690ac3d060511c63d02194bd5cefaba8dbf225fd60b26283eb1055e4b'}
@@ -139,13 +165,11 @@ def prepare(worker,upstream,bun,node,bundle,output):
         for name,data in pinned_members(archive,{**REVIEWED_BINARY_HASHES,**extra},prefix):
             target=BASE/'bin'/name;target.write_bytes(data);target.chmod(0o755)
     for name,expected in {**REVIEWED_BINARY_HASHES,**extra}.items():require(digest(BASE/'bin'/name)==expected,'binary_missing')
-    python=export_image(PYTHON_IMAGE,BASE/'downloads/python-amd64.tar',PYTHON_CONFIG)
+    python=export_image(PYTHON_IMAGE,BASE/'downloads/python-amd64.tar',PYTHON_CONFIG,PYTHON_MANIFEST)
     chromium=export_image(CHROMIUM_IMAGE,BASE/'downloads/playwright-1.62.1-linux-amd64.tar',CHROMIUM_CONFIG)
     run(['/usr/bin/docker','build','--platform','linux/amd64','--tag',SQUID_TAG,'--file',BROWSER/'egress-fixture.Dockerfile',BROWSER],timeout=600)
-    squid=json.loads(run(['/usr/bin/docker','image','inspect',SQUID_TAG]))[0]
-    run(['/usr/bin/docker','save','--output',PACKET/'squid-image.tar',SQUID_TAG])
     # The same Dockerfile, base digests, signed snapshot and exact packages bind this rebuilt image.
-    squid_pin=dict(config=squid['Id'],diffIds=squid['RootFS']['Layers'],archiveSha256=digest(PACKET/'squid-image.tar'))
+    squid_pin=export_image(SQUID_TAG,PACKET/'squid-image.tar',daemon=True)
     for name in (*SOURCES,'protected_host.py','product_host_fixture.py'):
         copy(HERE/name if name=='product_host_fixture.py' else LINUX/name,BASE/'case/source'/name)
     source=BASE/'case/source/deadline_probe.py'
@@ -165,7 +189,7 @@ def prepare(worker,upstream,bun,node,bundle,output):
     copy(bundle,BASE/'command/product-command-node.cjs')
     copy(HERE/'product_command_native_host.py',BASE/'command/product_host_fixture.py')
     config=dict(base='/opt/oc25',binaries=str(BASE/'bin'),archive=str(BASE/'downloads/python-amd64.tar'),
-        archiveSha256=python['archiveSha256'],image='python@'+PYTHON_CONFIG,imageTag=PYTHON_IMAGE,sources=str(BASE/'case/source'),
+        archiveSha256=python['archiveSha256'],image='python@'+PYTHON_MANIFEST,imageTag=PYTHON_IMAGE,sources=str(BASE/'case/source'),
         sourceHashes={name:digest(BASE/'case/source'/name) for name in SOURCES},binaryHashes=REVIEWED_BINARY_HASHES,
         python='/usr/bin/python3.12',pythonPath=paths,secretsDirectory=str(BASE/'command/secrets'))
     record(BASE/'case/config.json',dict(state=str(BASE/'command/state'),socket='/run/oc25/command.sock',nodeUid=62425,nodeGid=62425,
@@ -194,7 +218,7 @@ def prepare(worker,upstream,bun,node,bundle,output):
     text=replace_exact(text,'ef19d46fd24bc5512ae880bcc895da8639f0d895e22347edf832d0a1a7950bb4',digest(deadline));browser.write_text(text)
     identity='deadline-a1-p4'+secrets.token_hex(3)
     program=PACKET/'run.py';text=program.read_text()
-    for old,new in (('deadline-a1-comp5',identity),('7d636842c8633beeaf30c512b6b022693cf1120b563c842dfc4bbc6d9441632e',squid_pin['archiveSha256']),('sha256:5b3968c26dd7b5cd7fdb69ecf90a85c277848993d613ee0fd01efa475892c671',squid_pin['config']),('a8f9ebd1770ddc8e55dab7a68d4ec1ec1eebf374bb97cc65cf2c3cb373fc6791',digest(bun))):text=replace_exact(text,old,new)
+    for old,new in (('deadline-a1-comp5',identity),('7d636842c8633beeaf30c512b6b022693cf1120b563c842dfc4bbc6d9441632e',squid_pin['archiveSha256']),('sha256:5b3968c26dd7b5cd7fdb69ecf90a85c277848993d613ee0fd01efa475892c671',squid_pin['config']),('sha256:fad04b80804e8de9228ddf78229712edb21ef86eb218c4d77de8dad1f1a74b8f',squid_pin['manifest']),('a8f9ebd1770ddc8e55dab7a68d4ec1ec1eebf374bb97cc65cf2c3cb373fc6791',digest(bun))):text=replace_exact(text,old,new)
     program.write_text(text)
     companion=PACKET/'companion.py';companion.write_text(replace_exact(companion.read_text(),'/opt/openbot-qualification-20260925-c8b2/units','/opt/obp4/units'))
     copy(BROWSER/'native-network/run_probe.py',PACKET/'snapshot.py')

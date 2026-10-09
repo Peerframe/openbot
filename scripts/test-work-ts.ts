@@ -34,6 +34,7 @@ import {
 } from "./python-acceptance-fixture.ts";
 import { qualifyPythonDrain } from "./ts-work-drain-acceptance.ts";
 import { qualifyWorkProcessRecovery } from "./ts-work-process-acceptance.ts";
+import { qualifyDeadlineCloseRace } from "./ts-work-deadline-acceptance.ts";
 import { qualifyWorkProduct } from "./ts-work-product-acceptance.ts";
 
 await installWorkRuntime();
@@ -226,6 +227,7 @@ try {
       new URL("../packages/work/dist/workflows.js", import.meta.url),
     );
     const workflowBundle = await bundleWorkflowCode({ workflowsPath });
+    await qualifyDeadlineCloseRace(client, native, workflowBundle);
     const makeWorker = () =>
       Worker.create({
         connection: native!,

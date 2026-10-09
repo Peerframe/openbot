@@ -58,7 +58,8 @@ export async function OpenBotWorkTsV1(input: WorkStart): Promise<void> {
   const body = new CancellationScope(),
     alarm = new CancellationScope();
   let expired = false,
-    completed = false;
+    completed = false,
+    closing = false;
   const monitor = initial.watch
     ? alarm.run(async () => {
         let state = initial;
@@ -70,6 +71,7 @@ export async function OpenBotWorkTsV1(input: WorkStart): Promise<void> {
           throw ApplicationFailure.nonRetryable("invalid_tree_deadline", "InvalidWork");
         await sleep(Math.max(0, state.deadline - Date.now()));
         // Close SQL authority before cancelling in-flight work; late observed truth can still settle.
+        closing = true;
         await tree.closeWorkTree(input);
         expired = true;
         body.cancel();
@@ -103,9 +105,13 @@ export async function OpenBotWorkTsV1(input: WorkStart): Promise<void> {
       }
     });
   } catch (error) {
+    // SQL closure can veto an Activity before the closure Activity acknowledgement arrives.
+    // Observe that original result before classifying the veto or cancelling the monitor.
+    if (closing) await monitored;
     if (alarmFailure) throw alarmFailure;
     if (!expired) throw error;
   } finally {
+    if (closing) await monitored;
     alarm.cancel();
     await monitored;
   }

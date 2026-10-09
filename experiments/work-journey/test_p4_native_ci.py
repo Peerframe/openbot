@@ -56,6 +56,40 @@ class NativePacketTests(unittest.TestCase):
                 p.write_text(json.dumps(value))
                 with self.assertRaisesRegex(ValueError,'explicit_native_ci'):host.NativeHost(p,Path(directory))
 
+    def test_oci_copy_keeps_manifest_and_config_pins_separate(self):
+        with TemporaryDirectory() as directory:
+            p=Path(directory)/'image.tar';calls=[]
+            def run(argv):calls.append(argv);p.write_bytes(b'fixture OCI archive');return b''
+            identity={'manifest':packet.PYTHON_MANIFEST,'config':packet.PYTHON_CONFIG,'diffIds':[]}
+            with patch.object(packet,'run',side_effect=run),patch.object(packet,'oci_identity',return_value=identity) as verify:
+                value=packet.export_image(packet.PYTHON_IMAGE,p,packet.PYTHON_CONFIG,packet.PYTHON_MANIFEST)
+            self.assertIn('docker://'+packet.PYTHON_IMAGE+'@'+packet.PYTHON_MANIFEST,calls[0])
+            self.assertIn('--preserve-digests',calls[0]);self.assertIn('--src-no-creds',calls[0])
+            self.assertNotEqual(packet.PYTHON_CONFIG,packet.PYTHON_MANIFEST)
+            verify.assert_called_once_with(p,packet.PYTHON_CONFIG,packet.PYTHON_MANIFEST)
+            self.assertEqual(value['config'],packet.PYTHON_CONFIG)
+
+    def test_oci_metadata_pin_drift_and_platform_fail_closed(self):
+        with TemporaryDirectory() as directory:
+            p=Path(directory)/'image.tar'
+            def write(architecture='amd64',corrupt=False):
+                config=json.dumps({'architecture':architecture,'os':'linux','rootfs':{'diff_ids':[]}}).encode()
+                cp={'digest':'sha256:'+hashlib.sha256(config).hexdigest(),'size':len(config)}
+                manifest=json.dumps({'schemaVersion':2,'config':cp,'layers':[]}).encode()
+                mp={'digest':'sha256:'+hashlib.sha256(manifest).hexdigest(),'size':len(manifest)}
+                records={'index.json':json.dumps({'schemaVersion':2,'manifests':[mp]}).encode(),'blobs/sha256/'+mp['digest'][7:]:manifest,'blobs/sha256/'+cp['digest'][7:]:b'changed' if corrupt else config}
+                with tarfile.open(p,'w') as t:
+                    for name,data in records.items():
+                        member=tarfile.TarInfo(name);member.size=len(data);t.addfile(member,io.BytesIO(data))
+                return cp['digest'],mp['digest']
+            cp,mp=write();self.assertEqual(packet.oci_identity(p,cp,mp)['manifest'],mp)
+            with self.assertRaisesRegex(ValueError,'image_manifest_changed'):packet.oci_identity(p,cp,'sha256:'+('0'*64))
+            with self.assertRaisesRegex(ValueError,'image_content_changed'):packet.oci_identity(p,'sha256:'+('0'*64),mp)
+            cp,mp=write(corrupt=True)
+            with self.assertRaisesRegex(ValueError,'oci_metadata_pin_changed'):packet.oci_identity(p,cp,mp)
+            cp,mp=write(architecture='arm64')
+            with self.assertRaisesRegex(ValueError,'image_platform_changed'):packet.oci_identity(p,cp,mp)
+
     def test_worker_venv_prefix_survives_an_interpreter_symlink(self):
         with TemporaryDirectory() as directory:
             root=Path(directory);(root/'bin').mkdir();(root/'pyvenv.cfg').write_text('fixture venv')
