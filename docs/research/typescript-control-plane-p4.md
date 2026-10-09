@@ -697,3 +697,15 @@ four locations in the public packet source. The parent retains those content-fre
 on stage/pre-ready failure. It never publishes exception values, locals, keys, enrollment or private
 stderr. Positive/negative redaction checks pass; this adds observability, not acceptance or retry.
 Fresh actual native staging, command, isolated browser and complete hosted checks remain required.
+
+
+The diagnostic attempt on `1b5da7fd`,
+[CI37923141565](https://github.com/Peerframe/openbot/actions/runs/37923141565), retained
+`unsafe_directory` at the original Host stage's protected-directory check, and the same check
+prevented key-cleanup verification. No native command or browser succeeded. Fresh root-created
+fixture directories have private modes; the shared `/opt` ancestor is the remaining suspected
+permission gap, but its prior metadata was not captured. Preparation now seals only that fixed
+ancestor to root:root0755 on the guarded disposable GitHub runner, records exact before/after
+UID/GID/mode and unchanged inode, and runs original directory checks before native admission.
+It does not recurse, change existing tool children, modify user hosts or relax any native gate.
+Actual recorded metadata and fresh native results remain required before concluding that gap closed.

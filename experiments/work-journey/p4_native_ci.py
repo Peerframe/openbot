@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 import secrets
 import shutil
+import stat
 import subprocess
 import sys
 import tarfile
@@ -144,17 +145,35 @@ def worker_site(worker):
     return matches[0]
 
 
+def seal_fixture_parent():
+    # Some hosted images let the runner write /opt. The unchanged native path checks require
+    # root-owned, non-writable ancestors. Seal only this fixed top-level disposable-CI directory.
+    require(sys.platform=='linux' and os.geteuid()==0 and os.environ.get('GITHUB_ACTIONS')=='true',
+        'disposable_linux_ci_only')
+    parent=Path('/opt');before=parent.lstat()
+    require(stat.S_ISDIR(before.st_mode),'fixture_parent_directory_required')
+    os.chown(parent,0,0);parent.chmod(0o755)
+    after=parent.lstat()
+    require((before.st_dev,before.st_ino)==(after.st_dev,after.st_ino) and stat.S_ISDIR(after.st_mode)
+        and after.st_uid==0 and after.st_gid==0 and stat.S_IMODE(after.st_mode)==0o755,'fixture_parent_changed')
+    def public(value):return dict(uid=value.st_uid,gid=value.st_gid,mode=oct(stat.S_IMODE(value.st_mode)))
+    return dict(path='/opt',before=public(before),after=public(after),inodeUnchanged=True)
+
+
 def prepare(worker,upstream,bun,node,bundle,output):
     require(sys.platform=='linux' and os.geteuid()==0 and os.uname().machine=='x86_64'
         and os.environ.get('GITHUB_ACTIONS')=='true','disposable_linux_ci_only')
     require('VERSION_ID="24.04"' in Path('/etc/os-release').read_text(),'ubuntu_24_04_required')
     require(not BASE.exists() and not BASE.is_symlink() and not output.exists(),'fresh_ci_packet_required')
+    parent=seal_fixture_parent()
     os.umask(0o077);BASE.mkdir(mode=0o700)
     for path in ('bin','bin/gvisor-bin','downloads','units','case','case/source','case/python','deps','command','command/docker-config'):
         (BASE/path).mkdir(mode=0o700)
     PACKET.mkdir(mode=0o700)
     sys.path[:0]=[str(LINUX),str(HERE),str(REPOSITORY/'apps/server-python/src')]
     from protected_native import REVIEWED_BINARY_HASHES,SOURCES
+    from protected_io import directory
+    directory(BASE);directory(BASE/'command')
     from product_browser_upstream import verify,LOOPBACK,ORIGINAL
     verify(upstream)
     browser_pins={'deadline_probe.py':'ef19d46fd24bc5512ae880bcc895da8639f0d895e22347edf832d0a1a7950bb4','sandbox.py':'5859262340afb15ca7ac3153a586dbc96339fc71576fa4cd1a01151423fa7465','output_capacity.py':'1d25ff9f64ff1110d555c1431a0d1cfcf023c6338cd949b38fb88a79ed794ab6'}
@@ -188,6 +207,7 @@ def prepare(worker,upstream,bun,node,bundle,output):
     require(not Path('/opt/oc25').exists() and not Path('/opt/oc25p').exists() and not Path('/opt/oc25n').exists() and not Path('/run/oc25').exists(),'command_paths_occupied')
     Path('/opt/oc25').mkdir(mode=0o700);Path('/opt/oc25n').mkdir(mode=0o755);Path('/run/oc25').mkdir(mode=0o750)
     Path('/opt/oc25n').chmod(0o755);Path('/run/oc25').chmod(0o750);os.chown('/run/oc25',0,62425)
+    directory('/opt/oc25');directory('/run/oc25',private=False)
     require(run([node,'--version']).strip()==b'v22.22.2','reviewed_node_version_changed')
     copy(node,Path('/opt/oc25n/node'));Path('/opt/oc25n/node').chmod(0o755)
     copy(bundle,BASE/'command/product-command-node.cjs')
@@ -244,13 +264,13 @@ def prepare(worker,upstream,bun,node,bundle,output):
             if p.is_file() and not p.is_symlink():command_files.append(dict(path=str(p),sha256=digest(p)))
     for p in (BASE/'command/product_host_fixture.py',BASE/'case/config.json',BASE/'command/product-command-node.cjs',Path('/opt/oc25n/node'),BASE/'MANIFEST.json'):
         command_files.append(dict(path=str(p),sha256=digest(p)))
-    plan=dict(version=1,fixtureEnvironment='disposable-github-linux',pythonPath=paths,commandFiles=command_files,
+    plan=dict(version=1,fixtureEnvironment='disposable-github-linux',fixtureParent=parent,pythonPath=paths,commandFiles=command_files,
         nativeRoot=str(BASE/'units'/identity),browserProgram=str(program),packet=str(PACKET),
         reviewedBinaries=REVIEWED_BINARY_HASHES,python=python,chromium=chromium,squid=squid_pin,bunSha256=digest(bun),
-        packagingAdaptations=['fresh native root','offline export hash bound to reviewed image config/layers','root-private source copies','Bun 1.3.14 from existing CI','original browser listener only inside private network','new synthetic TLS CA/NSS database'])
+        packagingAdaptations=['root-owned /opt ancestor on disposable runner','fresh native root','offline export hash bound to reviewed image config/layers','root-private source copies','Bun 1.3.14 from existing CI','original browser listener only inside private network','new synthetic TLS CA/NSS database'])
     record(BASE/'PLAN.json',plan)
     record(output,{'version':1,'program':str(BASE/'command/product_host_fixture.py')})
-    print(json.dumps(dict(nativePacketReady=True,fixtureEnvironment=plan['fixtureEnvironment'],rootFresh=True,imageContentPinned=True,binariesPinned=True)))
+    print(json.dumps(dict(nativePacketReady=True,fixtureEnvironment=plan['fixtureEnvironment'],rootFresh=True,imageContentPinned=True,binariesPinned=True,fixtureParent=parent)))
 
 
 if __name__=='__main__':

@@ -7,6 +7,8 @@ import json
 from pathlib import Path
 import sys
 import unittest
+import stat
+from types import SimpleNamespace
 from unittest.mock import AsyncMock,patch
 from tempfile import TemporaryDirectory
 
@@ -17,6 +19,20 @@ from test_product_command_remote import finished,BINDING
 
 
 class NativePacketTests(unittest.TestCase):
+    def test_ci_parent_is_sealed_without_recursing_or_relaxing_native_checks(self):
+        before=SimpleNamespace(st_mode=stat.S_IFDIR|0o777,st_uid=1001,st_gid=1001,st_dev=1,st_ino=2)
+        after=SimpleNamespace(st_mode=stat.S_IFDIR|0o755,st_uid=0,st_gid=0,st_dev=1,st_ino=2)
+        with patch.object(packet.sys,'platform','linux'),patch.object(packet.os,'geteuid',return_value=0),patch.dict(packet.os.environ,{'GITHUB_ACTIONS':'true'}):
+            with patch.object(Path,'lstat',side_effect=[before,after]),patch.object(packet.os,'chown') as owner,patch.object(Path,'chmod') as mode:
+                result=packet.seal_fixture_parent()
+            owner.assert_called_once_with(Path('/opt'),0,0);mode.assert_called_once_with(0o755)
+            self.assertEqual(result,dict(path='/opt',before=dict(uid=1001,gid=1001,mode='0o777'),after=dict(uid=0,gid=0,mode='0o755'),inodeUnchanged=True))
+            before.st_mode=stat.S_IFLNK|0o777
+            with patch.object(Path,'lstat',return_value=before),patch.object(packet.os,'chown') as owner:
+                with self.assertRaisesRegex(ValueError,'parent_directory_required'):packet.seal_fixture_parent()
+                owner.assert_not_called()
+        with self.assertRaisesRegex(ValueError,'disposable_linux_ci_only'):packet.seal_fixture_parent()
+
     def test_source_rebinding_requires_one_reviewed_literal(self):
         self.assertEqual(packet.replace_exact('pin=original','original','measured'),'pin=measured')
         for value in ('absent','original original'):
