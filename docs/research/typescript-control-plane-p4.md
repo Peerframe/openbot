@@ -760,3 +760,24 @@ local tag before the unchanged config/manifest/platform guard. This follows the 
 content, source enforcement, routes, runtime budget or host daemon. Actual failure stderr was not
 retained publicly, so the transport-name attribution rests on the observed operation and loader
 contract, not an original daemon message. Fresh native browser and all current-head CI remain required.
+
+
+### Isolated browser product passed before native closure; generated CA input correction
+
+[CI37929897873](https://github.com/Peerframe/openbot/actions/runs/37929897873) on `dde114cd`
+again accepted the actual protected command. The isolated browser now reached the product: four
+actual approvals, one each navigate/type/click/read, independent target state, downloaded report,
+binary history replay, graceful container replacement and unchanged private-profile state all
+passed. Chromium accepted the generated CA and refused wrong-host/unknown-CA before readiness.
+However final native acceptance returned no JSON; the result is retained **accepted:false**,
+`nativeCleanupComplete:false`, not a completed browser qualification.
+
+The packet built Chromium's NSS databases but omitted `nssdb/ca.pem`, required independently by
+the unchanged Node TLS-tunnel probe. Preparation now copies only its generated public CA into
+that read-only fixture mount and records its hash in the existing packet manifest. No personal
+trust, CA signing key or certificate bypass is introduced. The earlier root exception was not
+fully captured, so this is a proven missing input and inferred historical failure attribution.
+The controller now drains bounded stderr through EOF into a private file and publishes only fixed
+phase/type/code plus typed original-unit/cleanup flags. Original raw exception values remain private.
+The original600-second expiry and already-open TLS-tunnel revocation gates are unchanged and still
+require a new complete result. No partial product result establishes native acceptance.

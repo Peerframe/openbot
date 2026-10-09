@@ -69,6 +69,17 @@ def bind_squid_load(text):
     return replace_exact(text,inspected,tagged+'\n        '+inspected)
 
 
+def browser_trust(packet,certutil):
+    # Both Chromium NSS and the independent verified-TLS tunnel use this generated fixture CA.
+    # Only its public certificate is copied; no host/personal roots or signing key are selected.
+    trust=packet/'nssdb';trust.mkdir(mode=0o755)
+    run([certutil,'-N','-d','sql:'+str(trust),'--empty-password'])
+    run([certutil,'-A','-d','sql:'+str(trust),'-n','OpenBot disposable fixture CA','-t','C,,','-i',packet/'tls/ca.pem'])
+    copy(packet/'tls/ca.pem',trust/'ca.pem')
+    trust.chmod(0o755)
+    for p in trust.iterdir():p.chmod(0o644)
+
+
 def download(target,pin):
     url,expected,maximum=pin
     with urlopen(url,timeout=120) as response,target.open('xb') as output:
@@ -258,12 +269,7 @@ def prepare(worker,upstream,bun,node,bundle,output):
     # Generate only a disposable CA and NSS database; no host/personal trust is read or installed.
     run([worker,'-B',PACKET/'prepare_tls.py','--output',PACKET/'tls'])
     nss=BASE/'nss-tools';run(['/usr/bin/dpkg-deb','--extract',BASE/'downloads/nss.deb',nss])
-    (PACKET/'nssdb').mkdir(mode=0o755)
-    certutil=nss/'usr/bin/certutil'
-    run([certutil,'-N','-d','sql:'+str(PACKET/'nssdb'),'--empty-password'])
-    run([certutil,'-A','-d','sql:'+str(PACKET/'nssdb'),'-n','OpenBot disposable fixture CA','-t','C,,','-i',PACKET/'tls/ca.pem'])
-    (PACKET/'nssdb').chmod(0o755)
-    for p in (PACKET/'nssdb').iterdir():p.chmod(0o644)
+    browser_trust(PACKET,nss/'usr/bin/certutil')
     for name in ('socket_probe.mjs','tunnel_probe.mjs','browser-entry.mjs'):(PACKET/name).chmod(0o644)
     record(PACKET/'FILES.json',files(PACKET))
     command_files=[]

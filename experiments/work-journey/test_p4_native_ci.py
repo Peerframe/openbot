@@ -14,6 +14,7 @@ from tempfile import TemporaryDirectory
 
 import p4_native_ci as packet
 import product_command_native_host as host
+import p4_native_browser as native_browser
 import product_command_remote as remote
 from test_product_command_remote import finished,BINDING,staged,pem,ROUTE,TIMING
 
@@ -141,6 +142,32 @@ class NativePacketTests(unittest.TestCase):
             cp,mp=write(architecture='arm64')
             with self.assertRaisesRegex(ValueError,'image_platform_changed'):packet.oci_identity(p,cp,mp)
 
+    def test_browser_trust_contains_same_generated_public_ca_for_nss_and_tls_tunnel(self):
+        with TemporaryDirectory() as directory:
+            root=Path(directory);(root/'tls').mkdir();ca=root/'tls/ca.pem';ca.write_bytes(b'generated public fixture certificate')
+            def initialize(argv):
+                trust=root/'nssdb'
+                if '-N' in argv:
+                    for name in ('cert9.db','key4.db'):(trust/name).write_bytes(b'synthetic NSS database')
+                return b''
+            with patch.object(packet,'run',side_effect=initialize) as run:
+                packet.browser_trust(root,Path('/owned/certutil'))
+            self.assertEqual((root/'nssdb/ca.pem').read_bytes(),ca.read_bytes())
+            self.assertIn(ca,run.call_args_list[1].args[0]);self.assertIn('C,,',run.call_args_list[1].args[0])
+            self.assertEqual(stat.S_IMODE((root/'nssdb').stat().st_mode),0o755)
+            for p in (root/'nssdb').iterdir():self.assertEqual(stat.S_IMODE(p.stat().st_mode),0o644)
+            self.assertIn('nssdb/ca.pem',[v['path'] for v in packet.files(root)])
+            with self.assertRaises(FileExistsError):packet.browser_trust(root,Path('/owned/certutil'))
+
+    def test_browser_failure_diagnostic_excludes_private_values_and_malformed_flags(self):
+        value=dict(accepted=False,failedOriginalUnitClosed=True,productionUnchanged=True,ownedRuntimeRemoved=True,
+            actualRunsc='private credential',existingContainerCount=0,nativeDeadlineSeconds=600,failure='private model payload')
+        record=native_browser.native_failure(RuntimeError('secret cookie token'),'expiry',value)
+        self.assertNotIn('private',json.dumps(record));self.assertNotIn('secret',json.dumps(record))
+        self.assertEqual(record['nativeBrowserFailure']['nativeFlags'],dict(accepted=False,failedOriginalUnitClosed=True,productionUnchanged=True,ownedRuntimeRemoved=True))
+        self.assertEqual(record['nativeBrowserFailure']['nativeDeadlineSeconds'],600)
+        with self.assertRaisesRegex(ValueError,'native_failure_phase'):native_browser.native_failure(RuntimeError(),'arbitrary private input',value)
+
     def test_worker_venv_prefix_survives_an_interpreter_symlink(self):
         with TemporaryDirectory() as directory:
             root=Path(directory);(root/'bin').mkdir();(root/'pyvenv.cfg').write_text('fixture venv')
@@ -172,6 +199,35 @@ class NativePacketTests(unittest.TestCase):
 
 
 class NativeDiagnosticsTests(unittest.IsolatedAsyncioTestCase):
+    async def test_browser_stderr_captures_every_chunk_until_eof_and_refuses_overflow(self):
+        stream=SimpleNamespace(read=AsyncMock(side_effect=[b'first partial line',b' remaining diagnostic',b'']))
+        self.assertEqual(await native_browser.bounded_stderr(stream),b'first partial line remaining diagnostic')
+        self.assertEqual(stream.read.await_count,3)
+        stream=SimpleNamespace(read=AsyncMock(side_effect=[b'x'*(native_browser.MAXIMUM+1)]))
+        with self.assertRaisesRegex(ValueError,'native_capture_bound'):await native_browser.bounded_stderr(stream)
+
+    async def test_browser_controller_retains_failed_native_result_and_complete_private_stderr(self):
+        import product_browser_probe as probe
+        with TemporaryDirectory() as directory:
+            output=Path(directory)/'owned-output'
+            diagnostic=native_browser.native_failure(ValueError('native_browser_acceptance_failed'),'expiry',
+                dict(accepted=False,failedOriginalUnitClosed=True,productionUnchanged=True,ownedRuntimeRemoved=True))
+            script='import sys,json,time\nprint(json.dumps({"fixtureEnvironment":"disposable-github-linux"}),flush=True)\nsys.stdin.readline()\nsys.stderr.write("private first chunk");sys.stderr.flush();time.sleep(.02)\nsys.stderr.write(" private final chunk");sys.stderr.flush()\nprint('+repr(json.dumps(diagnostic))+',flush=True)\nraise SystemExit(1)'
+            child=await asyncio.create_subprocess_exec(sys.executable,'-c',script,
+                stdin=asyncio.subprocess.PIPE,stdout=asyncio.subprocess.PIPE,stderr=asyncio.subprocess.PIPE)
+            async def product(*args):
+                output.mkdir(mode=0o700)
+                (output/'RESULT.json').write_text(json.dumps(dict(accepted=True,isolatedLinuxBrowserProduct=True,ownedFixturesClosed=True)))
+            with patch.object(native_browser.asyncio,'create_subprocess_exec',AsyncMock(return_value=child)),patch.object(probe,'run',AsyncMock(side_effect=product)),patch('builtins.print') as emit:
+                with self.assertRaisesRegex(ValueError,'native_browser_original_acceptance_failed'):
+                    await native_browser.qualify(output,Path('/owned/upstream'),Path('/owned/browsers'))
+            value=json.loads((output/'RESULT.json').read_text())
+            self.assertFalse(value['accepted']);self.assertFalse(value['nativeCleanupComplete'])
+            self.assertEqual(value['nativeFailure'],diagnostic['nativeBrowserFailure'])
+            self.assertEqual((output/'native.stderr-private').read_bytes(),b'private first chunk private final chunk')
+            self.assertEqual(json.loads(emit.call_args.args[0]),diagnostic)
+            self.assertNotIn('private',emit.call_args.args[0])
+
     async def test_same_runner_host_binds_actual_server_port_without_a_proxy(self):
         with TemporaryDirectory() as directory:
             root=Path(directory);configuration=root/'configuration.json'

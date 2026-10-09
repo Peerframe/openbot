@@ -23,6 +23,46 @@ def require(value,code):
     if not value:raise ValueError(code)
 
 
+FAILURE_TYPES=frozenset(('FileNotFoundError','PermissionError','TimeoutError','TimeoutExpired',
+    'OSError','ValueError','RuntimeError','CalledProcessError','JSONDecodeError'))
+FAILURE_PHASES=frozenset(('readiness','product','finish','expiry'))
+FAILURE_CODES={
+    'bounded wait expired: verified open TLS tunnel':'verified_tls_tunnel_missing',
+    'bounded wait expired: existing tunnel revocation':'tunnel_revocation_missing',
+    'existing tunnel survived or target received another request':'tunnel_revocation_failed',
+    'not original native timeout':'native_timeout_changed',
+    'owned native tree is not empty':'native_cgroup_not_empty',
+    'production state changed':'native_host_state_changed',
+    "private Docker command failed: ('image', 'inspect')":'image_name_missing',
+    "private Docker command failed: ('image', 'tag')":'image_digest_missing',
+    'native_browser_acceptance_failed':'native_acceptance_failed',
+}
+NATIVE_FLAGS=('accepted','actualRunsc','actualSquid','actualProductJourney','originalNativeExpiryVerified',
+    'failedOriginalUnitClosed','productionUnchanged','ownedRuntimeRemoved')
+
+
+def native_failure(error,phase,result):
+    # Public fixed phase/type and typed original-fixture flags only. No exception values,
+    # stderr, command inputs, cookies, keys or enrollment enter hosted diagnostics.
+    require(phase in FAILURE_PHASES,'native_failure_phase_changed')
+    record=dict(phase=phase,errorType=type(error).__name__ if type(error).__name__ in FAILURE_TYPES else 'Exception',
+        code=FAILURE_CODES.get(str(error),'fixture_failed'))
+    if type(result) is dict:
+        record['nativeFlags']={k:result[k] for k in NATIVE_FLAGS if type(result.get(k)) is bool}
+        for k in ('failure','cleanupFailure'):
+            if type(result.get(k)) is str and result[k] in FAILURE_CODES:record[k+'Code']=FAILURE_CODES[result[k]]
+        for k in ('nativeDeadlineSeconds','existingContainerCount'):
+            if type(result.get(k)) is int and 0<=result[k]<=65535:record[k]=result[k]
+    return {'nativeBrowserFailure':record}
+
+
+async def bounded_stderr(stream):
+    data=bytearray()
+    while part:=await stream.read(4096):
+        data.extend(part);require(len(data)<=MAXIMUM,'native_capture_bound')
+    return bytes(data)
+
+
 class Relay(socketserver.BaseRequestHandler):
     def handle(self):
         remote=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM)
@@ -52,7 +92,7 @@ def root_run():
     os.umask(0o077)
     plan=json.loads((BASE/'PLAN.json').read_text());root=Path(plan['nativeRoot'])
     require(root.parent==BASE/'units' and not root.exists(),'fresh_native_root_required')
-    servers=[];child=None;accepted=False
+    servers=[];child=None;accepted=False;error=None;result=None;phase='readiness'
     log=(BASE/'browser-private.log').open('xb')
     try:
         child=subprocess.Popen(['/usr/bin/python3','-B',str(PROGRAM),'run'],stdin=subprocess.DEVNULL,
@@ -60,7 +100,6 @@ def root_run():
         end=time.monotonic()+150
         while not (root/'ready.json').exists():
             if child.poll() is not None:
-                sys.stderr.write((BASE/'browser-private.log').read_text(errors='replace')[-8192:])
                 raise ValueError('native_browser_before_ready_failed')
             require(time.monotonic()<end,'native_browser_readiness_unknown');time.sleep(.1)
         relays={}
@@ -70,18 +109,22 @@ def root_run():
             relays[name]='http://127.0.0.1:'+str(server.server_address[1])
         print(json.dumps(dict(fixtureEnvironment='disposable-github-linux',computerUrl=relays['control'],stateUrl=relays['target'],
             targetUrl='https://example.com:18443',token='synthetic-linux-composition-fixture-only')),flush=True)
+        phase='product'
         require(select.select([sys.stdin.buffer],[],[],360)[0],'product_acceptance_missing')
         raw=sys.stdin.buffer.readline(1025);require(len(raw)<=1024,'product_acceptance_bound')
         value=json.loads(raw);require(type(value) is dict and set(value)=={'productAccepted'} and type(value['productAccepted']) is bool,'product_acceptance_changed')
         accepted=value['productAccepted']
         operation='finish' if accepted else 'abort'
+        phase='finish'
         subprocess.run(['/usr/bin/python3','-B',str(PROGRAM),operation],check=True,capture_output=True,timeout=10)
+        phase='expiry'
         code=child.wait(timeout=620)
         result=json.loads((root/'result.json').read_text())
         require(code==0 and accepted and result['accepted'] is True and result['actualRunsc'] is True
             and result['originalNativeExpiryVerified'] is True and result['productionUnchanged'] is True
             and result['ownedRuntimeRemoved'] is True,'native_browser_acceptance_failed')
         print(json.dumps(result),flush=True)
+    except Exception as failure:error=failure
     finally:
         if child is not None and child.poll() is None:
             # Request only the original failed unit's bounded cleanup. Never renew/restart it.
@@ -91,6 +134,13 @@ def root_run():
             except subprocess.TimeoutExpired:child.terminate();child.wait(timeout=5)
         for server in servers:server.shutdown();server.server_close()
         log.close()
+    if error is not None:
+        candidate=root/'result.json'
+        if result is None and candidate.is_file() and candidate.stat().st_size<=MAXIMUM:
+            try:result=json.loads(candidate.read_text())
+            except (ValueError,UnicodeError):pass
+        print(json.dumps(native_failure(error,phase,result)),flush=True)
+        raise SystemExit(1) from None
 
 
 async def qualify(output,upstream,browsers):
@@ -98,16 +148,17 @@ async def qualify(output,upstream,browsers):
     require(not output.exists(),'fresh_product_output_required')
     root=await asyncio.create_subprocess_exec('/usr/bin/sudo','-n','/usr/bin/python3','-B',str(LAUNCHER),'--root',
         stdin=asyncio.subprocess.PIPE,stdout=asyncio.subprocess.PIPE,stderr=asyncio.subprocess.PIPE,limit=MAXIMUM)
-    error=None;result=None
-    async def stderr():
-        data=await root.stderr.read(MAXIMUM+1);require(len(data)<=MAXIMUM,'native_capture_bound')
-        return data
-    error_task=asyncio.create_task(stderr())
+    error=None;result=None;diagnostic=None
+    error_task=asyncio.create_task(bounded_stderr(root.stderr))
     try:
         remote=json.loads(await asyncio.wait_for(root.stdout.readline(),160))
+        if type(remote) is dict and set(remote)=={'nativeBrowserFailure'}:
+            diagnostic=remote;raise ValueError('native_browser_readiness_failed')
         async with asyncio.timeout(360):await run(output,upstream,browsers,'linux-replacement',remote,'ts')
         root.stdin.write(b'{"productAccepted":true}\n');await root.stdin.drain();root.stdin.close()
         raw=await asyncio.wait_for(root.stdout.readline(),620);result=json.loads(raw)
+        if type(result) is dict and set(result)=={'nativeBrowserFailure'}:
+            diagnostic=result;raise ValueError('native_browser_original_acceptance_failed')
         await asyncio.wait_for(root.wait(),10)
         require(root.returncode==0 and result['accepted'] is True,'native_browser_acceptance_failed')
         record=json.loads((output/'RESULT.json').read_text())
@@ -127,9 +178,10 @@ async def qualify(output,upstream,browsers):
         data=await error_task
         if not output.exists():output.mkdir(mode=0o700)
         (output/'native.stderr-private').write_bytes(data)
-        if error is not None:print(json.dumps({'nativeFixtureDiagnostic':data.decode('utf8',errors='replace')[-8192:]}),flush=True)
+        if error is not None:print(json.dumps(diagnostic or native_failure(error,'product',None)),flush=True)
         if error is not None and (output/'RESULT.json').exists():
             record=json.loads((output/'RESULT.json').read_text());record['accepted']=False;record['nativeCleanupComplete']=False
+            if diagnostic is not None:record['nativeFailure']=diagnostic['nativeBrowserFailure']
             (output/'RESULT.json').write_text(json.dumps(record,indent=2)+'\n')
 
 

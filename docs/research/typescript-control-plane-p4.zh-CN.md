@@ -548,3 +548,19 @@ manifest 绑定原本地标签，再保留原 config/manifest/平台门槛；沿
 [离线装载绑定](../../experiments/linux-execution/deadline_probe.py)，不改变镜像内容、源码隔离、
 路由、原生预算或宿主 daemon。未公开保留原 daemon 错误，传输命名归因仍基于实际操作与装载
 契约，而非原异常。仍须新的真实隔离浏览器及当前 HEAD 全部 CI。
+
+
+### 隔离浏览器产品链路通过但原生未闭合；生成 CA 输入修正
+
+`dde114cd` 的 [CI37929897873](https://github.com/Peerframe/openbot/actions/runs/37929897873)
+再次通过保护命令。隔离浏览器已进入产品流程：四次实际审批、navigate/type/click/read 各一次、
+独立目标状态、报告下载、二进制历史重放、平滑容器替换和私有状态恢复均通过；就绪前 Chromium
+还通过生成 CA 的 HTTPS 并拒绝错误主机/未知 CA。最终原生验收却未返回 JSON；公开结果保留
+**accepted:false**、`nativeCleanupComplete:false`，不能视为浏览器完整验收。
+
+packet 建立了 Chromium NSS 数据库，却漏放原 Node TLS 隧道探针单独需要的 `nssdb/ca.pem`。
+准备现只把自身生成的公开 CA 复制进只读夹具挂载，并由既有 packet manifest 固定指纹；不使用
+个人信任、CA 签名密钥或证书绕过。旧 root 异常未完整捕获，因此这是已证实的输入缺失，历史
+失败归因仍为推断。控制器现有界读取 stderr 至 EOF，原文只存私有文件；公开诊断仅含固定阶段、
+类型、代码与严格类型的原单元/清理状态。原600秒到期及已打开 TLS 隧道撤销门槛不变，仍须
+新的完整结果，不能用局部产品通过代替原生验收。
