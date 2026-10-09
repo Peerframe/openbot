@@ -1251,3 +1251,9 @@ interop uses production APIs. See the [command integration record](research/type
 
 P4 审批命令复用已审核的 jose6.2.12/canonicalize5.0.0，增加 TS Server 生产依赖边；沿用原
 v2 契约、准备时钟、SQL 单次许可和产品适配，真实 Python/TS API 互验，不新增版本或自写密码算法。
+
+
+The P4 native package gate reuses the pinned Temporal1.32.0 macOS arm64 Server as an owned
+SQLite/mTLS fixture only; production stays PostgreSQL/mTLS. It is not a bundled application or
+new product dependency. Reviewed release/archive/member hashes and alternatives are recorded in
+[the P4 native qualification decision](research/typescript-control-plane-p4.md#macos-native-qualification-engine-2026-10-09).

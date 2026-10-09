@@ -44,7 +44,7 @@ def main():
     ts_product_group = os.environ.get("OPENBOT_CONTROL_TS_PRODUCT_GROUP", "none")
     if ts_product_group not in ("none", "identity", "identity-models", "p3") or (ts_product_group != "none" and (authority != "product" or proxy_address is None)):
         raise ValueError("TS product ownership requires an explicit private product proxy.")
-    if ts_work_group not in ("none", "reports") or (ts_work_group != "none" and ts_product_group != "p3"):
+    if ts_work_group not in ("none", "reports", "p4") or (ts_work_group != "none" and ts_product_group != "p3"):
         raise SystemExit("TS Work ownership requires explicit private P3 product mode.")
     ts_channel_read_group = os.environ.get("OPENBOT_CONTROL_TS_CHANNEL_READ_GROUP", "none")
     if ts_channel_read_group not in ("none", "channels") or (ts_channel_read_group != "none" and
@@ -80,12 +80,12 @@ def main():
     profiles = None
     product = None
     browser_profiles = None
-    browser_path = os.environ.get('OPENBOT_CONTROL_BROWSER_CONFIG_PATH')
+    browser_path = os.environ.get('OPENBOT_CONTROL_BROWSER_CONFIG_PATH') if ts_work_group != 'p4' else None
     if browser_path is not None and (authority != 'product'
             or not os.environ.get('OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH')):
         raise SystemExit('Browser capture configuration requires product mode and an explicit Work engine configuration.')
     command_installation = None
-    command_path = os.environ.get('OPENBOT_CONTROL_COMMAND_CONFIG_PATH')
+    command_path = os.environ.get('OPENBOT_CONTROL_COMMAND_CONFIG_PATH') if ts_work_group != 'p4' else None
     if command_path is not None and (authority != 'product'
             or not os.environ.get('OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH')):
         raise SystemExit('Command configuration requires product mode and an explicit Work engine configuration.')
@@ -190,7 +190,7 @@ def main():
         product.automations.work_sources = sources
         product.interactions.work_sources = sources
         engine_config = os.environ.get('OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH')
-        if engine_config:
+        if engine_config and ts_work_group != "p4":
             from openbot_server.work_product_runtime import ProductWorkRuntime
             from openbot_server.work_product_service import ProductWorkService
             search_key = os.environ.get('TAVILY_API_KEY')

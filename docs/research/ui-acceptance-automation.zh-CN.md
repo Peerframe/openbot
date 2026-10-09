@@ -86,3 +86,13 @@
 ## 未决问题
 
 - 接入云端 CI 需要给 Linux 运行环境固定浏览器来源，这是另一项改动。
+
+
+## P4 执行组合（2026-10-09）
+
+原有 `--entry ts` 流程现在先用自管 PostgreSQL/mTLS Temporal 夹具，再启动 P4 配对 Python/TS。
+复用 Work 夹具生命周期和固定版本，没有新增浏览器、服务安装或服务商账号。`/health` 确认
+`typescript-v1` 执行所有者正在运行后，才执行未改动的12步界面流程；收据增加 `workGroup`。
+实际 P4 运行通过12/12，112个 API 响应，零非预期响应、页面错误和 workspace 503，包含入口重启
+及重连。这是一次性界面验收，不代表安装应用排空、隔离命令执行或付费推理。
+详见 [P4 记录](typescript-control-plane-p4.zh-CN.md)。

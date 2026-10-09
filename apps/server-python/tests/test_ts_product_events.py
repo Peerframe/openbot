@@ -43,20 +43,28 @@ def test_invalidation_listener_filters_payload_and_fails_closed(monkeypatch):
     asyncio.run(scenario())
 
 
-def test_p4_selection_quarantines_only_migrated_work_operations():
+@pytest.mark.parametrize("group", ("reports", "p4"))
+def test_p4_selection_quarantines_only_migrated_work_operations(group):
     from fastapi.testclient import TestClient
     from openbot_server.ts_product_ownership import WORK_ROUTES, work_owns
-    for group in ('reports', 'unknown'):
+    for invalid in ('reports', 'p4', 'unknown'):
         with pytest.raises(ValueError, match='TS Work ownership'):
-            create_app(AsyncMock(), owner_name='Owner', ts_work_group=group)
+            create_app(AsyncMock(), owner_name='Owner', ts_work_group=invalid)
     assert not work_owns('GET', '/api/v1/runs/example/progress')
     assert not work_owns('GET', '/api/v1/execution/health')
     assert not work_owns('GET', '/api/v1/tasks/example/extra')
     reader, product, work = AsyncMock(), AsyncMock(), AsyncMock()
     product.write_routes = []
     selected = create_app(reader, owner_name='Owner', product=product, work=work,
-        ts_product_group='p3', ts_work_group='reports', proxy_address='127.0.0.1',
+        ts_product_group='p3', ts_work_group=group, proxy_address='127.0.0.1',
         public_origin='http://public.example', allowed_origins=('http://public.example',))
+    paths = {route.path for route in selected.routes}
+    if group == 'p4':
+        assert '/ws/nodes' not in paths
+        assert not any(path.startswith('/_openbot/p4/') for path in paths)
+    else:
+        assert '/ws/nodes' in paths
+        assert any(path.startswith('/_openbot/p4/') for path in paths)
     with TestClient(selected, client=('127.0.0.1', 4400)) as api:
         for method, pattern in WORK_ROUTES:
             path = pattern.replace('[^/]+', 'fixture')

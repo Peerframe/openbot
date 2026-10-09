@@ -1,7 +1,7 @@
-import { spawnSync } from "node:child_process";
 // Real Temporal/mTLS + disposable PostgreSQL qualification. The Activity below is an explicit
 // synthetic control probe: it verifies handoff/recovery/fences, not product model/tool completion.
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { randomBytes, randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { setTimeout as delay } from "node:timers/promises";
@@ -32,6 +32,8 @@ import {
   OwnedDockerFixture,
   startControlPostgres,
 } from "./python-acceptance-fixture.ts";
+import { qualifyPythonDrain } from "./ts-work-drain-acceptance.ts";
+import { qualifyWorkProcessRecovery } from "./ts-work-process-acceptance.ts";
 import { qualifyWorkProduct } from "./ts-work-product-acceptance.ts";
 
 await installWorkRuntime();
@@ -149,198 +151,206 @@ try {
   });
   native = await NativeConnection.connect({ address: fixture.address, tls });
   const client = new Client({ connection, namespace: "default" });
-  const engine = new TemporalEngine(client);
-  const settings = {
-    namespace: "default",
-    taskQueue: "openbot-p4-" + randomUUID(),
-    executionTimeoutMs: 300_000,
-  };
-  const lost = await seed();
-  let starts = 0;
-  const losingEngine = {
-    namespace: engine.namespace,
-    start: async (...args: Parameters<typeof engine.start>) => {
-      starts++;
-      await engine.start(...args);
-      throw new Error("synthetic lost reply");
-    },
-    inspectStart: engine.inspectStart.bind(engine),
-  };
-  await assert.rejects(dispatchOne(lost, settings, handoff, losingEngine), /synthetic lost reply/);
-  await sql`UPDATE work_tasks SET status='cancelled',cancel_requested=true,authority_active=false WHERE id=${lost.taskId}`;
-  const recovered = await dispatchOne(lost, settings, handoff, losingEngine);
-  assert.equal(recovered.acknowledged, true);
-  assert.equal(recovered.startRequested, false);
-  assert.equal(starts, 1);
-  assert.equal(
-    (await sql`SELECT status FROM work_tasks WHERE id=${lost.taskId}`)[0]!.status,
-    "cancelled",
-  );
-  await client.workflow
-    .getHandle(WORKFLOW_ID_PREFIX + lost.runId)
-    .terminate("Owned synthetic cancellation probe finished");
-  console.log("PASS lost start reply recovered from real history, cancelled task remains closed");
+  await qualifyPythonDrain(sql, transactions, client, python, () => seed("python-v1"));
+  if (process.argv[3] === "--recovery-only") await qualifyWorkProcessRecovery(dsn, fixture);
+  if (!["--drain-only", "--recovery-only"].includes(process.argv[3] ?? "")) {
+    const engine = new TemporalEngine(client);
+    const settings = {
+      namespace: "default",
+      taskQueue: "openbot-p4-" + randomUUID(),
+      executionTimeoutMs: 300_000,
+    };
+    const lost = await seed();
+    let starts = 0;
+    const losingEngine = {
+      namespace: engine.namespace,
+      start: async (...args: Parameters<typeof engine.start>) => {
+        starts++;
+        await engine.start(...args);
+        throw new Error("synthetic lost reply");
+      },
+      inspectStart: engine.inspectStart.bind(engine),
+    };
+    await assert.rejects(
+      dispatchOne(lost, settings, handoff, losingEngine),
+      /synthetic lost reply/,
+    );
+    await sql`UPDATE work_tasks SET status='cancelled',cancel_requested=true,authority_active=false WHERE id=${lost.taskId}`;
+    const recovered = await dispatchOne(lost, settings, handoff, losingEngine);
+    assert.equal(recovered.acknowledged, true);
+    assert.equal(recovered.startRequested, false);
+    assert.equal(starts, 1);
+    assert.equal(
+      (await sql`SELECT status FROM work_tasks WHERE id=${lost.taskId}`)[0]!.status,
+      "cancelled",
+    );
+    await client.workflow
+      .getHandle(WORKFLOW_ID_PREFIX + lost.runId)
+      .terminate("Owned synthetic cancellation probe finished");
+    console.log("PASS lost start reply recovered from real history, cancelled task remains closed");
 
-  const identity = await seed();
-  await dispatchOne(identity, settings, handoff, engine);
-  const row = (await sql`SELECT * FROM work_admissions WHERE run_id=${identity.runId}`)[0]!;
-  const execution = new WorkExecution(transactions);
-  let calls = 0;
-  let admissionCalls = 0;
-  let chainTask: string | undefined;
-  let pendingTask: string | undefined;
-  let oldFence: WorkFence | undefined;
-  const activities = {
-    inspectWorkTree: async () => ({ watch: false, deadline: null }),
-    awaitWorkAdmission: async (start: WorkStart) => {
-      if (start.taskId === pendingTask) admissionCalls++;
-      const binding = await currentBinding(engine, settings, start);
-      await transactions.run((db) => acceptedWork(db, binding, true));
-    },
-    advanceWork: async (start: WorkStart) => {
-      const binding = await currentBinding(engine, settings, start);
-      const fence = await execution.claim(binding);
-      await transactions.run(async (db) => {
-        await acceptedWork(db, binding);
-        await checkWorkFence(db, fence);
-        if (oldFence && start.taskId === identity.taskId)
-          await assert.rejects(checkWorkFence(db, oldFence), /execution_claim_stale/);
+    const identity = await seed();
+    await dispatchOne(identity, settings, handoff, engine);
+    const row = (await sql`SELECT * FROM work_admissions WHERE run_id=${identity.runId}`)[0]!;
+    const execution = new WorkExecution(transactions);
+    let calls = 0;
+    let admissionCalls = 0;
+    let chainTask: string | undefined;
+    let pendingTask: string | undefined;
+    let oldFence: WorkFence | undefined;
+    const activities = {
+      inspectWorkTree: async () => ({ watch: false, deadline: null }),
+      awaitWorkAdmission: async (start: WorkStart) => {
+        if (start.taskId === pendingTask) admissionCalls++;
+        const binding = await currentBinding(engine, settings, start);
+        await transactions.run((db) => acceptedWork(db, binding, true));
+      },
+      advanceWork: async (start: WorkStart) => {
+        const binding = await currentBinding(engine, settings, start);
+        const fence = await execution.claim(binding);
+        await transactions.run(async (db) => {
+          await acceptedWork(db, binding);
+          await checkWorkFence(db, fence);
+          if (oldFence && start.taskId === identity.taskId)
+            await assert.rejects(checkWorkFence(db, oldFence), /execution_claim_stale/);
+        });
+        if (start.taskId === chainTask)
+          return { state: fence.epoch < 65 ? ("continue" as const) : ("completed" as const) };
+        if (start.taskId === pendingTask) return { state: "completed" as const };
+        oldFence = fence;
+        calls++;
+        return { state: calls === 1 ? ("waiting" as const) : ("completed" as const) };
+      },
+    };
+    const workflowsPath = fileURLToPath(
+      new URL("../packages/work/dist/workflows.js", import.meta.url),
+    );
+    const workflowBundle = await bundleWorkflowCode({ workflowsPath });
+    const makeWorker = () =>
+      Worker.create({
+        connection: native!,
+        namespace: settings.namespace,
+        taskQueue: settings.taskQueue,
+        workflowBundle,
+        activities,
+        shutdownGraceTime: "1 second",
+        shutdownForceTime: "5 seconds",
       });
-      if (start.taskId === chainTask)
-        return { state: fence.epoch < 65 ? ("continue" as const) : ("completed" as const) };
-      if (start.taskId === pendingTask) return { state: "completed" as const };
-      oldFence = fence;
-      calls++;
-      return { state: calls === 1 ? ("waiting" as const) : ("completed" as const) };
-    },
-  };
-  const workflowsPath = fileURLToPath(
-    new URL("../packages/work/dist/workflows.js", import.meta.url),
-  );
-  const workflowBundle = await bundleWorkflowCode({ workflowsPath });
-  const makeWorker = () =>
-    Worker.create({
-      connection: native!,
-      namespace: settings.namespace,
-      taskQueue: settings.taskQueue,
-      workflowBundle,
-      activities,
-      shutdownGraceTime: "1 second",
-      shutdownForceTime: "5 seconds",
-    });
-  const first = await makeWorker();
-  const firstRunning = first.run();
-  try {
-    const deadline = Date.now() + 25_000;
-    while (calls < 1 && Date.now() < deadline) await delay(100);
-    assert.equal(calls, 1, "Real remote Activity did not run");
-    // Wait until the Activity completion and durable timer are recorded before replacing the worker.
-    let waiting = false;
-    while (Date.now() < deadline) {
-      const history = await client.workflow
-        .getHandle(WORKFLOW_ID_PREFIX + identity.runId)
-        .fetchHistory();
-      if (history.events?.some((event) => event.timerStartedEventAttributes)) {
-        waiting = true;
-        break;
+    const first = await makeWorker();
+    const firstRunning = first.run();
+    try {
+      const deadline = Date.now() + 25_000;
+      while (calls < 1 && Date.now() < deadline) await delay(100);
+      assert.equal(calls, 1, "Real remote Activity did not run");
+      // Wait until the Activity completion and durable timer are recorded before replacing the worker.
+      let waiting = false;
+      while (Date.now() < deadline) {
+        const history = await client.workflow
+          .getHandle(WORKFLOW_ID_PREFIX + identity.runId)
+          .fetchHistory();
+        if (history.events?.some((event) => event.timerStartedEventAttributes)) {
+          waiting = true;
+          break;
+        }
+        await delay(100);
       }
-      await delay(100);
+      assert(waiting, "Durable timer was not recorded before worker replacement");
+    } finally {
+      first.shutdown();
+      await firstRunning;
     }
-    assert(waiting, "Durable timer was not recorded before worker replacement");
-  } finally {
-    first.shutdown();
-    await firstRunning;
-  }
-  const second = await makeWorker();
-  await second.runUntil(async () => {
-    const handle = client.workflow.getHandle(WORKFLOW_ID_PREFIX + identity.runId);
-    await handle.signal("workChanged");
-    await handle.result();
-  });
-  assert.equal(calls, 2, "Restart reran an already completed Activity");
-  const history = await client.workflow
-    .getHandle(WORKFLOW_ID_PREFIX + identity.runId)
-    .fetchHistory();
-  assert.equal(
-    (await engine.inspectStart(WORKFLOW_ID_PREFIX + identity.runId))!.firstRunId,
-    row.engine_first_run_id,
-  );
-  await Worker.runReplayHistory({ workflowBundle }, history);
-  console.log(
-    "PASS real worker replacement, durable wakeup, stale fence rejection and offline replay",
-  );
+    const second = await makeWorker();
+    await second.runUntil(async () => {
+      const handle = client.workflow.getHandle(WORKFLOW_ID_PREFIX + identity.runId);
+      await handle.signal("workChanged");
+      await handle.result();
+    });
+    assert.equal(calls, 2, "Restart reran an already completed Activity");
+    const history = await client.workflow
+      .getHandle(WORKFLOW_ID_PREFIX + identity.runId)
+      .fetchHistory();
+    assert.equal(
+      (await engine.inspectStart(WORKFLOW_ID_PREFIX + identity.runId))!.firstRunId,
+      row.engine_first_run_id,
+    );
+    await Worker.runReplayHistory({ workflowBundle }, history);
+    console.log(
+      "PASS real worker replacement, durable wakeup, stale fence rejection and offline replay",
+    );
 
-  const continued = await seed();
-  chainTask = continued.taskId;
-  await dispatchOne(continued, settings, handoff, engine);
-  const continuedRow = (
-    await sql`SELECT engine_first_run_id,submission_attempt_id FROM work_admissions WHERE run_id=${continued.runId}`
-  )[0]!;
-  const third = await makeWorker();
-  await third.runUntil(async () => {
-    await client.workflow.getHandle(WORKFLOW_ID_PREFIX + continued.runId).result();
-  });
-  const continuedStart = await engine.inspectStart(WORKFLOW_ID_PREFIX + continued.runId);
-  assert.equal(continuedStart!.firstRunId, continuedRow.engine_first_run_id);
-  const firstHistory = await client.workflow
-    .getHandle(WORKFLOW_ID_PREFIX + continued.runId, continuedRow.engine_first_run_id)
-    .fetchHistory();
-  assert(
-    firstHistory.events?.some((event) => event.workflowExecutionContinuedAsNewEventAttributes),
-  );
-  await Worker.runReplayHistory({ workflowBundle }, firstHistory);
-  await Worker.runReplayHistory(
-    { workflowBundle },
-    await client.workflow.getHandle(WORKFLOW_ID_PREFIX + continued.runId).fetchHistory(),
-  );
-  assert.equal(
-    Number(
-      (await sql`SELECT execution_epoch FROM work_runs WHERE id=${continued.runId}`)[0]!
-        .execution_epoch,
-    ),
-    65,
-  );
-  const continuedClosure = await observeEngineClosure(
-    client,
-    settings,
-    { ...continued, attemptId: continuedRow.submission_attempt_id },
-    continuedRow.engine_first_run_id,
-  );
-  assert.equal(continuedClosure?.state, "COMPLETED");
-  assert.notEqual(continuedClosure?.engineRunId, continuedClosure?.firstRunId);
-  console.log(
-    "PASS Continue-As-New retains accepted chain and exact input; both histories replay; immutable chain closure verified",
-  );
-
-  const pending = await seed();
-  pendingTask = pending.taskId;
-  const pendingRef = "temporal:default:" + WORKFLOW_ID_PREFIX + pending.runId;
-  const reserved = await handoff.reserve(pending, pendingRef);
-  await engine.start(
-    WORKFLOW_ID_PREFIX + pending.runId,
-    { ...pending, attemptId: reserved.attemptId! },
-    settings,
-  );
-  const fourth = await makeWorker();
-  await fourth.runUntil(async () => {
-    const deadline = Date.now() + 20_000;
-    while (!admissionCalls && Date.now() < deadline) await delay(100);
-    assert(admissionCalls > 0);
+    const continued = await seed();
+    chainTask = continued.taskId;
+    await dispatchOne(continued, settings, handoff, engine);
+    const continuedRow = (
+      await sql`SELECT engine_first_run_id,submission_attempt_id FROM work_admissions WHERE run_id=${continued.runId}`
+    )[0]!;
+    const third = await makeWorker();
+    await third.runUntil(async () => {
+      await client.workflow.getHandle(WORKFLOW_ID_PREFIX + continued.runId).result();
+    });
+    const continuedStart = await engine.inspectStart(WORKFLOW_ID_PREFIX + continued.runId);
+    assert.equal(continuedStart!.firstRunId, continuedRow.engine_first_run_id);
+    const firstHistory = await client.workflow
+      .getHandle(WORKFLOW_ID_PREFIX + continued.runId, continuedRow.engine_first_run_id)
+      .fetchHistory();
+    assert(
+      firstHistory.events?.some((event) => event.workflowExecutionContinuedAsNewEventAttributes),
+    );
+    await Worker.runReplayHistory({ workflowBundle }, firstHistory);
+    await Worker.runReplayHistory(
+      { workflowBundle },
+      await client.workflow.getHandle(WORKFLOW_ID_PREFIX + continued.runId).fetchHistory(),
+    );
     assert.equal(
       Number(
-        (await sql`SELECT execution_epoch FROM work_runs WHERE id=${pending.runId}`)[0]!
+        (await sql`SELECT execution_epoch FROM work_runs WHERE id=${continued.runId}`)[0]!
           .execution_epoch,
       ),
-      0,
+      65,
     );
-    await dispatchOne(pending, settings, handoff, engine);
-    await client.workflow.getHandle(WORKFLOW_ID_PREFIX + pending.runId).result();
-  });
-  assert(admissionCalls >= 2);
-  console.log(
-    "PASS early Activity waits for durable acknowledgement without failing or gaining authority",
-  );
-  await qualifyWorkProduct(dsn, fixture, workflowBundle);
+    const continuedClosure = await observeEngineClosure(
+      client,
+      settings,
+      { ...continued, attemptId: continuedRow.submission_attempt_id },
+      continuedRow.engine_first_run_id,
+    );
+    assert.equal(continuedClosure?.state, "COMPLETED");
+    assert.notEqual(continuedClosure?.engineRunId, continuedClosure?.firstRunId);
+    console.log(
+      "PASS Continue-As-New retains accepted chain and exact input; both histories replay; immutable chain closure verified",
+    );
+
+    const pending = await seed();
+    pendingTask = pending.taskId;
+    const pendingRef = "temporal:default:" + WORKFLOW_ID_PREFIX + pending.runId;
+    const reserved = await handoff.reserve(pending, pendingRef);
+    await engine.start(
+      WORKFLOW_ID_PREFIX + pending.runId,
+      { ...pending, attemptId: reserved.attemptId! },
+      settings,
+    );
+    const fourth = await makeWorker();
+    await fourth.runUntil(async () => {
+      const deadline = Date.now() + 20_000;
+      while (!admissionCalls && Date.now() < deadline) await delay(100);
+      assert(admissionCalls > 0);
+      assert.equal(
+        Number(
+          (await sql`SELECT execution_epoch FROM work_runs WHERE id=${pending.runId}`)[0]!
+            .execution_epoch,
+        ),
+        0,
+      );
+      await dispatchOne(pending, settings, handoff, engine);
+      await client.workflow.getHandle(WORKFLOW_ID_PREFIX + pending.runId).result();
+    });
+    assert(admissionCalls >= 2);
+    console.log(
+      "PASS early Activity waits for durable acknowledgement without failing or gaining authority",
+    );
+    await qualifyWorkProduct(dsn, fixture, workflowBundle);
+    await qualifyWorkProcessRecovery(dsn, fixture);
+  }
 } catch (error) {
   const logged = spawnSync("docker", ["logs", "--tail", "300", postgresName], {
     env: environment,

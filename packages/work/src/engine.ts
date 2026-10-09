@@ -91,4 +91,4 @@ export class TemporalEngine implements EnginePort {
     }
   }
 }
-export { Client, Connection };
+export { Client, Connection, WorkflowNotFoundError };

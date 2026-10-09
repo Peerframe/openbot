@@ -1,6 +1,5 @@
 import type { Server } from "node:http";
 import type { Server as HttpsServer } from "node:https";
-import { WorkerRuntime } from "./worker-runtime.js";
 import { join } from "node:path";
 import type { Readable } from "node:stream";
 import {
@@ -50,6 +49,7 @@ import { ownerCookie } from "./transcription-read.js";
 import { workChannelRoutes } from "./work-channel.js";
 import { workRoutes } from "./work-public.js";
 import { WorkService } from "./work-service.js";
+import { WorkerRuntime } from "./worker-runtime.js";
 import { boundedJson } from "./write-input.js";
 
 const inventory = [
@@ -183,6 +183,19 @@ export function productHandler(
   const match = (method: string, path: string) =>
     routes.find((route) => route.method === method && route.pattern.test(path));
   return {
+    health:
+      runtime instanceof WorkerRuntime && work
+        ? () => ({
+            ok: work.healthy(),
+            service: "openbot-server",
+            phase: "typescript-product-candidate",
+            execution: {
+              owner: "typescript-v1",
+              state: work.healthy() ? "running" : "unavailable",
+            },
+            time: new Date().toISOString(),
+          })
+        : undefined,
     attachWorkers: (server: Server | HttpsServer) => {
       if (!(runtime instanceof WorkerRuntime)) return undefined;
       runtime.registry.attach(server, publicOrigin);

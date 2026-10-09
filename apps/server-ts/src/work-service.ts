@@ -12,27 +12,28 @@ import {
   type WorkStart,
   type WorkWorker,
 } from "@openbot/work";
+import { DatabaseFence } from "./database-fence.js";
 import type { ModelConnections } from "./model-connections.js";
 import type { ModelTransport } from "./model-network.js";
 import type { OwnerFiles } from "./owner-files.js";
 import type { Plugins } from "./product-plugins.js";
+import { submitDueWork } from "./work-automations.js";
+import type { WorkBrowserServices } from "./work-browser.js";
+import { WorkBrowserProfiles } from "./work-browser-profiles.js";
+import type { WorkCommandSetup } from "./work-command-installation.js";
+import { WorkCommandProfiles } from "./work-command-profiles.js";
 import { acceptedWork } from "./work-execution.js";
 import { WorkFiles } from "./work-files.js";
 import { WorkHandoff, workTransactions } from "./work-handoff.js";
-import { submitDueWork } from "./work-automations.js";
+import { auditPythonDrain, requirePythonDrain } from "./work-python-drain.js";
 import { WorkRuntime } from "./work-runtime.js";
 import { WorkTerminal } from "./work-terminal.js";
 import { cascadeWork, workTree } from "./work-tree.js";
 import type { WorkWebOptions } from "./work-web.js";
-
 import type { WorkerRuntime } from "./worker-runtime.js";
-import { WorkBrowserProfiles } from "./work-browser-profiles.js";
-import { DatabaseFence } from "./database-fence.js";
-import type { WorkBrowserServices } from "./work-browser.js";
-import { WorkCommandProfiles } from "./work-command-profiles.js";
-import type { WorkCommandSetup } from "./work-command-installation.js";
 
 export type WorkOptions = EngineSettings & {
+  drainPythonQueue?: string;
   web?: WorkWebOptions;
   tokenLimit?: number;
   address: string;
@@ -45,6 +46,11 @@ export function validateWorkOptions(value: WorkOptions) {
     !Number.isSafeInteger(value.tokenLimit ?? 100000) ||
     (value.tokenLimit ?? 100000) < 0 ||
     (value.tokenLimit ?? 100000) > 1000000000 ||
+    (value.drainPythonQueue !== undefined &&
+      (!value.drainPythonQueue ||
+        value.drainPythonQueue.length > 256 ||
+        value.drainPythonQueue.includes("\0") ||
+        value.drainPythonQueue === value.taskQueue)) ||
     value.address.length > 320 ||
     /\s/.test(value.address) ||
     url.username ||
@@ -162,7 +168,6 @@ export class WorkService {
       },
     };
     try {
-      await this.runtime.resources.commands?.start();
       this.connection = await Connection.connect({
         address: this.options.address,
         tls,
@@ -172,6 +177,16 @@ export class WorkService {
       const engine = new TemporalEngine(
         new Client({ connection: this.connection, namespace: this.options.namespace }),
       );
+      if (this.options.drainPythonQueue !== undefined) {
+        const report = await auditPythonDrain(
+          this.transactions,
+          engine.client,
+          this.options.drainPythonQueue,
+          AbortSignal.any([this.stopped.signal, AbortSignal.timeout(25000)]),
+        );
+        requirePythonDrain(report);
+      }
+      await this.runtime.resources.commands?.start();
       this.worker = await createWorkWorker({
         address: this.options.address,
         tls,

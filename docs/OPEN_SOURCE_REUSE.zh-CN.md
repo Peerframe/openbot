@@ -692,3 +692,8 @@ Python 执行。SDK 的 source-map 加载把已有 `source-map-js` 纳入生产�
 频道与媒体集成复用既有消息/Run 提交、0039/0040 协作、自动化 occurrence 领取和原始媒体合同；
 固定 OpenAI/Anthropic SDK 发送有界原始字节，同一 SQL 锁下的只读检查复用任务/来源后立即清除。
 见[组合证据与剩余门槛](research/typescript-control-plane-p4.zh-CN.md#频道提交自动化与媒体集成2026-10-09)。
+
+
+P4 原生包门禁仅将固定 Temporal1.32.0 macOS arm64 Server 用作一次性 SQLite/mTLS 夹具；
+生产仍为 PostgreSQL/mTLS。它不是打包应用或新增产品依赖。发布、归档/成员指纹和替代方案见
+[P4 原生验收决定](research/typescript-control-plane-p4.zh-CN.md#macos-原生验收引擎2026-10-09)。

@@ -2,9 +2,10 @@ import { isIP } from "node:net";
 import { isAbsolute } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { ByteProviderTransport, ModelTransport } from "./model-network.js";
-import type { WorkerRuntimeOptions } from "./worker-runtime.js";
 import { scalarText } from "./owner-auth-crypto.js";
+import { loadWorkInstallation } from "./work-installation.js";
 import { validateWorkOptions, type WorkOptions } from "./work-service.js";
+import type { WorkerRuntimeOptions } from "./worker-runtime.js";
 
 export interface EntryOptions {
   upstream: string;
@@ -212,7 +213,10 @@ export function entryOptions(environment: NodeJS.ProcessEnv): EntryOptions {
     !/^[0-9]{1,10}$/.test(environment.OPENBOT_CONTROL_WORK_TOKEN_LIMIT ?? "100000")
   )
     throw new Error("Product Work token limit must be an explicit bounded integer.");
-  if (!["none", "reports"].includes(workGroup) || (workGroup !== "none" && productGroup !== "p3"))
+  if (
+    !["none", "reports", "p4"].includes(workGroup) ||
+    (workGroup !== "none" && productGroup !== "p3")
+  )
     throw new Error("Unknown or incomplete TS Work composition.");
   if (!["none", "identity", "identity-models", "p3"].includes(productGroup))
     throw new Error("Unknown TS product group.");
@@ -233,6 +237,28 @@ export function entryOptions(environment: NodeJS.ProcessEnv): EntryOptions {
     throw new Error("The primary Bot write group requires an explicit PostgreSQL URL.");
   const authGroup = environment.OPENBOT_TS_AUTH_GROUP ?? "none";
   if (!["none", "owner"].includes(authGroup)) throw new Error("Unknown TS auth group.");
+  if (
+    workGroup === "p4" &&
+    (authGroup !== "owner" ||
+      channelGroup !== "channels" ||
+      group !== "transcription" ||
+      writeGroup !== "primary-bot")
+  )
+    throw new Error("P4 requires all accepted product groups and the sole TS Owner authority.");
+  const installedWork =
+    workGroup === "p4"
+      ? loadWorkInstallation({
+          temporal: environment.OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH ?? "",
+          fileRoot: environment.OPENBOT_TS_WORK_FILE_ROOT ?? "",
+          tokenLimit: Number(environment.OPENBOT_CONTROL_WORK_TOKEN_LIMIT ?? "100000"),
+          ...(environment.OPENBOT_CONTROL_BROWSER_CONFIG_PATH === undefined
+            ? {}
+            : { browser: environment.OPENBOT_CONTROL_BROWSER_CONFIG_PATH }),
+          ...(environment.OPENBOT_CONTROL_COMMAND_CONFIG_PATH === undefined
+            ? {}
+            : { command: environment.OPENBOT_CONTROL_COMMAND_CONFIG_PATH }),
+        })
+      : undefined;
   const ttl = environment.OPENBOT_TS_SESSION_TTL_HOURS ?? "12";
   if (authGroup === "owner" && !/^[0-9]{1,3}$/.test(ttl))
     throw new Error("Invalid Owner session TTL.");
@@ -246,6 +272,17 @@ export function entryOptions(environment: NodeJS.ProcessEnv): EntryOptions {
     ...(productGroup !== "none"
       ? {
           product: {
+            ...(installedWork
+              ? {
+                  workerRuntime: installedWork.workerRuntime,
+                  work: {
+                    ...installedWork.work,
+                    ...(environment.TAVILY_API_KEY === undefined
+                      ? {}
+                      : { web: { tavilyKey: environment.TAVILY_API_KEY } }),
+                  },
+                }
+              : {}),
             ...(workGroup === "reports"
               ? {
                   work: {

@@ -7,6 +7,7 @@ import { availablePort, type ManagedServerProcess } from "./native-server.js";
 import {
   containedProductFile,
   launchPythonProductServer,
+  pythonProductConfigurationEnvironment,
   pythonProductEnvironment,
   selectsPythonProduct,
   verifyPythonProductHealth,
@@ -57,11 +58,26 @@ export async function launchTsProductServer(
 ): Promise<ManagedServerProcess & { readonly processIds: readonly number[] }> {
   if (!(await selectsTsProduct(runtimeRoot))) throw new Error("TS candidate is not selected.");
   const env = pythonProductEnvironment(runtimeRoot, source);
+  const configuration = await pythonProductConfigurationEnvironment(env);
+  if (!configuration.OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH)
+    throw new Error("P4 requires the existing private Temporal installation configuration.");
   const node = await containedProductFile(runtimeRoot, "node/bin/node");
   const entry = await containedProductFile(runtimeRoot, "apps/server-ts/dist/desktop-entry.js");
   // Refuse incomplete installed payloads before the Python migrator or writer starts.
   for (const name of [
     "apps/server-ts/dist/app.js",
+    "apps/server-ts/dist/work-installation.js",
+    "apps/server-ts/dist/work-python-drain.js",
+    "apps/server-ts/dist/work-service.js",
+    "apps/server-ts/dist/work-runtime.js",
+    "apps/server-ts/dist/work-command.js",
+    "apps/server-ts/dist/worker-runtime.js",
+    "packages/work/dist/workflows.js",
+    "node_modules/@temporalio/worker/package.json",
+    "node_modules/@temporalio/core-bridge/releases/aarch64-apple-darwin/index.node",
+    "node_modules/jose/package.json",
+    "node_modules/canonicalize/package.json",
+
     "apps/server-ts/dist/tls.js",
     "apps/server-ts/dist/transcription-read.js",
     "apps/server-ts/dist/primary-bot-write.js",
@@ -135,6 +151,7 @@ export async function launchTsProductServer(
     TS_CANDIDATE.authGroup,
     TS_CANDIDATE.channelReadGroup,
     TS_CANDIDATE.productGroup,
+    TS_CANDIDATE.workGroup,
   );
   let child: ChildProcessByStdio<Writable, null, null>;
   try {
@@ -148,6 +165,10 @@ export async function launchTsProductServer(
         OPENBOT_TS_WRITE_GROUP: TS_CANDIDATE.writeGroup,
         OPENBOT_TS_AUTH_GROUP: TS_CANDIDATE.authGroup,
         OPENBOT_TS_PRODUCT_GROUP: TS_CANDIDATE.productGroup,
+        OPENBOT_TS_WORK_GROUP: TS_CANDIDATE.workGroup,
+        OPENBOT_TS_WORK_FILE_ROOT: env.OPENBOT_CONTROL_ARTIFACT_ROOT as string,
+        ...configuration,
+        ...(source.TAVILY_API_KEY === undefined ? {} : { TAVILY_API_KEY: source.TAVILY_API_KEY }),
         OPENBOT_TS_OBJECT_ROOT: env.OPENBOT_CONTROL_OBJECT_ROOT as string,
         OPENBOT_TS_ARTIFACT_ROOT: env.OPENBOT_CONTROL_ARTIFACT_ROOT as string,
         OPENBOT_TS_PLUGIN_STORE_PATH: env.OPENBOT_CONTROL_PLUGIN_STORE_PATH as string,
@@ -220,7 +241,13 @@ export async function launchTsProductServer(
   try {
     const deadline = Date.now() + 30000;
     while (managed.isAlive() && Date.now() < deadline) {
-      if (await verifyPythonProductHealth(env.OPENBOT_CONTROL_ALLOWED_ORIGINS as string)) {
+      if (
+        await verifyPythonProductHealth(
+          env.OPENBOT_CONTROL_ALLOWED_ORIGINS as string,
+          false,
+          "typescript-product-candidate",
+        )
+      ) {
         if (managed.isAlive()) return managed;
         break;
       }

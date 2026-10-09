@@ -300,3 +300,32 @@ synthetic model variants), `npm run check`, native staged/packaged probes and
 `npm run ui:acceptance -- --entry ts` with PASS 12/12. UI receipts must have no unexplained workspace
 503. Synthetic peers exercise real sockets and SQL boundaries but do not replace actual execution
 acceptance. Keep draft PRs targeted at `main` until the unified review authorizes merge.
+
+
+## Complete P4 candidate
+
+`OPENBOT_TS_WORK_GROUP=p4` selects all Work routes, the sole Worker registry/socket and TS Temporal
+supervisor alongside the complete P3 groups above. Pair it with
+`OPENBOT_CONTROL_TS_WORK_GROUP=p4`; the retained Python process then exposes no Work supervisor,
+Worker socket or private runtime port. It still serves retained static/helpers until P5.
+
+Supply existing private `OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH`, optional
+`OPENBOT_CONTROL_BROWSER_CONFIG_PATH` / `OPENBOT_CONTROL_COMMAND_CONFIG_PATH`, and
+`OPENBOT_TS_WORK_FILE_ROOT` pointing at the retained artifact directory. Existing credentials and
+Python queue stay unchanged; TS derives a disjoint versioned queue. Startup requires a complete
+read-only Python SQL/Temporal drain before new TS admission. Unknown old effects, unconfirmed
+submissions, live executions and unfinished repairs block the switch. Stop the paired old processes
+first. An absent engine/configuration fails closed; no API-only fallback is selected for P4.
+
+The v8 Desktop marker selects this composition and checks SDK/native resources before startup.
+For native smoke and same-source measurement, provide `OPENBOT_NATIVE_TEMPORAL_ARCHIVE` pointing
+at the pinned Temporal1.32.0 macOS arm64 archive described in the
+[P4 record](../../docs/research/typescript-control-plane-p4.md#macos-native-qualification-engine-2026-10-09).
+The probe owns its temporary mTLS/SQLite engine; the product database is native PostgreSQL.
+`npm run test:work:ts` retains actual PostgreSQL/mTLS recovery and actual child SIGKILL checks.
+`npm run ui:acceptance -- --entry ts` now owns the same real PostgreSQL/mTLS engine fixture and
+requires a healthy TS execution owner before the12 unchanged interface steps. These tests use no
+installed profile or paid account. The separate installed-app drain/start/quit/restart acceptance
+is recorded in the [P4 record](../../docs/research/typescript-control-plane-p4.md#installed-candidate-acceptance-2026-10-09).
+Actual isolated-executor and hosted qualification remain open; this candidate is not an accepted
+P4 completion or P5 retirement.

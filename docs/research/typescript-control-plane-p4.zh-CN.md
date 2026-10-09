@@ -2,7 +2,7 @@
 
 [English](typescript-control-plane-p4.md) · 简体中文
 
-- 状态：开发中，尚未验收 P4 切换或 Python 排空
+- 状态：完整 P4 候选已在本机安装；真实隔离执行端与托管验收仍待完成
 - 日期：2026-10-09
 - 负责人：@yxflc11
 - 决策：[ADR-0050](../decisions/0050-typescript-control-plane.zh-CN.md)
@@ -263,3 +263,107 @@ unknown，没有第二次准备、发许可或产物；SQL 确认每个已执行
 没有准备。三个聚焦文件共10项通过。完整仓库检查通过：Server159、Desktop578/3个平台跳过、
 Web695、Node129/3个平台跳过；最终构建20/20，其中16项缓存。native 隔离及 Unix peer 身份
 仍明确为合成夹具；真实 Linux/runsc、桌面接入、进程死亡窗口、UI12/12与安装环境排空尚未完成。
+
+
+## 安装组合与 Python 排空（2026-10-09）
+
+复用安装目录已有的私有 `temporal.json`、`browser.json` 和 `command.json`，不改写凭证或旧队列。
+显式 `OPENBOT_TS_WORK_GROUP=p4` 要求全部已验收 P3 选择器，建立唯一 TS Worker 注册表，并根据
+旧 Python 队列派生独立的版本化队列。配对 Python 不再启动 Work 监督器、Worker 套接字或私有运行时
+端口。Desktop v8 要求已有 Temporal 配置和真实 SDK/native 资源；缺少或损坏配置会拒绝启动，
+不会自动退回仅 API 模式。Python 仍打包保留至 P5，并支持显式停机后成对回切。
+
+已查阅官方 [Temporal Visibility 文档](https://docs.temporal.io/visibility) 与上文固定提交的
+SDK1.24.0 `workflow-client` 源码。Visibility 是最终一致的，列表中没有任务不能证明排空。
+比较仅查第一页（证据不足）、仅改队列（遗留 SQL 义务）与完整 SQL 加逐 ID 权威引擎检查，选择
+最后一种，使用已发布 SDK API，没有复制上游源码或引入新依赖。
+
+在 TS Work 服务或自动化启动前，以 keyset 遍历所有 Python 所有的 SQL 行，包括未确认提交、
+已接纳/结果未知副作用和未完成的关闭后对账。逐个 Describe 确定的旧 workflow ID，核实队列、
+类型、首个 Run 和不可变终结历史，再次 Describe 排除并发续链。遍历所有正在运行的 Visibility 页，
+发现仅引擎存在的义务。已超过保留期的历史缺失单独计数；通信失败、续链、引用不匹配和不完整历史
+均拒绝切换。二次读取全部 SQL 并比对摘要，拒绝并发变化。检查只读，不取消、重试、结算或退款。
+执行门禁前必须停止旧接纳进程；空列表、引擎关闭和夹具结果本身都不能授权生产切换。
+
+一次性环境通过105行 SQL（含第一页之后的活跃行）、未确认/未知/未完对账拒绝、三个真实未被
+Worker 领取的 Python 类型 Temporal 执行、多页 Visibility、真实终结历史与并发 SQL 变更检查。
+Desktop 定向检查36项通过、2项平台跳过。这些是门禁实现证据，不代表已安装应用排空。
+完整 P4、界面、原生包和安装环境验收仍待完成；当前本地交接记录保留对应日志与版本范围。
+
+
+## macOS 原生验收引擎（2026-10-09）
+
+现有 macOS 托管打包作业没有 Docker 引擎，因此复用官方 Temporal Server1.32.0 的原生临时进程，
+使用其文档中的 SQLite 初始化和相同 mTLS 策略。此处验证安装包原生加载及配对生命周期；
+PostgreSQL 持久化、结构与升级验收仍保留在现有真实 PostgreSQL/mTLS 通道。产品不选择该夹具、
+明文、SQLite 或隐式测试服务器，安装包也不包含它。
+
+已审阅 [Server1.32.0 发布](https://github.com/temporalio/temporal/releases/tag/v1.32.0)、
+校验归档中的 `config/development-sqlite-file.yaml`、`config/docker.yaml` 和
+[TLS 配置](https://docs.temporal.io/references/configuration#tls)。macOS arm64 归档
+SHA-256 为 `f95748376241f5941327fa4c4e8e76641e8c4a9acabf77de9c86eb3d8238f4d7`，
+大小96,287,042字节。复用既有有界归档/成员校验，二进制大小和指纹保存在
+`experiments/work-journey/release_archive.py`。没有复制上游源码；声明式配置使用公开结构，
+Server 保留 MIT 许可。没有 SDK 自动下载或新增产品依赖：CI 显式下载固定归档，本地须提供路径。
+临时进程、凭证和 SQLite 文件在结束后清理；安装包自身的数据仍使用真实原生 PostgreSQL。
+
+另已审阅 MIT [CLI1.9.1](https://github.com/temporalio/cli/releases/tag/v1.9.1)，提交
+`1de87a9f26991bf4f5c0a5ff96f2cea8d7a3cbde`、start-dev 实现/测试及未关闭问题。
+其开发命令未暴露所需服务器 TLS 配置，因此未采用。为 macOS 托管机器额外安装 Docker/VM 会增加
+不必要的环境依赖；官方 Server 资产满足此项门禁而不改变生产架构。
+
+
+## 集成恢复与安装验收证据（2026-10-09）
+
+实际 TS 产品入口作为独立子进程，连接一次性 PostgreSQL 和双向 TLS Temporal。在五个已提交边界发送
+SIGKILL：预留提交但尚未启动、引擎已接收但尚未确认、已准入副作用但未返回响应、原始回执已保存、
+产物已原子发布但 Activity 尚未完成。替代进程使用同一数据库、队列、密钥和文件。未确认提交不重发，
+未知副作用不重复执行或发布；可恢复的启动与原始回执最终完成，回执指纹、三次模型步骤与唯一最终
+发布均保持不变。五个窗口全部通过。模型响应与暂停钩子为合成，进程终止、HTTP、SQL、文件与引擎
+恢复为真实执行。整套验收预算为1200秒，产品各自的截止时间不变。
+
+现有 TS 界面命令拥有同一一次性双向 TLS 引擎，并要求 P4 健康阶段和 TS 执行归属。原有12步全部通过，
+共112个响应，零非预期响应、零页面错误、零 workspace503，包括重启与重连。未修改网页源码。暂存
+原生负载也通过34项资源和13项导入导出检查，使用真实原生 PostgreSQL 与固定版本双向 TLS 引擎。
+这些检查使用一次性用户目录和合成加密回调；已安装 Electron/Keychain 验收单独记录。
+
+对于用户指定的已安装 OpenBot，先复制其已停止的 PostgreSQL 集群，在副本上运行目标增量迁移，
+再只读查询安装配置指定的 Temporal。副本有两个 Python Run；活跃 Run、未确认提交、未知副作用、
+未完成对账和引擎运行中执行均为零。一个终结历史不存在，单独计数。源集群1292个文件、62,318,329
+字节的完整指纹保持不变，临时副本已停止并删除。这只是只读预检查，实际切换启动仍须在旧双进程
+停止后再次执行门禁。Linux/runsc 执行、安装后应用验收与托管 CI 仍不能宣称完成。
+
+
+未签名的完整 macOS arm64 应用也通过相同的34项资源、13项导入导出检查，以及真实双向 TLS Worker
+启动、密码与数据重启保留、任一子进程退出、父进程管道关闭清理和无效执行配置拒绝。包内81个
+Desktop 编译文件与当前构建一致，ASAR SHA-256 为
+`504141e2fded74e151de9e6998df5edd17f7ccb322fcd004abbeca9082843885`。
+macOS Worker companion 复用已验证来源 `6e9d13edc77e0bb4b1aa797a9701cf16cd7a877c` 的未变产物，
+完整包清单仍由打包器校验。
+
+同源原生测量每种组合交替执行三轮，每轮均有全新配置启动和重启，使用真实原生 PostgreSQL 与
+已连接的测试引擎；各端点预热10次后测量100次请求，RSS 只统计自身子进程。Python 单服务首次/重启
+就绪中位数为10,917/8,938毫秒，RSS为248,096KiB；完整 P4 为6,696/5,302毫秒、650,096KiB。
+P4 健康/频道接口中位延迟为0.306/0.815毫秒，Python为0.580/9.889毫秒。现有测量标签
+`ts-forwarding` 在本次代表完整 v8 P4 组合。引擎进程、Electron 页面、Keychain 和在途执行成本
+不在这些采样内。这是单台 macOS arm64 机器的数据，不能当作普遍性能承诺。Python 保留至 P5，
+当前共存阶段没有降低内存和包体积。测量进程已全部停止，一次性数据已删除。
+
+
+## 已安装候选验收（2026-10-09）
+
+整套 `npm run test:work:ts` 的48个命名检查全部通过，包含五个真实进程终止窗口。完整
+`npm run check` 退出0：Server162项、Desktop579项并有3项平台跳过、Web695项、Node129项并有3项
+平台跳过；最后20项构建全部通过，其中16项使用缓存。构建后再次确认包内81个 Desktop 编译文件
+一致。没有付费模型调用。
+
+按用户指定的最终环境，先把原应用和完整配置保存在私有回滚目录，再用这个未签名开发候选替换
+本机现有 OpenBot。实际 Electron 应用读取既有 Keychain 凭据，完成认证，恢复工作区和实时连接。
+真实健康接口报告 `typescript-product-candidate`，执行归属为运行中的 `typescript-v1`；
+这要求安装环境 SQL/Temporal 排空门在 Worker 准入前通过。正常退出停止了两个服务和原生 PostgreSQL；真实重启再次通过排空门，恢复 TS Worker、工作区和实时连接。
+
+退出后的只读副本审计确认已有57项规范迁移（原为53项），仍为相同两个旧 Run，没有活跃、未确认
+或未解决的义务，启用的自动任务为零；旧 Work SQL 指纹未变。18个既有配置、对象和产物文件
+共3,610,608字节，与回滚副本逐字节一致。没有在真实数据中提交 Work 或调用模型。这个安装候选
+没有补齐缺失的 Linux/runsc 部署或浏览器配置，也不能把合成执行端证据当作原生验收。完整 P4
+资格验收与托管 CI 仍待完成；Python 删除、包体积缩减和 P5 不在本轮范围内。

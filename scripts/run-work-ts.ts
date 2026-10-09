@@ -1,10 +1,16 @@
 import { spawn, spawnSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { allowlistedEnvironment } from "./python-acceptance-fixture.ts";
 
 import { qualifyCommandInterop } from "./ts-work-command-interop.ts";
 
+const args = process.argv.slice(2);
+if (
+  args.length > 1 ||
+  (args[0] !== undefined && !["--drain-only", "--recovery-only"].includes(args[0]))
+)
+  throw new Error("Work qualification accepts only --drain-only or --recovery-only.");
 const root = fileURLToPath(new URL("../", import.meta.url));
 const python =
   process.env.OPENBOT_TEMPORAL_TEST_PYTHON ??
@@ -29,7 +35,7 @@ if (verified.error || verified.status !== 0)
 await qualifyCommandInterop(python);
 const child = spawn(
   python,
-  ["-I", "experiments/work-journey/ts_control_probe.py", "--node", process.execPath],
+  ["-I", "experiments/work-journey/ts_control_probe.py", "--node", process.execPath, ...args],
   { cwd: root, env, stdio: "inherit" },
 );
 for (const signal of ["SIGINT", "SIGTERM"] as const) process.once(signal, () => child.kill(signal));

@@ -335,6 +335,15 @@ jobs:
         run: npm exec -- turbo run build --filter=@openbot/server-ts
       - name: Stage the exact mixed TS product runtime
         run: node apps/desktop/scripts/prepare-native-server.ts --ts-product
+      - name: Fetch the pinned native P4 qualification engine
+        shell: bash
+        run: |
+          curl --proto '=https' --tlsv1.2 --fail --location --silent --show-error \
+            --max-time 180 --max-filesize 96287042 \
+            --output "$RUNNER_TEMP/temporal_1.32.0_darwin_arm64.tar.gz" \
+            https://github.com/temporalio/temporal/releases/download/v1.32.0/temporal_1.32.0_darwin_arm64.tar.gz
+          # The owned fixture verifies archive and regular-member sizes/hashes before execution.
+          echo "OPENBOT_NATIVE_TEMPORAL_ARCHIVE=$RUNNER_TEMP/temporal_1.32.0_darwin_arm64.tar.gz" >> "$GITHUB_ENV"
       - name: Verify the staged TS entry and paired Python/PostgreSQL lifecycle
         shell: bash
         run: |
@@ -356,7 +365,7 @@ jobs:
         shell: bash
         run: |
           umask 077
-          env -i PATH="$PATH" LANG=en_US.UTF-8 \
+          env -i PATH="$PATH" LANG=en_US.UTF-8 OPENBOT_NATIVE_TEMPORAL_ARCHIVE="$OPENBOT_NATIVE_TEMPORAL_ARCHIVE" \
             apps/desktop/out/ts-product-runtime/node/bin/node apps/desktop/scripts/measure-ts-product.ts apps/desktop/out/ts-product-runtime \
             > "$RUNNER_TEMP/ts-preview-overhead.json"
       - name: Retain synthetic TS Preview lifecycle and performance evidence

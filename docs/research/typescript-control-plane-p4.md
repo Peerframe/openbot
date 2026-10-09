@@ -2,7 +2,7 @@
 
 English · [简体中文](typescript-control-plane-p4.zh-CN.md)
 
-- Status: Implementation in progress; no P4 cutover or drain accepted
+- Status: Integrated P4 candidate installed locally; actual isolated-executor and hosted qualification remain open
 - Date: 2026-10-09
 - Owner: @yxflc11
 - Decision: [ADR-0050](../decisions/0050-typescript-control-plane.md)
@@ -386,3 +386,137 @@ isolation and Unix peer identity remain explicitly synthetic. The full repositor
 Server159, Desktop578 with3platform skips, Web695 and Node129 with3platform skips; final build20/20
 with16cached. Actual Linux/runsc qualification, Desktop composition, process-death windows,
 UI12/12 and installed drain remain open.
+
+
+## Installation composition and Python drain (2026-10-09)
+
+Reuse the installed private `temporal.json`, `browser.json` and `command.json`; never rewrite
+credentials or the retained queue. Explicit `OPENBOT_TS_WORK_GROUP=p4` requires all accepted P3
+selectors, creates the sole TS Worker registry, and derives a disjoint versioned queue from the
+configured Python queue. The paired Python process has neither a Work supervisor, Worker socket
+nor a private runtime port. Desktop v8 requires the existing Temporal configuration and actual
+SDK/native resources. An absent or invalid execution configuration fails closed; this candidate
+has no implicit API-only fallback. Python remains packaged for P5 and explicit paired reversal.
+
+Reviewed official [Temporal Visibility documentation](https://docs.temporal.io/visibility) and
+SDK1.24.0 `workflow-client` source at the commit already pinned above. Visibility is eventually
+consistent: its absence is not a drain proof. Compare a first-page-only list (insufficient), queue
+renaming alone (leaves pending SQL obligations), and full SQL plus authoritative per-ID engine
+inspection. Select the last using released SDK APIs, with no copied upstream source or new dependency.
+
+Before any TS Work service or automation starts, read all Python-owned SQL rows with keyset paging,
+including unconfirmed submissions, admitted/unknown effects and unfinished closed repairs. Describe
+each deterministic old workflow ID, verify queue/type/first-run identity and immutable terminal
+history, then re-describe for a racing continuation. Scan every running Visibility page to find
+engine-only obligations. Missing retained history is counted separately; transport failures,
+continued chains, mismatched references and incomplete history refuse cutover. Re-read SQL and
+compare its full digest to reject concurrent changes. This is read-only evidence; it never cancels,
+retries, settles or refunds old work. Stop the old admission processes before this gate. Empty
+Visibility alone, a closed engine execution and fixture results never authorize a production switch.
+
+The disposable gate passed with105 SQL rows (including an active row after the first page),
+unconfirmed/unknown/unfinished-repair refusal, three real unpolled Python-type Temporal executions,
+multiple Visibility pages, actual terminated-history verification and a concurrent SQL change.
+Desktop focused checks passed36 cases with2 platform skips. These qualify the gate implementation;
+they do not establish drain of the installed application. Complete P4/UI/native/installed acceptance
+remains pending. The local current handoff identifies exact logs and revision scope.
+
+
+## macOS native qualification engine (2026-10-09)
+
+The existing macOS hosted package lane has no Docker engine. Reuse official Temporal Server1.32.0
+as a temporary native fixture, with its documented SQLite initialization and the same mutual TLS
+policy. This verifies packaged native loading and paired lifecycle; PostgreSQL durability, schema
+and upgrade acceptance stay in the existing real PostgreSQL/mTLS lane. A product never selects
+this fixture, plaintext, SQLite or an implicit test server. The installer does not ship it.
+
+Reviewed [Server1.32.0 release](https://github.com/temporalio/temporal/releases/tag/v1.32.0),
+its `config/development-sqlite-file.yaml` and `config/docker.yaml` from the verified archive,
+and [TLS configuration](https://docs.temporal.io/references/configuration#tls). The macOS arm64
+archive SHA-256 is `f95748376241f5941327fa4c4e8e76641e8c4a9acabf77de9c86eb3d8238f4d7`,
+size96,287,042 bytes. Reuse the existing bounded archive/member verifier; exact binary sizes and
+hashes are in `experiments/work-journey/release_archive.py`. No upstream source is copied; declarative
+configuration uses the published schema and the Server retains its MIT license. No automatic
+SDK download or new product dependency is introduced: CI explicitly downloads the pinned archive,
+and local qualification requires its explicit path. The owned process, credentials and SQLite file
+are removed at completion. The package database remains actual native PostgreSQL.
+
+Also reviewed MIT [CLI1.9.1](https://github.com/temporalio/cli/releases/tag/v1.9.1), commit
+`1de87a9f26991bf4f5c0a5ff96f2cea8d7a3cbde`, its start-dev implementation/tests and open issues.
+Its development command does not expose the required server TLS configuration, so it is not used.
+A Docker/VM installation on hosted macOS would add an unnecessary environment dependency.
+The released Server asset meets this narrow gate without changing production architecture.
+
+
+## Integrated recovery and installation evidence (2026-10-09)
+
+The production TS entry now runs in a real child process against disposable PostgreSQL and mutual-TLS
+Temporal. Qualification sends SIGKILL at five committed boundaries: reservation before start, engine
+acceptance before acknowledgement, admitted effect before response, saved original receipt, and atomic
+publication before Activity completion. A replacement uses the same database, queue, keys and files.
+The unconfirmed submission is not resent; the unknown effect is not repeated or published. Recoverable
+starts and committed receipts complete, preserving the original receipt digest, three model steps and
+one final publication. All five windows passed. Provider bytes and pause hooks are synthetic; process
+death, HTTP, SQL, file storage and engine recovery are actual. The aggregate qualification budget is
+1200 seconds; individual product deadlines are unchanged.
+
+The existing TS UI command now owns the same disposable mTLS engine and requires the P4 health phase
+and TS execution owner. Its12 existing steps passed with112 responses, zero unexpected responses,
+zero page errors and zero workspace503s, including restart and reconnect. No Web source was changed.
+The staged native payload also passed34 resource and13 portability checks with actual native
+PostgreSQL and the pinned native mTLS engine. These checks use disposable profiles and synthetic
+encryption callbacks; installed Electron/Keychain acceptance remains separate.
+
+For the user-selected installed OpenBot, a consistent copy of its stopped PostgreSQL cluster was
+audited with target additive migrations applied only to the copy. Its installed Temporal endpoint
+was queried read-only. The copy held two Python Runs; active Runs, unconfirmed submissions, unresolved
+effects, unfinished repairs and running engine executions were all zero. One terminal history was
+absent and counted separately. All1292 source files (62,318,329 bytes) retained the same full digest,
+and the temporary copy was stopped and removed. This is a read-only precheck, not an installed
+cutover: actual startup must repeat the gate after the old pair has stopped. Linux/runsc execution,
+installed application acceptance and hosted CI still have no completion claim.
+
+
+The unsigned canonical macOS arm64 app also passed the same34 resource/13 portability checks,
+actual mTLS Worker startup, password/data restart, both-child exit supervision, parent-EOF cleanup
+and invalid execution configuration refusal. All81 packaged Desktop compiled files match the
+current build; its ASAR SHA-256 is
+`504141e2fded74e151de9e6998df5edd17f7ccb322fcd004abbeca9082843885`.
+The unchanged macOS Worker companion was reused from verified source
+`6e9d13edc77e0bb4b1aa797a9701cf16cd7a877c`; its complete packaged manifest remains validated.
+
+Same-source native measurement used three alternating trials per composition, each with a fresh
+profile and restart, actual native PostgreSQL and the connected fixture engine,100 measured requests
+per endpoint after10 warmups, and only owned descendant RSS. Python-only median fresh/restart
+readiness was10,917/8,938ms and248,096KiB RSS; complete P4 was6,696/5,302ms and650,096KiB RSS.
+P4 median health/channel latency was0.306/0.815ms (Python0.580/9.889ms). The retained measurement
+label `ts-forwarding` represents the complete v8 P4 composition in this run. The engine process,
+Electron renderer, Keychain and in-flight execution cost are outside those RSS/timing samples.
+This is one macOS arm64 machine, not a general performance promise. Python remains packaged until
+P5; memory and payload size have not been reduced by this coexistence stage. All owned measurement
+processes stopped and disposable data was removed.
+
+
+## Installed candidate acceptance (2026-10-09)
+
+The integrated `npm run test:work:ts` run passed all48 named checks, including all five actual
+process-death windows. The complete repository `npm run check` exited0: Server162 tests, Desktop579
+with3 platform skips, Web695 and Node129 with3 platform skips. Its final20 builds passed,16 cached.
+The packaged81 Desktop compiled files still matched after that build. No paid model was called.
+
+Using the environment explicitly chosen by the user, the existing macOS OpenBot application was
+replaced by this unsigned development candidate after retaining its original bundle and complete
+profile in a private rollback directory. The actual Electron app loaded the existing Keychain
+credentials, authenticated, and restored its workspace and realtime connection. Its actual health
+endpoint reported `typescript-product-candidate` with `typescript-v1` execution running, which
+requires the installed SQL/Temporal drain before Worker admission. Normal application quit stopped
+both services and native PostgreSQL. Actual restart passed the drain again and restored the TS
+Worker, workspace and realtime connection.
+
+A read-only copy audit after that stop found57 canonical migrations (previously53), the same two
+legacy Runs, no active/unconfirmed/unresolved obligations, and no enabled automations. The old
+Work SQL digest was unchanged. All18 retained configuration/object/artifact files (3,610,608 bytes)
+matched the rollback copy byte-for-byte. There was no production Work submission or model call.
+This installed candidate does not supply the missing Linux/runsc deployment or browser configuration,
+and does not turn synthetic executor evidence into native acceptance. Full P4 qualification and
+hosted CI remain open; Python removal, package reduction and P5 are not included.

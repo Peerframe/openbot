@@ -1,6 +1,4 @@
 import { createPublicKey } from "node:crypto";
-import { closeSync, constants, fstatSync, openSync, readFileSync, realpathSync } from "node:fs";
-import { isAbsolute } from "node:path";
 import { commandPreparationBindingSchema } from "@openbot/protocol";
 import { z } from "zod";
 import {
@@ -13,6 +11,7 @@ import { CommandSigner, CommandVerifier } from "./work-command-crypto.js";
 import type { CommandInbox } from "./work-command-inbox.js";
 import type { WorkCommandProfiles } from "./work-command-profiles.js";
 import { strictCommandJson } from "./work-command-values.js";
+import { readWorkInstallationFile } from "./work-installation.js";
 
 const identity = commandPreparationBindingSchema.shape.nodeId,
   pathSchema = z.string().min(1).max(4096);
@@ -46,33 +45,10 @@ export type WorkCommandSetup = {
   inbox: CommandInbox;
   configuration: WorkCommandConfiguration;
 };
-function owned(path: string, privateFile: boolean, maximum: number) {
-  if (!isAbsolute(path) || realpathSync(path) !== path)
-    throw new Error("command_installation_invalid");
-  const fd = openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
-  try {
-    const stat = fstatSync(fd);
-    if (
-      !stat.isFile() ||
-      stat.uid !== process.geteuid?.() ||
-      stat.nlink !== 1 ||
-      stat.size < 1 ||
-      stat.size > maximum ||
-      stat.mode & (privateFile ? 0o077 : 0o022)
-    )
-      throw new Error("command_installation_invalid");
-    const bytes = readFileSync(fd);
-    if (bytes.length !== stat.size || fstatSync(fd).size !== stat.size)
-      throw new Error("command_installation_invalid");
-    return bytes;
-  } finally {
-    closeSync(fd);
-  }
-}
 /** Explicit, owned configuration only. No environment key lookup, route discovery or fallback. */
 export function loadWorkCommandConfiguration(path: string): WorkCommandConfiguration {
   try {
-    const value = schema.parse(strictCommandJson(owned(path, true, 16384)));
+    const value = schema.parse(strictCommandJson(readWorkInstallationFile(path, true, 16384)));
     if (
       value.route.enforcementKeyId !== value.enforcement.keyId ||
       value.control.issuer === value.enforcement.issuer ||
@@ -81,8 +57,14 @@ export function loadWorkCommandConfiguration(path: string): WorkCommandConfigura
     )
       throw new Error();
     checkCommandBudget(value.timing, 1, 300001, value.policy.limits.wallSeconds);
-    const privatePem = owned(value.control.privateKeyPath, true, 4096).toString("utf8"),
-      enforcementPublicPem = owned(value.enforcement.publicKeyPath, false, 4096).toString("utf8");
+    const privatePem = readWorkInstallationFile(value.control.privateKeyPath, true, 4096).toString(
+        "utf8",
+      ),
+      enforcementPublicPem = readWorkInstallationFile(
+        value.enforcement.publicKeyPath,
+        false,
+        4096,
+      ).toString("utf8");
     const key = createPublicKey(privatePem);
     if (key.asymmetricKeyType !== "ed25519") throw new Error();
     return {

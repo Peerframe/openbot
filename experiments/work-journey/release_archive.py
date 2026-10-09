@@ -1,4 +1,4 @@
-"""Extract two pinned official Temporal 1.31.3 binaries for an owned upgrade fixture."""
+"""Extract pinned official Temporal binaries for owned upgrade/native fixtures."""
 from contextlib import suppress
 import gzip
 import hashlib
@@ -9,6 +9,14 @@ import tarfile
 
 # Official release checksums and inspected regular-member hashes; see the upgrade research.
 RELEASES = {
+    'darwin-arm64-1.32.0': {
+        'size': 96287042,
+        'sha256': 'f95748376241f5941327fa4c4e8e76641e8c4a9acabf77de9c86eb3d8238f4d7',
+        'members': {
+            'temporal-server': (143368082, 'f1663788fd4d8d702576b659db212b4d45a8dbfc0909eb7f7a86d0d442de6a60'),
+            'temporal-sql-tool': (39794690, 'ae3f05c59696f3466800cb5a0e1d57d3809ffc35834e7de9ca2e6bd2c747e71b'),
+        },
+    },
     'amd64': {
         'size': 93822307,
         'sha256': 'f2c3bf9f1115b506259e5972a62c38257296c043e15798358c3fb758625b96b8',
@@ -108,7 +116,7 @@ def _extract_members(stream, release, directory_fd, created):
 
 def extract_release(archive: Path, arch: str, destination: Path) -> dict[str, Path]:
     """Verify the pinned release and populate a new private directory, removing partial output."""
-    if arch not in ('amd64', 'arm64'):
+    if arch not in RELEASES:
         raise ValueError('Expected amd64 or arm64 release architecture')
     release = RELEASES[arch]
     destination = Path(destination).absolute()

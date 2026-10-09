@@ -45,7 +45,7 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
                run_commands: RunCommandStore | None = None, work=None, product=None,
                proxy_address: str | None = None, public_origin: str | None = None,
                ts_read_group: str = "none", ts_write_group: str = "none", ts_auth_group: str = "none", ts_channel_read_group: str = "none", ts_product_group: str = "none", ts_work_group: str = "none") -> FastAPI:
-    if ts_work_group not in ("none", "reports") or (ts_work_group != "none" and (ts_product_group != "p3" or product is None or work is None or proxy_address is None or public_origin is None)):
+    if ts_work_group not in ("none", "reports", "p4") or (ts_work_group != "none" and (ts_product_group != "p3" or product is None or work is None or proxy_address is None or public_origin is None)):
         raise ValueError("TS Work ownership requires an explicit private P3 product proxy.")
     if ts_product_group not in ("none", "identity", "identity-models", "p3") or (ts_product_group != "none" and (product is None or proxy_address is None)):
         raise ValueError("TS product ownership requires an explicit private product proxy.")
@@ -100,7 +100,7 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
 
     app = FastAPI(title="OpenBot control-plane reference", version="0.0.0",
                   docs_url=None, redoc_url=None, lifespan=lifespan)
-    if ts_product_group == "p3":
+    if ts_product_group == "p3" and ts_work_group != "p4":
         from .ts_runtime_port import register_runtime_port
         register_runtime_port(app, product, secure_cookies=secure_cookies, allowed_origins=allowed_origins)
     if (proxy_address is None) != (public_origin is None):
@@ -117,7 +117,7 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
     async def private_response(request: Request, call_next):
         from .ts_product_ownership import owns as ts_product_owns, work_owns
         if ((ts_product_group != "none" and ts_product_owns(request.method, request.url.path, ts_product_group))
-                or (ts_work_group == "reports" and work_owns(request.method, request.url.path))):
+                or (ts_work_group in ("reports", "p4") and work_owns(request.method, request.url.path))):
             return JSONResponse({"error": "operation_owned_by_ts"}, status_code=503, headers={"Cache-Control":"no-store","X-Content-Type-Options":"nosniff","X-Frame-Options":"DENY"})
         auth_write = auth is not None and request.method == "POST" and request.url.path in (
             "/api/v1/auth/login", "/api/v1/auth/logout", "/api/v1/auth/password",
@@ -289,7 +289,7 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
     if product is not None:
         from .product_control import register_product_routes
         register_product_routes(app, product, store, secure_cookies=secure_cookies, allowed_origins=allowed_origins,
-                                ts_read_group=ts_read_group, ts_write_group=ts_write_group)
+                                ts_read_group=ts_read_group, ts_write_group=ts_write_group, ts_work_group=ts_work_group)
 
     # Cookie parsing is invoked inside the adapter to keep the store request-scoped. Declare
     # that exact scheme in generated OpenAPI too; a schema is never an authorization check.
