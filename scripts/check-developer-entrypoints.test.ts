@@ -3,7 +3,10 @@ import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test, { type TestContext } from "node:test";
-import { validateDeveloperEntrypoints } from "./check-developer-entrypoints.ts";
+import {
+  ROOT_RULES_MAX_LINES,
+  validateDeveloperEntrypoints,
+} from "./check-developer-entrypoints.ts";
 
 function fixture(t: TestContext) {
   const root = mkdtempSync(join(tmpdir(), "openbot-entry-"));
@@ -15,6 +18,7 @@ function fixture(t: TestContext) {
     "---\nname: openbot-change\ndescription: Make a scoped change.\n---\nRead the map.\n";
   writeFileSync(path, source);
   writeFileSync(join(root, "AGENTS.md"), "[change](.agents/skills/openbot-change/SKILL.md)");
+  writeFileSync(join(root, "CLAUDE.md"), "@AGENTS.md\n");
   return { root, dir, path, source };
 }
 
@@ -44,4 +48,16 @@ test("repo discovery cannot depend on symlink support", (t) => {
   const f = fixture(t);
   symlinkSync(f.dir, join(f.root, ".agents/skills/alias"), "junction");
   assert.match(validateDeveloperEntrypoints(f.root).join(" "), /not a symlink/u);
+});
+test("the root map keeps its line budget and Claude Code imports it", (t) => {
+  const f = fixture(t);
+  const route = "[change](.agents/skills/openbot-change/SKILL.md)";
+  writeFileSync(join(f.root, "AGENTS.md"), `${route}\n${"line\n".repeat(ROOT_RULES_MAX_LINES)}`);
+  assert.match(validateDeveloperEntrypoints(f.root).join(" "), /keep the root map within/u);
+  writeFileSync(join(f.root, "AGENTS.md"), route);
+  assert.deepEqual(validateDeveloperEntrypoints(f.root), []);
+  writeFileSync(join(f.root, "CLAUDE.md"), "Read AGENTS.md.");
+  assert.match(validateDeveloperEntrypoints(f.root).join(" "), /CLAUDE\.md must/u);
+  rmSync(join(f.root, "CLAUDE.md"));
+  assert.match(validateDeveloperEntrypoints(f.root).join(" "), /CLAUDE\.md must/u);
 });

@@ -1,98 +1,63 @@
-# OpenBot 仓库协作规则
+# OpenBot 仓库地图
 
 [English](AGENTS.md) · 简体中文
 
-英文 `AGENTS.md` 是规范原文；本文件是同步译本，不额外叠加规则。
-规则适用于在本仓库任意目录工作的人工贡献者和编码 Agent。
+这是给编码智能体和贡献者的地图。先读这里，再只读你要改的路径的本地规则和代码。子目录里的 `AGENTS.md`
+对该目录生效。环境搭建和完整贡献流程见[贡献指南](CONTRIBUTING.zh-CN.md)。以英文版为准。
 
-## 开始工作
+## 东西在哪里
 
-修改前核对工作目录、分支/HEAD 和未提交文件。现行控制层是
-[Python](apps/server-python/AGENTS.md)；`apps/server` 已退役。
-[冻结的 TypeScript oracle](tests/oracles/legacy-server/AGENTS.md)只用于测试，不是产品回退方案。
-保留 Python/Temporal、TS/React、薄 Electron 和必要 Node 辅助工具的职责。
+| 路径 | 是什么 |
+| --- | --- |
+| `apps/web` | React 网页界面（[规则](apps/web/AGENTS.md)、[设计入口](docs/design/README.md)） |
+| `apps/desktop` | 在本机运行产品的轻量 Electron 外壳（[规则](apps/desktop/AGENTS.md)） |
+| `apps/server-ts` | TypeScript 控制面，所有接口的迁移目标（[规则](apps/server-ts/AGENTS.md)、[ADR-0050](docs/decisions/0050-typescript-control-plane.md)） |
+| `apps/server-python` | Python 控制面，按 ADR-0050 逐组退役（[规则](apps/server-python/AGENTS.md)） |
+| `apps/node`、`providers/*` | 工作节点和执行提供方 |
+| `packages/protocol` | 共享的接口契约（[规则](packages/protocol/AGENTS.md)） |
+| `packages/db` | PostgreSQL 表结构和迁移 |
+| `packages/harness` | Python 智能体运行时（[规则](packages/harness/AGENTS.md)） |
+| `experiments/*` | CI 仍在运行的探针和测试夹具，不是产品代码 |
+| `tests/oracles/legacy-server` | 冻结的对照输入，绝不作为产品后备（[规则](tests/oracles/legacy-server/AGENTS.md)） |
+| `docs/decisions` | ADR：已采纳的架构决定 |
+| `docs/research` | 单个决定的依据；只打开你需要的那一篇 |
 
-只读[仓库地图](docs/REPOSITORY_MAP.zh-CN.md)中相关行，再读局部 `AGENTS.md`、契约、消费者与
-代表测试；证据不足时沿调用或可复现失败继续展开。启动见[贡献指南](CONTRIBUTING.zh-CN.md)，
-UI 从[设计入口](docs/design/README.zh-CN.md)开始，不预加载整个研究库。
-C1→C2→C3 已完成升级保存在[升级记录](docs/REPOSITORY_UPGRADE_PLAN.md)。它与早期迁移记录都是
-带日期的历史证据，不是常驻待办；当前工作以用户请求和实际 checkout 为准。
+`apps/server` 只剩一份退役说明。[REPOSITORY_MAP](docs/REPOSITORY_MAP.md) 列出常见任务的入口和代表性测试。
 
-[开发入口](.agents/README.zh-CN.md)链接已有职责与工作流。仓库开发 skills 仍在 `.agents/skills`，
-按当前任务只选择并读取所需项：
-[openbot-change](.agents/skills/openbot-change/SKILL.md)、
-[openbot-check](.agents/skills/openbot-check/SKILL.md)、
-[openbot-ui](.agents/skills/openbot-ui/SKILL.md)、
-[openbot-review](.agents/skills/openbot-review/SKILL.md)。
-这些是贡献工作流，不是 Employee 技能或产品资源。即使会话从根启动，也要显式读取修改路径下的局部规则。
+## 工作流程
 
-## 目标与交付
+按任务选一个读：[openbot-change](.agents/skills/openbot-change/SKILL.md)（实现一项改动）、
+[openbot-check](.agents/skills/openbot-check/SKILL.md)（选择检查、排查失败）、
+[openbot-ui](.agents/skills/openbot-ui/SKILL.md)（网页或桌面界面）、
+[openbot-review](.agents/skills/openbot-review/SKILL.md)（审查改动）。它们是贡献流程，不是 Employee 技能或产品资源。
 
-- 非简单工作开始前，明确用户要的结果、真实入口、本轮有限的验收范围和下一个交付检查点。
-  复用有效决策；有实质差异的路线按整合成本、首个可用成果、运行维护和风险比较。
-  常规改动不需要额外方案文档或审批。
-- 在约定范围内优先形成可用的端到端候选，再扩展基础设施。尽早核对关键接口和环境前提。
-  区分真实产品服务与夹具、候选验收与阶段或迁移完成。凭据或目标环境缺失要明确记录，
-  不能靠继续增加过渡设施替代。
-- 保留必要安全与正确性门槛。只有当前验收阻断自动进入本切片；其他改进进入现有待办。
-  有限范围的候选必须实际执行其限制。不得悄悄缩小用户目标或扩大验收门槛。
-- 整合工作、依赖或返工增加而可用行为没有推进时，重新判断关键路径，在授权范围内调整实现。
-  说明具体缺口和下一动作，不通过不断增加准备性切片延长阶段。
-- 每个文件范围只有一个实现者，已验收修复逐项集成，保留可用基线。临时适配器和并行实现
-  要有替换或退出条件；保护用户数据，在替代实现验证前不退役原实现。
-- 汇报可用行为、剩余验收项和实际阻塞。长任务或实际移交时，复用一份当前摘要，包含工作
-  目录、版本、未提交内容、证据和归属。移交前核实原写入者已结束，或明确安排互不重叠的
-  修改归属。遵守用户的停止指令与发布边界。
+## 检查
 
-## 实现前调研
+- 开发中，跑你所改包的相关测试。
+- 交付代码前，跑 `npm run check`。
+- 改界面或控制面时，再跑 `npm run ui:acceptance -- --entry ts`，必须显示 `PASS 12/12`。
+- 只改文档时，跑 `npm run docs:check` 即可。
 
-新增依赖或版本、公共协议、授权/安全边界、持久数据边界及重大架构选择，须在实现前补针对性证据。
-新功能只在包含上述尚未决定的选择时触发调研；只研究受影响的决定，不重查整个技术栈：
+## 先调研再实现
 
-1. 搜索 GitHub 和相关官方标准或一手文档。
-2. 比较维护中的候选，包括源码、发行版、测试、开放问题、平台适配、安全边界、许可证，
-   以及整合和运行成本。
-3. 固定实际审查的精确发行版或提交。
-4. 优先顺序为可行的开放标准、发布依赖、薄适配器、上游贡献、窄范围分叉、本地专用实现。
-   “可行”包含目标行为与总交付、维护成本；安装成熟组件本身不够。
-5. 在已有 Issue、ADR 或调研记录中记录决策和相关证据；确需新记录时使用
-   `docs/research/TEMPLATE.md`。
-6. 说明是否复制或实质改编源码，并保留必要声明。
+新依赖或新版本、公开协议、授权或安全边界、持久化数据、重要的架构选择，都要先有依据再写代码：比较仍在维护的方案，
+固定所审查的版本，优先用标准或已发布的组件而不是自己写，并把决定记在 ADR、调研记录或 PR 里，说明是否复制了源码。
+扩展现有代码前先查 [OPEN_SOURCE_REUSE](docs/OPEN_SOURCE_REUSE.md)。细节见[贡献指南](CONTRIBUTING.zh-CN.md)。
 
-扩展现有代码时，先查 `docs/OPEN_SOURCE_REUSE.md` 中对应条目，补齐与改动相关的缺失或部分证据。
-既定契约内的修复与接线复用仍有效的决策和审查版本，记录引用与变化的假设，不为每个提交
-重开调研。仅在新要求、依赖变化或新证据使原结论失效时重开受影响的决策。
-调研应解决具体选择或缺口，不能无限推迟产品整合。
+## 产品和安全边界
 
-无合适候选时，本地实现前记录已查候选、搜索词和精确缺口。行为和声明不变的拼写、翻译及
-机械排版无需新调研。旧计划和贡献检查表按上述触发条件执行；不得借此豁免安全、许可证、
-必需 CI 或已接受的产品要求。
+- Server 是 Employee 身份、授权、路由、审批和审计的唯一可信来源。
+- 模型、网页、导入的技能、消息、Worker Host 和 Provider 都不可信。
+- 能力不等于授权。新的副作用需要明确的策略、失败即拒绝、有界的输入输出和测试。
+- 平台、无障碍和安全支持，只按一致性文档里的证据声明。
+- Employee 的学习方向受 Hermes Agent 启发，保留这一出处说明。
+- 办公室可视化是延后的可选插件，只有里程碑要求时才扩展。
 
-## 产品与安全边界
+## 工作规则
 
-- Server 是 Employee 身份、授权、路由、审批和审计的唯一事实来源。
-- 模型、网页、导入技能、消息、Worker Host 和 Provider 均视为不受信任。
-- 能力不授予权限。新增副作用须有明确策略、失败关闭行为、有界输入输出及测试。
-- Windows、macOS、Linux、无障碍或安全支持声明不得超出一致性文档中的证据。
-- Employee 进化与学习方向明确受 Hermes Agent 启发。保留归因，不暗示 OpenBot 首创学习图概念。
-- 办公室可视化是推迟的可选插件，仅在用户明确要求的里程碑包含它时扩展。
-
-## 贡献者体验
-
-全新 checkout 应能按文档启动、定位契约、运行定向检查和交接，不依赖私人路径、付费模型或口头背景。
-使用确定性模型和临时夹具，把依赖环境的回归保留在已有 CI 中。遵循
-[贡献者体验](CONTRIBUTING.zh-CN.md#贡献者体验)，优先使用已有扩展点，不另建实现或审批流程。
-这些规则不授权推送、合并、发布、付费模型调用、生产数据修改或远端保护变更。
-
-## 工程与仓库卫生
-
-- 源码、注释、ADR 和主要文档以英文为规范原文；同一 Pull Request 内同步变更的用户可见
-  项目文档的中文译本。
-- 注释解释权威、安全、并发、生命周期和上游约束，不复述语法。
-- 提交保持聚焦。开发时运行受影响检查，实现或整合交接前运行 `npm run check`；不为每次
-  状态更新或仅交接文字修改重复未变化的全套检查。仅指令或文档变更时，验证修改后的规则、
-  本地链接和文档门槛，不只为文字变更重建无关二进制。仍须遵守必需 CI 及明确适用的发布、
-  迁移或安全门槛。检查器、skill、提示词及 AGENTS 是行为工作流变更，须运行相关正反例、链接及
-  发现/读取验收，不能仅按 Markdown 当作文字豁免。脚本变化仍须运行 `npm run check`。
-  记录真实失败，区分实际执行、缓存与跳过，不把旧结果重新标为本轮执行。
-- 不提交凭据、私人对话、含用户数据的生成截图或无关本地素材。
+- 代码、注释、ADR 和文档以英文为准。只有面向用户的文档保留中文翻译：各 README、`docs/DESKTOP_INSTALLATION`、
+  `NODE_ENROLLMENT`、`PLUGINS`、`CROSS_PLATFORM` 和 `THIRD_PARTY_NOTICES`。
+- 注释解释权限、安全、并发、生命周期和上游约束，不复述语法。
+- 迁移用的临时代码要在代码注释里写明退出条件，例如 `// Remove in P5`。
+- 同一时间一个文件只有一个人在改。绝不提交凭证、私人记录、本机路径或含用户数据的截图。
+- 推送、合并、发布、付费模型调用和改动生产数据，都需要所有者明确要求。
