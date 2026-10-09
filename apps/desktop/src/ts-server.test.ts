@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 import { PassThrough } from "node:stream";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ spawn: vi.fn(), python: vi.fn() }));
+const mocks = vi.hoisted(() => ({ spawn: vi.fn(), python: vi.fn(), configuration: vi.fn() }));
 vi.mock("node:child_process", async (original) => ({
   ...(await original<typeof import("node:child_process")>()),
   spawn: mocks.spawn,
@@ -13,6 +13,7 @@ vi.mock("node:child_process", async (original) => ({
 vi.mock("./python-server.js", async (original) => ({
   ...(await original<typeof import("./python-server.js")>()),
   launchPythonProductServer: mocks.python,
+  pythonProductConfigurationEnvironment: mocks.configuration,
 }));
 
 import * as native from "./native-server.js";
@@ -28,6 +29,18 @@ const resources = [
   "node/bin/node",
   "apps/server-ts/dist/desktop-entry.js",
   "apps/server-ts/dist/app.js",
+  "apps/server-ts/dist/work-installation.js",
+  "apps/server-ts/dist/work-python-drain.js",
+  "apps/server-ts/dist/work-service.js",
+  "apps/server-ts/dist/work-runtime.js",
+  "apps/server-ts/dist/work-command.js",
+  "apps/server-ts/dist/worker-runtime.js",
+  "packages/work/dist/workflows.js",
+  "node_modules/@temporalio/worker/package.json",
+  "node_modules/@temporalio/core-bridge/releases/aarch64-apple-darwin/index.node",
+  "node_modules/jose/package.json",
+  "node_modules/canonicalize/package.json",
+
   "apps/server-ts/dist/tls.js",
   "apps/server-ts/dist/transcription-read.js",
   "apps/server-ts/dist/primary-bot-write.js",
@@ -89,6 +102,14 @@ const resources = [
 beforeEach(() => {
   mocks.spawn.mockReset();
   mocks.python.mockReset();
+  // These are pairing tests with a simulated macOS payload on every CI host. The real
+  // POSIX ownership/file checks are covered by python-server tests and native qualification.
+  mocks.configuration.mockReset().mockImplementation(async (env: Record<string, string>) => ({
+    OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH: join(
+      dirname(env.OPENBOT_CONTROL_MODEL_SETTINGS_PATH!),
+      "temporal.json",
+    ),
+  }));
   vi.stubGlobal(
     "process",
     Object.create(process, {
@@ -101,7 +122,7 @@ beforeEach(() => {
     Response.json({
       ok: true,
       service: "openbot-server",
-      phase: "python-product-candidate",
+      phase: "typescript-product-candidate",
     }),
   );
 });
@@ -115,6 +136,9 @@ afterEach(async () => {
 async function fixture() {
   const root = await realpath(await mkdtemp(join(tmpdir(), "openbot-ts-desktop-test-")));
   directories.push(root);
+  await writeFile(join(root, "temporal.json"), JSON.stringify({ retainedPrivateFixture: true }), {
+    mode: 0o600,
+  });
   await writeFile(join(root, "ts-control.json"), JSON.stringify(TS_CANDIDATE));
   await writeFile(
     join(root, "python-control.json"),
@@ -193,6 +217,7 @@ it("keeps absent selection on Python and refuses malformed, symlink or unmatched
     { ...TS_CANDIDATE, format: "openbot.desktop.ts-control/v4" },
     { ...TS_CANDIDATE, format: "openbot.desktop.ts-control/v5" },
     { ...TS_CANDIDATE, format: "openbot.desktop.ts-control/v6" },
+    { ...TS_CANDIDATE, format: "openbot.desktop.ts-control/v7" },
     { ...TS_CANDIDATE, koffiVersion: "3.3.1" },
     { ...TS_CANDIDATE, openaiVersion: "7.27.0" },
     { ...TS_CANDIDATE, anthropicVersion: "0.130.0" },
@@ -222,6 +247,7 @@ it("owns one private Python writer and public TS entry, passes only the database
     "owner",
     "channels",
     "p3",
+    "p4",
   );
   const [executable, args, options] = mocks.spawn.mock.calls[0]!;
   expect(executable).toBe(join(f.root, "node/bin/node"));
@@ -234,6 +260,9 @@ it("owns one private Python writer and public TS entry, passes only the database
     OPENBOT_TS_WRITE_GROUP: "primary-bot",
     OPENBOT_TS_AUTH_GROUP: "owner",
     OPENBOT_TS_PRODUCT_GROUP: "p3",
+    OPENBOT_TS_WORK_GROUP: "p4",
+    OPENBOT_TS_WORK_FILE_ROOT: join(f.root, "objects/work-artifacts"),
+    OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH: join(f.root, "temporal.json"),
     OPENBOT_TS_OBJECT_ROOT: join(f.root, "objects"),
     OPENBOT_TS_ARTIFACT_ROOT: join(f.root, "objects/work-artifacts"),
     OPENBOT_TS_PLUGIN_STORE_PATH: join(f.root, "objects/plugins/state.json"),
@@ -276,6 +305,8 @@ it.each(["ts", "python"])("stops the partner when %s terminates without retry", 
   expect(mocks.python).toHaveBeenCalledOnce();
 });
 
+// Each missing resource exercises the full file preflight. Windows CI performs roughly 80
+// removal/check/restore cycles here; this bound covers fixture I/O, not a product deadline.
 it("refuses incomplete TS resources before starting Python, and releases Python if TS spawn throws", async () => {
   const f = await fixture();
   for (const resource of resources.slice(2)) {
@@ -289,4 +320,22 @@ it("refuses incomplete TS resources before starting Python, and releases Python 
   });
   await expect(launchTsProductServer(f.root, f.env)).rejects.toThrow("spawn failure");
   expect(f.python.stop).toHaveBeenCalledOnce();
+}, 15_000);
+
+it("refuses missing P4 engine configuration before starting the Python migrator or TS entry", async () => {
+  const f = await fixture();
+  mocks.configuration.mockResolvedValue({});
+  await expect(launchTsProductServer(f.root, f.env)).rejects.toThrow("P4 requires");
+  expect(mocks.python).not.toHaveBeenCalled();
+  expect(mocks.spawn).not.toHaveBeenCalled();
+});
+
+it("propagates execution configuration refusal before either product process starts", async () => {
+  const f = await fixture();
+  mocks.configuration.mockRejectedValue(new Error("Private configuration refused"));
+  await expect(launchTsProductServer(f.root, f.env)).rejects.toThrow(
+    "Private configuration refused",
+  );
+  expect(mocks.python).not.toHaveBeenCalled();
+  expect(mocks.spawn).not.toHaveBeenCalled();
 });

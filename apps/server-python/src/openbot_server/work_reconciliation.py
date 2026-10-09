@@ -86,7 +86,7 @@ class ReconciliationStore:
         async with self._store._transaction(trusted=True) as db:
             cursor = await db.execute('SELECT c.id,a.id AS action_id,a.task_id,a.run_id '
                 'FROM work_reconciliation_commands c JOIN work_actions a ON a.id=c.action_id '
-                'WHERE c.finished_at IS NULL '
+                "JOIN work_admissions h ON h.run_id=a.run_id WHERE c.finished_at IS NULL AND h.execution_owner='python-v1' "
                 'ORDER BY c.created_at,c.id LIMIT %s', (limit,))
             return [dict(commandId=r['id'], actionId=r['action_id'], taskId=r['task_id'], runId=r['run_id'])
                     for r in await cursor.fetchall()]

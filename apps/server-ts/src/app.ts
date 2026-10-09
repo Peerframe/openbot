@@ -1,7 +1,6 @@
-import { runtimePrefix } from "./runtime-port.js";
 import { AsyncLocalStorage } from "node:async_hooks";
-import type { Readable } from "node:stream";
 import type { Socket } from "node:net";
+import type { Readable } from "node:stream";
 import replyFrom from "@fastify/reply-from";
 import {
   automationHttpOperations,
@@ -16,6 +15,7 @@ import {
   workHttpOperations,
 } from "@openbot/protocol";
 import Fastify from "fastify";
+import { channelReader } from "./channel-read.js";
 import {
   type EntryOptions,
   forbiddenHeader,
@@ -23,14 +23,14 @@ import {
   safeRequestTarget,
   validateOptions,
 } from "./config.js";
+import { ownerAuthentication } from "./owner-auth.js";
+import { primaryBotWriter, WriteFailure, writeUnavailable } from "./primary-bot-write.js";
+import { productHandler } from "./product-http.js";
+import { runtimePrefix } from "./runtime-port.js";
 import { entryTls } from "./tls.js";
 import { ownerCookie, ReadFailure, transcriptionReader } from "./transcription-read.js";
-import { primaryBotWriter, WriteFailure, writeUnavailable } from "./primary-bot-write.js";
-import { primaryBotJson } from "./write-input.js";
-import { ownerAuthentication } from "./owner-auth.js";
-import { productHandler } from "./product-http.js";
-import { channelReader } from "./channel-read.js";
 import { workerTunnel } from "./worker-tunnel.js";
+import { primaryBotJson } from "./write-input.js";
 
 // This inventory is shared with P1. Only the explicitly enabled read operation changes owner.
 export const pythonOperations: readonly {
@@ -201,6 +201,10 @@ export async function createEntry(input: EntryOptions) {
     reply.code(400).send({ error: "Invalid entry request." });
   });
   app.all("/*", (request, reply) => {
+    if (request.method === "GET" && request.url.split("?")[0] === "/health" && product?.health) {
+      const health = product.health();
+      return reply.code(health.ok ? 200 : 503).send(health);
+    }
     if (decodeURIComponent((request.raw.url ?? "").split("?")[0] ?? "").startsWith(runtimePrefix))
       return reply.code(404).send({ error: "Not found." });
     if (
@@ -329,9 +333,9 @@ export async function createEntry(input: EntryOptions) {
   });
   // Python also serves the optional built Web root and owns unknown method/path refusals.
   // The fixed destination cannot be selected by path, Origin, Host, query or request body.
-  const closeTunnels = workerTunnel(app.server, options);
+  const closeTunnels = product?.attachWorkers(app.server) ?? workerTunnel(app.server, options);
   app.addHook("preClose", async () => {
-    closeTunnels();
+    await closeTunnels();
   });
   return app;
 }

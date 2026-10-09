@@ -8,6 +8,10 @@
 
 | 组件 | 版本 | 版权归属及许可 |
 | --- | --- | --- |
+| `jose` | 6.2.12 | 2018 Filip Skokan；MIT；上游许可保留在生产依赖中 |
+| `canonicalize` | 5.0.0 | Apache-2.0；上游许可保留在生产依赖中；P4 使用发布 API，未复制实现 |
+| Temporal TypeScript SDK 及 SDK 传递依赖 | 1.24.0 | 2021–2025 Temporal Technologies Inc.；MIT；上游许可保留在依赖中，见 [P4 审核](docs/research/typescript-control-plane-p4.zh-CN.md) |
+| `source-map-js` | 1.2.2 | 2009–2011 Mozilla Foundation 与贡献者；BSD-3-Clause；保留上游许可 |
 | Microsoft .NET、`Microsoft.Extensions.*`、`System.*` | 锁文件及发布运行时确定 | .NET Foundation 与贡献者；MIT |
 | `Meziantou.Framework.Win32.Jobs` | 4.0.0 | Gérald Barré；MIT |
 | Electron | 44.3.0 | Electron 贡献者及 GitHub Inc.；MIT；保留 `LICENSE` 与 `LICENSES.chromium.html` |

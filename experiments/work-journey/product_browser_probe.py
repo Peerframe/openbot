@@ -1,6 +1,7 @@
 """Real Control/Node/Chromium/Temporal journey and bounded interruption; synthetic state only."""
 import argparse,asyncio,json,os,secrets,signal,sys,time,subprocess
 from pathlib import Path
+from uuid import uuid4
 from concurrent.futures import ThreadPoolExecutor
 ROOT=Path(__file__).resolve().parents[2]
 PACKET=Path(__file__).resolve().parent
@@ -11,13 +12,24 @@ from active_restore_probe import ControlDatabase,private
 from postgres_server import PostgresServer
 from product_http_fixture import API,Process,CLEAN_ENV,ReadUnavailable
 from temporalio.worker import Replayer
+from temporalio.api.history.v1 import History
 from temporalio.client import WorkflowFailureError
 from pydantic_ai.durable_exec.temporal import PydanticAIPlugin
 from openbot_server.work_worker import OpenBotWork
 
 def emit(**v):print(json.dumps(v),flush=True)
-async def run(directory,upstream,browsers,recovery='worker',remote=None):
+async def run(directory,upstream,browsers,recovery='worker',remote=None,entry='python'):
  os.umask(0o077)
+ if entry=='ts' and recovery not in ('pages','response-loss','linux-replacement'):raise ValueError('Unsupported TS browser recovery mode')
+ if entry=='python' and recovery=='pages':raise ValueError('Python page qualification uses the worker mode')
+ workflow_prefix='openbot-work-ts-v1-' if entry=='ts' else 'openbot-work-v1-'
+ async def replay(history):
+  history_path=directory/'history.json';history_path.write_text(history.to_json())
+  if entry=='ts':
+   history_path=directory/'history.bin';history_path.write_bytes(History(events=history.events).SerializeToString())
+   await asyncio.to_thread(subprocess.run,['node','--import','tsx',str(PACKET/'product_browser_ts_server.ts'),'--replay',str(history_path)],cwd=ROOT,env=CLEAN_ENV,check=True,timeout=30)
+  else:
+   with ThreadPoolExecutor(max_workers=2) as executor:await Replayer(workflows=[OpenBotWork],plugins=[PydanticAIPlugin()],workflow_task_executor=executor).replay_workflow(history)
  connection_recovery=recovery in ('control','node','replacement')
  profile_recovery=recovery in ('browser-restart','linux-replacement')
  if (recovery=='linux-replacement') != (remote is not None):raise ValueError('Linux replacement requires the explicit remote fixture configuration')
@@ -28,6 +40,7 @@ async def run(directory,upstream,browsers,recovery='worker',remote=None):
  if directory.exists():raise ValueError("Use a new owned output directory")
  directory.mkdir(mode=0o700)
  for name in ('artifacts','objects','provider','node'):(directory/name).mkdir(mode=0o700)
+ if entry=='ts':(directory/'work-files').mkdir(mode=0o700)
  db=ControlDatabase(directory,'browser-product','postgres:17.11-bookworm@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0')
  unavailable_reads=0
  engine=api=node=log=None;node_id='browser-product-'+secrets.token_hex(5)
@@ -40,7 +53,9 @@ async def run(directory,upstream,browsers,recovery='worker',remote=None):
   pc=directory/'provider.json';private(pc,dict(directory=str(directory/'provider')))
   api=API(directory,db.dsn,directory/'artifacts',request_timeout=20 if remote else 5)
   api.env.update(OPENBOT_CONTROL_AUTHORITY='product',OPENBOT_CONTROL_WORK_TOKEN_LIMIT='1000000',OPENBOT_CONTROL_OBJECT_ROOT=str(directory/'objects'),OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH=str(ec),OPENBOT_BROWSER_PROBE_CONFIG=str(pc))
-  def start():api.child=Process([sys.executable,'-u','-B',str(PACKET/'product_browser_server.py')],api.directory,api.env)
+  def start():
+   command=['node','--import','tsx',str(PACKET/'product_browser_ts_server.ts')] if entry=='ts' else [sys.executable,'-u','-B',str(PACKET/'product_browser_server.py')]
+   api.child=Process(command,api.directory,api.env)
   async def until(f,seconds=60):
    nonlocal unavailable_reads
    deadline=time.monotonic()+seconds
@@ -86,7 +101,7 @@ async def run(directory,upstream,browsers,recovery='worker',remote=None):
   issued=await asyncio.to_thread(api.call,'/api/v1/nodes/enrollment-tokens',dict(nodeId=node_id),expected=201)
   credential=(await asyncio.to_thread(api.call,'/api/v1/nodes/enroll',dict(nodeId=node_id,token=issued.pop('token')),expected=201))['credential']
   log=(directory/'node.log').open('w')
-  node=await asyncio.create_subprocess_exec('node','--import','tsx',str(PACKET/('product_browser_remote_node.ts' if remote else 'product_browser_node.ts')),cwd=ROOT,env={**CLEAN_ENV,'PLAYWRIGHT_BROWSERS_PATH':str(browsers)},stdin=asyncio.subprocess.PIPE,stdout=asyncio.subprocess.PIPE,stderr=log)
+  node=await asyncio.create_subprocess_exec('node','--import','tsx',str(PACKET/('product_browser_native_node.ts' if remote and remote.get('fixtureEnvironment')=='disposable-github-linux' else 'product_browser_remote_node.ts' if remote else 'product_browser_node.ts')),cwd=ROOT,env={**CLEAN_ENV,'PLAYWRIGHT_BROWSERS_PATH':str(browsers)},stdin=asyncio.subprocess.PIPE,stdout=asyncio.subprocess.PIPE,stderr=log)
   node.stdin.write(json.dumps(dict(nodeId=node_id,botId=bot['id'],serverUrl=api.url.replace('http:','ws:')+'/ws/nodes',credential=credential,directory=str(directory/'node'),upstream=str(upstream),recovery=connection_recovery or profile_recovery,nodeProcess=recovery in ('node','replacement'),responseLoss=recovery=='response-loss',profileRestart=profile_recovery,remote=remote)).encode());await node.stdin.drain();node.stdin.close()
   async with asyncio.timeout(20):target=json.loads(await node.stdout.readline())['targetUrl']
   state_target=remote['stateUrl'].rstrip('/') if remote else target
@@ -110,10 +125,11 @@ async def run(directory,upstream,browsers,recovery='worker',remote=None):
    action=await until(pending)
    assert action['decision']=='pending'
    if name=='click_browser':
-    (directory/'provider/pause-worker').touch();await until(lambda:(directory/'provider/worker-stopped').exists(),30)
+    if entry=='python':
+     (directory/'provider/pause-worker').touch();await until(lambda:(directory/'provider/worker-stopped').exists(),30)
     async with httpx.AsyncClient(trust_env=False) as http:state=(await http.get(state_target+'/state')).json()
     assert state['submitted']==0 and state['text']=='浏览器任务 你好 🌏',state
-    emit(stage='worker-stopped-with-original-click-pending')
+    emit(stage='worker-stopped-with-original-click-pending' if entry=='python' else 'original-click-pending')
     if connection_recovery:
      await interrupt_connection()
      await until(lambda:(directory/'provider/worker-stopped').exists(),30)
@@ -121,7 +137,7 @@ async def run(directory,upstream,browsers,recovery='worker',remote=None):
      assert (await until(pending))['id']==action['id']
      emit(stage='connection-changed-before-original-approval',mode=recovery)
    await asyncio.to_thread(api.call,f"/api/v1/actions/{action['id']}/decision",dict(intentDigest=action['intentDigest'],approved=True))
-   if name=='click_browser':
+   if name=='click_browser' and entry=='python':
     await asyncio.sleep(.4)
     async with httpx.AsyncClient(trust_env=False) as http:state=(await http.get(state_target+'/state')).json()
     assert state['submitted']==0
@@ -140,16 +156,23 @@ async def run(directory,upstream,browsers,recovery='worker',remote=None):
     assert counts==expected_counts,counts
     cancelled=await asyncio.to_thread(api.call,f'/api/v1/tasks/{tid}/cancel',{})
     assert cancelled['cancelRequested'] and not cancelled['authorityActive']
-    handle=client.get_workflow_handle('openbot-work-v1-'+rid)
-    # SQL cancellation closes admission; the next engine Activity fails closed rather than
-    # publishing a successful result. This is the existing product cancellation contract.
-    try:await asyncio.wait_for(handle.result(),30)
-    except WorkflowFailureError:pass
-    else:raise AssertionError('Cancelled Task unexpectedly completed its Workflow')
-    engine_status=(await handle.describe()).status.name
-    assert engine_status in ('FAILED','CANCELED'),engine_status
+    handle=client.get_workflow_handle(workflow_prefix+rid)
+    if entry=='ts':
+     # Cancellation closes authority, but an unknown effect keeps the Task unresolved.
+     # Reconciliation is a receipt lookup; the existing engine deliberately keeps waiting.
+     await asyncio.to_thread(api.call,f"/api/v1/actions/{action['id']}/reconcile",dict(intentDigest=action['intentDigest'],requestKey=str(uuid4()),expectedSequence=0,reason='Lookup the original click receipt after cancellation'),expected=202)
+     await until(lambda:any(a.get('reconciliation',{}).get('outcome')=='unresolved' for a in api.snapshot(tid)['actions'] if a['id']==action['id']))
+     engine_status=(await handle.describe()).status.name
+     assert engine_status=='RUNNING',engine_status
+    else:
+     try:await asyncio.wait_for(handle.result(),30)
+     except WorkflowFailureError:pass
+     else:raise AssertionError('Cancelled Python Task unexpectedly completed its Workflow')
+     engine_status=(await handle.describe()).status.name
+     assert engine_status in ('FAILED','CANCELED'),engine_status
     closed=api.snapshot(tid)
     assert closed['cancelRequested'] and not closed['authorityActive']
+    assert not closed['artifacts'],'Unresolved click must not publish a report'
     assert next(a for a in closed['actions'] if a['id']==action['id'])['status']==denied['status']
     if recovery=='replacement':
      refusal=await asyncio.to_thread(api.call,f"/api/v1/bots/{bot['id']}/browser",{},expected=409)
@@ -175,18 +198,19 @@ async def run(directory,upstream,browsers,recovery='worker',remote=None):
     assert state['submitted']==expected_submitted and state['text']=='浏览器任务 你好 🌏',state
     model_counts=json.loads((directory/'provider/provider-counts.json').read_text())
     assert model_counts==dict(navigate=1,type=1,click=1),model_counts
-    history=await handle.fetch_history();(directory/'history.json').write_text(history.to_json())
-    with ThreadPoolExecutor(max_workers=2) as executor:await Replayer(workflows=[OpenBotWork],plugins=[PydanticAIPlugin()],workflow_task_executor=executor).replay_workflow(history)
+    await replay(await handle.fetch_history())
     assert json.loads((directory/'node/browser-counts.json').read_text())==counts
     assert json.loads((directory/'provider/provider-counts.json').read_text())==model_counts
-    record=dict(accepted=True,readUnavailablePolls=unavailable_reads,mode=recovery,scope='trusted synthetic page on local Chromium',actualProductEntry=True,actualNode=True,actualChromium=True,actualPostgres=True,mutualTLS=True,canonicalMigrations=canonical_migrations,actualWorkApprovals=3,modelHTTP='synthetic',browserCalls=counts,modelCalls=model_counts,originalClickStatus=denied['status'],actualTargetSubmitted=expected_submitted,cancelRequested=True,authorityActive=False,unresolvedActionPreserved=True,taskStatus=closed['status'],offlineReplay=True,publicEgressQualified=False,isolatedLinuxBrowserProduct=False)
+    record=dict(accepted=True,entry=entry,readUnavailablePolls=unavailable_reads,mode=recovery,scope='trusted synthetic page on local Chromium',actualProductEntry=True,actualNode=True,actualChromium=True,actualPostgres=True,mutualTLS=True,canonicalMigrations=canonical_migrations,actualWorkApprovals=3,modelHTTP='synthetic',browserCalls=counts,modelCalls=model_counts,originalClickStatus=denied['status'],actualTargetSubmitted=expected_submitted,cancelRequested=True,authorityActive=False,unresolvedActionPreserved=True,taskStatus=closed['status'],offlineReplay=True,publicEgressQualified=False,isolatedLinuxBrowserProduct=False)
     if connection_recovery:record.update(staleApprovalNeverDispatched=True,oldViewRefused=True)
     if recovery=='response-loss':
      fault=json.loads((directory/'node/response-loss.json').read_text())
      assert fault==dict(upstreamClickRequests=1,upstreamSuccess=True,targetSubmitted=1),fault
      assert denied['status']=='unknown'
      record.update(actualResponseSocketDestroyed=True,clickAppliedButUnknown=True,originalClickNeverRetried=True)
-    record['engineCloseStatus']=engine_status
+    record['engineStatus' if entry=='ts' else 'engineCloseStatus']=engine_status
+    record['historyReplayScope']='open-workflow' if entry=='ts' else 'closed-workflow'
+    if entry=='ts':record['cancelledUnknownReconciliation']='unresolved'
     record.update(wholeControlProcessRestarted=recovery=='control',nodeProcessRestarted=recovery in ('node','replacement'),browserProcessRestarted=False)
     if recovery in ('node','replacement'):
      processes=json.loads((directory/'node/node-processes.json').read_text())
@@ -210,11 +234,12 @@ async def run(directory,upstream,browsers,recovery='worker',remote=None):
   report=await asyncio.to_thread(api.call,snapshot['artifacts'][0]['downloadUrl'],raw=True);assert 'Saved: 浏览器任务 你好 🌏' in report.decode()
   async with httpx.AsyncClient(trust_env=False) as http:state=(await http.get(state_target+'/state')).json()
   assert state['submitted']==1 and state['stored']=='浏览器任务 你好 🌏'
-  handle=client.get_workflow_handle('openbot-work-v1-'+rid);assert (await asyncio.wait_for(handle.result(),20))['status']=='completed'
-  history=await handle.fetch_history();(directory/'history.json').write_text(history.to_json())
-  with ThreadPoolExecutor(max_workers=2) as executor:await Replayer(workflows=[OpenBotWork],plugins=[PydanticAIPlugin()],workflow_task_executor=executor).replay_workflow(history)
+  handle=client.get_workflow_handle(workflow_prefix+rid);result=await asyncio.wait_for(handle.result(),20)
+  if entry=='python':assert result['status']=='completed'
+  else:assert result is None and (await handle.describe()).status.name=='COMPLETED'
+  await replay(await handle.fetch_history())
   assert json.loads((directory/'node/browser-counts.json').read_text())==counts and json.loads((directory/'provider/provider-counts.json').read_text())==model_counts
-  record=dict(accepted=True,readUnavailablePolls=unavailable_reads,scope='trusted synthetic page on local Chromium',actualProductEntry=True,actualNode=True,actualChromium=True,actualPostgres=True,mutualTLS=True,canonicalMigrations=canonical_migrations,actualWorkApprovals=4,modelHTTP='synthetic',browserCalls=counts,modelCalls=model_counts,approvedWhileWorkerStopped=True,sameNodeConnectionRetained=True,originalClickOnlyOnce=True,actualTargetIndependentState=True,reportDownloaded=True,offlineReplay=True,publicEgressQualified=False,isolatedLinuxBrowserProduct=False)
+  record=dict(accepted=True,entry=entry,readUnavailablePolls=unavailable_reads,scope='trusted synthetic page on local Chromium',actualProductEntry=True,actualNode=True,actualChromium=True,actualPostgres=True,mutualTLS=True,canonicalMigrations=canonical_migrations,actualWorkApprovals=4,modelHTTP='synthetic',browserCalls=counts,modelCalls=model_counts,approvedWhileWorkerStopped=entry=='python',sameNodeConnectionRetained=True,originalClickOnlyOnce=True,actualTargetIndependentState=True,reportDownloaded=True,offlineReplay=True,publicEgressQualified=False,isolatedLinuxBrowserProduct=False)
   if profile_recovery:
    assert state['persistentCookie'] and state['sessionCookie'] and state['indexedDB']=='synthetic-indexed-value',state
    held=await asyncio.to_thread(api.call,f"/api/v1/browser-sessions/{view['id']}/commands",dict(kind='take'))
@@ -262,10 +287,11 @@ if __name__=='__main__':
  parser.add_argument('--output',type=Path,required=True)
  parser.add_argument('--upstream',type=Path,required=True)
  parser.add_argument('--browsers',type=Path,required=True)
- parser.add_argument('--recovery',choices=('worker','control','node','replacement','response-loss','browser-restart','linux-replacement'),default='worker')
+ parser.add_argument('--entry',choices=('python','ts'),default='python')
+ parser.add_argument('--recovery',choices=('pages','worker','control','node','replacement','response-loss','browser-restart','linux-replacement'),default='worker')
  parser.add_argument('--remote-host-config',type=Path)
  args=parser.parse_args()
  async def bounded():
   async with asyncio.timeout(360):
-   await run(args.output.resolve(),args.upstream.resolve(),args.browsers.resolve(),args.recovery,json.loads(args.remote_host_config.read_text()) if args.remote_host_config else None)
+   await run(args.output.resolve(),args.upstream.resolve(),args.browsers.resolve(),args.recovery,json.loads(args.remote_host_config.read_text()) if args.remote_host_config else None,args.entry)
  asyncio.run(bounded())

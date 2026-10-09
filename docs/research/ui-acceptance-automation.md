@@ -99,3 +99,14 @@ English · [简体中文](ui-acceptance-automation.zh-CN.md)
 
 - Wiring it into hosted CI needs a pinned browser source for Linux runners. That is a separate
   change.
+
+
+## P4 execution composition (2026-10-09)
+
+The existing `--entry ts` journey now selects P4 with an owned PostgreSQL-backed mTLS Temporal
+fixture before starting its paired Python/TS processes. Reuse the Work fixture lifecycle and pins;
+no new browser, service installation or provider account. The unchanged12 interface steps run only
+after `/health` identifies a running `typescript-v1` execution owner. Receipts include `workGroup`.
+The real P4 run passed12/12 with112 API responses, zero unexpected responses/page errors/workspace
+503s, including entry restart and reconnect. This is disposable interface acceptance, not installed
+app drain, isolated command execution or paid inference. See the [P4 record](typescript-control-plane-p4.md).

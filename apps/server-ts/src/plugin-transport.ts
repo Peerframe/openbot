@@ -1,7 +1,7 @@
 import { lookup } from "node:dns/promises";
-import { BlockList, isIP } from "node:net";
 import { Agent as HttpAgent, request as httpRequest } from "node:http";
 import { Agent as HttpsAgent, request as httpsRequest } from "node:https";
+import { BlockList, isIP } from "node:net";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { pluginPromptResultHttpSchema, pluginResourceResultHttpSchema } from "@openbot/protocol";
@@ -96,6 +96,7 @@ export class PluginTransport {
     readonly local: readonly string[],
     readonly signal: AbortSignal,
     readonly resolve = lookup,
+    readonly beforeRequest?: (message: unknown) => Promise<void>,
   ) {
     this.endpoint = normalizePluginEndpoint(endpoint, local);
   }
@@ -153,6 +154,9 @@ export class PluginTransport {
       )
     )
       return pluginError("forbidden");
+    signal.throwIfAborted();
+    // The Work one-use gate runs after DNS validation, immediately before the pinned send.
+    if (!ending) await this.beforeRequest?.(JSON.parse(body));
     signal.throwIfAborted();
     const outgoing: Record<string, string> = {
       Host: url.host,
@@ -275,8 +279,9 @@ export async function withPlugin<T>(
   local: readonly string[],
   signal: AbortSignal,
   use: (client: Client) => Promise<T>,
+  beforeRequest?: (message: unknown) => Promise<void>,
 ): Promise<T> {
-  const transport = new PluginTransport(endpoint, token, local, signal);
+  const transport = new PluginTransport(endpoint, token, local, signal, lookup, beforeRequest);
   const sdk = new StreamableHTTPClientTransport(new URL(transport.endpoint), {
     fetch: transport.fetch.bind(transport),
     requestInit: { redirect: "error" },

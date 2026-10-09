@@ -1,17 +1,18 @@
 import { createCipheriv, createDecipheriv, randomBytes, timingSafeEqual } from "node:crypto";
 import { closeSync, constants, fstatSync, fsyncSync } from "node:fs";
 import { basename, dirname, isAbsolute, resolve } from "node:path";
-import { exclusiveLock, openAt, openDirectory } from "./posix-files.js";
-import { readFileAt, writeFileAt, removeFileAt } from "./owner-files.js";
 import { hasIntegerTokens, parseJsonInput } from "./json-input.js";
+import { readFileAt, removeFileAt, writeFileAt } from "./owner-files.js";
 import {
+  type PluginState,
   pluginBytes,
   pluginError,
   pluginParse,
   pluginStateSchema,
-  type PluginState,
 } from "./plugin-values.js";
+import { exclusiveLock, openAt, openDirectory } from "./posix-files.js";
 import { WriteFailure } from "./primary-bot-write.js";
+
 const limit = 3 * 1024 * 1024,
   aad = Buffer.from("openbot.plugins/v1");
 function parse(bytes: Buffer) {
@@ -187,6 +188,25 @@ export class PluginStore {
       undefined,
       true,
     );
+  }
+  // Work holds this read lease before its Task transaction; never across network I/O.
+  async withRead<T>(
+    operation: (state: PluginState) => Promise<T>,
+    signal?: AbortSignal,
+  ): Promise<T> {
+    const outcome = await this.#lease(async (root) => {
+      this.#recover(root);
+      const state = this.#load(root);
+      // Storage failures stay redacted by the lease. The trusted caller's control refusal
+      // must survive outside it so corrections, stale fences and explicit denials keep meaning.
+      try {
+        return { ok: true as const, value: await operation(state) };
+      } catch (error) {
+        return { ok: false as const, error };
+      }
+    }, signal);
+    if (!outcome.ok) throw outcome.error;
+    return outcome.value;
   }
   async read(signal?: AbortSignal) {
     return this.#lease(async (root) => {
