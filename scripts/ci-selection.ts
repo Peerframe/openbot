@@ -147,7 +147,7 @@ export function selectChecks(
       ) ||
       /^\.agents\/skills\/[^/]+\/SKILL\.md$/.test(file) ||
       /^docs\/prompts?\/[^/]+\.md$/.test(file) ||
-      file === ".github/PULL_REQUEST_TEMPLATE.md"
+      file === ".github/pull_request_template.md"
     ) {
       reasons.push(`Contributor behavior: ${file}`);
       continue;

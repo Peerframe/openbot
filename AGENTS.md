@@ -66,8 +66,9 @@ the decision in an ADR, a research record or the PR. Say whether any source was 
 ## Working rules
 
 - English is canonical for code, comments, ADRs and docs. Keep a Chinese translation only for
-  user-facing docs: the READMEs, `docs/DESKTOP_INSTALLATION`, `NODE_ENROLLMENT`, `PLUGINS`,
-  `CROSS_PLATFORM` and `THIRD_PARTY_NOTICES`.
+  user-facing docs (the root README, `THIRD_PARTY_NOTICES`, and in `docs/` the installation, onboarding,
+  Windows Desktop, node enrollment, plugin and cross-platform guides), the contributor entry
+  (`AGENTS`, `CONTRIBUTING`) and `docs/design`.
 - Comments explain authority, security, concurrency, lifecycle and upstream constraints, not syntax.
 - Temporary migration code carries its exit condition in a code comment, e.g. `// Remove in P5`.
 - One writer per file at a time. Never commit credentials, private transcripts, local paths or
