@@ -55,8 +55,9 @@
 
 ## 工作规则
 
-- 代码、注释、ADR 和文档以英文为准。只有面向用户的文档保留中文翻译：各 README、`docs/DESKTOP_INSTALLATION`、
-  `NODE_ENROLLMENT`、`PLUGINS`、`CROSS_PLATFORM` 和 `THIRD_PARTY_NOTICES`。
+- 代码、注释、ADR 和文档以英文为准。只有这些保留中文翻译：面向用户的文档（各 README、`THIRD_PARTY_NOTICES`，
+  以及 `docs/` 里的安装、新手引导、Windows 桌面版、节点注册、插件和跨平台说明）、贡献入口（`AGENTS`、`CONTRIBUTING`）
+  和 `docs/design`。
 - 注释解释权限、安全、并发、生命周期和上游约束，不复述语法。
 - 迁移用的临时代码要在代码注释里写明退出条件，例如 `// Remove in P5`。
 - 同一时间一个文件只有一个人在改。绝不提交凭证、私人记录、本机路径或含用户数据的截图。
