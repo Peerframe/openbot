@@ -329,9 +329,9 @@ export async function createEntry(input: EntryOptions) {
   });
   // Python also serves the optional built Web root and owns unknown method/path refusals.
   // The fixed destination cannot be selected by path, Origin, Host, query or request body.
-  const closeTunnels = workerTunnel(app.server, options);
+  const closeTunnels = product?.attachWorkers(app.server) ?? workerTunnel(app.server, options);
   app.addHook("preClose", async () => {
-    closeTunnels();
+    await closeTunnels();
   });
   return app;
 }

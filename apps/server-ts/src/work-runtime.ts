@@ -1,3 +1,5 @@
+import type { WorkBrowserServices } from "./work-browser.js";
+import { workBrowserTools } from "./work-browser-tools.js";
 import type { WorkMediaItem } from "./work-model-media.js";
 import { channelReadTools, channelWorkBots } from "./work-channel-reads.js";
 import { randomUUID } from "node:crypto";
@@ -74,6 +76,7 @@ export class WorkRuntime {
     attachments?: OwnerFiles,
     plugins?: Plugins,
     web?: WorkWebOptions,
+    readonly browser?: WorkBrowserServices,
   ) {
     this.execution = new WorkExecution(transactions);
     this.ledger = new WorkLedger(transactions, files);
@@ -84,11 +87,12 @@ export class WorkRuntime {
       attachments,
       plugins,
       web,
+      browser,
     );
   }
   private async source(db: WorkDb, scope: WorkScope, session?: FileSession) {
     const task = await currentWork(db, scope),
-      source = await resolveWorkSource(db, task);
+      source = await resolveWorkSource(db, task, scope.browserProfiles);
     const [bot] =
       await db`SELECT id,name,role,description,profile_revision FROM bots WHERE id=${task.bot_id} AND deleted_at IS NULL FOR SHARE`;
     if (!bot) throw new WorkConflict("product_task_bot_missing");
@@ -100,13 +104,23 @@ export class WorkRuntime {
       objective: task.objective,
       attachments,
       channel: source.kind === "channel" ? source.provenance : null,
+      browser: source.browser,
+      collaboration:
+        !source.browser &&
+        (source.kind === "channel" || !!source.native?.value.request.collaboratorBotIds.length),
       collaborators:
-        source.kind === "channel"
+        source.kind === "channel" && !source.browser
           ? (await channelWorkBots(db, task, source)).bots.map((b) => b.id)
           : (source.native?.value.request.collaboratorBotIds ?? []),
-      knowledge: source.kind === "channel" || (source.native?.value.request.knowledge ?? false),
-      plugins: source.kind === "channel" || (source.native?.value.request.plugins ?? false),
-      web: source.kind === "channel" || (source.native?.value.request.web ?? false),
+      knowledge:
+        !source.browser &&
+        (source.kind === "channel" || (source.native?.value.request.knowledge ?? false)),
+      plugins:
+        !source.browser &&
+        (source.kind === "channel" || (source.native?.value.request.plugins ?? false)),
+      web:
+        !source.browser &&
+        (source.kind === "channel" || (source.native?.value.request.web ?? false)),
       selection: source.selection,
       profileSha256: source.profileSha256,
       profile: {
@@ -130,7 +144,7 @@ export class WorkRuntime {
   }
   private async selected(db: WorkDb, scope: WorkScope, intent?: WorkAction["intent"]) {
     const task = await currentWork(db, scope),
-      source = await resolveWorkSource(db, task);
+      source = await resolveWorkSource(db, task, scope.browserProfiles);
     if (
       !(await db`SELECT id FROM bots WHERE id=${task.bot_id} AND deleted_at IS NULL FOR SHARE`)
         .length
@@ -501,6 +515,7 @@ export class WorkRuntime {
         current,
         turns,
         reports,
+        browserArtifacts: (await this.resources.browser?.artifacts(db, scope)) ?? [],
         pending,
         modelCount: models.length,
       };
@@ -548,7 +563,10 @@ export class WorkRuntime {
         if (!verdict.accepted) throw new WorkConflict("result_review_refused");
         workText(verdict.reason, 2048);
         const verification = currentReview.evidence!,
-          artifacts = reports.map(({ text: _text, ...descriptor }) => descriptor);
+          artifacts = [
+            ...reports.map(({ text: _text, ...descriptor }) => descriptor),
+            ...((await this.resources.browser?.artifacts(db, scope)) ?? []),
+          ];
         const digest = workCanonical(
           {
             taskId: task.id,
@@ -567,7 +585,7 @@ export class WorkRuntime {
         if (root.spent > root.limit) throw new WorkConflict("root_token_budget_exhausted");
         const knowledge = await this.resources.knowledge.prepareCompletion(db, scope);
         const ids: string[] = [];
-        for (const report of reports) {
+        for (const report of artifacts) {
           this.files.read(report);
           const id = randomUUID();
           ids.push(id);
@@ -621,7 +639,7 @@ export class WorkRuntime {
       const context = await this.transactions.run(async (db) =>
         freezeWorkContext(db, await acceptedWork(db, binding), binding.input.runId),
       );
-      scope = { binding, fence, contextId: context.id };
+      scope = { binding, fence, contextId: context.id, browserProfiles: this.browser?.profiles };
       const activeScope = scope;
       await this.resources.lock(
         (session) =>
@@ -685,8 +703,11 @@ export class WorkRuntime {
           tools: [
             reportTool,
             ...(state.source.channel ? channelReadTools : []),
-            ...(state.source.channel || state.source.collaborators.length
-              ? collaborationTools
+            ...(state.source.collaboration ? collaborationTools : []),
+            ...(state.source.browser
+              ? workBrowserTools.filter(
+                  (t) => t.name === "capture_browser" || state.source.browser?.page,
+                )
               : []),
             ...(state.source.attachments.length ? [attachmentReadTool] : []),
             ...(state.source.knowledge ? knowledgeTools : []),
@@ -714,6 +735,7 @@ export class WorkRuntime {
           answer: summary,
           collaboration: state.joins.consumed,
           reports: state.reports,
+          ...(state.browserArtifacts.length ? { browserArtifacts: state.browserArtifacts } : {}),
           toolObservations: state.turns.flatMap((turn) =>
             turn.tools.map((tool, index) => ({
               callId: tool.id,

@@ -1,3 +1,6 @@
+import type { Server } from "node:http";
+import type { Server as HttpsServer } from "node:https";
+import { WorkerRuntime } from "./worker-runtime.js";
 import { join } from "node:path";
 import type { Readable } from "node:stream";
 import {
@@ -68,8 +71,11 @@ export function productHandler(
   upstream?: string,
 ) {
   const store = ownerTransactions(options.databaseUrl);
-  const runtime =
-    options.controlReads && upstream ? new RuntimePort(upstream, publicOrigin, secure) : undefined;
+  const runtime = options.workerRuntime
+    ? new WorkerRuntime(options.databaseUrl, options.workerRuntime)
+    : options.controlReads && upstream
+      ? new RuntimePort(upstream, publicOrigin, secure)
+      : undefined;
   const invalidations = options.controlReads
     ? new ProductInvalidations(options.databaseUrl)
     : undefined;
@@ -114,6 +120,7 @@ export function productHandler(
           options.modelTransport,
           files,
           plugins,
+          runtime instanceof WorkerRuntime ? runtime : undefined,
         )
       : undefined;
   const greetings =
@@ -121,13 +128,18 @@ export function productHandler(
       ? new BotGreetings(options.databaseUrl, models, options.modelTransport)
       : undefined;
   const browsers = runtime ? new BrowserSessions(options.databaseUrl) : undefined;
-  const workerIdentities = runtime ? new WorkerIdentities(options.databaseUrl) : undefined;
+  const workerIdentities =
+    runtime instanceof WorkerRuntime
+      ? runtime.identities
+      : runtime
+        ? new WorkerIdentities(options.databaseUrl)
+        : undefined;
   const publisher = options.publisher ? loadEmployeePublisher(options.publisher) : undefined;
   const routes = [
     ...(work
       ? [
           ...workRoutes(work.files, files),
-          ...workChannelRoutes(files, work.options.tokenLimit ?? 100000),
+          ...workChannelRoutes(files, work.options.tokenLimit ?? 100000, work.browser?.profiles),
         ]
       : []),
     ...(browsers ? browserRoutes(browsers) : []),
@@ -166,6 +178,11 @@ export function productHandler(
   const match = (method: string, path: string) =>
     routes.find((route) => route.method === method && route.pattern.test(path));
   return {
+    attachWorkers: (server: Server | HttpsServer) => {
+      if (!(runtime instanceof WorkerRuntime)) return undefined;
+      runtime.registry.attach(server, publicOrigin);
+      return () => runtime.registry.close();
+    },
     verify: async () => {
       await invalidations?.start();
       files?.verify();
@@ -177,9 +194,9 @@ export function productHandler(
     },
     close: async () => {
       await work?.close();
-      runtime?.close();
+      await runtime?.close();
       await browsers?.close();
-      await workerIdentities?.close();
+      if (!(runtime instanceof WorkerRuntime)) await workerIdentities?.close();
       await invalidations?.close();
       network?.close();
       await greetings?.close();

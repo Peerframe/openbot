@@ -1229,3 +1229,15 @@ Channel and media integration reuses the retained message/Run admission,0039/004
 automation occurrence claim and original-media contracts. The current pinned OpenAI/Anthropic
 SDKs carry bounded inline originals; source/identity reuse is confined to one read-only validation
 pass under its existing SQL locks. See the [combined evidence and remaining gates](research/typescript-control-plane-p4.md#channel-admission-schedules-and-media-integration-2026-10-09).
+
+P4's explicit native Worker/browser Task composition promotes the already reviewed MIT ws8.21.3
+into the server's production closure without changing its pin. It reuses existing shared schemas,
+PostgreSQL identity/human gates and retained Python browser profile/approval/receipt contracts;
+no browser manager, new persistence schema or copied upstream source is introduced. The
+[P4 integration record](research/typescript-control-plane-p4.md#native-worker-and-approved-browser-task-integration-2026-10-09)
+distinguishes actual product transport/engine checks from synthetic browser peers and outstanding
+Linux/installed-app acceptance.
+
+P4 原生 Worker/浏览器任务将已审核的 ws8.21.3 提升为生产依赖，版本不变；复用共享契约、
+身份/人工接管锁及 Python 原有审批/回执语义，不新增浏览器管理器或数据库结构。详见上述记录，
+真实传输/引擎证据与可控浏览器 peer、待验收 Linux/已安装环境明确区分。

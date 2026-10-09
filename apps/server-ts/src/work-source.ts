@@ -7,10 +7,12 @@ import { descriptor, nativeWorkScope } from "./work-scope.js";
 import { channelWorkRow, workTree } from "./work-tree.js";
 import { sha256, workCanonical } from "./work-values.js";
 
+import type { WorkBrowserProfiles } from "./work-browser-profiles.js";
 const validationSources = new WeakMap<
   WorkTaskRow,
   {
     db: WorkDb;
+    profiles?: WorkBrowserProfiles | undefined;
     source: Awaited<ReturnType<typeof readWorkSource>>;
   }
 >();
@@ -22,8 +24,8 @@ export function withWorkSource<T>(
   operation: (scope: WorkScope) => Promise<T>,
 ) {
   return withCurrentWork(db, scope, async (validationScope, task) => {
-    const source = await resolveWorkSource(db, task);
-    validationSources.set(task, { db, source });
+    const source = await resolveWorkSource(db, task, scope.browserProfiles);
+    validationSources.set(task, { db, source, profiles: scope.browserProfiles });
     try {
       return await operation(validationScope);
     } finally {
@@ -32,18 +34,23 @@ export function withWorkSource<T>(
   });
 }
 /** Resolve persisted provenance under the existing source-before-Task locks. Never create scope from model input. */
-export async function resolveWorkSource(db: WorkDb, task: WorkTaskRow) {
+export async function resolveWorkSource(
+  db: WorkDb,
+  task: WorkTaskRow,
+  profiles?: WorkBrowserProfiles,
+) {
   const locked = validationSources.get(task);
-  if (locked?.db === db) return locked.source;
-  return readWorkSource(db, task);
+  if (locked?.db === db && locked.profiles === profiles) return locked.source;
+  return readWorkSource(db, task, profiles);
 }
-async function readWorkSource(db: WorkDb, task: WorkTaskRow) {
+async function readWorkSource(db: WorkDb, task: WorkTaskRow, profiles?: WorkBrowserProfiles) {
   const [mapping] = await db`SELECT * FROM work_sources WHERE task_id=${task.id} FOR SHARE`;
   const [profile] = await db`SELECT * FROM work_task_profiles WHERE task_id=${task.id} FOR SHARE`;
   const isolated = (
     await db`SELECT 1 FROM work_command_profiles WHERE task_id=${task.id} UNION ALL SELECT 1 FROM work_browser_profiles WHERE task_id=${task.id}`
   ).length;
-  if ((mapping && profile) || isolated) throw new WorkConflict("product_source_ambiguous");
+  if ((mapping && profile) || isolated > 1 || (isolated && !mapping))
+    throw new WorkConflict("product_source_ambiguous");
   if (mapping) {
     const channel = await channelWorkRow(db, task.id);
     if (
@@ -56,7 +63,14 @@ async function readWorkSource(db: WorkDb, task: WorkTaskRow) {
       channel.node_id !== null
     )
       throw new WorkConflict("product_source_changed");
-    if (!["none", "model"].includes(channel.execution_profile))
+    const browser =
+      channel.execution_profile === "docker-linux" && profiles
+        ? await profiles.resolve(db, task)
+        : null;
+    if (
+      (!["none", "model"].includes(channel.execution_profile) && !browser) ||
+      (isolated && !browser)
+    )
       throw new WorkConflict("isolated_execution_unqualified");
     const [member] =
       await db`SELECT cb.bot_id FROM channel_bots cb JOIN channels c ON c.id=cb.channel_id
@@ -64,7 +78,10 @@ async function readWorkSource(db: WorkDb, task: WorkTaskRow) {
       AND c.deleted_at IS NULL AND b.deleted_at IS NULL FOR SHARE OF cb,c,b`;
     if (!member) throw new WorkConflict("product_model_scope_changed");
     const selection =
-      channel.model_selection === null ? null : modelSelectionSchema.parse(channel.model_selection);
+      browser?.profile.modelSelection ??
+      (channel.model_selection === null
+        ? null
+        : modelSelectionSchema.parse(channel.model_selection));
     const tree = workTree(task),
       root = tree.sources.get(tree.rootTaskId) ?? channel;
     const provenance = {
@@ -82,12 +99,19 @@ async function readWorkSource(db: WorkDb, task: WorkTaskRow) {
       kind: "channel" as const,
       channel,
       native: null,
+      browser,
       selection,
       provenance,
       profileSha256: workCanonical({
         ...provenance,
         executionProfile: channel.execution_profile,
         modelSelection: selection,
+        ...(browser
+          ? {
+              browserProfileSha256: browser.sha256,
+              browserPageScopeSha256: browser.page?.sha256 ?? null,
+            }
+          : {}),
       }).digest,
     };
   }
@@ -117,6 +141,7 @@ async function readWorkSource(db: WorkDb, task: WorkTaskRow) {
     kind: "task" as const,
     channel: null,
     native,
+    browser: null,
     selection,
     profileSha256: String(profile.profile_digest),
     provenance: {
@@ -133,7 +158,9 @@ export async function resourceWorkSource(
   capability: "attachments" | "knowledge" | "plugins" | "web" | "collaboration" | "channel_reads",
 ) {
   const task = await currentWork(db, scope),
-    source = await resolveWorkSource(db, task);
+    source = await resolveWorkSource(db, task, scope.browserProfiles);
+  if (source.browser && !["attachments", "channel_reads"].includes(capability))
+    throw new WorkConflict("isolated_task_capability_unavailable");
   if (source.kind === "task") {
     const request = source.native?.value.request;
     if (

@@ -60,6 +60,22 @@ export class WorkerIdentities {
         })) as T,
     );
   }
+  async authenticate(nodeId: string, credential: string, signal: AbortSignal) {
+    const credentialDigest = secretDigest("credential", credential);
+    return this.trusted(signal, async (db) => {
+      const rows =
+        await db`UPDATE node_credentials SET last_authenticated_at=date_trunc('milliseconds',clock_timestamp()),
+        updated_at=date_trunc('milliseconds',clock_timestamp()) WHERE node_id=${nodeId}
+        AND credential_digest=${credentialDigest} AND revoked_at IS NULL RETURNING node_id`;
+      return rows.length === 1 ? credentialDigest : null;
+    });
+  }
+  async connectionEvent(nodeId: string, kind: "connected" | "disconnected", signal: AbortSignal) {
+    await this.trusted(signal, async (db) => {
+      await db`INSERT INTO run_events(id,type,payload,created_at) VALUES(${randomUUID()},
+        ${"WORKER_HOST_" + kind.toUpperCase()},${db.json({ nodeId })},date_trunc('milliseconds',clock_timestamp()))`;
+    });
+  }
   async close() {
     await this.fence.close();
     await this.db.end({ timeout: 1 });

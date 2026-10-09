@@ -25,6 +25,10 @@ import { WorkTerminal } from "./work-terminal.js";
 import { cascadeWork, workTree } from "./work-tree.js";
 import type { WorkWebOptions } from "./work-web.js";
 
+import type { WorkerRuntime } from "./worker-runtime.js";
+import { WorkBrowserProfiles } from "./work-browser-profiles.js";
+import { DatabaseFence } from "./database-fence.js";
+import type { WorkBrowserServices } from "./work-browser.js";
 export type WorkOptions = EngineSettings & {
   web?: WorkWebOptions;
   tokenLimit?: number;
@@ -83,6 +87,7 @@ export class WorkService {
   readonly transactions;
   readonly files: WorkFiles;
   readonly runtime: WorkRuntime;
+  readonly browser: WorkBrowserServices | undefined;
   readonly handoff: WorkHandoff;
   readonly terminal: WorkTerminal;
   private readonly stopped = new AbortController();
@@ -102,10 +107,18 @@ export class WorkService {
     transport?: ModelTransport,
     readonly attachments?: OwnerFiles,
     plugins?: Plugins,
+    worker?: WorkerRuntime,
   ) {
     validateWorkOptions(options);
     this.transactions = workTransactions(databaseUrl);
     this.files = new WorkFiles(options.fileRoot);
+    this.browser = worker
+      ? {
+          profiles: new WorkBrowserProfiles(models, worker.browserConfiguration()),
+          registry: worker.registry,
+          gate: new DatabaseFence(databaseUrl, 1326850642, 35000, "browser_busy"),
+        }
+      : undefined;
     this.runtime = new WorkRuntime(
       this.transactions,
       this.files,
@@ -114,6 +127,7 @@ export class WorkService {
       attachments,
       plugins,
       options.web,
+      this.browser,
     );
     this.handoff = new WorkHandoff(this.transactions);
     this.terminal = new WorkTerminal(this.transactions, this.runtime.ledger);
@@ -192,6 +206,7 @@ export class WorkService {
           this.attachments,
           this.options.tokenLimit ?? 100000,
           this.stopped.signal,
+          this.browser?.profiles,
         );
       } catch {
         /* A failed occurrence remains due; it must not prevent the independent handoff/repair pass. */
@@ -268,6 +283,7 @@ export class WorkService {
     this.stopped.abort();
     await Promise.all([this.loop, this.worker?.close()]);
     await this.workerRun;
+    await this.browser?.gate.close();
     await this.connection?.close();
     await this.transactions.close();
   }

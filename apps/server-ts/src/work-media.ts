@@ -19,7 +19,7 @@ export class WorkMedia {
   constructor(readonly files: WorkFiles) {}
   private async manifest(db: WorkDb, scope: WorkScope, session?: FileSession, hydrate = false) {
     const task = await currentWork(db, scope),
-      source = await resolveWorkSource(db, task);
+      source = await resolveWorkSource(db, task, scope.browserProfiles);
     const attached = sourceWorkAttachments(source, task.objective, session);
     if (
       source.kind === "task" &&

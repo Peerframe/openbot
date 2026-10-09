@@ -1,3 +1,5 @@
+import { WorkBrowser, type WorkBrowserServices } from "./work-browser.js";
+import { workBrowserNames } from "./work-browser-tools.js";
 import { z } from "zod";
 import {
   attachmentRead,
@@ -37,6 +39,7 @@ import { WorkWeb, type WorkWebOptions, workWebNames } from "./work-web.js";
 /** File lease always precedes SQL identity/Task locks, including model disclosure and publication. */
 export class WorkResources {
   readonly media: WorkMedia;
+  readonly browser: WorkBrowser | undefined;
   readonly channel: WorkChannelReads;
   readonly collaboration: WorkCollaboration;
   readonly knowledge: WorkKnowledge;
@@ -49,7 +52,9 @@ export class WorkResources {
     readonly attachments?: OwnerFiles,
     plugins?: Plugins,
     web?: WorkWebOptions,
+    browser?: WorkBrowserServices,
   ) {
+    this.browser = browser ? new WorkBrowser(transactions, ledger, browser) : undefined;
     this.media = new WorkMedia(ledger.files);
     this.channel = new WorkChannelReads(transactions, ledger);
     this.collaboration = new WorkCollaboration(transactions, ledger);
@@ -119,13 +124,18 @@ export class WorkResources {
   async revalidate(db: WorkDb, scope: WorkScope, session?: FileSession, plugins?: PluginState) {
     return withWorkSource(db, scope, async (scope) => {
       const media = await this.media.validate(db, scope, session);
+      await this.browser?.revalidate(db, scope);
       await this.channel.revalidate(db, scope);
       await this.collaboration.revalidate(db, scope);
       await this.plugins.revalidate(db, scope, plugins);
       await this.web.revalidate(db, scope);
       await this.knowledge.revalidate(db, scope);
       const task = await currentWork(db, scope);
-      sourceWorkAttachments(await resolveWorkSource(db, task), task.objective, session);
+      sourceWorkAttachments(
+        await resolveWorkSource(db, task, scope.browserProfiles),
+        task.objective,
+        session,
+      );
       for (const action of await loadWorkActions(db, task.id)) {
         if (
           action.run_id === scope.binding.input.runId &&
@@ -161,6 +171,10 @@ export class WorkResources {
     };
   }
   payload(action: WorkAction, observation: WorkJson | null) {
+    if (workBrowserNames.includes(action.intent.tool as never)) {
+      if (!this.browser) throw new WorkConflict("browser_composition_required");
+      return this.browser.payload(action, observation);
+    }
     if (channelReadNames.includes(action.intent.tool as never))
       return this.channel.payload(action, observation);
     if (collaborationNames.includes(action.intent.tool as (typeof collaborationNames)[number]))
@@ -195,6 +209,16 @@ export class WorkResources {
     call: WorkModelObservation["calls"][number],
     signal: AbortSignal,
   ) {
+    if (workBrowserNames.includes(call.name as never)) {
+      if (!this.browser) throw new WorkConflict("browser_composition_required");
+      return this.lock(
+        (session, plugins) =>
+          this.browser!.execute(scope, key, call, signal, (db) =>
+            this.revalidate(db, scope, session, plugins),
+          ),
+        signal,
+      );
+    }
     if (channelReadNames.includes(call.name as never))
       return this.channel.execute(scope, key, call);
     if (workWebNames.includes(call.name as (typeof workWebNames)[number]))

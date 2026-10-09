@@ -296,3 +296,51 @@ authority changes after the pass and expiry. The expanded aggregate harness allo
 and the two-tree case 90 seconds; product SQL/HTTP/Activity/deadline values are unchanged.
 The combined run then passed without a 503. Preserve the unresolved earlier failure evidence;
 required UI acceptance, Worker execution, installed-app drain and final P4 completion remain open.
+
+## Native Worker and approved browser Task integration (2026-10-09)
+
+The explicit in-process Worker composition now replaces the P3 Python runtime port for live
+registry, enrollment/revocation detach and Owner browser transport. It reuses the reviewed MIT
+`ws`8.21.3 release/commit `c791e707eab3c13dd9a261d2479c3cc4a49a6fed` from the existing Node liveness review;
+the existing dependency moves from the candidate's test edge into its production closure without
+an installation or version change. Original credential/connection bindings, identity fence1326850643,
+public ingress checks, bounded frames/queues and one-use browser transport claims remain mandatory.
+Unselected deployments still use the existing private port; no automatic failover is introduced.
+
+The Task adapter ports the retained `work_browser_profiles.py`, `work_product_browser.py` and
+`work_browser_page_actions.py` decisions. Only a deployment-routed channel source with a
+`docker-linux` Bot and explicit model selection can capture an immutable browser profile and
+optional page-origin scope. The existing tables and digest conventions are reused. Trusted
+composition is passed through Work scope; missing composition fails closed. Browser sources receive
+channel reads, attachments, reports and their explicit browser tools, without gaining plugin,
+knowledge, web-search or collaboration authority from channel membership.
+
+Capture and page operations require separate fresh Owner approvals. The shared human gate1326850642
+spans the effect and observation. The original connection, credential, control revision, source,
+Task/fence and current approval are checked before dispatch under the identity fence. An immutable
+attempt precedes the write; the command expires at the earliest of25seconds, the original claim,
+Action or tree deadline. Page inputs bind an already applied same-authority observation and exact
+page/frame snapshot; configured origins are rechecked on the response. Original private PNG bytes
+and strict page data are persisted, with no claim of visual interpretation or verified business
+outcome. Four captures and sixteen page operations are the existing per-task limits. Only capture
+artifacts publish after independent review. Lost outcomes remain unknown and recovery reads the
+original receipt without recapturing or retrying input.
+
+The combined actual HTTP/PostgreSQL/mTLS Temporal/WebSocket/MCP/HTTPS qualification passed with
+all existing native/channel/media/schedule cases. New cases exercise four separately approved
+browser effects, download of the committed PNG, human takeover/release between proposal and
+approval, socket loss followed by reconnect/reconciliation with one dispatch, and an out-of-origin
+page response. Owner browser opening, observe/take/release, maintenance, re-enrollment and revocation
+also use the sole TS registry. Browser image/page responses in these new cases are deterministic
+peer data: they are not actual browser-engine or Linux-isolation evidence. Focused origin,
+argument/receipt and read-pass boundary checks passed5cases. The full repository check subsequently passed (Server153tests; Desktop578passed/3platform skips;
+Web695tests; final build20/20 with15cached). The two old packaging assertions excluding ws were
+updated to require the existing pinned Worker dependency while still excluding the retired oracle.
+No public group or installed application has been switched.
+
+Read-only installed-target checks found OpenBot0.1.0-alpha.9 with existing Temporal configuration,
+but no browser/command installation file. The current local Docker runtimes provide runc, not
+runsc. A configured Linux Worker Host is an explicit dependency for final isolated-command
+qualification; do not discover a personal SSH target or reuse consumed historical remote
+reservations. Command authority/transport integration, actual process-death windows, paired
+packaging, UI12/12, complete installed SQL/engine drain and installed-app acceptance remain open.

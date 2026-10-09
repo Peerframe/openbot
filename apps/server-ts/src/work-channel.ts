@@ -18,6 +18,8 @@ import { createWork, workParse } from "./work-public.js";
 import { workAttachmentIds } from "./work-source.js";
 import { cascadeWork } from "./work-tree.js";
 import { workText } from "./work-values.js";
+import type { WorkBrowserProfiles } from "./work-browser-profiles.js";
+import { lockWorkTask } from "./work-handoff.js";
 type Row = Record<string, any>;
 export function taskTitle(content: string) {
   if (content.length <= 80) return content;
@@ -42,8 +44,14 @@ export async function channelAudit(
 ) {
   await db`INSERT INTO run_events(id,run_id,channel_id,bot_id,type,payload) VALUES(${randomUUID()},${run.id ?? null},${run.channel_id},${run.bot_id ?? null},${type},${db.json(payload as never)})`;
 }
-export async function admitChannelWork(db: WorkDb, run: Row, tokenLimit: number) {
-  if (!["none", "model"].includes(run.execution_profile))
+export async function admitChannelWork(
+  db: WorkDb,
+  run: Row,
+  tokenLimit: number,
+  browser?: WorkBrowserProfiles,
+) {
+  const isolated = run.execution_profile === "docker-linux" && browser?.has(run.bot_id);
+  if (!["none", "model"].includes(run.execution_profile) && !isolated)
     throw new WorkConflict("isolated_execution_unqualified");
   const task = await createWork(
     db,
@@ -59,9 +67,11 @@ export async function admitChannelWork(db: WorkDb, run: Row, tokenLimit: number)
       prior.source_message_id !== run.source_message_id
     )
       throw new WorkConflict("source_content_changed");
+    if (isolated) await browser!.resolve(db, await lockWorkTask(db, task.id));
     return task;
   }
   await db`INSERT INTO work_sources(task_id,legacy_run_id,channel_id,source_message_id) VALUES(${task.id},${run.id},${run.channel_id},${run.source_message_id})`;
+  if (isolated) await browser!.capture(db, await lockWorkTask(db, task.id));
   await workEvent(db, task.id, "source.admitted", { sourceRunId: run.id });
   return task;
 }
@@ -117,6 +127,7 @@ export async function submitChannelWork(
   body: unknown,
   tokenLimit: number,
   automationId?: string,
+  browser?: WorkBrowserProfiles,
 ) {
   channelIdentity(channelId);
   const value = workParse(createMessageInputSchema, body);
@@ -165,11 +176,11 @@ export async function submitChannelWork(
     await db`INSERT INTO messages(id,channel_id,author_type,reply_to_message_id,run_id,content,created_at) VALUES(${messageId},${channelId},${automationId ? "system" : "human"},${value.replyToMessageId ?? null},${firstRunId},${value.content},${clock!.created_at}) RETURNING *`;
   const runs = [];
   for (const [index, bot] of selected.entries()) {
-    const selection = await workSelection(db, bot);
+    const selection = bot.computer_profile === "docker-linux" ? null : await workSelection(db, bot);
     const [run] =
       await db`INSERT INTO runs(id,channel_id,bot_id,source_message_id,execution_profile,instruction,title,status,model_selection,created_at,updated_at)
       VALUES(${index === 0 ? firstRunId : randomUUID()},${channelId},${bot.id},${messageId},${bot.computer_profile},${value.content},${title},'queued',${selection === null ? null : db.json(selection)},${clock!.created_at},${clock!.created_at}) RETURNING *`;
-    const task = await admitChannelWork(db, run!, tokenLimit);
+    const task = await admitChannelWork(db, run!, tokenLimit, browser);
     runs.push(runProjection({ ...run, work_task_id: task.id }));
     await channelAudit(db, run!, "RUN_CREATED", {
       sourceMessageId: messageId,
@@ -283,6 +294,7 @@ async function steerChannelRun(db: WorkDb, id: string, body: unknown) {
 export function workChannelRoutes(
   files: OwnerFiles | undefined,
   tokenLimit: number,
+  browser?: WorkBrowserProfiles,
 ): ProductRoute[] {
   const guard = async <T>(operation: () => Promise<T>) => {
     try {
@@ -306,12 +318,15 @@ export function workChannelRoutes(
             ? files.withLock(
                 (session) =>
                   owner(
-                    (db) => submitChannelWork(db, session, ids[0]!, body, tokenLimit),
+                    (db) =>
+                      submitChannelWork(db, session, ids[0]!, body, tokenLimit, undefined, browser),
                     session.signal,
                   ),
                 signal,
               )
-            : owner((db) => submitChannelWork(db, undefined, ids[0]!, body, tokenLimit)),
+            : owner((db) =>
+                submitChannelWork(db, undefined, ids[0]!, body, tokenLimit, undefined, browser),
+              ),
         ),
       execute: async () => {
         throw new Error("Channel admission requires the file authority lease.");

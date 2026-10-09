@@ -21,6 +21,8 @@ import {
   WORKFLOW_ID_PREFIX,
 } from "../packages/work/dist/index.js";
 import { workPluginFixture } from "./ts-work-plugin-fixture.ts";
+import { qualifyBrowserWork } from "./ts-browser-work-acceptance.ts";
+import { qualifyWorkerProduct } from "./ts-worker-product-acceptance.ts";
 import { workWebFixture } from "./ts-work-web-fixture.ts";
 
 export async function qualifyWorkProduct(
@@ -172,113 +174,161 @@ export async function qualifyWorkProduct(
             : !tools.some((t: { bots?: unknown[] }) => Array.isArray(t?.bots))
               ? { name: "list_channel_bots", arguments: {} }
               : null;
-    const message = channelCall
+    const browserTask = objective.startsWith("Browser Task"),
+      browserObservations = tools.filter((t: { status?: string }) => t.status === "observed"),
+      lastPage = browserObservations.at(-1);
+    if (browserTask && !review) {
+      const names = body.tools.map((t: { function: { name: string } }) => t.function.name);
+      for (const forbidden of ["call_plugin", "delegate_task", "knowledge_catalog", "search_web"])
+        assert(!names.includes(forbidden), "Browser source cannot gain " + forbidden);
+    }
+    const browserCall =
+      review || !browserTask
+        ? null
+        : objective === "Browser Task redirect"
+          ? !lastPage
+            ? { name: "navigate_browser", arguments: { url: "https://fixture.invalid/worker" } }
+            : null
+          : !tools.some((t: { status?: string }) => t.status === "captured")
+            ? { name: "capture_browser", arguments: {} }
+            : objective !== "Browser Task complete"
+              ? null
+              : browserObservations.length === 0
+                ? { name: "navigate_browser", arguments: { url: "https://fixture.invalid/worker" } }
+                : browserObservations.length === 1
+                  ? {
+                      name: "type_browser",
+                      arguments: {
+                        observationId: lastPage.observationId,
+                        ref: "e1",
+                        text: "Approved fixture",
+                      },
+                    }
+                  : browserObservations.length === 2
+                    ? { name: "read_browser", arguments: {} }
+                    : null;
+    const message = browserCall
       ? {
           role: "assistant",
           content: null,
           tool_calls: [
             {
-              id: "channel-" + channelCall.name,
+              id: "browser-" + tools.length,
               type: "function",
-              function: { name: channelCall.name, arguments: "{}" },
+              function: {
+                name: browserCall.name,
+                arguments: JSON.stringify(browserCall.arguments),
+              },
             },
           ],
         }
-      : colleagueCall
+      : channelCall
         ? {
             role: "assistant",
             content: null,
             tool_calls: [
               {
-                id: "colleague-call",
+                id: "channel-" + channelCall.name,
                 type: "function",
-                function: {
-                  name: colleagueCall.name,
-                  arguments: JSON.stringify(colleagueCall.arguments),
-                },
+                function: { name: channelCall.name, arguments: "{}" },
               },
             ],
           }
-        : webCall
+        : colleagueCall
           ? {
               role: "assistant",
               content: null,
               tool_calls: [
                 {
-                  id: "web-" + webCall.name + "-" + tools.length,
+                  id: "colleague-call",
                   type: "function",
-                  function: { name: webCall.name, arguments: JSON.stringify(webCall.arguments) },
+                  function: {
+                    name: colleagueCall.name,
+                    arguments: JSON.stringify(colleagueCall.arguments),
+                  },
                 },
               ],
             }
-          : pluginCall
+          : webCall
             ? {
                 role: "assistant",
                 content: null,
                 tool_calls: [
                   {
-                    id: "plugin-" + pluginCall.name,
+                    id: "web-" + webCall.name + "-" + tools.length,
                     type: "function",
-                    function: {
-                      name: pluginCall.name,
-                      arguments: JSON.stringify(pluginCall.arguments),
-                    },
+                    function: { name: webCall.name, arguments: JSON.stringify(webCall.arguments) },
                   },
                 ],
               }
-            : knowledgeCall
+            : pluginCall
               ? {
                   role: "assistant",
                   content: null,
                   tool_calls: [
                     {
-                      id: "knowledge-" + knowledgeCall.name,
+                      id: "plugin-" + pluginCall.name,
                       type: "function",
                       function: {
-                        name: knowledgeCall.name,
-                        arguments: JSON.stringify(knowledgeCall.arguments),
+                        name: pluginCall.name,
+                        arguments: JSON.stringify(pluginCall.arguments),
                       },
                     },
                   ],
                 }
-              : shouldRead
+              : knowledgeCall
                 ? {
                     role: "assistant",
                     content: null,
                     tool_calls: [
                       {
-                        id: "attachment-call",
+                        id: "knowledge-" + knowledgeCall.name,
                         type: "function",
                         function: {
-                          name: "read_attachment",
-                          arguments: JSON.stringify({
-                            attachmentId: input.attachments.find(
-                              (a: { mode: string }) => a.mode !== "binary",
-                            ).id,
-                          }),
+                          name: knowledgeCall.name,
+                          arguments: JSON.stringify(knowledgeCall.arguments),
                         },
                       },
                     ],
                   }
-                : !review && !hasReport
+                : shouldRead
                   ? {
                       role: "assistant",
                       content: null,
                       tool_calls: [
                         {
-                          id: "report-call",
+                          id: "attachment-call",
                           type: "function",
                           function: {
-                            name: "write_report",
+                            name: "read_attachment",
                             arguments: JSON.stringify({
-                              name: "Report.md",
-                              markdown: "# Synthetic report\n\n" + objective,
+                              attachmentId: input.attachments.find(
+                                (a: { mode: string }) => a.mode !== "binary",
+                              ).id,
                             }),
                           },
                         },
                       ],
                     }
-                  : { role: "assistant", content: answer };
+                  : !review && !hasReport
+                    ? {
+                        role: "assistant",
+                        content: null,
+                        tool_calls: [
+                          {
+                            id: "report-call",
+                            type: "function",
+                            function: {
+                              name: "write_report",
+                              arguments: JSON.stringify({
+                                name: "Report.md",
+                                markdown: "# Synthetic report\n\n" + objective,
+                              }),
+                            },
+                          },
+                        ],
+                      }
+                    : { role: "assistant", content: answer };
     const bytes = Buffer.from(
       JSON.stringify({
         id: "synthetic-completion",
@@ -303,6 +353,9 @@ export async function qualifyWorkProduct(
       token = randomBytes(32).toString("base64url");
     const hash = createHash("sha256").update(token).digest("hex");
     await sql`INSERT INTO auth_sessions(id,token_digest,owner_id,expires_at) VALUES(${randomUUID()},${hash},'owner',clock_timestamp()+interval '10 minutes')`;
+    const browserBot = randomUUID(),
+      workerNode = "p4-worker-" + randomUUID();
+    await sql`INSERT INTO bots(id,name,role,computer_profile) VALUES(${browserBot},'Worker fixture','Synthetic browser acceptance','docker-linux')`;
     const options: EntryOptions = {
       host: "127.0.0.1",
       port,
@@ -311,6 +364,12 @@ export async function qualifyWorkProduct(
       product: {
         databaseUrl,
         controlReads: true,
+        workerRuntime: {
+          browserRoutes: { [browserBot]: workerNode },
+          pageOrigins: { [browserBot]: ["https://fixture.invalid"] },
+          humanControl: true,
+          legacyHumanControl: false,
+        },
         plugins: {
           storePath: join(directory, "plugins", "state.json"),
           localEndpoints: [pluginPeer.endpoint],
@@ -373,6 +432,13 @@ export async function qualifyWorkProduct(
     });
     assert.equal(connection.status, 201, await connection.clone().text());
     const created = (await connection.json()) as { connection: { id: string } };
+    const browserChannel = randomUUID();
+    await sql`UPDATE bots SET configuration=${sql.json({ model: { connectionId: created.connection.id, modelId: "synthetic-model" } })} WHERE id=${browserBot}`;
+    await sql`INSERT INTO channels(id,name) VALUES(${browserChannel},'Browser Work fixture')`;
+    await sql`INSERT INTO channel_bots(channel_id,bot_id) VALUES(${browserChannel},${browserBot})`;
+    await qualifyWorkerProduct(origin, token, browserBot, workerNode, (context) =>
+      qualifyBrowserWork(context, browserBot, browserChannel),
+    );
     const botId = randomUUID();
     await sql`INSERT INTO bots(id,name,role,computer_profile,configuration) VALUES(${botId},'Work fixture','Synthetic acceptance','model',
       ${sql.json({ model: { connectionId: created.connection.id, modelId: "synthetic-model" } })}::jsonb)`;

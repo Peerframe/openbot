@@ -40,10 +40,11 @@ test("TS entry production closure includes reviewed adapters, model SDKs and nat
     "@temporalio/core-bridge",
     "@temporalio/client",
     "source-map-js",
+    "ws",
   ]) {
     assert(graph.packageKeys.includes(`node_modules/${name}`), `${name} must be staged`);
   }
-  assert(!graph.packageKeys.includes("node_modules/ws"));
+  assert.equal(source.packages["apps/server-ts"].dependencies.ws, "8.21.3");
   assert(!graph.workspaceKeys.includes("tests/oracles/legacy-server"));
   assert.throws(() => collectProductionPackageGraph(source, "apps/server-ts/other"), /Unsupported/);
 });

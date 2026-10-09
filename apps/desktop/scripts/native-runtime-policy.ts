@@ -15,7 +15,7 @@ export interface NativeRuntimeLock {
   >;
 }
 
-/** Coexistence keeps the reviewed Python helpers and adds only the forwarding closure. */
+/** Coexistence keeps the reviewed Python helpers and adds the reviewed TS production closure. */
 export function mixedCandidateGraph(lock: NativeRuntimeLock) {
   const python = pythonCandidateGraph(lock);
   for (const [name, version] of [

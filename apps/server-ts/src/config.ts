@@ -2,6 +2,7 @@ import { isIP } from "node:net";
 import { isAbsolute } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { ByteProviderTransport, ModelTransport } from "./model-network.js";
+import type { WorkerRuntimeOptions } from "./worker-runtime.js";
 import { scalarText } from "./owner-auth-crypto.js";
 import { validateWorkOptions, type WorkOptions } from "./work-service.js";
 
@@ -14,6 +15,7 @@ export interface EntryOptions {
   product?: {
     databaseUrl: string;
     work?: WorkOptions;
+    workerRuntime?: WorkerRuntimeOptions;
     allowedOrigins?: readonly string[];
     models?: { keyPath: string; customBaseUrls: readonly string[] };
     modelTransport?: ModelTransport;
@@ -52,6 +54,8 @@ function origin(value: string): URL {
 
 export function validateOptions(options: EntryOptions): EntryOptions {
   if (options.product) {
+    if (options.product.workerRuntime && (!options.product.work || !options.product.controlReads))
+      throw new Error("The sole Worker registry requires the complete Work/product composition.");
     if (options.product.work) {
       if (!options.product.models) throw new Error("Work requires model connection composition.");
       validateWorkOptions(options.product.work);
