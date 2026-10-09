@@ -7,17 +7,18 @@ immutable start-history inspection and trusted Activity identity. Server-owned S
 fences live in `apps/server-ts/src/work-handoff.ts` and `work-execution.ts`. Model/tool policy,
 receipts and publication remain Server responsibilities. No package imports an application.
 
-This is an integration in progress, **not an enabled product runtime or completed P4**. Current
-Activities are composed only by the explicit synthetic control qualification. No public route,
-Desktop startup, product supervisor or existing Python workflow changes owner. Python handoff and
-Activity gates exclude newly created `typescript-v1` admissions; existing admissions default to
-`python-v1`, and SQL rejects changing an admission's owner. Child task execution is refused by the
-initial TS control adapter until root-first collaboration authority is ported.
+The explicit P4 product candidate composes these Activities through the TS Server supervisor,
+Work/source routes and sole Worker socket registry. It includes native/channel tasks, schedules,
+root-first collaboration, retained harness policy and model/media/knowledge/plugin/web/browser/
+approved-command tools. Python gates exclude new `typescript-v1` admissions; existing admissions
+remain `python-v1`, and SQL rejects changing their owner. Startup requires a complete paginated
+SQL/Temporal drain of legacy obligations before new TS admission.
 
-The next product checkpoint is native Owner Task creation through model/report execution and
-verified artifact download. Remaining P4 includes the harness strategy, all runtime tools, public
-Work/source routes, Worker sockets, supervision, packaging and complete Python history drain.
-See [the accepted decision](../../docs/decisions/0050-typescript-control-plane.md) and
+Desktop v8 selects the same composition and requires its private engine configuration. The
+canonical macOS arm64 candidate is installed and has passed actual authenticated startup,
+normal paired-service shutdown and restart. Actual isolated Linux command/browser and all hosted
+checks still gate P4 completion; Python retirement remains P5. See
+[the accepted decision](../../docs/decisions/0050-typescript-control-plane.md) and
 [implementation evidence](../../docs/research/typescript-control-plane-p4.md).
 
 ## Checks
@@ -37,10 +38,13 @@ connect to configured product data, call paid providers or download an automatic
 command uses `apps/server-python/.worker-venv/bin/python`.
 
 The probe exercises real SQL/SDK/Temporal, concurrent reservation, cross-owner refusal, lost start
-reply recovery after cancellation, Worker replacement, durable wakeup, stale fences,
-Continue-As-New chain identity, exported-history replay and the start/acknowledgement race. Its
-synthetic `advanceWork` Activity proves those engine/control contracts only; it does not prove
-model quality, tool effects, public Task completion or cross-language history replay.
+reply recovery, Worker replacement, durable wakeup, stale fences, Continue-As-New chain identity
+and official exported-history replay. Product journeys also cover public Task/report download,
+all runtime tool families, channel/schedule/source ownership, collaboration expiry and five actual
+process SIGKILL recovery windows. A controlled tree-close acknowledgement race verifies successful
+closure and refusal on failed closure, then replays both histories. Provider responses and selected
+peers remain synthetic; actual native command/browser qualification runs separately in the owned
+Linux CI fixture. These checks do not establish model quality or cross-language history replay.
 
 A production composition must provide explicit authenticated engine transport and a distinct TS
 queue, derive facts with `currentBinding()` inside remote Activities, and check the SQL binding

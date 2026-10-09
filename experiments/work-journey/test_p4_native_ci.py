@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 import sys
 import unittest
-from unittest.mock import patch
+from unittest.mock import AsyncMock,patch
 from tempfile import TemporaryDirectory
 
 import p4_native_ci as packet
@@ -109,10 +109,49 @@ class NativePacketTests(unittest.TestCase):
             self.assertEqual(packet.worker_site(worker),site)
             with self.assertRaisesRegex(ValueError,'explicit_worker_venv'):packet.worker_site(worker.resolve())
 
+    def test_native_failure_record_excludes_values_and_locals(self):
+        for error in (RuntimeError('unsafe_directory'),ValueError('obenr_privateToken secret private.pem')):
+            record=host.failure_record(error)
+            self.assertEqual(set(record),{'errorType','code','locations'})
+            self.assertEqual(record['code'],'unsafe_directory' if isinstance(error,RuntimeError) else 'fixture_failed')
+            self.assertNotIn('private',json.dumps(record))
+        try:exec(compile('raise RuntimeError("unsafe_file")',str(host.BASE/'case/source/protected_io.py'),'exec'))
+        except RuntimeError as error:record=host.failure_record(error)
+        # Module-scope frames are excluded; public named functions retain only their location.
+        self.assertEqual(record['locations'],[])
+        namespace={}
+        exec(compile('def fixture():\n raise RuntimeError("unsafe_file")',str(host.BASE/'case/source/protected_io.py'),'exec'),namespace)
+        try:namespace['fixture']()
+        except RuntimeError as error:record=host.failure_record(error)
+        self.assertEqual(record['locations'],[dict(file='case/source/protected_io.py',function='fixture',line=2)])
+
     def test_root_and_remote_discovery_are_not_implicit(self):
         with self.assertRaisesRegex(ValueError,'disposable_linux_ci_only'):
             packet.prepare(*(Path('/unused') for _ in range(6)))
         with self.assertRaisesRegex(ValueError,'root_ci_packet_required'):host.root_mode('stage')
+
+
+class NativeDiagnosticsTests(unittest.IsolatedAsyncioTestCase):
+    async def test_stage_and_preready_failures_keep_only_public_diagnostic_in_artifact(self):
+        for operation in ('stage','run'):
+            with TemporaryDirectory() as directory:
+                root=Path(directory);configuration=root/'configuration.json'
+                configuration.write_text(json.dumps({'version':1,'program':str(host.PROGRAM)}))
+                with patch.object(host.sys,'platform','linux'):controller=host.NativeHost(configuration,root)
+                diagnostic={'nativeFixtureFailure':{'errorType':'RuntimeError','code':'unsafe_directory','locations':[]}}
+                private=b'synthetic private key, arguments and enrollment'
+                script='import sys\nsys.stdout.write('+repr(json.dumps(diagnostic)+'\n')+')\nsys.stderr.write('+repr(private.decode())+')\nraise SystemExit(1)'
+                child=await asyncio.create_subprocess_exec(sys.executable,'-c',script,
+                    stdin=asyncio.subprocess.DEVNULL,stdout=asyncio.subprocess.PIPE,stderr=asyncio.subprocess.PIPE)
+                with patch.object(controller,'spawn',AsyncMock(return_value=child)) as spawn,patch('builtins.print') as emit:
+                    with self.assertRaises(ValueError):
+                        if operation=='stage':await controller.once(operation,{})
+                        else:await controller.start('obenr_'+('a'*43),12345)
+                spawn.assert_awaited_once()
+                self.assertEqual(json.loads((root/('native-'+operation+'.failure.json')).read_text()),diagnostic)
+                self.assertEqual(json.loads(emit.call_args.args[0]),diagnostic)
+                self.assertNotIn('private',emit.call_args.args[0])
+                self.assertEqual((root/('native-'+operation+'.stderr-private')).read_bytes(),private)
 
 
 if __name__=='__main__':unittest.main()

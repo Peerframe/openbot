@@ -16,6 +16,34 @@ def require(value,code):
     if not value:raise ValueError(code)
 
 
+FAILURE_CODES=frozenset(('unsafe_path','unsafe_directory','unsafe_file','oversized_file','changed_file',
+    'fixture_uid_occupied','fixture_socket_occupied','public_directory_occupied','node_binary_changed',
+    'node_bundle_changed','linux_root_required','invalid_native_config','missing_native_pin',
+    'unreviewed_image','binary_changed','source_changed','archive_changed','invalid_python',
+    'image_tag_changed','systemd_version_changed','native_command_unknown','native_packet_changed'))
+FAILURE_TYPES=frozenset(('FileNotFoundError','PermissionError','FileExistsError','NotADirectoryError',
+    'IsADirectoryError','BlockingIOError','TimeoutError','OSError','ValueError','TypeError','RuntimeError',
+    'KeyError','ModuleNotFoundError','ImportError','Refused','ValidationError'))
+
+
+def failure_record(error):
+    # Only fixed error codes/types and locations in the verified public packet. No values/locals,
+    # formatted tracebacks, enrollment, keys or stderr enter the hosted diagnostic.
+    kind=type(error).__name__;code=str(error)
+    record={'errorType':kind if kind in FAILURE_TYPES else 'Exception',
+        'code':code if code in FAILURE_CODES else 'fixture_failed','locations':[]}
+    trace=error.__traceback__
+    while trace:
+        source=Path(trace.tb_frame.f_code.co_filename)
+        if source.is_relative_to(BASE) and source.suffix=='.py':
+            relative=str(source.relative_to(BASE));function=trace.tb_frame.f_code.co_name
+            if re.fullmatch(r'[A-Za-z0-9_./-]{1,180}',relative) and re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]{0,63}',function):
+                record['locations'].append(dict(file=relative,function=function,line=trace.tb_lineno))
+        trace=trace.tb_next
+    record['locations']=record['locations'][-4:]
+    return record
+
+
 class NativeHost:
     def __init__(self,configuration,directory):
         value=json.loads(Path(configuration).read_text())
@@ -36,6 +64,13 @@ class NativeHost:
             stdout,stderr=await asyncio.wait_for(child.communicate(),30)
             require(len(stdout)<=MAXIMUM and len(stderr)<=MAXIMUM,'native_capture_bound')
             (self.directory/('native-'+operation+'.stderr-private')).write_bytes(stderr)
+            if child.returncode!=0:
+                try:diagnostic=json.loads(stdout)
+                except (ValueError,UnicodeError):diagnostic=None
+                if type(diagnostic) is dict and set(diagnostic)=={'nativeFixtureFailure'}:
+                    # This subprocess is the fixed root-owned, hash-verified public CI packet.
+                    (self.directory/('native-'+operation+'.failure.json')).write_text(json.dumps(diagnostic)+'\n')
+                    print(json.dumps(diagnostic),flush=True)
             require(child.returncode==0,'native_'+operation+'_failed')
             return json.loads(stdout)
         finally:
@@ -75,6 +110,9 @@ class NativeHost:
         error_task=asyncio.create_task(stderr())
         try:
             ready=json.loads(await asyncio.wait_for(self.process.stdout.readline(),20))
+            if type(ready) is dict and set(ready)=={'nativeFixtureFailure'}:
+                (self.directory/'native-run.failure.json').write_text(json.dumps(ready)+'\n')
+                print(json.dumps(ready),flush=True)
             require(ready==dict(version=1,event='remote_ready',socketReady=True,nodeSpawned=True,nodeUid=62425,serverAuthenticated=False),'native_ready_changed')
         except BaseException:
             await asyncio.wait_for(self.process.wait(),150);await error_task
@@ -159,4 +197,7 @@ def root_mode(operation):
 if __name__=='__main__':
     os.umask(0o077)
     require(len(sys.argv)==2,'invalid_native_ci_operation')
-    root_mode(sys.argv[1])
+    try:root_mode(sys.argv[1])
+    except Exception as error:
+        print(json.dumps({'nativeFixtureFailure':failure_record(error)}),flush=True)
+        raise SystemExit(1) from None

@@ -681,3 +681,19 @@ precheck establishes transport only, never Linux/runsc acceptance. The first con
 unknown-authority failure is preserved. The successful retry used only the host's existing public
 system trust bundle and retained TLS validation; no Docker socket, user profile or credentials
 were mounted. Native command/browser acceptance and every check on the final HEAD remain open.
+
+
+### First actual native staging attempt
+
+On `0b718481`, [CI37921320288](https://github.com/Peerframe/openbot/actions/runs/37921320288)
+passed the fresh native packet preparation, including both immutable OCI copies and rebuilt Squid
+export. The actual command step then refused at Host staging with `native_stage_failed`; its
+cleanup remained unconfirmed and the isolated-browser step was skipped. The private child stderr
+was not uploaded, so the exact underlying cause is still unknown. The failed result is preserved.
+The same run's Windows client job passed after the resource-fixture budget correction.
+
+The fixed, hash-verified root launcher now returns only an allowlisted error code/type and up to
+four locations in the public packet source. The parent retains those content-free JSON diagnostics
+on stage/pre-ready failure. It never publishes exception values, locals, keys, enrollment or private
+stderr. Positive/negative redaction checks pass; this adds observability, not acceptance or retry.
+Fresh actual native staging, command, isolated browser and complete hosted checks remain required.

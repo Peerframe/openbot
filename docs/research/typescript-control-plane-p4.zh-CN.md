@@ -488,3 +488,16 @@ Workflow 修正版45daf316现已依次完成暂存与完整打包。第二次实
 此仿真预检只证明传输，不证明 Linux/runsc 验收。首个容器 TLS unknown-authority 失败保留；
 重试只挂载主机已有公共系统信任证书并保留 TLS 校验，没有 Docker socket、用户 profile 或凭据
 挂载。真实原生命令/浏览器和最终 HEAD 的全部检查仍待通过。
+
+
+### 首次真实原生 staging 尝试
+
+`0b718481` 的 [CI37921320288](https://github.com/Peerframe/openbot/actions/runs/37921320288) 已通过
+新鲜原生包准备，含两份不可变 OCI 复制和重建 Squid 导出。真实命令步骤随后在 Host staging
+以 `native_stage_failed` 拒绝；清理未确认，隔离浏览器跳过。私有子进程 stderr 未上传，因此底层
+原因仍未确定；保留该失败。同轮 Windows 客户端作业在资源夹具时间修正后已通过。
+
+固定且经哈希核验的 root launcher 现只返回白名单错误码/类型及最多四处公开包源码位置；父进程
+在 staging/ready 前失败时保留这些无内容 JSON 诊断，不公布异常值、局部变量、密钥、注册凭据或
+私有 stderr。正负脱敏检查通过；此改动只补定位，不授予通过、不重试。新鲜真实原生 staging、
+命令、隔离浏览器与完整托管检查仍待通过。

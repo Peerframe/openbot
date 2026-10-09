@@ -6,14 +6,14 @@
 身份核对。Server 的 SQL 准入与执行栅栏位于 `apps/server-ts/src/work-handoff.ts` 和
 `work-execution.ts`。模型/工具策略、回执与发布仍归 Server；本包不导入应用代码。
 
-目前仍在集成，**尚未启用产品运行时，P4 尚未完成**。当前 Activity 只由明确的合成控制验收组合。
-公开接口、桌面启动、产品监管进程和已有 Python 工作流均未切换归属。Python 交接和 Activity
-门禁排除新建的 `typescript-v1` 准入；已有记录默认 `python-v1`，SQL 禁止修改归属。在协作的根任务
-优先加锁规则迁完前，TS 控制适配器拒绝执行子任务。
+显式 P4 产品候选现通过 TS Server 监管、Work/来源接口和唯一 Worker socket 注册表组合这些
+Activity，覆盖原生/频道任务、周期任务、根任务优先协作、原有 harness 策略及模型/媒体/知识/
+插件/网页/浏览器/审批命令工具。Python 门禁排除新 `typescript-v1` 准入；旧记录保留 `python-v1`，
+SQL 拒绝修改归属。新 TS 准入前必须完成旧 SQL/Temporal 全部分页义务排空。
 
-下一产品检查点是 Owner 新建原生任务，经模型/报告执行和独立验证后下载产物。完整 P4 还包括
-harness 策略、全部运行时工具、Work/来源接口、Worker 连接、监管、打包与 Python 历史排空。
-见[已批准决策](../../docs/decisions/0050-typescript-control-plane.zh-CN.md)和
+Desktop v8 选择同一组合并要求私有引擎配置。macOS arm64 完整候选已安装，实际认证启动、正常
+双服务退出与重启验收通过。真实隔离 Linux 命令/浏览器及当前 HEAD 全部托管检查仍是 P4 完成门槛；
+Python 退役属于 P5。见[已批准决策](../../docs/decisions/0050-typescript-control-plane.zh-CN.md)和
 [实现证据](../../docs/research/typescript-control-plane-p4.zh-CN.md)。
 
 ## 检查
@@ -30,10 +30,12 @@ npm run test:work:ts
 数据、不调用付费模型，也不自动下载测试服务器。`OPENBOT_TEMPORAL_TEST_PYTHON` 可指定已有且通过
 锁定环境验证的 Worker 解释器，默认使用 `apps/server-python/.worker-venv/bin/python`。
 
-验收使用真实 SQL/SDK/Temporal，覆盖并发预留、跨归属拒绝、取消后丢失启动响应的恢复、Worker
-替换、持久等待唤醒、旧栅栏拒绝、Continue-As-New 链身份、导出历史回放及启动确认竞态。合成
-`advanceWork` Activity 只证明这些引擎/控制合同，不证明模型质量、工具效果、公开任务完成或跨语言
-历史回放。
+验收使用真实 SQL/SDK/Temporal，覆盖并发预留、跨归属拒绝、丢失启动响应恢复、Worker 替换、
+持久唤醒、旧栅栏拒绝、Continue-As-New 链身份和官方导出历史重放。产品流程还覆盖公开任务/
+报告下载、全部运行时工具族、频道/周期/来源归属、协作过期与五个真实进程 SIGKILL 恢复窗口。
+受控树关闭回执竞态同时验证成功关闭、关闭失败传播与两份历史重放。模型响应与部分 peer 仍为
+合成；真实原生命令/浏览器在有明确归属的 Linux CI 夹具另验。这些检查不证明模型质量或跨语言
+历史重放。
 
 产品组合必须显式配置认证引擎连接与独立 TS 队列，在远程 Activity 内通过 `currentBinding()`
 提取事实，并在每次模型/工具准入及发布前检查 SQL 绑定与当前权限。唤醒信号不授予权限。启动结果

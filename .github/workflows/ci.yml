@@ -640,6 +640,7 @@ jobs:
           path: |
             ${{ runner.temp }}/openbot-command-ts-native/result.json
             ${{ runner.temp }}/openbot-command-ts-native/remote-result.json
+            ${{ runner.temp }}/openbot-command-ts-native/native-*.failure.json
             ${{ runner.temp }}/openbot-browser-ts-native/RESULT.json
           if-no-files-found: ignore
       - name: Retain content-free TS browser qualification results
