@@ -1,7 +1,5 @@
 # Moving the control plane back to TypeScript: task and repository plan
 
-English · [简体中文](typescript-control-plane-plan.zh-CN.md)
-
 - Status: Proposed (input for Codex's ADR; no product code changes until the Owner approves it)
 - Date: 2026-10-05
 - Owner: @yxflc11

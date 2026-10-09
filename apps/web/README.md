@@ -1,6 +1,6 @@
 # Shared OpenBot client
 
-[简体中文](README.zh-CN.md) · [Repository map](../../docs/REPOSITORY_MAP.md)
+[Repository map](../../docs/REPOSITORY_MAP.md)
 
 This React client is used by both Web and Electron Desktop. `App.tsx` coordinates navigation and authenticated workspace state. Feature components render controlled data and call Server APIs; they do not grant tools, choose authorization or read provider credentials.
 

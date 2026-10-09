@@ -1,7 +1,5 @@
 # Isolated Linux browser product qualification
 
-[English](README.md) · [简体中文](README.zh-CN.md)
-
 This is the retained single-use native fixture for the browser retirement gate, not a production
 Host installer. The selected `deadline-a1-comp5` identity is consumed. Never rerun it or extend its
 600-second original unit. Source/dependency pins and rejected attempts are recorded in

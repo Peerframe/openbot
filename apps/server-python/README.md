@@ -1,7 +1,5 @@
 # Python control plane and product candidate
 
-[English](README.md) · [简体中文](README.zh-CN.md)
-
 Python/FastAPI implements the trusted business control layer, separately from the untrusted Agent
 Runtime.
 The explicit `product` entry composes Owner identity/workspace, model connections, knowledge,

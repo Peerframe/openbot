@@ -1,7 +1,5 @@
 # Research: @biomejs/biome 2.5.13 CI evidence
 
-[English](biome-2.5.13-ci-review.md) · [简体中文](biome-2.5.13-ci-review.zh-CN.md)
-
 - Status: Reviewed; complete CI required before merge
 - Date: 2026-09-15
 - Related PR: #73

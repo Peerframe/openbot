@@ -1,7 +1,5 @@
 # C21: permanent channel attachment deletion and measured storage
 
-English · [简体中文](channel-storage-purge.zh-CN.md)
-
 2026-10-03; depends on C19 PR #161, revision `85c2f7d` (not merged when work began).
 Reuse [C19](channel-attachment-reference-counts.md), [channel attachments](channel-attachments.md),
 [identity tombstones](../decisions/0047-identity-lifecycle-and-read-state.md), and existing OwnerTransactions/audit.
@@ -60,7 +58,7 @@ No Web changes, paid models, automatic merge, release or production-data mutatio
 Contracts: `DELETE .../attachments/:id/purge`, `POST .../attachments/cleanup` with UUID requestKey,
 Owner `GET /api/v1/storage`, `GET/PUT /api/v1/settings/storage` with expectedRevision and null/30
 policy. The [English API](../API.md#c21-permanent-channel-trash-deletion-and-measured-storage) and
-[Chinese API](../API.zh-CN.md#c21频道回收站永久删除与实测存储空间) cover responses, limits, 409/410,
+[Chinese API](../API.md) cover responses, limits, 409/410,
 idempotency, measured-byte scope and audit. Migration 0050 adds minimal receipts/policy/late-reference
 guards; whole-channel tombstone cleanup retains its existing contract.
 

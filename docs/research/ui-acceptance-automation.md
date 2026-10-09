@@ -1,7 +1,5 @@
 # Research: Automated whole-interface acceptance
 
-English · [简体中文](ui-acceptance-automation.zh-CN.md)
-
 - Status: Accepted (Owner decision 2026-10-07)
 - Date: 2026-10-07
 - Owner: OpenBot maintainers

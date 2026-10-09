@@ -1,7 +1,5 @@
 # Research: React DOM types and Zod updates
 
-[English](dependency-types-zod-september15.md) · [简体中文](dependency-types-zod-september15.zh-CN.md)
-
 - Date: 2026-09-15
 - Status: reviewed; combined installation and CI required before merge
 - Scope: [PR #79](https://github.com/Peerframe/openbot/pull/79) and [PR #80](https://github.com/Peerframe/openbot/pull/80)

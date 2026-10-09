@@ -1,7 +1,5 @@
 # Native Agent
 
-[English](NATIVE_AGENT.md) · [简体中文](NATIVE_AGENT.zh-CN.md)
-
 OpenBot can execute a bounded model/tool/observation loop in the Server. The released Vercel AI SDK
 runs iteration; PostgreSQL remains the authority for tasks, channel membership, replies and audit.
 

@@ -1,7 +1,5 @@
 # Offline Employee publisher tooling
 
-[English](README.md) · [简体中文](README.zh-CN.md)
-
 This retained developer package owns the offline `employee:publisher-key` CLI and its original
 keyring/template dependency closure. It does not run the Server, access a database, or import
 `apps/server` or the frozen test oracle. Source is initially unchanged OpenBot MIT code;

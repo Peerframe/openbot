@@ -2,7 +2,6 @@
 
 - Status: Accepted for the bounded C4 contract
 - Date: 2026-10-01
-- Chinese: [简体中文](0049-owner-approval-policy.zh-CN.md)
 
 ## Decision
 

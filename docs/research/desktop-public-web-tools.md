@@ -1,7 +1,5 @@
 # Research: Public web tools in the installed Desktop Agent
 
-[English](desktop-public-web-tools.md) · [简体中文](desktop-public-web-tools.zh-CN.md)
-
 - Status: Accepted
 - Date: 2026-09-08
 - Owner: OpenBot contributors

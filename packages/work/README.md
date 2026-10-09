@@ -1,7 +1,5 @@
 # Work execution in TypeScript (P4)
 
-English · [简体中文](README.zh-CN.md)
-
 This package implements the new `OpenBotWorkTsV1` Temporal workflow, single-attempt handoff,
 immutable start-history inspection and trusted Activity identity. Server-owned SQL admission and
 fences live in `apps/server-ts/src/work-handoff.ts` and `work-execution.ts`. Model/tool policy,

@@ -1,7 +1,5 @@
 # Native Task UI contract
 
-[English](NATIVE_TASK_SCOPE.md) · [简体中文](NATIVE_TASK_SCOPE.zh-CN.md)
-
 The Server adapters implement all explicit native scope capabilities. UI and full Temporal
 acceptance remain separate integration checks. Fixed owner namespace means the existing single Owner session.
 All write requests require the existing session cookie and accepted Origin. No token in bodies.

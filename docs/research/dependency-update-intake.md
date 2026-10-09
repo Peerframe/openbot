@@ -1,7 +1,5 @@
 # Research: Reviewed dependency update intake
 
-[English](dependency-update-intake.md) · [简体中文](dependency-update-intake.zh-CN.md)
-
 - Status: Reviewed before configuration changes
 - Date: 2026-09-15
 - Owner: OpenBot maintainers

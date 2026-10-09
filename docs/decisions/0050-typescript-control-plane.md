@@ -1,7 +1,5 @@
 # ADR-0050: Move the control plane to TypeScript by route group
 
-English · [简体中文](0050-typescript-control-plane.zh-CN.md)
-
 - Status: Accepted — Owner approved P0–P5 execution on 2026-10-06
 - Date: 2026-10-06
 - Owner: @yxflc11

@@ -1,7 +1,5 @@
 # Technology baseline
 
-[English](TECHNOLOGY.md) · [简体中文](TECHNOLOGY.zh-CN.md)
-
 Reviewed on 2026-09-28 against this checkout's lockfiles and manifests. Exact versions are review
 snapshots and must be updated through a focused, tested dependency change rather than silently
 floated. For live layout and setup, prefer [the repository map](REPOSITORY_MAP.md),

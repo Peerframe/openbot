@@ -1,7 +1,5 @@
 # Packaged Desktop Temporal connection probe
 
-[English](README.md) · [简体中文](README.zh-CN.md)
-
 This disposable probe reuses the existing compiled `NativeServerController` and
 `launchPythonProductServer`. It does not build, patch or copy product resources, start a
 Temporal server, submit a Task, call a model, touch Keychain or use a real Desktop dataRoot.

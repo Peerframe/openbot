@@ -1,7 +1,5 @@
 # P4: TypeScript Work execution and Python drain
 
-English · [简体中文](typescript-control-plane-p4.zh-CN.md)
-
 - Status: Integrated P4 candidate qualified for unified review; all hosted checks on the actual PR HEAD remain mandatory
 - Date: 2026-10-09
 - Owner: @yxflc11

@@ -1,7 +1,5 @@
 # Local API
 
-[English](API.md) · [简体中文](API.zh-CN.md)
-
 OpenBot Server exposes the control-plane API. Development defaults to
 `http://localhost:3001`. Except for health, session status, login, and Node enrollment exchange,
 every `/api/v1` route requires an authenticated local Owner Session. Do not expose the Server,

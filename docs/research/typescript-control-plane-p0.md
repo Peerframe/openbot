@@ -1,7 +1,5 @@
 # TypeScript control plane: P0 review and baseline
 
-English · [简体中文](typescript-control-plane-p0.zh-CN.md)
-
 - Status: P0 accepted; dependency choices reviewed, native and GUI baselines measured
 - Date/search date: 2026-10-06
 - Owner: @yxflc11

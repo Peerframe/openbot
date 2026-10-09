@@ -1,7 +1,5 @@
 # Research: @types/node 26.5.1 CI evidence
 
-[English](node-types-26.5.1-ci-review.md) · [简体中文](node-types-26.5.1-ci-review.zh-CN.md)
-
 - Status: Reviewed; complete CI required before merge
 - Date: 2026-09-15
 - Related PR: #74

@@ -1,7 +1,5 @@
 # Desktop attachment upload proxy exception
 
-[English](desktop-attachment-proxy.md) · [简体中文](desktop-attachment-proxy.zh-CN.md)
-
 - Status: accepted; 2026-09-11.
 - Existing reuse entry: Desktop Server connection in `OPEN_SOURCE_REUSE.md`,
   [desktop-server-connection.md](desktop-server-connection.md), and

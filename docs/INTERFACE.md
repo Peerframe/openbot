@@ -1,7 +1,5 @@
 # Interface plan: channels first + optional office plugin
 
-[English](INTERFACE.md) · [简体中文](INTERFACE.zh-CN.md)
-
 Current developer entry: [design index](design/README.md) → actual components/tests. This document
 retains channel-era design intent; newer Work Task/Run semantics and verified state behavior come
 from the current code and [repository map](REPOSITORY_MAP.md), not every historical plan below.

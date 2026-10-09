@@ -1,7 +1,5 @@
 # Open-source-first engineering
 
-[English](OPEN_SOURCE_REUSE.md) · [简体中文](OPEN_SOURCE_REUSE.zh-CN.md)
-
 ## Policy
 
 OpenBot researches new dependencies/versions, public protocols, authorization/security or persistent-data
@@ -927,7 +925,7 @@ The [architecture-specific CI scope](research/architecture-ci-scope.md) reuses G
 `workflow_call` and required job results, plus the existing exact-pin Desktop Python and direct
 container qualification. Python product results are distinct from retained-client/legacy
 compatibility, and S7 participates in the protected aggregate. No dependency or upstream source
-is added; the [Chinese scope record](research/architecture-ci-scope.zh-CN.md) states the same limits.
+is added; the [Chinese scope record](research/architecture-ci-scope.md) states the same limits.
 
 The [direct product candidate](research/python-product-container.md) reuses the reviewed official
 Python3.12.13 and Node24.21.0 Bookworm image digests, unchanged63-distribution Worker lock,

@@ -1,7 +1,5 @@
 # Official SDK durability composition
 
-[English](README.md) · [简体中文](README.zh-CN.md)
-
 An isolated comparison of Pydantic AI **2.47.0** with DBOS **3.0.0** and Temporal Python
 **1.33.0**. It uses the released `DBOSDurability` and `TemporalDurability` capabilities, a scripted
 model, actual killed/restarted workers, disposable PostgreSQL and a parent-owned loopback event

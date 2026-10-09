@@ -1,7 +1,5 @@
 # Research: shared task and attachment flow
 
-[English](task-flow-refactor.md) · [简体中文](task-flow-refactor.zh-CN.md)
-
 - Status: Accepted for implementation
 - Date: 2026-09-14
 - Owner: @yxflc11

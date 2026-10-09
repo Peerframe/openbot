@@ -1,7 +1,5 @@
 # Database operations
 
-[English](DATABASE.md) · [简体中文](DATABASE.zh-CN.md)
-
 OpenBot keeps channels, employees, Runs, approvals, audit records, sessions, and artifact metadata
 in PostgreSQL. Object bytes, plugin state and encrypted model settings live outside the database.
 A usable recovery set includes the database and the persistent files and keys listed below.

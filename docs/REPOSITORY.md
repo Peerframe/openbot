@@ -1,7 +1,5 @@
 # Repository strategy
 
-[English](REPOSITORY.md) · [简体中文](REPOSITORY.zh-CN.md)
-
 ## Decision
 
 The foundation uses **one monorepo**. No upstream fork is required to build or test the initial

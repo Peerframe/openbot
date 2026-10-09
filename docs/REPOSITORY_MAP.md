@@ -1,7 +1,5 @@
 # Repository map
 
-[简体中文](REPOSITORY_MAP.zh-CN.md)
-
 Start with the [root map](../AGENTS.md), then one route below and its local rules. Commands run from
 the repository root. When a route does not answer the question, follow imports, calls or a failing
 test. Setup is in [CONTRIBUTING](../CONTRIBUTING.md).

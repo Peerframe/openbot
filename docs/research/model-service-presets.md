@@ -1,7 +1,5 @@
 # Research: Owner-configured model services and provider presets
 
-[English](model-service-presets.md) · [简体中文](model-service-presets.zh-CN.md)
-
 - Status: Accepted
 - Date: 2026-09-08
 - Owner: @yxflc11

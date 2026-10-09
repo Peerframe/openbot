@@ -1,7 +1,5 @@
 # Research: AI SDK provider patches, September 15
 
-[English](ai-sdk-patches-september15.md) · [简体中文](ai-sdk-patches-september15.zh-CN.md)
-
 - Status: Reviewed; final integration checks required before merge
 - Date: 2026-09-15
 - Owner: OpenBot contributors

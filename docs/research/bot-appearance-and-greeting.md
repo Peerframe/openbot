@@ -1,7 +1,5 @@
 # C9 and C11: editing a Bot's look, and the new-Bot greeting
 
-English · [简体中文](bot-appearance-and-greeting.zh-CN.md)
-
 - Status: Implemented (backend 2026-10-03, UI step 37)
 - Date: 2026-10-03
 - Owner: @yxflc11

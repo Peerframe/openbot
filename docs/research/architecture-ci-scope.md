@@ -70,7 +70,7 @@ Move existing OpenBot workflow steps without weakening their assertions; MIT not
 
 Run the existing workflow guard and real shell negatives, check the retained build graph excludes
 the TS Server, run `npm run check`, then run the entire hosted workflow on the pushed head.
-Maintain [the Chinese scope record](architecture-ci-scope.zh-CN.md).
+Maintain [the Chinese scope record](architecture-ci-scope.md).
 
 The macOS smoke uses synthetic bootstrap encryption, not Keychain or GUI automation. No Python
 Desktop distribution on Windows/Linux is newly qualified. Product command/runsc/browser handover,

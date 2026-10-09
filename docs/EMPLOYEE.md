@@ -1,7 +1,5 @@
 # Portable employee model
 
-[English](EMPLOYEE.md) · [简体中文](EMPLOYEE.zh-CN.md)
-
 ## Product decision
 
 An OpenBot Bot is a portable digital employee, not a chat preset and not the computer that runs

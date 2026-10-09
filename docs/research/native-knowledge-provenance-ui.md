@@ -1,7 +1,5 @@
 # Native knowledge provenance UI
 
-[English](native-knowledge-provenance-ui.md) · [简体中文](native-knowledge-provenance-ui.zh-CN.md)
-
 - Date: 2026-09-25.
 - Status: Candidate display adapter; final product integration remains required.
 - Scope: Distinguish native Task/Work Run provenance from legacy channel Run provenance in Owner knowledge review and accepted memory.

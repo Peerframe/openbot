@@ -1,7 +1,5 @@
 # OpenBot plugin directory
 
-[English](README.md) · [简体中文](README.zh-CN.md)
-
 Plugins expose capabilities through MCP Streamable HTTP. This directory contains reviewed catalog
 metadata, not executable uploads. Installation and Bot grants always require a separate Owner review.
 

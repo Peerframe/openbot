@@ -1,7 +1,5 @@
 # Research: Vite 8.3 lockfile coherence
 
-[English](vite-8.3-lock-coherence.md) · [简体中文](vite-8.3-lock-coherence.zh-CN.md)
-
 - Status: Reviewed before lockfile repair; complete CI required before merge
 - Date: 2026-09-15
 - Related PR: #77

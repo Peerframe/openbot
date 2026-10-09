@@ -1,7 +1,5 @@
 # Feature research records
 
-[English](README.md) · [简体中文](README.zh-CN.md)
-
 Follow [root research triggers](../../AGENTS.md#research-before-implementation): new dependencies or
 versions, public protocols, authorization/security or persistent-data boundaries, and material
 architecture choices need targeted evidence. Ordinary fixes and wiring cite the existing decision,

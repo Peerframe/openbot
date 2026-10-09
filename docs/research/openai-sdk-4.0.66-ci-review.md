@@ -1,7 +1,5 @@
 # Research: @ai-sdk/openai 4.0.66 CI evidence
 
-[English](openai-sdk-4.0.66-ci-review.md) · [简体中文](openai-sdk-4.0.66-ci-review.zh-CN.md)
-
 - Status: Reviewed; complete CI required before merge
 - Date: 2026-09-15
 - Related PR: #76

@@ -1,7 +1,5 @@
 # OpenBot documentation
 
-[简体中文](README.zh-CN.md)
-
 Start with [Desktop installation](DESKTOP_INSTALLATION.md) and the [user manual](https://peerframe.github.io/openbot-website/manual/installation/). The website manuals are maintained under [openbot-website](https://github.com/Peerframe/openbot-website) `src/content/docs`.
 Contributors start at the [development entry](../.agents/README.md).
 

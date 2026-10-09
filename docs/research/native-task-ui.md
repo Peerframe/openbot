@@ -1,7 +1,5 @@
 # Native Task scope UI
 
-[English](native-task-ui.md) · [简体中文](native-task-ui.zh-CN.md)
-
 - Status: Candidate UI; final product/browser integration is required.
 - Date: 2026-09-25.
 - Scope: Owner attachment inputs and immutable Task capability grants in the existing React task screen.

@@ -1,7 +1,5 @@
 # C22–C24: storage cleanup follow-ups
 
-English · [简体中文](storage-cleanup-follow-ups.zh-CN.md)
-
 - Status: Contracts implemented; C23 Owner-approved narrow fork qualified
 - Date: 2026-10-03
 - Owner: @yxflc11

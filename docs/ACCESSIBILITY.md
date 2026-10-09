@@ -1,7 +1,5 @@
 # Accessibility baseline
 
-[English](ACCESSIBILITY.md) · [简体中文](ACCESSIBILITY.zh-CN.md)
-
 OpenBot is not claiming WCAG conformance yet. This document records the interaction patterns that
 are implemented, the upstream work they follow, the checks that were run, and the gaps contributors
 must not accidentally describe as complete.

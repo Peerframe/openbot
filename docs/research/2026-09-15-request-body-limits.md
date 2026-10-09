@@ -1,7 +1,5 @@
 # Research: bound JSON input while reading
 
-[English](2026-09-15-request-body-limits.md) · [简体中文](2026-09-15-request-body-limits.zh-CN.md)
-
 - Status: Accepted for implementation
 - Date: 2026-09-15
 - Owner: OpenBot maintainers

@@ -1,7 +1,5 @@
 # Provider conformance
 
-[English](PROVIDER_CONFORMANCE.md) · [简体中文](PROVIDER_CONFORMANCE.zh-CN.md)
-
 OpenBot publishes executable checks before it describes a platform or Provider as supported. The
 design adapts stable check ids and explicit expected-failure baselines from
 [MCP Conformance `74edef34`](https://github.com/modelcontextprotocol/conformance/tree/74edef34d674f563537be8c6587cebaa58e830ca),

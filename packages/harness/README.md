@@ -1,7 +1,5 @@
 # OpenBot Python harness
 
-English · [简体中文](README.zh-CN.md)
-
 The single active `openbot-agent-runtime` package lives here. It keeps the existing import name
 `openbot_agent_runtime`, bounded Pydantic AI loop and optional Temporal composition. It proposes
 work; Python control owns identity, authorization, routing, approvals, root budgets, facts and

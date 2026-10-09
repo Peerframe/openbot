@@ -1,7 +1,5 @@
 # Research: Chat-driven Bot setup and memory (C29)
 
-English · [简体中文](chat-driven-bot-setup.zh-CN.md)
-
 - Status: Proposed (Owner decision 2026-10-06; contract for Codex)
 - Date: 2026-10-06
 - Owner: OpenBot maintainers

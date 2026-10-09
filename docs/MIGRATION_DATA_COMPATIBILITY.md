@@ -1,7 +1,5 @@
 # Migration source and data compatibility
 
-[English](MIGRATION_DATA_COMPATIBILITY.md) · [简体中文](MIGRATION_DATA_COMPATIBILITY.zh-CN.md)
-
 The feature source at `9cc73c9e78451e572f57d142d6b9caf62ccb78e2` cannot directly upgrade its
 19-migration database to the migration baseline `c33e03f1a14de739196113769c59fdaace9029e7`.
 The first 17 SQL files match exactly. Indices 17 and 18 reuse timestamps for different changes:
