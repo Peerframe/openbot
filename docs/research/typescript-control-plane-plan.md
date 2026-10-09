@@ -5,7 +5,7 @@ English · [简体中文](typescript-control-plane-plan.zh-CN.md)
 - Status: Proposed (input for Codex's ADR; no product code changes until the Owner approves it)
 - Date: 2026-10-05
 - Owner: @yxflc11
-- Related: the Owner's request of 2026-10-05; [architecture migration plan](../ARCHITECTURE_MIGRATION_PLAN.md);
+- Related: the Owner's request of 2026-10-05; the architecture migration plan;
   [Temporal ADR 0046](../decisions/0046-temporal-as-recovery-owner.md)
 - Acceptance journey: the Desktop app and the Web client run unchanged against a TypeScript
   control plane, with no bundled Python, and every public HTTP and event contract passes the same

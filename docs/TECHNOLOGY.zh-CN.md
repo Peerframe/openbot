@@ -27,7 +27,7 @@ PostgreSQL 保存权威状态，并且只在操作系统确实需要时使用很
 | 可选持久 Work 引擎 | 显式配置时的 Temporal 组合 | 普通 API 启动不会创建该引擎。 |
 
 历史 Desktop 基础 ADR 与调研仍是那些决定的记录；它们并不表示 Node/Hono Server 仍是现行控制面。
-迁移证据见历史文档 [MIGRATION_HANDOFF](MIGRATION_HANDOFF.zh-CN.md)。长期保留向 TypeScript
+长期保留向 TypeScript
 收敛的方向，先完成有实际收益的外围替换。核心替换需要单独经过验证的切换；本轮清理不迁移
 Python Server 或 harness 核心。
 
@@ -46,8 +46,7 @@ Desktop 首次引导仍提供同一产品的四种组合（仅 Client；Client �
 Worker Host 可选；高级自部署）。清单上限、Server origin 确认以及原生 Worker 登记细节写在现行
 Desktop 文档中，而不是本基线：从 [Desktop 贡献者规则](../apps/desktop/AGENTS.md)、
 [Desktop 安装](DESKTOP_INSTALLATION.zh-CN.md) 与 [Desktop 引导](DESKTOP_ONBOARDING.zh-CN.md)
-开始。Desktop 的 Python 产品打包见
-[DESKTOP_PYTHON_CANDIDATE](DESKTOP_PYTHON_CANDIDATE.zh-CN.md)。
+开始。
 
 ## 选择的语言与运行时
 

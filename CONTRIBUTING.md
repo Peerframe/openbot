@@ -39,9 +39,6 @@ OpenBot currently reviews contributions in this order:
 5. documentation, accessibility evidence, and faithful translations;
 6. broad new subsystems only after issue-level design agreement.
 
-Start with the [contributor work packages](docs/CONTRIBUTOR_TASKS.md) if you want a bounded task with
-acceptance criteria.
-
 Start with the [repository map](docs/REPOSITORY_MAP.md) for module ownership, contracts and focused checks.
 
 ## Find an area to contribute
@@ -190,7 +187,7 @@ Contract, lock, generator, build, CI and unmapped inputs conservatively select t
 Selection follows the npm lockfile's transitive consumer graph plus explicit Python, dynamic
 Desktop and packaging edges. `npm run ci:check` exercises scope/result counterexamples and real
 cache/zero-test behavior. No-test packages expose no fake passing test task; their actual consumer
-coverage and missing local tests remain explicit. See the [check duties and producer table](docs/REPOSITORY_UPGRADE_PLAN.md#c3-check-duties-and-artifact-ownership).
+coverage and missing local tests remain explicit.
 
 Use npm entrypoints (`npm run` / `npm exec -- turbo`) so the Turbo cache hashes the actual npm,
 Node, OS and architecture identity in `npm_config_user_agent`. Source, lockfile graph, generators,
@@ -257,9 +254,7 @@ gates; script/implementation changes still require `npm run check` before handof
 checks and release/migration/security gates remain applicable. Only the tested CI selector may
 declare a lane not applicable. State actual test counts, cached results, skips and missing environments.
 
-The [completed upgrade record](docs/REPOSITORY_UPGRADE_PLAN.md) preserves dated evidence and limits,
-not a standing queue of C1/C2/C3 work. Start from the current request and checkout; preserve local
-completion records. UI work follows [the existing design index](docs/design/README.md), current
+Start from the current request and checkout; preserve local completion records. UI work follows [the existing design index](docs/design/README.md), current
 tokens/components and affected rendered states. A discovery/reading exercise locates owners and
 checks; it does not establish a completed implementation, rendered acceptance or hosted CI.
 

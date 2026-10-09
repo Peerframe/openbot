@@ -6,7 +6,7 @@ Python 资格工具不新增主机 Node 前置条件或编译层。
 `d426715` 的 TS 入口于2026-09-30通过明确授权的单次固定 Linux/runsc 实测
 （`deadline-a1-ts0930a`）：两次浏览器正常关闭，同 profile 重开成功，合成 DOM 与1280×800 PNG
 经过独立核验；原180秒 Invocation 到期，cgroup 清空并移除本次运行时目录。生产容器和网络状态前后不变。
-固定镜像、原生二进制与策略不变，见[当前清理证据](../../docs/CLEANUP_2026-09-28.md#current-integration-and-remaining-work)。
+固定镜像、原生二进制与策略不变。
 
 **此前 MJS 版固定镜像 Linux/runsc CDP 组件于2026-09-25实测通过。** 已授权的单次测试取得合成页面真实DOM与PNG、同profile重开、内层沙箱诊断及原生期限／清理证据，见[有界实测记录](REAL_CDP_RESULT.json)。这不启用产品浏览器能力，也不代表egress、Employee profile权限或人工接管通过。见[研究](../../docs/research/browser-cdp-qualification.zh-CN.md)及[此前b2失败记录](../linux-execution/REAL_BROWSER_CHROOT_ATTEMPT.json)。
 

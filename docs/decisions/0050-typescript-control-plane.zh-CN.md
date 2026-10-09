@@ -17,7 +17,7 @@
 本工作区已有未提交改动，归原作者所有，不属于本 ADR 的修改范围。
 
 本规划重新讨论 [ADR-0046](0046-temporal-as-recovery-owner.md) 和
-[架构迁移记录](../ARCHITECTURE_MIGRATION_PLAN.zh-CN.md) 中的语言选择；保留 Temporal 作为唯一恢复调度者，
+架构迁移记录中的语言选择；保留 Temporal 作为唯一恢复调度者，
 Server 作为唯一授权依据。批准改变的是目标方向；各组替代实现过关前，Python 继续提供当前产品。
 
 | 方案 | 首个可用成果 | 整合与运维 | 维护与目标符合度 |

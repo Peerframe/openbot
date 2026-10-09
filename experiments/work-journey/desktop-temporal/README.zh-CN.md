@@ -15,7 +15,7 @@ node experiments/work-journey/desktop-temporal/smoke-packaged-temporal.ts \
   --temporal-config /absolute/private/existing-engine.json
 ```
 
-三个参数必须是绝对路径。配置使用 [Desktop 候选文档](../../../docs/DESKTOP_PYTHON_CANDIDATE.zh-CN.md)中的既有 schema，包含 `temporal_address`、`namespace`、`queue` 与 `tls`。输入文件必须属于当前用户、是私有普通文件、大小为1–16,384字节。探针保留地址、namespace、TLS路径和有界可选项，仅在新的临时私有 `D/temporal.json` 中将 queue 替换为随机队列；不会改原配置、复制私钥内容或注册 namespace。
+三个参数必须是绝对路径。配置使用 Desktop 候选文档中的既有 schema，包含 `temporal_address`、`namespace`、`queue` 与 `tls`。输入文件必须属于当前用户、是私有普通文件、大小为1–16,384字节。探针保留地址、namespace、TLS路径和有界可选项，仅在新的临时私有 `D/temporal.json` 中将 queue 替换为随机队列；不会改原配置、复制私钥内容或注册 namespace。
 
 首次启动与重启均须通过真实 `/health` 和合成 Owner 登录。观察器使用包内 Python `-I -B` 与原 mTLS adapter，只读查询两种 TaskQueue 的 poller：Workflow 与 Activity 必须各有一个新 identity，且二者相同。新鲜度使用该次启动时间，忽略服务端保留的旧 poller，因此宿主与引擎时钟必须一致；不要求停止后旧 poller 立即消失。
 

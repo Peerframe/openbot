@@ -32,8 +32,6 @@ OpenBot 必须方便多位独立开发者参与，不能形成只有项目负责
 5. 文档、无障碍证据和忠实翻译；
 6. 只有完成 Issue 级设计对齐后，才接受宽泛的新子系统。
 
-如果想直接领取范围清晰的工作，请从[贡献者任务包](docs/CONTRIBUTOR_TASKS.zh-CN.md)开始。
-
 ## 从哪里开始
 
 | 情况 | 入口 | 必须提供的证据 |
@@ -153,7 +151,7 @@ npm run check:affected -- --base "$BASE_SHA" --head "$HEAD_SHA"
 
 范围基于 npm 锁文件的传递消费者图及少量 Python、Desktop 动态和打包映射。
 `npm run ci:check` 包含选择/汇总反例和真实缓存/零测试验证。无局部测试的包不再暴露虚假的
-测试成功任务，明确依靠消费者覆盖及局部缺口。职责和产物归属见[唯一交接](docs/REPOSITORY_UPGRADE_PLAN.md#c3-check-duties-and-artifact-ownership)。
+测试成功任务，明确依靠消费者覆盖及局部缺口。
 
 使用 npm 入口（`npm run` / `npm exec -- turbo`），让缓存通过 `npm_config_user_agent`
 纳入实际 npm、Node、OS、架构身份，以及源码、锁依赖图、生成器、配置和声明的运行环境。
@@ -206,8 +204,7 @@ AGENTS 链接的 SKILL.md，记录实际生效方式。这里未配置 Claude �
 不代表纯文字。纯文字/指令运行适用检查；脚本/实现修改交接前仍须 `npm run check`。必要云端及
 发布/迁移/安全门不变，仅通过反例验证的 CI 选择器可以声明某 lane 不适用。记录测试数、缓存、跳过和缺失环境。
 
-[已完成升级记录](docs/REPOSITORY_UPGRADE_PLAN.md)保留带日期的证据和限制，不是常驻 C1/C2/C3
-待办。以当前请求和 checkout 为起点，保留本地结案记录。UI 使用
+以当前请求和 checkout 为起点，保留本地结案记录。UI 使用
 [既有设计索引](docs/design/README.zh-CN.md)、现有 tokens/组件及受影响状态。
 发现/读取验收只证明可以找到职责和检查，不代表实现、渲染验收或托管 CI 已完成。
 

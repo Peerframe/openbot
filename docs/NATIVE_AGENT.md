@@ -41,8 +41,6 @@ Existing files are not overwritten. General browser downloads remain disabled in
 The native loop includes the assigned Bot's current name, role and description as bounded context,
 and records the profile revision it used. Profile content does not grant tools or override policy.
 
-See the [alpha.4 core upgrade](CORE_UPGRADE.md) for channel collaboration, attachment formats and plugin setup.
-
 ## Tools and limits
 
 | Boundary | Behavior |
@@ -97,7 +95,7 @@ Report tests cover transactional publication, rollback, source provenance and au
 
 These fixtures make no paid requests and do not certify live model availability, output quality or
 real-device desktop control. See the [research record](research/native-agent-loop.md) and
-[source/report research](research/agent-research-artifacts.md) and [execution plan](EXECUTION_PLAN.md).
+[source/report research](research/agent-research-artifacts.md).
 
 ## Reviewed memory loop
 

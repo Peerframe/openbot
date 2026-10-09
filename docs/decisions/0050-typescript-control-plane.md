@@ -19,7 +19,7 @@ product is Python; the retired `apps/server` and frozen TS oracle cannot be reac
 shortcut. Existing uncommitted work belongs to its current authors and is outside this ADR.
 
 The plan reopens the language choice in [ADR-0046](0046-temporal-as-recovery-owner.md) and
-[the architecture migration record](../ARCHITECTURE_MIGRATION_PLAN.md). It preserves Temporal as the
+the architecture migration record. It preserves Temporal as the
 sole recovery owner and the Server as the sole authority. Approval changes the *target direction*;
 the current Python implementation remains active until each replacement passes its gate.
 

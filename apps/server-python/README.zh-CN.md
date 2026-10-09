@@ -2,12 +2,12 @@
 
 [English](README.md) · [简体中文](README.zh-CN.md)
 
-Python/FastAPI 实现[迁移计划](../../docs/ARCHITECTURE_MIGRATION_PLAN.zh-CN.md)中的可信业务控制层，
+Python/FastAPI 实现可信业务控制层，
 与不受信任的 Agent Runtime 分开。显式 `product` 入口已组合 Owner 身份／工作区、模型连接、知识、
 对话、日程、文件／处理器、插件／MCP 和 Worker Host 服务；明确配置的 Temporal 引擎负责持久 Work 执行、审批、修正与发布。
 仓库开发、容器和 macOS arm64 桌面默认入口选择 Python `product` 模式。直接调用 `serve.py` 仍默认只读，必须显式选择权限。Windows／Intel Mac 桌面使用远程服务。
 
-当前范围与证据见[迁移交接](../../docs/MIGRATION_HANDOFF.zh-CN.md)。本地产品链路和 macOS arm64 Preview
+本地产品链路和 macOS arm64 Preview
 打包流程已通过；隔离 Linux 命令和 Chromium／人工接管产品链路已验收；支持范围见交接记录。
 下文早期分阶段章节记录较窄模式的契约与历史测试，不代表当前产品的全部功能范围。
 

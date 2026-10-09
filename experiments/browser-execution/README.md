@@ -7,8 +7,7 @@ The TS entry at `d426715` passed the authorized single fixed Linux/runsc case on
 (`deadline-a1-ts0930a`): both browsers closed, the profile reopened, synthetic DOM and1280×800 PNG
 were independently checked, and original180-second Invocation expiry emptied the cgroup and
 removed owned runtime directories. Production container/network state was unchanged. The case
-uses the same fixed image, native binaries and policies; see the current evidence entry in the
-[cleanup checkpoint](../../docs/CLEANUP_2026-09-28.md#current-integration-and-remaining-work).
+uses the same fixed image, native binaries and policies.
 
 **The prior MJS fixed-image Linux/runsc CDP component passed on2026-09-25.** The authorized single case produced real synthetic-page DOM and PNG, reopened the same browser profile, observed inner sandbox diagnostics and verified native expiry/cleanup. See [actual bounded evidence](REAL_CDP_RESULT.json). This does not enable product browser capabilities or qualify egress, Employee-profile authority or human takeover. See the [research](../../docs/research/browser-cdp-qualification.md) and [earlier actual b2 failure](../linux-execution/REAL_BROWSER_CHROOT_ATTEMPT.json).
 

@@ -50,5 +50,4 @@ The final transfer must stop competing writers, validate references/counts/diges
 semantics, produce a restorable paired backup, and define post-cutover rollback after new writes.
 An old code checkout or old database snapshot alone is not a safe post-cutover rollback plan.
 Unknown external effects remain unresolved until reconciled. This document authorizes no live
-production change. See [stage plan](ARCHITECTURE_MIGRATION_PLAN.md) and
-[research](research/migration-lineage-audit.md).
+production change. See the [research](research/migration-lineage-audit.md).

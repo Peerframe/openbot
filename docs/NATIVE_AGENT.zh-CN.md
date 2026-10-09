@@ -35,8 +35,6 @@ Desktop 使用系统“保存报告”对话框，请选择新的 `.md` 文件�
 原生循环会读取当前 Bot 的名称、职责和描述，作为有界上下文，并记录使用的档案版本。
 档案内容不会赋予工具权限，也不能覆盖执行策略。
 
-频道分工、附件格式和插件设置详见[alpha.4 核心升级](CORE_UPGRADE.zh-CN.md)。
-
 ## 工具与限制
 
 | 边界 | 行为 |
@@ -80,7 +78,7 @@ Hermes/Pi/OpenClaw 委派、浏览器观察/操作工具及任意桌面控制仍
 连接 IP 固定、原始 TLS 主机名、重定向、压缩、大小与取消；报告测试覆盖事务发布、回滚、来源记录和鉴权下载。
 
 测试不发送付费请求，不证明真实模型可用性、回答质量或实机桌面控制。
-参见[调研记录](research/native-agent-loop.md)、[网页与报告调研](research/agent-research-artifacts.md)和[执行计划](EXECUTION_PLAN.zh-CN.md)。
+参见[调研记录](research/native-agent-loop.md)和[网页与报告调研](research/agent-research-artifacts.md)。
 
 ## 经审阅的记忆闭环
 

@@ -907,7 +907,7 @@ retained Owner downloads remain available; already transferred model input canno
 Permanent trash cleanup and default-off 30-day automation are provided by C21 below; there
 is no fixed seven-day collector. Entire-channel deletion has its separate tombstone-authorized purge.
 Explicit transcription requires enabled OpenAI settings and the official endpoint, and retains
-original bytes plus derived text on the Server. See the [claim audit](reviews/C20-product-claims.md).
+original bytes plus derived text on the Server.
 
 ### C21: permanent channel trash deletion and measured storage
 

@@ -184,6 +184,4 @@ for a committed PR. `npm run check:affected` takes the same explicit arguments a
 validation lane; separate required jobs are printed. `npm run check` remains the repository total.
 The actual policy is [ci-selection](../scripts/ci-selection.ts), with success-only
 [aggregation](../scripts/ci-results.ts); counterexamples run via `npm run ci:check`. Read
-[contribution rules](../CONTRIBUTING.md#required-ci-completion) before CI work. The upgrade record's
-[historical producer/duty table](REPOSITORY_UPGRADE_PLAN.md#c3-check-duties-and-artifact-ownership)
-explains the accepted baseline; current scripts and workflows determine the applicable checks.
+[contribution rules](../CONTRIBUTING.md#required-ci-completion) before CI work. Current scripts and workflows determine the applicable checks.

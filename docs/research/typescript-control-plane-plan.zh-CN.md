@@ -5,7 +5,7 @@
 - 状态：提议（作为 Codex 写 ADR 的输入；所有者批准前不改产品代码）
 - 日期：2026-10-05
 - 负责人：@yxflc11
-- 相关：所有者 2026-10-05 的要求；[架构迁移计划](../ARCHITECTURE_MIGRATION_PLAN.zh-CN.md)；
+- 相关：所有者 2026-10-05 的要求；架构迁移计划；
   [Temporal ADR 0046](../decisions/0046-temporal-as-recovery-owner.md)
 - 验收路径：桌面应用和网页客户端连到 TypeScript 控制平面后照常使用，安装包里不再带 Python；所有公开的 HTTP 和
   事件契约，都通过和 Python 时一样的契约测试。

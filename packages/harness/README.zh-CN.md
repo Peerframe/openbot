@@ -74,5 +74,5 @@ packages/harness/scripts/quality.sh
 pyproject 单列原因和固定上限，不自动刷新 baseline 接受新违规。
 
 版本依据见[现有研究](RESEARCH.md#10-c2-installed-harness-and-contributor-tools-2026-09-27)，
-当前完成度及未验证平台见[唯一交接](../../docs/REPOSITORY_UPGRADE_PLAN.md)。wheel 成功不等于
+wheel 成功不等于
 产品、原生平台或发行资格已全部通过。

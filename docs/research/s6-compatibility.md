@@ -167,7 +167,7 @@ branch's model migration, switch, cipher or live-provider tests.
   two child reads (five synthetic reads). Both Runs complete. `NativeAgentRunner.#execute` creates
   a new budget for each child invocation. This agrees with [current architecture](../ARCHITECTURE.md)
   and [asynchronous collaboration](../ASYNC_COLLABORATION.md), which define per-Run limits and a shared
-  root deadline. [Capability inventory C11](../MIGRATION_CAPABILITIES.md) instead says the budget is
+  root deadline. Capability inventory C11 instead says the budget is
   shared; that inventory statement is not supported by this code/probe. Record this documentation
   mismatch for the integrator without changing shared files here. The target
   [work contract](../WORK_EXECUTION_CONTRACT.md) requires shared Task admission; its limits and

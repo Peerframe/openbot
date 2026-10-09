@@ -39,4 +39,4 @@ S2 固定目标模式与模型配置职责后再决定具体方案；当前尚�
 
 最终转换须停止竞争写入，验证关联、数量、摘要和权限，生成可以恢复的数据库与文件配套备份，并明确切换后产生新数据时如何回退。
 只保留旧代码或旧数据库快照，不足以构成切换后的安全回退方案。外部写入结果未知时先核对。本文件不授权生产变更。
-参见[阶段计划](ARCHITECTURE_MIGRATION_PLAN.zh-CN.md)与[研究](research/migration-lineage-audit.md)。
+参见[研究](research/migration-lineage-audit.md)。

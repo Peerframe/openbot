@@ -159,6 +159,5 @@ Work/native Task、核心 control 及模型/存储/附件的公共契约来自�
 本地已跟踪/未跟踪变化用 `npm run ci:scope -- --local`；已提交 PR 用已核实的 `--base SHA --head SHA`。
 `npm run check:affected` 接受同样的显式参数，只跑校验 lane，并列出其他必需 job；`npm run check`
 仍是仓库总检查。策略在 [ci-selection](../scripts/ci-selection.ts)，[汇总](../scripts/ci-results.ts)只接受必需项成功；
-反例用 `npm run ci:check`。CI 改动先读[贡献规则](../CONTRIBUTING.zh-CN.md#必要-ci-全部完成)。升级记录的
-[历史职责/产物表](REPOSITORY_UPGRADE_PLAN.md#c3-check-duties-and-artifact-ownership)说明已接受基线，
+反例用 `npm run ci:check`。CI 改动先读[贡献规则](../CONTRIBUTING.zh-CN.md#必要-ci-全部完成)。
 当前适用检查由实际脚本和工作流决定。

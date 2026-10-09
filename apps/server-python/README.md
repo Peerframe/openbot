@@ -2,8 +2,8 @@
 
 [English](README.md) · [简体中文](README.zh-CN.md)
 
-Python/FastAPI implements the trusted business control layer in the
-[migration plan](../../docs/ARCHITECTURE_MIGRATION_PLAN.md), separately from the untrusted Agent Runtime.
+Python/FastAPI implements the trusted business control layer, separately from the untrusted Agent
+Runtime.
 The explicit `product` entry composes Owner identity/workspace, model connections, knowledge,
 conversations, schedules, files/processors, plugins/MCP and Worker Host services. An explicitly
 configured Temporal engine supplies durable Work execution, approvals, corrections and publication.
@@ -11,7 +11,6 @@ Repository development, containers and macOS arm64 Desktop now select Python `pr
 Direct `serve.py` still defaults to read-only and requires explicit authority. Windows/Intel Mac
 Desktop use remote services.
 
-Current scope and evidence are in the [migration handoff](../../docs/MIGRATION_HANDOFF.md).
 Local product and packaged macOS arm64 Preview journeys pass; isolated Linux command and
 Chromium/human-takeover product qualification passed within the documented scope. Earlier staged-mode sections below
 describe their narrower contracts and historical tests, not the complete current product surface.

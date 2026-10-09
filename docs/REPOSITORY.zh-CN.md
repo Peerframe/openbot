@@ -44,11 +44,8 @@
 本地 Desktop 载荷选用 Python product 模式。直接启动 `serve.py` 未配置时仍只读。
 核心是 `packages/harness` 的 typed wheel，开发和产品宿主均安装此包。必要的 Node 解析闭包保留。
 定位当前源码/消费者/测试见[开发入口](../.agents/README.zh-CN.md)与[仓库地图](REPOSITORY_MAP.zh-CN.md)。
-[已完成升级记录](REPOSITORY_UPGRADE_PLAN.md)保留带日期的 C1→C2→C3 证据和限制，不是常驻待办。
 
-本表说明主要职责，不穷举目录。[迁移计划](ARCHITECTURE_MIGRATION_PLAN.zh-CN.md)
-与[交接](MIGRATION_HANDOFF.zh-CN.md)保留历史迁移决定和验收证据。
-受影响的决定需要背景时再读，不据此重新启动已完成步骤。
+本表说明主要职责，不穷举目录。
 无论使用何种语言，Server 始终是身份、策略、路由、审批和审计的唯一权威。
 Web 使用契约，Provider 实现执行接口。应用组装保持明确，只在本次行为变化需要时拆分已有模块。
 office 可视化继续作为延后可选插件。
