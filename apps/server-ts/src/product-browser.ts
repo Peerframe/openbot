@@ -517,3 +517,11 @@ export function browserRoutes(service: BrowserSessions): ProductRoute[] {
     },
   ];
 }
+
+// The sole Worker transport reuses these SQL checks at the final dispatch boundary.
+export {
+  authority as browserAuthority,
+  hostIdentity as browserHostIdentity,
+  state as browserControlState,
+  active as browserControlActive,
+};

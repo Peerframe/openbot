@@ -228,3 +228,28 @@ SSE 依赖已提交的通知；监听连接丢失后关闭流，等待显式重�
 候选须通过完整 HTTP/HTTPS 契约（含签名与合成模型变体）、`npm run check`、暂存及打包原生探针，
 以及 `npm run ui:acceptance -- --entry ts` 的 PASS 12/12。界面报告不能有未解释的 workspace 503。
 合成 peer 检验真实连接和数据库权限边界，不替代真实执行验收。草稿 PR 保持目标 `main`，统一评估后才合并。
+
+
+## 完整 P4 候选
+
+`OPENBOT_TS_WORK_GROUP=p4` 在上述完整 P3 组合上选择全部 Work 接口、唯一 Worker 注册表/套接字
+和 TS Temporal 监督器。与 `OPENBOT_CONTROL_TS_WORK_GROUP=p4` 配对，Python 不再暴露 Work
+监督器、Worker 套接字或私有运行时端口；P5 前继续保留静态资源及辅助程序。
+
+提供已有私有 `OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH`、可选
+`OPENBOT_CONTROL_BROWSER_CONFIG_PATH` / `OPENBOT_CONTROL_COMMAND_CONFIG_PATH`，并让
+`OPENBOT_TS_WORK_FILE_ROOT` 指向已有产物目录。凭证和 Python 队列不变，TS 派生独立版本化队列。
+新 TS 接纳开始前必须通过完整只读 Python SQL/Temporal 排空检查；未知旧副作用、未确认提交、
+活跃执行和未完对账都会阻止切换。先停止配对旧进程。缺少引擎/配置会拒绝启动，不选择仅 API 回退。
+
+v8 Desktop 标记选择此组合，并在启动前检查 SDK/native 资源。原生烟测和同源码测量须提供
+`OPENBOT_NATIVE_TEMPORAL_ARCHIVE`，指向 [P4 记录](../../docs/research/typescript-control-plane-p4.zh-CN.md#macos-原生验收引擎2026-10-09)
+中的固定 Temporal1.32.0 macOS arm64 归档。探针拥有临时 mTLS/SQLite 引擎，产品数据仍为原生
+PostgreSQL。`npm run test:work:ts` 保留真实 PostgreSQL/mTLS 恢复及实际子进程 SIGKILL 检查。
+`npm run ui:acceptance -- --entry ts` 现在管理同一真实 PostgreSQL/mTLS 引擎夹具，先确认 TS 执行
+所有者健康，再执行未改动的12步界面检查。测试不使用安装资料或付费账号。独立的安装环境
+排空、启动、退出和重启验收见 [P4 记录](../../docs/research/typescript-control-plane-p4.zh-CN.md#已安装候选验收2026-10-09)。
+真实保护 Linux/runsc 命令和隔离浏览器已通过原到期、隧道撤销、空 cgroup、拥有资源清理与宿主
+状态一致检查，见固定的 [P4 验收证据](../../docs/research/typescript-control-plane-p4.zh-CN.md#集成验收证据2026-10-09)。
+统一评估仍要求实际发布 PR HEAD 的全部检查通过。Python 退役与包体缩减属于 P5；此候选不授权
+合并或生产切换。

@@ -243,6 +243,7 @@ async function fixedProcess(
 export async function verifyPythonProductHealth(
   origin: string,
   privateProxy = false,
+  phase = "python-product-candidate",
 ): Promise<boolean> {
   let response: Response | undefined;
   try {
@@ -262,7 +263,7 @@ export async function verifyPythonProductHealth(
       "service" in value &&
       "phase" in value &&
       value.service === "openbot-server" &&
-      value.phase === "python-product-candidate"
+      value.phase === phase
     );
   } catch {
     return false;
@@ -281,6 +282,7 @@ export async function launchPythonProductServer(
   tsAuthGroup?: "owner",
   tsChannelReadGroup?: "channels",
   tsProductGroup?: "identity" | "identity-models" | "p3",
+  tsWorkGroup?: "reports" | "p4",
 ): Promise<
   ManagedServerProcess & {
     readonly closed: Promise<void>;
@@ -299,6 +301,9 @@ export async function launchPythonProductServer(
   if (tsProductGroup !== undefined && privatePort === undefined)
     throw new Error("TS product ownership requires the private Python product listener.");
   if (tsProductGroup) env.OPENBOT_CONTROL_TS_PRODUCT_GROUP = tsProductGroup;
+  if (tsWorkGroup !== undefined && (privatePort === undefined || tsProductGroup !== "p3"))
+    throw new Error("TS Work ownership requires the private P3 product listener.");
+  if (tsWorkGroup) env.OPENBOT_CONTROL_TS_WORK_GROUP = tsWorkGroup;
   if (tsChannelReadGroup !== undefined && privatePort === undefined)
     throw new Error("TS channel reads require the private Python product listener.");
   if (tsChannelReadGroup) env.OPENBOT_CONTROL_TS_CHANNEL_READ_GROUP = tsChannelReadGroup;

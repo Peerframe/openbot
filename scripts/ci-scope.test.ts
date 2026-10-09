@@ -484,3 +484,16 @@ test("the native parser source keeps types and installed Python consumers", () =
   ] as const)
     assert(plan.required.includes(job), job);
 });
+
+test("TS Work retains Python coexistence, real Temporal and package consumers", () => {
+  const plan = select("packages/work/src/workflows.ts");
+  assert(plan.workspaces.includes("@openbot/work"));
+  assert(plan.workspaces.includes("@openbot/server-ts"));
+  for (const job of [
+    "harness",
+    "python-runtime",
+    "temporal-qualification",
+    "python-desktop-preview",
+  ] as const)
+    assert(plan.required.includes(job));
+});

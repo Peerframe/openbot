@@ -454,3 +454,32 @@ def test_concurrent_acknowledgements_commit_one_fact(fixture, same_reference):
         assert acknowledgements(fixture, task_id) == [({'runId': run_id, 'engineReference': winner,
                                                         'engineFirstRunId': FIRST_RUN_ID},)]
     asyncio.run(check())
+
+
+def test_python_never_reserves_or_acknowledges_a_typescript_admission(fixture):
+    async def check():
+        store = PostgresWorkStore(fixture['dsn']); task = await new(fixture, store)
+        task_id, run_id = task['id'], task['runs'][0]['id']
+        # This fresh fixture has never been submitted. Construct a TS-created admission,
+        # rather than weakening the production immutability trigger for an existing owner.
+        with psycopg.connect(fixture['dsn']) as db:
+            db.execute('DELETE FROM work_admissions WHERE run_id=%s', (run_id,))
+            db.execute("INSERT INTO work_admissions(run_id,execution_owner) VALUES (%s,'typescript-v1')", (run_id,))
+        handoff = HandoffStore(store)
+        assert {'taskId': task_id, 'runId': run_id} not in await handoff.pending(128)
+        with pytest.raises(WorkConflict, match='handoff_execution_owner_mismatch'):
+            await handoff.reserve_submission(task_id, run_id, 'temporal:fixture:openbot-work-ts-v1-' + run_id)
+        with psycopg.connect(fixture['dsn']) as db:
+            db.execute('UPDATE work_admissions SET submission_reference=%s,submission_attempt_id=%s,'
+                'submission_attempted_at=clock_timestamp() WHERE run_id=%s',
+                ('temporal:fixture:openbot-work-ts-v1-' + run_id, ATTEMPT_ID, run_id))
+        assert await handoff.unconfirmed_for(task_id, run_id) is None
+        assert not any(row['runId'] == run_id for row in await handoff.unconfirmed(128))
+        with pytest.raises(WorkConflict, match='handoff_execution_owner_mismatch'):
+            await handoff.acknowledge(task_id, run_id, 'temporal:fixture:openbot-work-ts-v1-' + run_id,
+                                      ATTEMPT_ID, FIRST_RUN_ID)
+        assert recorded(fixture, task) == ('pending', None, 1)
+        with psycopg.connect(fixture['dsn']) as db:
+            with pytest.raises(psycopg.errors.CheckViolation, match='work_execution_owner_immutable'):
+                db.execute("UPDATE work_admissions SET execution_owner='python-v1' WHERE run_id=%s", (run_id,))
+    asyncio.run(check())

@@ -158,7 +158,7 @@ def staged_pin(raw, route, server_port):
     return pem.encode('ascii')
 
 
-def finished_evidence(value, expected_binding):
+def finished_evidence(value, expected_binding, *, container_count=10):
     # A successful runner exit is only lifetime evidence. Product assertions remain local.
     require(type(value) is dict and value.get('event') == 'remote_finished'
         and type(value.get('version')) is int and value['version'] == 1, 'remote_result_missing')
@@ -168,7 +168,8 @@ def finished_evidence(value, expected_binding):
                  'runnerWithin150s', 'enforcerKeyRemoved', 'socketAbsent'):
         require(value.get(name) is True, 'remote_cleanup_incomplete')
     require(type(value.get('actionCount')) is int and value['actionCount'] == 1, 'remote_action_count_changed')
-    production = dict(containerCount=10, identitiesAndStateUnchanged=True, ipv4Ipv6SemanticsUnchanged=True)
+    require(type(container_count) is int and container_count >= 0, "invalid_container_baseline")
+    production = dict(containerCount=container_count, identitiesAndStateUnchanged=True, ipv4Ipv6SemanticsUnchanged=True)
     for name in ('before', 'after'):
         require(type(value.get(name)) is dict and value[name] == production
             and type(value[name]['containerCount']) is int

@@ -268,7 +268,7 @@ async def _page(store, namespace, after, limit):
     async with store._transaction(trusted=True) as db:
         rows = await (await db.execute('SELECT t.id AS task_id,t.created_at,r.id AS run_id,r.ordinal,a.engine_first_run_id '
             'FROM work_tasks t JOIN work_runs r ON r.task_id=t.id JOIN work_admissions a ON a.run_id=r.id '
-            "WHERE t.status IN ('queued','open') AND r.status IN ('queued','running') AND a.state='acknowledged' "
+            "WHERE t.status IN ('queued','open') AND r.status IN ('queued','running') AND a.execution_owner='python-v1' AND a.state='acknowledged' "
             "AND a.engine_reference='temporal:'||%s||':openbot-work-v1-'||r.id "
             'AND a.submission_attempt_id IS NOT NULL AND a.engine_first_run_id IS NOT NULL '
             "AND NOT EXISTS (SELECT 1 FROM work_events e WHERE e.task_id=t.id AND e.kind='run.engine_terminal' AND e.payload->>'runId'=r.id) "

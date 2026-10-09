@@ -5,6 +5,13 @@
 This experiment qualifies a minimal retained-data path for two historical SQL lineages. It is
 preparation for S7, not a production migration utility or evidence that S7 is complete.
 
+The current58-entry P4 target, based on accepted `c077601b` plus append-only0057, passed all40
+retained migration/restore cases on2026-10-09. The view-only suffix exposes the control-owned,
+allowlisted model-configuration failure without rewriting retained records. Exact SQL/journal pins
+are in `target-history.json`; [P4 evidence](../../docs/research/typescript-control-plane-p4.md#model-configuration-failure-follow-up-2026-10-09)
+records separate actual channel and57-to58 guarded-upgrade checks. Earlier target counts below are
+historical. No production migration or installation is authorized by this evidence.
+
 | History | Immutable source | Expected path |
 | --- | --- | --- |
 | Architecture, 27 migrations | `c33e03f1a14de739196113769c59fdaace9029e7` | Restore old data, then apply current migrations with the existing production startup guard. |
