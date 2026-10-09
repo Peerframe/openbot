@@ -2,20 +2,15 @@
 
 [简体中文](REPOSITORY_MAP.zh-CN.md)
 
-Start with [root rules](../AGENTS.md), then one route below and its local rules. Commands run from
-this repository root. Check paths against the actual checkout; follow imports/calls or a failing test
-when the route does not answer the question. Do not load all research records. Setup is in
-[CONTRIBUTING](../CONTRIBUTING.md); the [development entry](../.agents/README.md) links existing workflows.
-The [completed upgrade record](REPOSITORY_UPGRADE_PLAN.md) preserves C1→C2→C3 evidence, not a standing
-work queue. Resolve the current task and revision independently of those historical checkpoints.
+Start with the [root map](../AGENTS.md), then one route below and its local rules. Commands run from
+the repository root. When a route does not answer the question, follow imports, calls or a failing
+test. Setup is in [CONTRIBUTING](../CONTRIBUTING.md).
 
-Python is the product control default. `apps/server` retains only a retirement README; the
-[frozen oracle](../tests/oracles/legacy-server/AGENTS.md) is comparison input only. Current runtime
-source is `packages/harness`; core checks and product consumers install its typed wheel.
-
-The accepted P2 [TS entry candidate](../apps/server-ts/README.md) forwards to one private Python
-upstream; read its [local rules](../apps/server-ts/AGENTS.md) before changing that boundary.
-Python remains the default and sole operation/background writer until qualified group migration.
+The control plane is moving from Python (`apps/server-python`) to TypeScript (`apps/server-ts`) by
+route group under [ADR-0050](decisions/0050-typescript-control-plane.md); read
+[the TS rules](../apps/server-ts/AGENTS.md) before changing that boundary. `apps/server` holds only
+a retirement note, and the [frozen oracle](../tests/oracles/legacy-server/AGENTS.md) is comparison
+input only. The Python agent runtime is `packages/harness`.
 
 ## UI interaction
 

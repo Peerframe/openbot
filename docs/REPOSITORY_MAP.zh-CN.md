@@ -2,17 +2,12 @@
 
 [English](REPOSITORY_MAP.md) · 简体中文
 
-从[根规则](../AGENTS.zh-CN.md)开始，只选下面相关路线和局部规则。命令都从仓库根目录运行。
-以当前 checkout 核对路径；不足时沿调用、import 或失败测试继续查，不预加载整个研究库。
-启动见[贡献指南](../CONTRIBUTING.zh-CN.md)，[开发入口](../.agents/README.zh-CN.md)链接已有工作流。
-[已完成升级记录](REPOSITORY_UPGRADE_PLAN.md)保留 C1→C2→C3 证据，不是常驻待办；
-当前任务和版本需独立核对，不能从历史检查点推定。
+从[根地图](../AGENTS.zh-CN.md)开始，只选下面相关路线和它的局部规则。命令都从仓库根目录运行。
+路线答不上来时，沿 import、调用或失败的测试继续查。环境搭建见[贡献指南](../CONTRIBUTING.zh-CN.md)。
 
-Python 是产品控制默认实现，`apps/server` 仅保留退役说明 README；[冻结 oracle](../tests/oracles/legacy-server/AGENTS.md)
-只作比较输入。核心在 `packages/harness`，测试及真实消费者安装其带类型信息的 wheel。
-
-已批准的 P2 [TS 入口候选](../apps/server-ts/README.zh-CN.md)转发到固定私有 Python 服务；
-修改这个边界先读[局部规则](../apps/server-ts/AGENTS.md)。逐组迁移过关前，Python 仍是默认实现和唯一操作/后台写入者。
+控制面正按 [ADR-0050](decisions/0050-typescript-control-plane.zh-CN.md) 逐组从 Python（`apps/server-python`）
+迁到 TypeScript（`apps/server-ts`）；改这个边界前先读 [TS 规则](../apps/server-ts/AGENTS.md)。`apps/server`
+只剩退役说明，[冻结 oracle](../tests/oracles/legacy-server/AGENTS.md) 只作比较输入。Python 智能体运行时在 `packages/harness`。
 
 ## UI 交互
 

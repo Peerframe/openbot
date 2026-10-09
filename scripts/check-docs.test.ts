@@ -28,6 +28,7 @@ function fixture(t: TestContext) {
   ])
     write(path, readFileSync(path, "utf8"));
   // Templates link to the actual contributor rules. The fixture only needs the target to exist.
+  write("CLAUDE.md", "@AGENTS.md\n");
   write("CONTRIBUTING.md", "Contribution rules.");
   write("README.md", "Welcome.\n");
   write("README.zh-CN.md", "欢迎。\n");
