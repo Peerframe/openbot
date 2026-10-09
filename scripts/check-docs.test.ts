@@ -79,12 +79,12 @@ test("ADRs can use decision-specific structure while their local links remain ch
   ]);
 });
 
-test("research-policy files and targeted evidence requirements remain enforced", (t) => {
+test("research-policy files and the PR research heading remain enforced", (t) => {
   const f = fixture(t);
-  f.write("docs/research/TEMPLATE.md", "## Search evidence\n");
+  f.write(".github/pull_request_template.md", "## What changed\n");
   assert.ok(
     validateDocumentation(f.root).failures.includes(
-      "docs/research/TEMPLATE.md: missing '## Source incorporation'.",
+      ".github/pull_request_template.md: missing '## Open-source research'.",
     ),
   );
   for (const path of ["docs/research/TEMPLATE.md", "docs/decisions/TEMPLATE.md"]) {
@@ -123,29 +123,4 @@ test("root README diagrams and oversized image inventories still fail", (t) => {
     "README.md: root READMEs must link to architecture docs instead of embedding Mermaid.",
     "README.md: contains 6 images; keep the root README lightweight.",
   ]);
-});
-
-test("PR template must keep both targeted evidence and existing-decision reuse instructions", (t) => {
-  const f = fixture(t);
-  for (const field of [
-    "Research artifact",
-    "Research reuse",
-    "Reuse scope",
-    "Unchanged assumptions",
-    "Source copied or substantially adapted",
-    "Research exemption",
-  ]) {
-    f.write(
-      ".github/pull_request_template.md",
-      readFileSync(".github/pull_request_template.md", "utf8").replaceAll(
-        `- ${field}:`,
-        "- Removed:",
-      ),
-    );
-    assert.ok(
-      validateDocumentation(f.root).failures.includes(
-        `.github/pull_request_template.md: missing '- ${field}:'.`,
-      ),
-    );
-  }
 });

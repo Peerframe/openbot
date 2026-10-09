@@ -10,7 +10,7 @@
 可观察路径，按适配、许可和总交付/维护成本比较可行且维护中的选择，固定实际审查版本/commit。
 可在已有记录补变化假设；边界变化仍要针对性审查。等价持久证据可放 Issue，长期契约/架构用 ADR。
 没有候选满足需求时记录实际查询、候选和精确缺口，不能省略归因/许可。
-[PR 证据路径](../../CONTRIBUTING.zh-CN.md#研究依据与文档豁免)保留七项表单、原决定复用与纯文字有界豁免。
+[PR 检查](../../CONTRIBUTING.zh-CN.md#研究依据与文档豁免)仅在依赖、协议、安全或持久化变化时要求记录链接和来源行。
 
 已接受记录包括 [Owner 管理员工记忆](owner-managed-employee-memory.md)：明确将进化/记忆方向
 归因于 Hermes，并在选择 OpenBot 现有 PostgreSQL 边界前比较 Letta、Mem0 与 LangMem。

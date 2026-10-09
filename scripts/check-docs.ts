@@ -2,8 +2,6 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, extname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { validateDeveloperEntrypoints } from "./check-developer-entrypoints.ts";
-import { requiredResearchFields } from "./check-pr-research.ts";
-import { reuseFields } from "./check-research-reuse.ts";
 
 const ignoredDirectories = new Set([
   ".git",
@@ -100,13 +98,7 @@ export function validateDocumentation(repositoryRoot: string): DocumentationResu
     const contracts = [
       {
         name: ".github/pull_request_template.md",
-        headings: [
-          "## Open-source research",
-          ...requiredResearchFields.map((field) => `- ${field}:`),
-          ...reuseFields.map((field) => `- ${field}:`),
-          "- Research exemption:",
-          "- Exemption reason:",
-        ],
+        headings: ["## Open-source research"],
       },
       {
         name: "AGENTS.md",
@@ -114,13 +106,8 @@ export function validateDocumentation(repositoryRoot: string): DocumentationResu
       },
       {
         name: "docs/research/TEMPLATE.md",
-        headings: [
-          "## Search evidence",
-          "## Candidate comparison",
-          "## Reuse decision",
-          "## Source incorporation",
-          "## Verification plan",
-        ],
+        // Research records follow the decision; only the starting outline must exist.
+        headings: [],
       },
       {
         name: "docs/decisions/TEMPLATE.md",
