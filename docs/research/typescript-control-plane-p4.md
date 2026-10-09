@@ -607,7 +607,7 @@ interleaving then reproduced a race: an Activity claimed before Owner approval r
 claim reserves the existing120-second envelope without renewing an old claim or granting approval.
 The same controlled interleaving now passes with one execution, one publication and unchanged
 counts after replay. Native CI exercises that race too.166 focused packet/remote/Host tests pass.
-Native command/browser CI and packaging of this product correction are still pending; P4 remains open.
+At that checkpoint, native command/browser CI and correction packaging were pending; later evidence follows below.
 
 ### Native preparation failures and closure acknowledgement correction
 
@@ -649,5 +649,35 @@ executed and unchanged caches reused. Current-head hosted/native qualification r
 The claim-corrected macOS package passed34 resource/13 portability and paired lifecycle smoke;
 the same installed app restored Keychain login, workspace and realtime, normally quit with both
 services/PostgreSQL stopped, and restarted successfully. That evidence covers the claim correction.
-The subsequent Workflow correction changes product bytes and requires a fresh package and same-app
-update before final P4 acceptance. Original profile and permanent rollback remain retained.
+The Workflow-corrected45daf316 canonical package has now been staged and built sequentially.
+Its second actual smoke passed34 resource/13 portability checks, real PostgreSQL/mTLS native
+Temporal paired lifecycle and invalid-configuration refusal, with zero model calls. The first
+smoke genuinely failed in the Node24.21.0 HTTP driver with `setTypeOfService EINVAL`; its log
+remains preserved, consistent with the [upstream report](https://github.com/nodejs/undici/issues/5544).
+No HTTP-driver patch was added, and the later pass does not erase the first failure. Smoke uses a
+synthetic crypto callback; actual installed-app UI separately verified retained Keychain login.
+The same installed app now includes both corrected modules, restores authenticated workspace and
+realtime, normally quits with paired services/PostgreSQL stopped, and successfully restarts.
+Installed/source/package module hashes match: work-execution `f59d018c0f539bfa317a1ee63d69bf82bfd30580f50c7d28fd1cba51d68c65b1`,
+Work workflow `2a2a405e72dfd3dc1ce181195127da517d8432b8f1806d56928d988a400a9747`.
+Original profile and all app/profile rollback copies remain retained.
+
+### Third preparation failure and actual OCI transport precheck
+
+[CI37918849225](https://github.com/Peerframe/openbot/actions/runs/37918849225) on45daf316 also
+failed before either native journey: Skopeo1.13 refuses a Docker registry reference containing
+both tag and digest. Sources now use the fixed digest alone. Rebuilt Squid additionally receives
+its original tag in the OCI index, as required by the unchanged native offline loader. The
+[reviewed transport syntax](https://raw.githubusercontent.com/containers/image/v5.26.1/docs/containers-transports.5.md)
+documents both restrictions/annotations. No image-content pin or native enforcement is relaxed.
+The same run's Windows missing-resource test exceeded its5-second default while executing roughly
+80 full file-preflight cycles. Its own bounded fixture-I/O budget is now15seconds; every resource
+refusal and paired-service cleanup assertion remains, and product deadlines do not change.
+
+Before another hosted attempt, actual fixed-package Skopeo copied both immutable public Python
+and Chromium images in one auto-removed Ubuntu24.04 amd64 container on macOS. Their original
+manifest/config/platform and layer identities passed independent OCI checks. This emulated
+precheck establishes transport only, never Linux/runsc acceptance. The first container's TLS
+unknown-authority failure is preserved. The successful retry used only the host's existing public
+system trust bundle and retained TLS validation; no Docker socket, user profile or credentials
+were mounted. Native command/browser acceptance and every check on the final HEAD remain open.

@@ -305,6 +305,8 @@ it.each(["ts", "python"])("stops the partner when %s terminates without retry", 
   expect(mocks.python).toHaveBeenCalledOnce();
 });
 
+// Each missing resource exercises the full file preflight. Windows CI performs roughly 80
+// removal/check/restore cycles here; this bound covers fixture I/O, not a product deadline.
 it("refuses incomplete TS resources before starting Python, and releases Python if TS spawn throws", async () => {
   const f = await fixture();
   for (const resource of resources.slice(2)) {
@@ -318,7 +320,7 @@ it("refuses incomplete TS resources before starting Python, and releases Python 
   });
   await expect(launchTsProductServer(f.root, f.env)).rejects.toThrow("spawn failure");
   expect(f.python.stop).toHaveBeenCalledOnce();
-});
+}, 15_000);
 
 it("refuses missing P4 engine configuration before starting the Python migrator or TS entry", async () => {
   const f = await fixture();

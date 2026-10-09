@@ -430,7 +430,7 @@ TS 命令入口已通过真实 HTTP/PostgreSQL/mTLS Temporal/Node/WebSocket/Unix
 时序稳定复现快速审批竞态：审批前已获取的 Activity claim 只剩约59.8秒，无法容纳既有准备/运行/停止
 预算。修复让新建的待审批命令 claim 预留既有120秒预算，不续期旧 claim，也不授予审批权限。
 相同时序回归现已通过，执行和发布各一次，重放不改变计数；原生 CI 同时覆盖该竞态。
-166项包完整性/远程边界/Host聚焦检查通过。原生命令/浏览器 CI 及此次产品修正的打包仍待验证，P4未完成。
+166项包完整性/远程边界/Host聚焦检查通过。当时原生命令/浏览器 CI 与此次修正打包待验证；后续证据见下节。
 
 ### 原生准备失败与关闭回执竞态修正
 
@@ -462,5 +462,29 @@ Worker 解释器保留软链接所在 venv 前缀。`57520ba9` 的下一轮在
 
 claim 修正版的 macOS 包已通过34资源/13导入导出与双服务生命周期 smoke；同一已安装应用恢复
 Keychain 登录、工作区和实时连接，正常退出后双服务/PostgreSQL 均停止，重启再次通过。
-此证据只覆盖 claim 修正。后续 Workflow 修正再次改变产品字节，最终 P4 仍需重新打包并更新同一
-应用。原 profile 与永久回滚资源继续保留。
+Workflow 修正版45daf316现已依次完成暂存与完整打包。第二次实际 smoke 通过34资源/13导入导出、
+真实 PostgreSQL/mTLS 原生 Temporal 双服务生命周期和无效配置拒绝，模型调用为零。首次 smoke
+确实在 Node24.21.0 HTTP 驱动的 `setTypeOfService EINVAL` 处失败，日志保留，与
+[上游记录](https://github.com/nodejs/undici/issues/5544) 一致。没有加入 HTTP 驱动补丁，后续通过
+不抹去首次失败。smoke 使用合成加密回调；实际已安装应用界面另行验证了原 Keychain 登录。
+同一已安装应用现包含两项修正，恢复认证工作区与实时连接，正常退出后双服务/PostgreSQL 停止，
+再次启动成功。源码/包/安装文件哈希一致：work-execution
+`f59d018c0f539bfa317a1ee63d69bf82bfd30580f50c7d28fd1cba51d68c65b1`，Work workflow
+`2a2a405e72dfd3dc1ce181195127da517d8432b8f1806d56928d988a400a9747`。原 profile 和所有应用/profile
+回滚副本继续保留。
+
+### 第三轮准备失败与真实 OCI 传输预检
+
+45daf316 的 [CI37918849225](https://github.com/Peerframe/openbot/actions/runs/37918849225) 同样在
+两种原生流程前失败：Skopeo1.13 拒绝同时包含 tag 与 digest 的 registry 引用。现只用固定 digest；
+重建 Squid 还在 OCI index 保留原 tag，满足未变的原生离线 loader。
+[固定版本传输语法](https://raw.githubusercontent.com/containers/image/v5.26.1/docs/containers-transports.5.md)
+说明这两个限制/注解；不放宽镜像内容固定值或原生执行约束。同一轮 Windows 缺失资源测试在
+约80次完整文件 preflight 后超过5秒默认时间；只给该测试15秒有界 I/O 时间，逐项拒绝启动与
+双服务清理断言保留，产品截止期不变。
+
+再次托管前，已在 Mac 上一个自动删除的 Ubuntu24.04 amd64 容器内，用固定 Skopeo 包实际复制
+不可变公开 Python 与 Chromium 镜像；原 manifest/config、平台与层身份独立 OCI 检查通过。
+此仿真预检只证明传输，不证明 Linux/runsc 验收。首个容器 TLS unknown-authority 失败保留；
+重试只挂载主机已有公共系统信任证书并保留 TLS 校验，没有 Docker socket、用户 profile 或凭据
+挂载。真实原生命令/浏览器和最终 HEAD 的全部检查仍待通过。

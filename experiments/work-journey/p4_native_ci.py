@@ -112,13 +112,17 @@ def oci_identity(path,expected=None,manifest=None):
 
 
 def export_image(image,path,expected=None,manifest=None,*,daemon=False):
-    immutable=image+'@'+manifest if manifest else image
+    tag=image.split('@',1)[0]
+    pin=manifest or (image.split('@',1)[1] if '@' in image else None)
+    immutable=tag.rsplit(':',1)[0]+'@'+pin if pin else image
     source='docker-daemon:'+image if daemon else 'docker://'+immutable
     # The legacy Docker save format drops registry digests. OCI copying preserves the original
     # manifest that the native no-pull preflight independently requires after offline load.
     flags=['--dest-oci-accept-uncompressed-layers'] if daemon else ['--preserve-digests']
+    # The reviewed browser loader addresses rebuilt Squid by its original tag.
+    destination='oci-archive:'+str(path)+(':'+image if daemon else '')
     run(['/usr/bin/skopeo','--override-os','linux','--override-arch','amd64','copy',
-        '--src-no-creds','--src-tls-verify=true',*flags,source,'oci-archive:'+str(path)])
+        '--src-no-creds','--src-tls-verify=true',*flags,source,destination])
     path.chmod(0o600)
     return dict(image=image,**oci_identity(path,expected,manifest),archiveSha256=digest(path),archiveBytes=path.stat().st_size)
 

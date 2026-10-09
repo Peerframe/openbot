@@ -63,11 +63,22 @@ class NativePacketTests(unittest.TestCase):
             identity={'manifest':packet.PYTHON_MANIFEST,'config':packet.PYTHON_CONFIG,'diffIds':[]}
             with patch.object(packet,'run',side_effect=run),patch.object(packet,'oci_identity',return_value=identity) as verify:
                 value=packet.export_image(packet.PYTHON_IMAGE,p,packet.PYTHON_CONFIG,packet.PYTHON_MANIFEST)
-            self.assertIn('docker://'+packet.PYTHON_IMAGE+'@'+packet.PYTHON_MANIFEST,calls[0])
+            self.assertIn('docker://python@'+packet.PYTHON_MANIFEST,calls[0])
             self.assertIn('--preserve-digests',calls[0]);self.assertIn('--src-no-creds',calls[0])
             self.assertNotEqual(packet.PYTHON_CONFIG,packet.PYTHON_MANIFEST)
             verify.assert_called_once_with(p,packet.PYTHON_CONFIG,packet.PYTHON_MANIFEST)
             self.assertEqual(value['config'],packet.PYTHON_CONFIG)
+            calls.clear()
+            with patch.object(packet,'run',side_effect=run),patch.object(packet,'oci_identity',return_value=identity):
+                packet.export_image(packet.CHROMIUM_IMAGE,p,packet.CHROMIUM_CONFIG)
+            self.assertIn('docker://mcr.microsoft.com/playwright@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e',calls[0])
+            calls.clear()
+            with patch.object(packet,'run',side_effect=run),patch.object(packet,'oci_identity',return_value=identity):
+                packet.export_image(packet.SQUID_TAG,p,daemon=True)
+            self.assertIn('docker-daemon:'+packet.SQUID_TAG,calls[0])
+            self.assertIn('--dest-oci-accept-uncompressed-layers',calls[0])
+            self.assertIn('oci-archive:'+str(p)+':'+packet.SQUID_TAG,calls[0])
+            self.assertNotIn('--preserve-digests',calls[0])
 
     def test_oci_metadata_pin_drift_and_platform_fail_closed(self):
         with TemporaryDirectory() as directory:
