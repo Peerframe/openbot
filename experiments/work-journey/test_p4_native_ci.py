@@ -15,7 +15,7 @@ from tempfile import TemporaryDirectory
 import p4_native_ci as packet
 import product_command_native_host as host
 import product_command_remote as remote
-from test_product_command_remote import finished,BINDING
+from test_product_command_remote import finished,BINDING,staged,pem,ROUTE,TIMING
 
 
 class NativePacketTests(unittest.TestCase):
@@ -148,12 +148,34 @@ class NativePacketTests(unittest.TestCase):
 
 
 class NativeDiagnosticsTests(unittest.IsolatedAsyncioTestCase):
+    async def test_same_runner_host_binds_actual_server_port_without_a_proxy(self):
+        with TemporaryDirectory() as directory:
+            root=Path(directory);configuration=root/'configuration.json'
+            configuration.write_text(json.dumps({'version':1,'program':str(host.PROGRAM)}))
+            with patch.object(host.sys,'platform','linux'):controller=host.NativeHost(configuration,root)
+            bundle=root/'node.cjs';bundle.write_bytes(b'public fixture module');key=pem()
+            with patch.object(controller,'once',AsyncMock()) as once:
+                with self.assertRaisesRegex(ValueError,'owned_native_server_port_required'):await controller.stage(ROUTE,TIMING,key,bundle)
+                once.assert_not_awaited()
+            controller.port=12345;response=staged(key);response['serverUrl']='ws://127.0.0.1:12345/ws/nodes'
+            with patch.object(controller,'once',AsyncMock(return_value=response)) as once,patch.object(host.asyncio,'start_server') as proxy,patch.object(host.socket,'socket') as sockets:
+                self.assertEqual(await controller.stage(ROUTE,TIMING,key,bundle),key)
+                self.assertEqual(once.call_args.args[1]['serverPort'],12345)
+                proxy.assert_not_called()
+                sockets.return_value.bind.assert_called_once_with(('127.0.0.1',12345))
+            controller.release_server_port()
+            sockets.return_value.close.assert_called_once()
+            with patch.object(controller,'spawn',AsyncMock()) as spawn:
+                with self.assertRaisesRegex(ValueError,'native_server_port_changed'):await controller.start('obenr_'+('a'*43),12346)
+                spawn.assert_not_awaited()
+
     async def test_stage_and_preready_failures_keep_only_public_diagnostic_in_artifact(self):
         for operation in ('stage','run'):
             with TemporaryDirectory() as directory:
                 root=Path(directory);configuration=root/'configuration.json'
                 configuration.write_text(json.dumps({'version':1,'program':str(host.PROGRAM)}))
                 with patch.object(host.sys,'platform','linux'):controller=host.NativeHost(configuration,root)
+                controller.port=12345
                 diagnostic={'nativeFixtureFailure':{'errorType':'RuntimeError','code':'unsafe_directory','locations':[]}}
                 private=b'synthetic private key, arguments and enrollment'
                 script='import sys\nsys.stdout.write('+repr(json.dumps(diagnostic)+'\n')+')\nsys.stderr.write('+repr(private.decode())+')\nraise SystemExit(1)'

@@ -509,3 +509,15 @@ Workflow 修正版45daf316现已依次完成暂存与完整打包。第二次实
 其元数据。准备现只在明确的一次性 GitHub runner 收紧这个固定祖先为 root:root0755，记录前后
 UID/GID/权限与 inode 未变，并在原生准入前执行原目录检查。不递归、不改已有工具子目录、不改用户
 主机，也不放宽原生门槛。仍须实际记录的元数据与新原生结果才能关闭该缺口。
+
+
+### 已确认的 CI 祖先权限缺口与同机 Node 连接
+
+`d15d8d95` 的 [CI37924247192](https://github.com/Peerframe/openbot/actions/runs/37924247192) 实际记录
+`/opt` 从 root:root0777 收紧为 root:root0755，inode 不变；原 staging 随后通过，真实 PostgreSQL/mTLS
+Temporal 启动。Node 未进入注册表，runner 清理仍未成功，命令与隔离浏览器均未验收通过。
+适配原先给 Node 一个单独 loopback TCP 中转端口，原样转发 HTTP Host 到 TS 入口；入口要求准确的
+标准 Host，端口不同即拒绝。没有公开保留原 Node 异常，此归因基于实际拓扑与入口契约。
+同机适配现直接使用 Server 选定的 loopback 端口，在 root staging 前绑定它，并在发送注册前拒绝
+端口变化；不增加代理或允许的 Host。产品入口检查、一次注册凭据、真实低 UID/Unix peer 和原生
+预算不变；远端 SSH 与默认验收保留原 staging/生命周期。仍需新鲜实际结果。

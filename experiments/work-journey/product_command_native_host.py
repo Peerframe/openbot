@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import re
+import socket
 import sys
 
 BASE=Path('/opt/obp4')
@@ -49,7 +50,7 @@ class NativeHost:
         value=json.loads(Path(configuration).read_text())
         require(type(value) is dict and type(value.get('version')) is int and value=={'version':1,'program':str(PROGRAM)},'explicit_native_ci_configuration_required')
         require(sys.platform=='linux','linux_required')
-        self.directory=directory;self.process=self.monitor=self.relay=None;self.port=None;self.route=None
+        self.directory=directory;self.process=self.monitor=None;self.port=None;self.route=None;self.server_reservation=None
 
     async def spawn(self,operation,payload):
         require(operation in ('stage','run','check','cleanup'),'invalid_native_ci_operation')
@@ -78,29 +79,28 @@ class NativeHost:
 
     async def stage(self,route,timing,control_public,bundle):
         from product_command_remote import staged_pin
+        # This Host and the actual Server share one disposable runner. Use the Server's canonical
+        # loopback port directly; a second TCP port would preserve the wrong HTTP Host header.
+        require(type(self.port) is int and 1024<=self.port<=65535,'owned_native_server_port_required')
+        reservation=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+        try:reservation.bind(('127.0.0.1',self.port))
+        except BaseException:reservation.close();raise
+        self.server_reservation=reservation
         self.route=route
-        async def forward(reader,writer):
-            remote_writer=None
-            try:
-                require(self.port is not None,'native_forward_not_ready')
-                remote_reader,remote_writer=await asyncio.open_connection('127.0.0.1',self.port)
-                async def copy(source,target):
-                    while chunk:=await source.read(65536):target.write(chunk);await target.drain()
-                    target.close()
-                await asyncio.gather(copy(reader,remote_writer),copy(remote_reader,writer))
-            finally:
-                writer.close()
-                if remote_writer:remote_writer.close()
-        self.relay=await asyncio.start_server(forward,'127.0.0.1',0)
-        port=self.relay.sockets[0].getsockname()[1]
         value=dict(version=1,route=route,timing=timing,controlIssuer='product-control',controlKid='product-control-key',
             controlPublicPem=control_public.decode('ascii'),enforcementIssuer='product-enforcer',
-            nodeBundleSha256=hashlib.sha256(bundle.read_bytes()).hexdigest(),serverPort=port)
-        return staged_pin(json.dumps(await self.once('stage',value)).encode(),route,port)
+            nodeBundleSha256=hashlib.sha256(bundle.read_bytes()).hexdigest(),serverPort=self.port)
+        return staged_pin(json.dumps(await self.once('stage',value)).encode(),route,self.port)
+
+    def release_server_port(self):
+        # Retain ownership across root staging/engine startup, then release immediately before
+        # the actual Server binds. There is no listener or application proxy on this socket.
+        require(self.server_reservation is not None,'native_server_port_not_reserved')
+        self.server_reservation.close();self.server_reservation=None
 
     async def start(self,enrollment,local_port):
         require(re.fullmatch(r'obenr_[A-Za-z0-9_-]{43}',enrollment) is not None,'one_time_enrollment_required')
-        self.port=local_port
+        require(type(local_port) is int and local_port==self.port and self.server_reservation is None,'native_server_port_changed')
         self.process=await self.spawn('run',dict(version=1,enrollmentToken=enrollment))
         async def stderr():
             data=await self.process.stderr.read(MAXIMUM+1)
@@ -155,7 +155,7 @@ class NativeHost:
                 if self.process.returncode is None:await asyncio.wait_for(self.process.wait(),150)
                 raise ValueError('native_original_cleanup_unconfirmed')
         finally:
-            if self.relay:self.relay.close();await self.relay.wait_closed()
+            if self.server_reservation:self.server_reservation.close();self.server_reservation=None
 
 
 def root_mode(operation):

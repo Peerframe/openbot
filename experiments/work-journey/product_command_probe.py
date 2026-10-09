@@ -61,6 +61,10 @@ async def qualify(directory,bundle,remote_options=None,entry="python",native_ci_
     pin=directory/'enforcer.pub'
     command_config=directory/'command.json'
     try:
+        if native_ci_config:
+            # Constructor chooses fixture settings only; the actual Server starts after staging.
+            api=API(directory,postgres.dsn,directory/'artifacts')
+            remote.port=int(api.url.rsplit(':',1)[1])
         pin.write_bytes(await remote.stage(route,timing,keys['control'][1],bundle) if remote else keys['enforcer'][1])
         private(command_config,dict(version=1,route=route,timing=timing,
             policy=dict(id='offline-command',image='python@sha256:6e13e65c55e33adf203d77ee371cf8bf5d81bd4902ef07565721f46bf44917af',
@@ -79,11 +83,12 @@ async def qualify(directory,bundle,remote_options=None,entry="python",native_ci_
         private(engine_config,dict(temporal_address=engine.address,namespace='default',queue='product-command-'+secrets.token_hex(6),
             tls=engine.client_settings,interval_seconds=1,execution_timeout_seconds=600))
         provider_config=directory/'provider.json';private(provider_config,dict(directory=str(directory/'provider'),claimApprovalRace=claim_approval_race))
-        api=API(directory,postgres.dsn,directory/'artifacts')
+        if api is None:api=API(directory,postgres.dsn,directory/'artifacts')
         api.env.update(OPENBOT_CONTROL_AUTHORITY='product',OPENBOT_CONTROL_WORK_TOKEN_LIMIT='1000000',
             OPENBOT_CONTROL_OBJECT_ROOT=str(directory/'objects'),OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH=str(engine_config),
             OPENBOT_CONTROL_COMMAND_CONFIG_PATH=str(command_config),OPENBOT_COMMAND_PROBE_CONFIG=str(provider_config))
         server=["node","--import","tsx",str(Path(__file__).with_name('product_command_ts_server.ts'))] if entry=='ts' else [sys.executable,'-u','-B',str(Path(__file__).with_name('product_command_server.py'))]
+        if native_ci_config:remote.release_server_port()
         api.child=Process(server,api.directory,api.env)
         async def until(function,seconds=75):
             deadline=time.monotonic()+seconds

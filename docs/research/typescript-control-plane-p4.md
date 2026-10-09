@@ -709,3 +709,19 @@ ancestor to root:root0755 on the guarded disposable GitHub runner, records exact
 UID/GID/mode and unchanged inode, and runs original directory checks before native admission.
 It does not recurse, change existing tool children, modify user hosts or relax any native gate.
 Actual recorded metadata and fresh native results remain required before concluding that gap closed.
+
+
+### Confirmed CI parent gap and same-runner Node connection
+
+[CI37924247192](https://github.com/Peerframe/openbot/actions/runs/37924247192) on `d15d8d95`
+recorded `/opt` before root:root0777 and after root:root0755 with unchanged inode. Original staging
+then passed and actual PostgreSQL/mTLS Temporal started. Node did not appear in the registry;
+runner cleanup remained unsuccessful and neither command nor isolated browser qualified.
+The adapter had staged a separate loopback TCP relay port; it forwarded the Node's HTTP Host
+unchanged to the actual TS entry, whose canonical-Host check rejects a different port. Private
+Node stderr was not retained publicly, so this attribution uses the observed topology and entry
+contract rather than an original Node exception. The co-located adapter now uses the actual
+Server's chosen loopback port directly, binds it before root staging and refuses a changed port
+before enrollment. No proxy or additional allowed Host is needed; product entry checks, one-time
+enrollment, actual low UID/Unix peer and original native budgets are unchanged. Remote SSH/default
+qualification keep their existing staging/lifecycle paths. Fresh actual results remain required.
