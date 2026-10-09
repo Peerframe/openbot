@@ -529,3 +529,22 @@ Temporal 启动。Node 未进入注册表，runner 清理仍未成功，命令�
 创建 API 并保留标准端口；迁移与引擎启动仍在实际 API/Node 启动前，普通与远端路径顺序不变。
 新增合成启动顺序回归执行真实 journey 入口，并验证 staging 拒绝后的清理，不执行 Docker、
 模型或特权操作；此回归不能代替原生验收。
+
+
+### 真实原生命令通过；隔离浏览器 OCI 命名缺口
+
+`63ccf725` 的 [CI37928387456](https://github.com/Peerframe/openbot/actions/runs/37928387456)
+已通过真实 TS 保护 Linux/runsc 命令：原占用跨审批保留，命令一次，精确 CSV/报告下载、独立审核
+与二进制历史重放。公开结果包含实际 SO_PEERCRED UID62425、一次预留、原单元 `timeout`、空
+cgroup、五秒余量内停止、单元释放、私有运行时与输出 backing 消失、密钥/socket 删除，以及前后
+三个宿主容器/防火墙状态一致与控制器完整清理。Native 和 peer 身份均为真实，模型仍为可控夹具。
+
+随后隔离浏览器在首次 Squid 名称检查拒绝，尚未就绪或产生产品效果；两个 OCI 装载和 Chromium
+身份检查已经完成。Skopeo OCI ref-name 不能可靠建立 Docker 标签；固定的
+[Skopeo 传输契约](https://github.com/containers/skopeo/blob/v1.13.3/docs/skopeo.1.md)
+区分 OCI-layout 标签和 Docker-archive 引用，因此沿用离线绑定提供 Docker 本地名称，内容不变。失败原单元已关闭、其运行时
+已移除，零容器/防火墙宿主基线一致；P4 仍未完成。私有 packet 现给独立固定的已装载 Squid
+manifest 绑定原本地标签，再保留原 config/manifest/平台门槛；沿用既有命令的
+[离线装载绑定](../../experiments/linux-execution/deadline_probe.py)，不改变镜像内容、源码隔离、
+路由、原生预算或宿主 daemon。未公开保留原 daemon 错误，传输命名归因仍基于实际操作与装载
+契约，而非原异常。仍须新的真实隔离浏览器及当前 HEAD 全部 CI。

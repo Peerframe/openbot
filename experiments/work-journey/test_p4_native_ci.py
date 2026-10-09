@@ -38,6 +38,30 @@ class NativePacketTests(unittest.TestCase):
         for value in ('absent','original original'):
             with self.assertRaisesRegex(ValueError,'source_shape_changed'):packet.replace_exact(value,'original','measured')
 
+    def test_oci_squid_name_binds_exact_manifest_and_keeps_original_identity_guard(self):
+        source=(packet.BROWSER/'composition/run.py').read_text()
+        bound=packet.bind_squid_load(source)
+        first="docker('image','tag',SQUID_MANIFEST,'openbot-squid77-debian-fixture:20260926')"
+        self.assertEqual(bound.replace(first+'\n        ','',1),source)
+        start=bound.index(first);end=bound.index('\n        for role,subnet',start)
+        block='\n'.join(line.strip() for line in bound[start:end].splitlines())
+        config='sha256:'+('1'*64);manifest='sha256:'+('2'*64)
+        for identity,architecture,accepted in ((manifest,'amd64',True),(config,'amd64',True),('sha256:'+('3'*64),'amd64',False),(manifest,'arm64',False)):
+            calls=[];named={}
+            def docker(*args):
+                calls.append(args)
+                if args[:2]==('image','tag'):
+                    self.assertEqual(args[2],manifest);named[args[3]]=args[2];return ''
+                self.assertEqual(args[:2],('image','inspect'));self.assertEqual(named[args[2]],manifest)
+                return json.dumps([dict(Id=identity,Architecture=architecture)])
+            namespace=dict(docker=docker,json=json,SQUID_MANIFEST=manifest,SQUID_CONFIG=config,require=packet.require)
+            if accepted:exec(block,namespace)
+            else:
+                with self.assertRaisesRegex(ValueError,'Squid image differs'):exec(block,namespace)
+            self.assertEqual([call[1] for call in calls],['tag','inspect'])
+        for changed in (source.replace("squid=json.loads(docker('image','inspect'","changed=json.loads(docker('image','inspect'"),source+source):
+            with self.assertRaisesRegex(ValueError,'source_shape_changed'):packet.bind_squid_load(changed)
+
     def test_official_top_level_directory_is_not_a_runtime_binary(self):
         with TemporaryDirectory() as directory:
             p=Path(directory)/'archive.tar';content=b'pinned executable'

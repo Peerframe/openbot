@@ -61,6 +61,14 @@ def replace_exact(text,old,new):
     return text.replace(old,new,1)
 
 
+def bind_squid_load(text):
+    # OCI load need not preserve a Skopeo ref-name as a Docker tag. Bind only the already
+    # pinned loaded manifest inside the private daemon; the original inspect guard remains.
+    inspected="squid=json.loads(docker('image','inspect','openbot-squid77-debian-fixture:20260926'))[0]"
+    tagged="docker('image','tag',SQUID_MANIFEST,'openbot-squid77-debian-fixture:20260926')"
+    return replace_exact(text,inspected,tagged+'\n        '+inspected)
+
+
 def download(target,pin):
     url,expected,maximum=pin
     with urlopen(url,timeout=120) as response,target.open('xb') as output:
@@ -243,7 +251,7 @@ def prepare(worker,upstream,bun,node,bundle,output):
     identity='deadline-a1-p4'+secrets.token_hex(3)
     program=PACKET/'run.py';text=program.read_text()
     for old,new in (('deadline-a1-comp5',identity),('7d636842c8633beeaf30c512b6b022693cf1120b563c842dfc4bbc6d9441632e',squid_pin['archiveSha256']),('sha256:5b3968c26dd7b5cd7fdb69ecf90a85c277848993d613ee0fd01efa475892c671',squid_pin['config']),('sha256:fad04b80804e8de9228ddf78229712edb21ef86eb218c4d77de8dad1f1a74b8f',squid_pin['manifest']),('a8f9ebd1770ddc8e55dab7a68d4ec1ec1eebf374bb97cc65cf2c3cb373fc6791',digest(bun))):text=replace_exact(text,old,new)
-    program.write_text(text)
+    program.write_text(bind_squid_load(text))
     companion=PACKET/'companion.py';companion.write_text(replace_exact(companion.read_text(),'/opt/openbot-qualification-20260925-c8b2/units','/opt/obp4/units'))
     copy(BROWSER/'native-network/run_probe.py',PACKET/'snapshot.py')
     snapshot=PACKET/'snapshot.py';snapshot.write_text(replace_exact(snapshot.read_text(),'/opt/openbot-qualification-20260925-c8b2/bin/docker',str(BASE/'bin/docker')))
@@ -267,7 +275,7 @@ def prepare(worker,upstream,bun,node,bundle,output):
     plan=dict(version=1,fixtureEnvironment='disposable-github-linux',fixtureParent=parent,pythonPath=paths,commandFiles=command_files,
         nativeRoot=str(BASE/'units'/identity),browserProgram=str(program),packet=str(PACKET),
         reviewedBinaries=REVIEWED_BINARY_HASHES,python=python,chromium=chromium,squid=squid_pin,bunSha256=digest(bun),
-        packagingAdaptations=['root-owned /opt ancestor on disposable runner','fresh native root','offline export hash bound to reviewed image config/layers','root-private source copies','Bun 1.3.14 from existing CI','original browser listener only inside private network','new synthetic TLS CA/NSS database'])
+        packagingAdaptations=['root-owned /opt ancestor on disposable runner','fresh native root','offline export hash bound to reviewed image config/layers','exact Squid manifest tagged only inside private daemon','root-private source copies','Bun 1.3.14 from existing CI','original browser listener only inside private network','new synthetic TLS CA/NSS database'])
     record(BASE/'PLAN.json',plan)
     record(output,{'version':1,'program':str(BASE/'command/product_host_fixture.py')})
     print(json.dumps(dict(nativePacketReady=True,fixtureEnvironment=plan['fixtureEnvironment'],rootFresh=True,imageContentPinned=True,binariesPinned=True,fixtureParent=parent)))

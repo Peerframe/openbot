@@ -735,3 +735,28 @@ the API and reserving its canonical port. Migration and engine startup still pre
 API/Node launch; the ordinary/remote path remains unchanged. An integrated synthetic start-order
 regression exercises the real journey entry and verifies stage-refusal cleanup, without Docker,
 models or privileged execution. It does not establish native qualification.
+
+
+### Actual native command accepted; isolated-browser OCI naming gap
+
+On `63ccf725`, [CI37928387456](https://github.com/Peerframe/openbot/actions/runs/37928387456)
+accepted the actual TS protected Linux/runsc command: original claim held across approval, one
+command, exact CSV/report downloads, independent review and binary history replay. The retained
+public result records actual SO_PEERCRED UID62425, one reservation, original unit `timeout`, empty
+cgroup, stop within five-second margin, released unit, absent private runtime/output backing, key
+and socket removal, identical before/after three-container/firewall state and complete controller
+cleanup. Neither Native nor peer identity is synthetic. Models remain deterministic fixtures.
+
+The isolated browser then refused the first named Squid image inspection before readiness or
+product effects. Both OCI loads and Chromium identity verification had completed; OCI exports do
+not reliably establish a Docker tag from Skopeo's ref-name. The pinned
+[Skopeo transport contract](https://github.com/containers/skopeo/blob/v1.13.3/docs/skopeo.1.md)
+defines an OCI-layout tag separately from a Docker-archive reference; the existing offline binding
+therefore supplies the Docker-local name without changing content. The failed original unit closed, its
+owned runtime was removed and zero-container/firewall host baseline matched. P4 is still open.
+The private packet now gives the exact independently pinned loaded Squid manifest its original
+local tag before the unchanged config/manifest/platform guard. This follows the retained command
+[offline-load binding](../../experiments/linux-execution/deadline_probe.py); it changes no image
+content, source enforcement, routes, runtime budget or host daemon. Actual failure stderr was not
+retained publicly, so the transport-name attribution rests on the observed operation and loader
+contract, not an original daemon message. Fresh native browser and all current-head CI remain required.
