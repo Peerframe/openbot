@@ -1,6 +1,8 @@
 # Research: S6 delegation, MCP and model preservation compatibility
 
 - Status: experiment only; S6 remains pending
+- Removed: the unused `experiments/s6-compat/` directory was deleted on 2026-10-10; recover it
+  from Git history at `a4c1fdc6478350edecd3e94e5b162477b90b56fc`.
 - Date: 2026-09-24
 - Owner: OpenBot contributors
 - Acceptance journey: synthetic channel Bots delegate through the existing Server store; the child

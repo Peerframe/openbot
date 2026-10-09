@@ -1,6 +1,8 @@
 # Research: cross-process pause/resume of an agent segment with the pinned SDK
 
 - Status: independently reproduced; narrow SDK compatibility evidence
+- Removed: the unused `experiments/runtime-continuation/` directory was deleted on 2026-10-10; recover it
+  from Git history at `a4c1fdc6478350edecd3e94e5b162477b90b56fc`.
 - Date: 2026-09-23
 - Owner: WorkBuddy (TASK018 dispatch); Codex owns independent acceptance
 - Related issue: none (task card `.workbuddy-handoff/TASK_018_RUNTIME_CONTINUATION.md`)
