@@ -520,3 +520,43 @@ matched the rollback copy byte-for-byte. There was no production Work submission
 This installed candidate does not supply the missing Linux/runsc deployment or browser configuration,
 and does not turn synthetic executor evidence into native acceptance. Full P4 qualification and
 hosted CI remain open; Python removal, package reduction and P5 are not included.
+
+
+## Hosted portability and actual Chromium qualification (2026-10-09)
+
+The first draft PR #212 run at `e5f807fc` passed all hosted jobs except Windows retained-client
+tests (and the dependent aggregate). Five pairing tests simulated macOS but accidentally invoked
+real POSIX private-file checks on Windows. Mock only that configuration boundary in these pairing
+tests, retain the actual POSIX checks and native qualification, and assert refusal propagates before
+either process starts. The focused local pair/configuration tests pass37 with2 platform skips;
+this is not a claim that the repaired Windows hosted run has passed.
+
+Extend the existing `product_browser_probe.py` with explicit `--entry ts --recovery pages` and
+`response-loss` selections. Reuse the reviewed browser upstream commit
+`29a83c1932fb67398dd7a36fa80c473e0230a637`, Playwright1.62.1 and the existing real Node fixture.
+Only model HTTP is synthetic. The TS entry uses the production configuration, Owner login,
+canonical PostgreSQL migrations, mTLS Temporal, browser approval/receipt and publication paths.
+Unsupported TS recovery modes refuse before resources are created; this does not claim the Python
+Worker-pause or remote Linux replacement cases have been ported. No product dependency or copied
+upstream source is added. Official SDK1.24.0 replays binary engine history via its bundled protobuf
+codec; the attempted JSON conversion failed before replay and is not counted as a pass.
+
+The local page journey passed: four independently approved operations, exactly one navigation,
+Unicode input, click and read, seven single model steps including independent report review,
+one downloaded report, independent target state and offline replay. Owned fixtures closed.
+An earlier navigation became unknown before the Node provider was called; its cause is unresolved
+and later successful runs do not erase that observation. The actual response-loss case also passed: the target
+recorded one click while its response socket was destroyed; cancellation removed authority, an
+explicit original-receipt lookup remained unresolved, and neither click nor model was repeated.
+No artifact was published. Per the existing TS ledger contract the unknown Task remains open and
+the engine waits; replay covers that open history, not a fabricated successful close. The first
+fixture assertion incorrectly expected immediate workflow closure and was corrected to this contract.
+New hosted results must still be reported separately. This is actual local Chromium evidence, not public egress,
+Linux isolation, installed browser configuration, or completion of the P4 isolated-executor gate.
+
+The shared probe's Python Worker-stop/approval/resume journey also passed on real Chromium,
+including seven single model steps, report download and closed-history replay. Four unsupported
+entry/recovery combinations refused before fixture side effects. The workflow-focused102 checks
+and full `npm run check` passed; Desktop580 plus3 platform skips, Server162, Web695 and Node129
+plus3 platform skips. The final30 test tasks reused14 caches and20 build tasks reused16 caches.
+These changes affect tests, qualification and CI; the installed candidate's product bytes are unchanged.

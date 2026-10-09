@@ -535,7 +535,7 @@ jobs:
         run: |
           npm install --global --ignore-scripts npm@10.9.9
           npm ci --ignore-scripts --audit=false
-          npm exec -- turbo run build --filter=@openbot/node^... --filter=@openbot/db
+          npm exec -- turbo run build --filter=@openbot/node^... --filter=@openbot/db --filter=@openbot/server-ts
       - name: Prepare the exact product Worker environment
         shell: bash
         run: |
@@ -586,6 +586,24 @@ jobs:
               --browsers "$RUNNER_TEMP/openbot-browser-binaries" \
               --recovery "$recovery"
           done
+      - name: Qualify TS P4 page execution and lost click response on actual Chromium
+        timeout-minutes: 12
+        shell: bash
+        run: |
+          for recovery in pages response-loss; do
+            "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/product_browser_probe.py \
+              --entry ts --recovery "$recovery" \
+              --output "$RUNNER_TEMP/openbot-browser-ts-$recovery" \
+              --upstream "$RUNNER_TEMP/openbot-browser-upstream" \
+              --browsers "$RUNNER_TEMP/openbot-browser-binaries"
+          done
+      - name: Retain content-free TS browser qualification results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: browser-ts-results
+          path: ${{ runner.temp }}/openbot-browser-ts-*/RESULT.json
+          if-no-files-found: ignore
       - name: Retain content-free browser interruption results
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

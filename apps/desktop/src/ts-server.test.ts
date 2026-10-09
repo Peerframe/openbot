@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 import { PassThrough } from "node:stream";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ spawn: vi.fn(), python: vi.fn() }));
+const mocks = vi.hoisted(() => ({ spawn: vi.fn(), python: vi.fn(), configuration: vi.fn() }));
 vi.mock("node:child_process", async (original) => ({
   ...(await original<typeof import("node:child_process")>()),
   spawn: mocks.spawn,
@@ -13,6 +13,7 @@ vi.mock("node:child_process", async (original) => ({
 vi.mock("./python-server.js", async (original) => ({
   ...(await original<typeof import("./python-server.js")>()),
   launchPythonProductServer: mocks.python,
+  pythonProductConfigurationEnvironment: mocks.configuration,
 }));
 
 import * as native from "./native-server.js";
@@ -101,6 +102,14 @@ const resources = [
 beforeEach(() => {
   mocks.spawn.mockReset();
   mocks.python.mockReset();
+  // These are pairing tests with a simulated macOS payload on every CI host. The real
+  // POSIX ownership/file checks are covered by python-server tests and native qualification.
+  mocks.configuration.mockReset().mockImplementation(async (env: Record<string, string>) => ({
+    OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH: join(
+      dirname(env.OPENBOT_CONTROL_MODEL_SETTINGS_PATH!),
+      "temporal.json",
+    ),
+  }));
   vi.stubGlobal(
     "process",
     Object.create(process, {
@@ -313,8 +322,18 @@ it("refuses incomplete TS resources before starting Python, and releases Python 
 
 it("refuses missing P4 engine configuration before starting the Python migrator or TS entry", async () => {
   const f = await fixture();
-  await rm(join(f.root, "temporal.json"));
+  mocks.configuration.mockResolvedValue({});
   await expect(launchTsProductServer(f.root, f.env)).rejects.toThrow("P4 requires");
+  expect(mocks.python).not.toHaveBeenCalled();
+  expect(mocks.spawn).not.toHaveBeenCalled();
+});
+
+it("propagates execution configuration refusal before either product process starts", async () => {
+  const f = await fixture();
+  mocks.configuration.mockRejectedValue(new Error("Private configuration refused"));
+  await expect(launchTsProductServer(f.root, f.env)).rejects.toThrow(
+    "Private configuration refused",
+  );
   expect(mocks.python).not.toHaveBeenCalled();
   expect(mocks.spawn).not.toHaveBeenCalled();
 });
