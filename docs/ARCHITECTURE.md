@@ -1,74 +1,119 @@
 # OpenBot architecture
 
-Current source uses the Python business Server and Temporal durable execution. macOS arm64 Desktop can host Python locally; Windows and Intel Mac use remote services while retaining old installations/data. The frozen TS oracle is test-only and never packaged as a backend.
-
-[简体中文](ARCHITECTURE.zh-CN.md) · [Repository map](REPOSITORY_MAP.md)
-
-OpenBot is a Python/TypeScript monorepo with one authoritative Server, replaceable execution Nodes and shared Desktop/Web clients. This document describes the current source tree. A directory, interface declaration or build artifact is not evidence that a platform can execute a capability.
+OpenBot has one authoritative Server, replaceable execution Nodes and one React client shared by
+Web and Desktop. This page describes how the parts fit today and what is changing. It is the one
+living architecture document. Decisions and their evidence live in [ADRs](decisions/); setup lives in
+[CONTRIBUTING](../CONTRIBUTING.md).
 
 ```mermaid
 flowchart LR
-  UI[Shared React client] -->|Authenticated REST and SSE| Server[OpenBot Server]
-  Desktop[Electron host] --> UI
+  UI[React client] -->|Authenticated REST and SSE| Server[OpenBot Server]
+  Desktop[Electron shell] --> UI
   Server --> DB[(PostgreSQL)]
-  Server --> Native[Server-owned native Agent]
-  Native --> Models[Configured model provider]
-  Native --> Plugins[Reviewed MCP services]
+  Server --> Temporal[Temporal]
+  Temporal --> Runtime[Agent runtime]
+  Runtime --> Models[Configured model provider]
+  Runtime --> Plugins[Reviewed MCP services]
   Node[Enrolled Node] -->|Outbound WebSocket| Server
-  Node --> Provider[Executable Provider adapter]
+  Node --> Provider[Execution Provider]
 ```
+
+## The Server is moving from Python to TypeScript
+
+[ADR-0050](decisions/0050-typescript-control-plane.md) moves the Server from `apps/server-python`
+to `apps/server-ts` one route group at a time. Both use the same PostgreSQL schema
+(`packages/db`) and the same wire contracts (`packages/protocol`), so data never moves between them.
+
+| Phase | State |
+| --- | --- |
+| P0–P2 | Done: shared contracts, the TS public entry, and forwarding to a private Python upstream |
+| P3 | Done: when selected, TS owns the Owner session and 109 of the 121 product operations, and is the only SSE publisher |
+| P4 | Done: when selected, TS also owns Work execution, its Temporal workers and the agent runtime; open Python histories drain on Python workers |
+| P5 | Next: TS becomes the default, Python, its harness and the forwarding code are removed, and `apps/server-ts` is renamed `apps/server` |
+
+Until P5, an installation runs Python unless the TS groups are selected explicitly. The selection
+switches, the forwarder and the Python drain are temporary and leave in P5.
 
 ## Runtime boundaries
 
-| Component | Current responsibility | Authority it does not receive |
+| Component | Responsibility | Authority it does not have |
 | --- | --- | --- |
-| `apps/server-python` | Owner sessions, channel/Bot identity, membership, routing, task state, approvals, audit, native Agent execution and authorized plugin access | Models and external data cannot override Server policy |
-| `apps/web` | Channel conversations, drafts, task supervision, settings and extension presentation | No direct database access, provider credentials or authorization decisions |
-| `apps/desktop` | Bundled client, trusted typed bridge, connection policy, supported local Server installation and platform lifecycle | Renderer content cannot invoke arbitrary main-process operations |
-| `apps/node` | Outbound enrollment/session, advertised executable capabilities, assignment lifecycle and Provider dispatch | A capability declaration does not authorize a task or side effect |
-| `providers/*` | Narrow integration with a specific execution backend | No ownership of Bot identity, channel membership, approval or final task truth |
-| `packages/domain`, `packages/protocol`, `packages/db` | Product types, validated wire contracts, schema and ordered migrations | A TypeScript type alone is not a runtime authorization check |
+| Server (`apps/server-ts`, `apps/server-python`) | Owner sessions, Bot and channel identity, membership, routing, task state, approvals, audit, agent execution and plugin access | Models and external data cannot override Server policy |
+| `apps/web` | Conversations, drafts, task supervision, settings and extension presentation | No database access, provider credentials or authorization decisions |
+| `apps/desktop` | Bundles the client, a typed restricted bridge, connection policy and the local Server lifecycle | Renderer content cannot call arbitrary main-process operations |
+| `apps/node` | Outbound enrollment, advertised capabilities, assignment lifecycle and Provider dispatch | Declaring a capability does not authorize a task or side effect |
+| `providers/*` | Narrow adapters to one execution backend | No ownership of identity, membership, approval or final task state |
+| `packages/protocol`, `packages/domain`, `packages/db` | Wire contracts, product types, schema and ordered migrations | A type is not a runtime authorization check |
 
 ## Data and state
 
-PostgreSQL stores Bots, channel membership, messages, Runs, task ancestry, approvals, audit, memory and skills. One submitted channel message may have up to six exact recipients and one Run per recipient. `(source_message_id, bot_id)` prevents duplicate per-Bot tasks while preserving one human source message. The Server validates all recipients before committing the submission.
+PostgreSQL stores Bots, channel membership, messages, Runs, task ancestry, approvals, audit, memory
+and skills.
+- **Submissions.** One channel message reaches at most six exact recipients with one Run each. The
+  pair `(source_message_id, bot_id)` prevents duplicate tasks for the same message and Bot. The
+  Server validates every recipient before it commits the submission.
+- **Transitions.** Task transitions use conditional updates inside transactions. Claims and
+  collaboration take explicit advisory or row locks.
+- **Removing a member.** This cancels the affected task trees and expires their pending approvals
+  before the membership row disappears.
+- **Files.** Binary content lives outside the database, behind Server-owned metadata and
+  authenticated access. Mentioning an attachment ID does not grant access to it.
 
-Task transitions use conditional updates and transactions. Native claims and collaboration use explicit advisory/row locks. Member removal cancels affected active task trees and expires pending approvals before membership disappears; direct conversations keep a fixed Bot. Reactions represent the single Owner's own selections, not synthetic multi-user activity.
+## Agents and collaboration
 
-Large binary content is stored outside the database behind Server-owned metadata and authenticated access. Channel attachments, generated artifacts and transient runtime frames have separate APIs and limits. A message mentioning an attachment ID does not by itself grant access.
+Temporal runs Work durably, and the agent runtime executes each Run against the configured model.
+- **Untrusted inputs.** Every tool is bound to the claimed Run's Bot and channel. The Bot profile,
+  memory, skills, messages, webpages, plugin descriptions and colleague results are all untrusted
+  guidance.
+- **Delegation.** Bots delegate through child tasks that use their own identity and grants.
+  Delegation depth, descendants, per-Run budgets and a shared root deadline all have bounds.
+- **Steering.** Owner corrections apply at the next model step. They never rewrite completed effects.
+- **Unknown outcomes.** An effect whose outcome is unknown is never replayed automatically.
+- **Commit.** Final replies, artifact metadata and terminal task state commit together.
 
-## Native Agent and collaboration
-
-For an opted-in Bot with execution profile `none`, the Server runs the installed AI SDK `ToolLoopAgent` against the configured model adapter. Every tool is bound to the claimed Run's Bot and channel. Profile text, memory, skills, messages, webpages, plugin descriptions and colleague results are untrusted guidance; none can grant authority.
-
-Up to six root tasks can execute concurrently, with root tasks for the same Bot/channel serialized. `start_task` returns a nonblocking child receipt; `wait_for_task` joins an exact child; `delegate_task` combines both. Child tasks use their own identity and grants. Two delegation levels, four descendants, per-Run step/tool budgets and a shared root deadline bound collaboration. Unread colleague results are joined before a parent final answer commits.
-
-Explicit Owner steering is stored against one queued/running native Run and injected at the next model step. It cannot alter completed effects or silently change another task. The completion transaction detects accepted but unapplied corrections and requires another bounded continuation.
-
-Supported provider streaming produces transient public text drafts over `run.output`. Final replies, artifact metadata and terminal task state commit together. Drafts are not audit truth, private reasoning is never displayed, and MiniMax retains the guarded nonstreaming path. Interrupted tasks fail on Server restart; ambiguous external effects are not replayed automatically. See [native Agent](NATIVE_AGENT.md) and [asynchronous collaboration](ASYNC_COLLABORATION.md).
+See [native Agent](NATIVE_AGENT.md) and [asynchronous collaboration](ASYNC_COLLABORATION.md).
 
 ## Nodes, Providers and approvals
 
-Worker-backed tasks follow the existing Server/Node assignment protocol. Nodes connect outward, advertise actual executable capabilities and capacity, and accept only Server-issued assignments. Offer/accept/confirm, start, progress, frames, terminal result and settlement messages have validated contracts. The Server reconciles disconnects and can send a cancellation after durable revocation.
+Nodes connect outward, advertise real capabilities and capacity, and accept only assignments the
+Server issued. The Server reconciles disconnects and sends a cancellation after it durably records a
+revocation.
+- **Approvals.** An effect that needs approval is approved through the Server's policy path before
+  dispatch. A late provider result cannot overwrite a terminal Server state.
+- **Docker.** The Docker Provider is a thin adapter to reviewed upstream endpoints. The other
+  Provider declarations are not execution support.
+- **Support claims.** Before claiming support, check [Provider conformance](PROVIDER_CONFORMANCE.md)
+  and [cross-platform boundaries](CROSS_PLATFORM.md).
 
-The Docker integration is a thin adapter to reviewed upstream computer endpoints for explicitly supported operations; it does not copy an upstream control plane. Other Provider declarations are not execution support. Consult [Provider conformance](PROVIDER_CONFORMANCE.md), [cross-platform boundaries](CROSS_PLATFORM.md) and the relevant Worker Host documentation before making support claims.
+## Plugins
 
-Approval-requiring effects must be recorded and approved through the Server's policy path before dispatch. Removing a member or ending a Run invalidates future authorization; a late provider result cannot overwrite a terminal Server state.
+MCP is the extension transport for reviewed tools, resources and prompts.
+- **Installation.** Installing a plugin pins its reviewed manifest, and each Bot has explicit
+  grants.
+- **Confirmations.** Tools in confirm mode need a fresh decision for their exact arguments.
+- **Isolation.** Plugin app content runs in a restricted surface.
 
-## Plugins and external integration
+See the [plugin guide](PLUGINS.md). OpenBot's Node protocol and channel REST/SSE contracts are separate
+from MCP. [Open-source reuse](OPEN_SOURCE_REUSE.md) records upstreams, licenses and attributions,
+including the Hermes Agent inspiration for Employee learning.
 
-MCP is the extension transport for reviewed tools, resources and Owner-selected prompts. Installation pins a reviewed manifest; each Bot has explicit grants. Confirm-mode tools require a fresh decision for exact arguments. Plugin app content runs in a restricted presentation surface and does not gain general Desktop or Server access. See [plugin protocol and author guide](PLUGINS.md).
+## Clients and installation
 
-OpenBot's internal Node protocol and channel REST/SSE contracts remain distinct from MCP. The current implementation is not an AG-UI or Matrix federation implementation. Standard protocols are reused where they fit the boundary; local identity and audit remain owned by the Server. [Open-source reuse](OPEN_SOURCE_REUSE.md) records exact upstreams, licenses and incorporation decisions. Employee learning inspiration from Hermes Agent remains attributed there.
+Web and Desktop share the React client over authenticated REST and SSE:
+- **Channel SSE** carries messages, task states, progress, transient output and interactions.
+- **Workspace SSE** carries wider workspace changes.
+- **Reconnect** reloads authoritative snapshots. Not every transient event can be replayed.
 
-## Clients, synchronization and installation
+Desktop runs the Server locally where packaging is qualified. See
+[Desktop installation](DESKTOP_INSTALLATION.md) and [Windows Desktop](WINDOWS_DESKTOP.md). A
+successful build is not installed-lifecycle evidence. The office visualization is an optional,
+deferred plugin.
 
-Desktop packages the React client and uses a typed, restricted Electron bridge. Web connects through authenticated Server REST/SSE. Channel SSE carries messages, task states, progress, transient output and interactions; workspace SSE carries broader workspace changes. Reconnect reloads authoritative snapshots. There is no claim of a durable replay cursor for every transient event.
+## Checks
 
-Local Server packaging, data permissions and lifecycle are platform-specific. The current work adds Windows x64 adaptation while preserving existing macOS behavior; a successful build is distinct from installed lifecycle evidence. Linux and other architectures retain their explicitly documented status. See [Windows Desktop](WINDOWS_DESKTOP.md) and [Desktop installation](DESKTOP_INSTALLATION.md). The office visualization remains an optional deferred plugin.
+`npm run check` runs lint, strict type checks, tests, builds, migration checks and the repository
+policy checks. `npm run ui:acceptance -- --entry ts` drives the real interface against a disposable
+stack. Mocks, real-database tests, rendered acceptance and real-platform execution are different
+kinds of evidence; report which one you ran.
 
-## Engineering entry points
-
-`npm run check` runs repository policy/documentation checks, migration checks, lint, strict type checking, tests and builds. Dedicated PostgreSQL CI steps run transaction suites against separate disposable databases. Model/transport mocks, real database tests, rendered client acceptance and real-platform execution provide different evidence and must not be conflated.
-
-Start from the [repository map](REPOSITORY_MAP.md) and [contributor guide](../CONTRIBUTING.md).
+Start from the [repository map](../AGENTS.md).

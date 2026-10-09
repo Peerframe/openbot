@@ -30,7 +30,7 @@ test("instructions, skills and prompts retain behavioral workflow gates", () => 
     "apps/web/AGENTS.md",
     ".agents/skills/openbot-check/SKILL.md",
     "docs/prompts/review.md",
-    ".github/PULL_REQUEST_TEMPLATE.md",
+    ".github/pull_request_template.md",
   ]) {
     const plan = select(file);
     assert(
