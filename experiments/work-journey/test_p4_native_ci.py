@@ -9,7 +9,7 @@ import sys
 import unittest
 import stat
 from types import SimpleNamespace
-from unittest.mock import AsyncMock,patch
+from unittest.mock import AsyncMock,Mock,patch
 from tempfile import TemporaryDirectory
 
 import p4_native_ci as packet
@@ -168,6 +168,29 @@ class NativeDiagnosticsTests(unittest.IsolatedAsyncioTestCase):
             with patch.object(controller,'spawn',AsyncMock()) as spawn:
                 with self.assertRaisesRegex(ValueError,'native_server_port_changed'):await controller.start('obenr_'+('a'*43),12346)
                 spawn.assert_not_awaited()
+
+    async def test_native_journey_waits_for_database_dsn_before_api_and_cleans_stage_failure(self):
+        import product_command_probe as probe
+        with TemporaryDirectory() as directory:
+            root=Path(directory);bundle=root/'node.cjs';bundle.write_bytes(b'public fixture module')
+            database=SimpleNamespace(close=Mock())
+            def start():database.dsn='postgresql://synthetic-owned-database'
+            database.start=Mock(side_effect=start)
+            controller=SimpleNamespace(port=None,close=AsyncMock())
+            async def stage(*args):
+                self.assertTrue(hasattr(database,'dsn'))
+                self.assertIsInstance(controller.port,int)
+                raise ValueError('synthetic_stage_refusal')
+            controller.stage=AsyncMock(side_effect=stage)
+            api_constructor=Mock(wraps=probe.API)
+            with patch.object(probe,'ControlDatabase',return_value=database),patch.object(host,'NativeHost',return_value=controller),patch.object(probe,'API',api_constructor),patch('builtins.print'):
+                with self.assertRaisesRegex(ValueError,'synthetic_stage_refusal'):
+                    await probe.qualify(root/'owned-output',bundle,entry='ts',native_ci_config=root/'explicit-ci.json')
+            database.start.assert_called_once_with()
+            self.assertEqual(api_constructor.call_args.args[1],database.dsn)
+            controller.stage.assert_awaited_once();controller.close.assert_awaited_once()
+            database.close.assert_called_once_with()
+            self.assertFalse((root/'owned-output/control.pem').exists())
 
     async def test_stage_and_preready_failures_keep_only_public_diagnostic_in_artifact(self):
         for operation in ('stage','run'):

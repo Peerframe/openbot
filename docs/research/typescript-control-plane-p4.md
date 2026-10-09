@@ -725,3 +725,13 @@ Server's chosen loopback port directly, binds it before root staging and refuses
 before enrollment. No proxy or additional allowed Host is needed; product entry checks, one-time
 enrollment, actual low UID/Unix peer and original native budgets are unchanged. Remote SSH/default
 qualification keep their existing staging/lifecycle paths. Fresh actual results remain required.
+
+
+The direct-port attempt on `a9ad854a`, [CI37927173904](https://github.com/Peerframe/openbot/actions/runs/37927173904),
+failed before native staging: the early API constructor read the owned PostgreSQL DSN before
+`ControlDatabase.start` had assigned it. Cleanup passed for the resources created before this
+refusal; no command or browser ran. Native CI now starts that owned database before constructing
+the API and reserving its canonical port. Migration and engine startup still precede the actual
+API/Node launch; the ordinary/remote path remains unchanged. An integrated synthetic start-order
+regression exercises the real journey entry and verifies stage-refusal cleanup, without Docker,
+models or privileged execution. It does not establish native qualification.

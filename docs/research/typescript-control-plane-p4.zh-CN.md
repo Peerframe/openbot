@@ -521,3 +521,11 @@ Temporal 启动。Node 未进入注册表，runner 清理仍未成功，命令�
 同机适配现直接使用 Server 选定的 loopback 端口，在 root staging 前绑定它，并在发送注册前拒绝
 端口变化；不增加代理或允许的 Host。产品入口检查、一次注册凭据、真实低 UID/Unix peer 和原生
 预算不变；远端 SSH 与默认验收保留原 staging/生命周期。仍需新鲜实际结果。
+
+
+直连端口尝试 `a9ad854a` 的 [CI37927173904](https://github.com/Peerframe/openbot/actions/runs/37927173904)
+在原生 staging 前失败：提前创建 API 时，拥有的 PostgreSQL 还未通过 `ControlDatabase.start`
+分配 DSN。该次已创建资源清理通过，命令和浏览器均未运行。原生 CI 现先启动该拥有数据库，再
+创建 API 并保留标准端口；迁移与引擎启动仍在实际 API/Node 启动前，普通与远端路径顺序不变。
+新增合成启动顺序回归执行真实 journey 入口，并验证 staging 拒绝后的清理，不执行 Docker、
+模型或特权操作；此回归不能代替原生验收。

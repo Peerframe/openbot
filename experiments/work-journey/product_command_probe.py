@@ -62,7 +62,9 @@ async def qualify(directory,bundle,remote_options=None,entry="python",native_ci_
     command_config=directory/'command.json'
     try:
         if native_ci_config:
-            # Constructor chooses fixture settings only; the actual Server starts after staging.
+            # PostgreSQL assigns its DSN only after readiness. Start the owned database before
+            # choosing the canonical Server port; no API process or enrollment starts here.
+            await asyncio.to_thread(postgres.start)
             api=API(directory,postgres.dsn,directory/'artifacts')
             remote.port=int(api.url.rsplit(':',1)[1])
         pin.write_bytes(await remote.stage(route,timing,keys['control'][1],bundle) if remote else keys['enforcer'][1])
@@ -72,7 +74,8 @@ async def qualify(directory,bundle,remote_options=None,entry="python",native_ci_
                             wallSeconds=60,outputMiB=64,capturedOutputKiB=1024)),
             control=dict(issuer='product-control',keyId='product-control-key',privateKeyPath=str(control)),
             enforcement=dict(issuer='product-enforcer',keyId=route['enforcementKeyId'],publicKeyPath=str(pin))))
-        await asyncio.to_thread(postgres.start);await asyncio.to_thread(postgres.migrate,ROOT)
+        if not native_ci_config:await asyncio.to_thread(postgres.start)
+        await asyncio.to_thread(postgres.migrate,ROOT)
         with psycopg.connect(postgres.dsn) as db:
             canonical_migrations = db.execute('SELECT count(*) FROM drizzle.__drizzle_migrations').fetchone()[0]
         engine=PostgresServer(directory,mtls=True)
