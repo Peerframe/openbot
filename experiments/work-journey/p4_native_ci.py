@@ -69,6 +69,20 @@ def download(target,pin):
     require(count==maximum and digest(target)==expected,'download_pin_changed')
 
 
+def pinned_members(archive,expected,prefix):
+    seen=set()
+    with tarfile.open(archive) as t:
+        for member in t:
+            if prefix and not member.name.startswith(prefix):continue
+            name=member.name.removeprefix(prefix)
+            pin=expected.get(name)
+            if pin is None:continue
+            require(name not in seen and member.isfile() and 0<member.size<=120*1024**2,'binary_archive_type_changed')
+            data=t.extractfile(member).read(member.size+1)
+            require(len(data)==member.size and hashlib.sha256(data).hexdigest()==pin,'binary_pin_changed')
+            seen.add(name);yield name,data
+
+
 def run(argv,timeout=600):
     return subprocess.check_output([str(v) for v in argv],timeout=timeout,env={
         'PATH':'/usr/sbin:/usr/bin:/sbin:/bin','LANG':'C.UTF-8','HOME':'/root','DOCKER_BUILDKIT':'1'})
@@ -92,6 +106,15 @@ def files(root):
     return result
 
 
+def worker_site(worker):
+    # Resolving venv/bin/python loses the venv prefix and selects the system interpreter.
+    worker=worker.absolute()
+    require(worker.parent.name=='bin' and (worker.parent.parent/'pyvenv.cfg').is_file(),'explicit_worker_venv_required')
+    matches=list(worker.parent.parent.glob('lib/python3.12/site-packages'))
+    require(len(matches)==1 and matches[0].is_dir(),'worker_closure_missing')
+    return matches[0]
+
+
 def prepare(worker,upstream,bun,node,bundle,output):
     require(sys.platform=='linux' and os.geteuid()==0 and os.uname().machine=='x86_64'
         and os.environ.get('GITHUB_ACTIONS')=='true','disposable_linux_ci_only')
@@ -113,14 +136,8 @@ def prepare(worker,upstream,bun,node,bundle,output):
         download(BASE/'downloads'/filename,pin)
     extra={'containerd-shim-runc-v2':'60a23e7d1d8f60b2f7ae8046cd656066c9dea065c3e0da3ce61cf2fdf173afd3','docker-init':'5ccb076690ac3d060511c63d02194bd5cefaba8dbf225fd60b26283eb1055e4b'}
     for archive,prefix in ((BASE/'downloads/docker.tgz','docker/'),(BASE/'downloads/gvisor.tar.bz2','')):
-        with tarfile.open(archive) as t:
-            for member in t:
-                name=member.name.removeprefix(prefix)
-                expected={**REVIEWED_BINARY_HASHES,**extra}.get(name)
-                if expected is None:continue
-                require(member.isfile(),'binary_archive_type_changed')
-                data=t.extractfile(member).read();require(hashlib.sha256(data).hexdigest()==expected,'binary_pin_changed')
-                target=BASE/'bin'/name;target.write_bytes(data);target.chmod(0o755)
+        for name,data in pinned_members(archive,{**REVIEWED_BINARY_HASHES,**extra},prefix):
+            target=BASE/'bin'/name;target.write_bytes(data);target.chmod(0o755)
     for name,expected in {**REVIEWED_BINARY_HASHES,**extra}.items():require(digest(BASE/'bin'/name)==expected,'binary_missing')
     python=export_image(PYTHON_IMAGE,BASE/'downloads/python-amd64.tar',PYTHON_CONFIG)
     chromium=export_image(CHROMIUM_IMAGE,BASE/'downloads/playwright-1.62.1-linux-amd64.tar',CHROMIUM_CONFIG)
@@ -134,7 +151,7 @@ def prepare(worker,upstream,bun,node,bundle,output):
     source=BASE/'case/source/deadline_probe.py'
     source.write_text(replace_exact(source.read_text(),'ARCHIVE_SHA = "b6a087a833e6d00409197b8ba06071a1890df84eb52b770b757f092b7d2e8788"','ARCHIVE_SHA = '+json.dumps(python['archiveSha256'])))
     shutil.copytree(REPOSITORY/'apps/server-python/src/openbot_server',BASE/'case/python/openbot_server',ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
-    site=next(worker.parent.parent.glob('lib/python3.12/site-packages'))
+    site=worker_site(worker)
     shutil.copytree(site,BASE/'deps',dirs_exist_ok=True,ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
     for p in [BASE/'deps',BASE/'case/python',*(BASE/'deps').rglob('*'),*(BASE/'case/python').rglob('*')]:
         if not p.is_symlink():p.chmod(0o755 if p.is_dir() else 0o644)
@@ -212,4 +229,4 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     for flag in ('worker','upstream','bun','node','node-bundle','output'):parser.add_argument('--'+flag,type=Path,required=True)
     args=parser.parse_args()
-    prepare(args.worker.resolve(),args.upstream.resolve(),args.bun.resolve(),args.node.resolve(),args.node_bundle.resolve(),args.output.resolve())
+    prepare(args.worker.absolute(),args.upstream.resolve(),args.bun.resolve(),args.node.resolve(),args.node_bundle.resolve(),args.output.resolve())

@@ -1,6 +1,8 @@
 """Packet integrity and admission tests; no Linux runtime, sudo, provider or remote credentials."""
 import asyncio
 import io
+import hashlib
+import tarfile
 import json
 from pathlib import Path
 import sys
@@ -19,6 +21,18 @@ class NativePacketTests(unittest.TestCase):
         self.assertEqual(packet.replace_exact('pin=original','original','measured'),'pin=measured')
         for value in ('absent','original original'):
             with self.assertRaisesRegex(ValueError,'source_shape_changed'):packet.replace_exact(value,'original','measured')
+
+    def test_official_top_level_directory_is_not_a_runtime_binary(self):
+        with TemporaryDirectory() as directory:
+            p=Path(directory)/'archive.tar';content=b'pinned executable'
+            with tarfile.open(p,'w') as t:
+                folder=tarfile.TarInfo('docker');folder.type=tarfile.DIRTYPE;t.addfile(folder)
+                member=tarfile.TarInfo('docker/docker');member.size=len(content);t.addfile(member,io.BytesIO(content))
+            expected={'docker':hashlib.sha256(content).hexdigest()}
+            self.assertEqual(list(packet.pinned_members(p,expected,'docker/')),[('docker',content)])
+            with tarfile.open(p,'w') as t:
+                link=tarfile.TarInfo('docker/docker');link.type=tarfile.SYMTYPE;link.linkname='/not-selected';t.addfile(link)
+            with self.assertRaisesRegex(ValueError,'binary_archive_type_changed'):list(packet.pinned_members(p,expected,'docker/'))
 
     def test_download_rejects_content_and_size_drift(self):
         with TemporaryDirectory() as directory:
@@ -41,6 +55,14 @@ class NativePacketTests(unittest.TestCase):
             for value in ({'version':1,'program':'/bin/sh'},{'version':True,'program':str(host.PROGRAM)},{'version':1,'program':str(host.PROGRAM),'extra':True}):
                 p.write_text(json.dumps(value))
                 with self.assertRaisesRegex(ValueError,'explicit_native_ci'):host.NativeHost(p,Path(directory))
+
+    def test_worker_venv_prefix_survives_an_interpreter_symlink(self):
+        with TemporaryDirectory() as directory:
+            root=Path(directory);(root/'bin').mkdir();(root/'pyvenv.cfg').write_text('fixture venv')
+            site=root/'lib/python3.12/site-packages';site.mkdir(parents=True)
+            worker=root/'bin/python';worker.symlink_to(sys.executable)
+            self.assertEqual(packet.worker_site(worker),site)
+            with self.assertRaisesRegex(ValueError,'explicit_worker_venv'):packet.worker_site(worker.resolve())
 
     def test_root_and_remote_discovery_are_not_implicit(self):
         with self.assertRaisesRegex(ValueError,'disposable_linux_ci_only'):
