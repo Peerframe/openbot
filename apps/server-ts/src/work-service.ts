@@ -19,6 +19,7 @@ import type { Plugins } from "./product-plugins.js";
 import { acceptedWork } from "./work-execution.js";
 import { WorkFiles } from "./work-files.js";
 import { WorkHandoff, workTransactions } from "./work-handoff.js";
+import { submitDueWork } from "./work-automations.js";
 import { WorkRuntime } from "./work-runtime.js";
 import { WorkTerminal } from "./work-terminal.js";
 import { cascadeWork, workTree } from "./work-tree.js";
@@ -26,6 +27,7 @@ import type { WorkWebOptions } from "./work-web.js";
 
 export type WorkOptions = EngineSettings & {
   web?: WorkWebOptions;
+  tokenLimit?: number;
   address: string;
   fileRoot: string;
   tls: { ca: string; certificate: string; key: string; serverName: string };
@@ -33,6 +35,9 @@ export type WorkOptions = EngineSettings & {
 export function validateWorkOptions(value: WorkOptions) {
   const url = new URL("tls://" + value.address);
   if (
+    !Number.isSafeInteger(value.tokenLimit ?? 100000) ||
+    (value.tokenLimit ?? 100000) < 0 ||
+    (value.tokenLimit ?? 100000) > 1000000000 ||
     value.address.length > 320 ||
     /\s/.test(value.address) ||
     url.username ||
@@ -95,7 +100,7 @@ export class WorkService {
     readonly options: WorkOptions,
     models: ModelConnections,
     transport?: ModelTransport,
-    attachments?: OwnerFiles,
+    readonly attachments?: OwnerFiles,
     plugins?: Plugins,
   ) {
     validateWorkOptions(options);
@@ -149,6 +154,7 @@ export class WorkService {
             return {
               watch:
                 !!tree.deadline ||
+                tree.sources.has(task.id) ||
                 !!tree.scopes.get(task.id)?.value.request.collaboratorBotIds.length,
               deadline: tree.deadline ? Date.parse(tree.deadline) + 1 : null,
             };
@@ -180,6 +186,16 @@ export class WorkService {
   }
   private async poll(engine: TemporalEngine) {
     while (!this.stopped.signal.aborted) {
+      try {
+        await submitDueWork(
+          this.transactions,
+          this.attachments,
+          this.options.tokenLimit ?? 100000,
+          this.stopped.signal,
+        );
+      } catch {
+        /* A failed occurrence remains due; it must not prevent the independent handoff/repair pass. */
+      }
       try {
         // A broken old submission cannot permanently hide newer rows behind a first-page limit.
         const unconfirmed = await this.handoff.unconfirmedBatch(8, this.unconfirmedAfter);

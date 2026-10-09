@@ -1,3 +1,5 @@
+import type { WorkMediaItem } from "./work-model-media.js";
+import { channelReadTools, channelWorkBots } from "./work-channel-reads.js";
 import { randomUUID } from "node:crypto";
 import { type ActivityBinding, WorkConflict, type WorkStep } from "@openbot/work";
 import { z } from "zod";
@@ -29,7 +31,9 @@ import {
 import { pluginWorkTools } from "./work-plugins.js";
 import { workUsage } from "./work-public.js";
 import { attachmentReadTool, WorkResources } from "./work-resources.js";
-import { nativeWorkScope } from "./work-scope.js";
+import { publishWorkSource } from "./work-channel.js";
+import { resolveWorkSource } from "./work-source.js";
+import type { FileSession } from "./owner-files.js";
 import { cascadeWork, workTreeBudget } from "./work-tree.js";
 import { artifactName, sha256, type WorkJson, workCanonical, workText } from "./work-values.js";
 import { type WorkWebOptions, workWebTools } from "./work-web.js";
@@ -82,43 +86,29 @@ export class WorkRuntime {
       web,
     );
   }
-  private async source(db: WorkDb, scope: WorkScope) {
-    const task = await currentWork(db, scope);
-    const [profile] = await db`SELECT * FROM work_task_profiles WHERE task_id=${task.id} FOR SHARE`;
-    const conflicting = await db`SELECT 1 FROM work_sources WHERE task_id=${task.id}`;
-    if (
-      !profile ||
-      conflicting.length ||
-      profile.bot_id !== task.bot_id ||
-      !["none", "model"].includes(profile.execution_profile)
-    )
-      throw new WorkConflict("product_source_changed");
-    const value = {
-      kind: "work_task_profile",
-      version: 1,
-      taskId: task.id,
-      botId: task.bot_id,
-      executionProfile: profile.execution_profile,
-      modelSelection: profile.model_selection,
-    };
-    if (workCanonical(value).digest !== profile.profile_digest)
-      throw new WorkConflict("product_task_profile_changed");
+  private async source(db: WorkDb, scope: WorkScope, session?: FileSession) {
+    const task = await currentWork(db, scope),
+      source = await resolveWorkSource(db, task);
     const [bot] =
       await db`SELECT id,name,role,description,profile_revision FROM bots WHERE id=${task.bot_id} AND deleted_at IS NULL FOR SHARE`;
     if (!bot) throw new WorkConflict("product_task_bot_missing");
-    const resource = await nativeWorkScope(db, task);
-
+    const media = await this.resources.media.validate(db, scope, session);
+    const attachments = media.attachments;
     return {
       taskId: task.id,
       botId: task.bot_id,
       objective: task.objective,
-      attachments: resource?.value.attachments ?? [],
-      collaborators: resource?.value.request.collaboratorBotIds ?? [],
-      knowledge: resource?.value.request.knowledge ?? false,
-      plugins: resource?.value.request.plugins ?? false,
-      web: resource?.value.request.web ?? false,
-      selection: profile.model_selection as unknown,
-      profileSha256: String(profile.profile_digest),
+      attachments,
+      channel: source.kind === "channel" ? source.provenance : null,
+      collaborators:
+        source.kind === "channel"
+          ? (await channelWorkBots(db, task, source)).bots.map((b) => b.id)
+          : (source.native?.value.request.collaboratorBotIds ?? []),
+      knowledge: source.kind === "channel" || (source.native?.value.request.knowledge ?? false),
+      plugins: source.kind === "channel" || (source.native?.value.request.plugins ?? false),
+      web: source.kind === "channel" || (source.native?.value.request.web ?? false),
+      selection: source.selection,
+      profileSha256: source.profileSha256,
       profile: {
         id: bot.id,
         name: bot.name,
@@ -139,7 +129,13 @@ export class WorkRuntime {
     };
   }
   private async selected(db: WorkDb, scope: WorkScope, intent?: WorkAction["intent"]) {
-    const source = await this.source(db, scope);
+    const task = await currentWork(db, scope),
+      source = await resolveWorkSource(db, task);
+    if (
+      !(await db`SELECT id FROM bots WHERE id=${task.bot_id} AND deleted_at IS NULL FOR SHARE`)
+        .length
+    )
+      throw new WorkConflict("product_task_bot_missing");
     const revision = intent
       ? z
           .number()
@@ -164,6 +160,9 @@ export class WorkRuntime {
     operation: "work" | "review",
     signal: AbortSignal,
   ) {
+    const media = await this.resources.run(scope, (db, _plugins, session) =>
+      this.resources.media.validate(db, scope, session),
+    );
     const data = workCanonical(input, 262144),
       blob = this.files.put(Buffer.from(data.wire));
     // Recover before resolving current credentials: historical observations survive revocation.
@@ -175,6 +174,8 @@ export class WorkRuntime {
       if (!action) return null;
       const request = blobSchema.parse(action.intent.request);
       if (
+        workCanonical(action.intent.inputMedia ?? null).wire !==
+          workCanonical(media.reference).wire ||
         request.sha256 !== blob.sha256 ||
         action.intent.operation !== operation ||
         action.correction_context_id !== scope.contextId
@@ -200,10 +201,11 @@ export class WorkRuntime {
           version: 1,
           operation,
           request: blob,
+          inputMedia: media.reference,
           provider: proof,
           profileSha256: source.profileSha256,
         },
-        Buffer.byteLength(data.wire) + 20480,
+        Buffer.byteLength(data.wire) + 20480 + media.reservation,
         false,
       );
     }
@@ -222,6 +224,20 @@ export class WorkRuntime {
     )
       throw new WorkConflict("model_outcome_pending");
     try {
+      let binary: WorkMediaItem[] = [];
+      await this.resources.lock((session, plugins) =>
+        this.ledger.fresh(scope, original.id, async (db) => {
+          await this.resources.revalidate(db, scope, session, plugins);
+          const hydrated = await this.resources.media.validate(db, scope, session, true);
+          if (
+            workCanonical(hydrated.reference).wire !==
+            workCanonical(original.intent.inputMedia ?? null).wire
+          )
+            throw new WorkConflict("model_media_binding_changed");
+          await fresh(db);
+          binary = hydrated.binary;
+        }),
+      );
       const result = await invokeWorkModel(
         selected!,
         input,
@@ -234,6 +250,7 @@ export class WorkRuntime {
           ),
         signal,
         this.transport,
+        binary,
       );
       await this.ledger.record(scope.binding, original, "model", result);
       return result;
@@ -369,8 +386,8 @@ export class WorkRuntime {
     return true;
   }
   private async state(scope: WorkScope) {
-    return this.resources.run(scope, async (db, plugins) => {
-      const source = await this.source(db, scope),
+    return this.resources.run(scope, async (db, plugins, session) => {
+      const source = await this.source(db, scope, session),
         actions = await loadWorkActions(db, source.taskId);
       const context = await freezeWorkContext(
         db,
@@ -499,7 +516,8 @@ export class WorkRuntime {
     workText(summary, 16384);
     await this.resources.run(
       scope,
-      async (db) => {
+      async (db, _plugins, session) => {
+        const media = await this.resources.media.validate(db, scope, session);
         const task = await currentWork(db, scope);
         if (Number(task.revision) !== expectedRevision)
           throw new WorkConflict("task_revision_changed");
@@ -538,6 +556,7 @@ export class WorkRuntime {
             summary,
             artifacts,
             verification,
+            inputMedia: media.reference,
             correctionContext: scope.contextId,
           },
           131072,
@@ -566,6 +585,7 @@ export class WorkRuntime {
           correctionContext: scope.contextId,
         });
         await this.resources.knowledge.insertCompleted(db, scope, knowledge);
+        await publishWorkSource(db, task.id, summary);
         await checkWorkFence(db, scope.fence);
       },
       true,
@@ -602,8 +622,13 @@ export class WorkRuntime {
         freezeWorkContext(db, await acceptedWork(db, binding), binding.input.runId),
       );
       scope = { binding, fence, contextId: context.id };
-      const activeScope = scope,
-        state = await this.state(activeScope);
+      const activeScope = scope;
+      await this.resources.lock(
+        (session) =>
+          this.transactions.run((db) => this.resources.media.prepare(db, activeScope, session)),
+        signal,
+      );
+      const state = await this.state(activeScope);
       if (state.current.some((a) => a.decision === "denied"))
         return this.fail(binding, "action_denied", scope);
       if (state.current.some((a) => a.status === "proposed" && !a.unexpired))
@@ -648,6 +673,7 @@ export class WorkRuntime {
             objective: state.source.objective,
             corrections: context.corrections,
             profile: state.source.profile,
+            channel: state.source.channel,
             attachments: state.source.attachments,
             collaborators: state.source.collaborators,
             collaboration: state.joins.consumed,
@@ -658,7 +684,10 @@ export class WorkRuntime {
           turns: last && !last.calls.length ? state.turns.slice(0, -1) : state.turns,
           tools: [
             reportTool,
-            ...(state.source.collaborators.length ? collaborationTools : []),
+            ...(state.source.channel ? channelReadTools : []),
+            ...(state.source.channel || state.source.collaborators.length
+              ? collaborationTools
+              : []),
             ...(state.source.attachments.length ? [attachmentReadTool] : []),
             ...(state.source.knowledge ? knowledgeTools : []),
             ...workWebTools(state.webCatalog),

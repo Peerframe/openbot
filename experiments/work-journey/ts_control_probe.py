@@ -23,7 +23,9 @@ async def qualify(node):
             receipt.chmod(0o600)
             child = await asyncio.create_subprocess_exec(node, 'scripts/test-work-ts.ts', str(receipt), cwd=ROOT)
             try:
-                code = await asyncio.wait_for(child.wait(), 180)
+                # The aggregate suite includes media, channels, collaboration and schedules.
+                # Individual HTTP/SQL/Activity deadlines remain unchanged.
+                code = await asyncio.wait_for(child.wait(), 600)
             except (TimeoutError, asyncio.CancelledError):
                 child.terminate()
                 raise

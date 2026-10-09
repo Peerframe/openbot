@@ -35,7 +35,28 @@ export type WorkAction = {
   unexpired: boolean;
 };
 export type WorkScope = { binding: ActivityBinding; fence: WorkFence; contextId: string };
+const validationTasks = new WeakMap<WorkScope, { db: WorkDb; task: WorkTaskRow }>();
+/** Reuse only the locked Task during a read-only resource validation pass. The private scope
+ * expires before any caller can write, dispatch or leave this SQL transaction. */
+export async function withCurrentWork<T>(
+  db: WorkDb,
+  scope: WorkScope,
+  operation: (scope: WorkScope, task: WorkTaskRow) => Promise<T>,
+): Promise<T> {
+  const task = await currentWork(db, scope),
+    validationScope = { ...scope };
+  validationTasks.set(validationScope, { db, task });
+  try {
+    const value = await operation(validationScope, task);
+    await checkWorkFence(db, scope.fence);
+    return value;
+  } finally {
+    validationTasks.delete(validationScope);
+  }
+}
 export async function currentWork(db: WorkDb, scope: WorkScope) {
+  const locked = validationTasks.get(scope);
+  if (locked?.db === db) return locked.task;
   const task = await acceptedWork(db, scope.binding);
   await checkWorkFence(db, scope.fence);
   await checkWorkContext(db, task, scope.binding.input.runId, scope.contextId);

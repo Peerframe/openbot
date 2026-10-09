@@ -1,3 +1,7 @@
+import { channelCollaborationReceipt, createChannelChild } from "./work-channel-collaboration.js";
+import { channelWorkBots } from "./work-channel-reads.js";
+import { resourceWorkSource, resolveWorkSource, sourceWorkAttachments } from "./work-source.js";
+import { lockWorkTask } from "./work-handoff.js";
 import { modelSelectionSchema } from "@openbot/protocol";
 import { WorkConflict } from "@openbot/work";
 import { z } from "zod";
@@ -13,7 +17,7 @@ import {
 } from "./work-ledger.js";
 import type { WorkModelObservation, WorkTool } from "./work-model.js";
 import { createWork } from "./work-public.js";
-import { descriptor, nativeWorkScope, nativeWorkSource } from "./work-scope.js";
+import { nativeWorkScope } from "./work-scope.js";
 import { scopeSubset, type WorkRelation, workCreationTree, workTree } from "./work-tree.js";
 import { type WorkJson, workCanonical, workText } from "./work-values.js";
 
@@ -109,7 +113,7 @@ function childIdentity(row: WorkRelation) {
     creationActionId: row.creation_action_id,
     taskId: row.child_task_id,
     workRunId: row.child_work_run_id,
-    runId: row.child_work_run_id,
+    runId: row.child_source_run_id ?? row.child_work_run_id,
   };
 }
 function envelope(intent: WorkAction["intent"], result: WorkJson) {
@@ -131,6 +135,8 @@ export async function collaborationReceipt(
     WorkRelation[]
   >`SELECT * FROM work_collaborations WHERE creation_action_id=${action.id}`;
   if (!row) return null;
+  if (row.source_kind === "channel")
+    return envelope(action.intent, await channelCollaborationReceipt(db, action, row));
   const args = createInput.parse(action.intent.arguments),
     effect = action.intent.effect as Record<string, WorkJson>;
   const [parent] = await db<WorkTaskRow[]>`SELECT * FROM work_tasks WHERE id=${action.task_id}`;
@@ -208,7 +214,7 @@ export async function collaborationReceipt(
     await db`SELECT deadline_at=${String(tree.deadline)}::timestamptz AS valid FROM work_collaborations WHERE creation_action_id=${action.id}`;
   if (!sameDeadline?.valid) throw new WorkConflict("collaboration_receipt_changed");
   return envelope(action.intent, {
-    runId: row.child_work_run_id,
+    runId: row.child_source_run_id ?? row.child_work_run_id,
     botId: child.bot_id,
     status: "queued",
     sourceKind: "task",
@@ -223,6 +229,8 @@ export class WorkCollaboration {
     ledger.restoreTool = collaborationReceipt;
   }
   private async catalog(db: WorkDb, task: WorkTaskRow) {
+    const resolved = await resolveWorkSource(db, task);
+    if (resolved.kind === "channel") return channelWorkBots(db, task, resolved);
     const tree = workTree(task),
       source = tree.scopes.get(task.id);
     if (!source) throw new WorkConflict("native_task_capability_unavailable");
@@ -244,11 +252,13 @@ export class WorkCollaboration {
     };
   }
   private async child(db: WorkDb, scope: WorkScope, runId: string) {
-    const { task, native } = await nativeWorkSource(db, scope, "collaboration");
+    const source = await resourceWorkSource(db, scope, "collaboration"),
+      { task, native } = source;
     const [row] = await db<
       WorkRelation[]
-    >`SELECT * FROM work_collaborations WHERE parent_task_id=${task.id} AND child_work_run_id=${runId}`;
-    if (!row || row.source_kind !== "task") throw new WorkConflict("collaboration_child_not_found");
+    >`SELECT * FROM work_collaborations WHERE parent_task_id=${task.id} AND ((source_kind='task' AND child_work_run_id=${runId}) OR (source_kind='channel' AND child_source_run_id=${runId}))`;
+    if (!row || row.source_kind !== source.kind)
+      throw new WorkConflict("collaboration_child_not_found");
     const [child] = await db<WorkTaskRow[]>`SELECT * FROM work_tasks WHERE id=${row.child_task_id}`;
     const [bot] =
       await db`SELECT computer_profile FROM bots WHERE id=${child?.bot_id ?? ""} AND deleted_at IS NULL FOR SHARE`;
@@ -256,9 +266,18 @@ export class WorkCollaboration {
       !child ||
       !bot ||
       !["none", "model"].includes(bot.computer_profile) ||
-      !scopeSubset(native, await nativeWorkScope(db, child), child.bot_id)
+      (source.kind === "task" &&
+        !scopeSubset(native, await nativeWorkScope(db, child), child.bot_id))
     )
       throw new WorkConflict("collaboration_child_authority_changed");
+    if (source.kind === "channel") {
+      const childSource = await resolveWorkSource(db, await lockWorkTask(db, child.id));
+      if (
+        childSource.kind !== "channel" ||
+        childSource.channel.channel_id !== source.channel.channel_id
+      )
+        throw new WorkConflict("collaboration_child_authority_changed");
+    }
     const creation = (await loadWorkActions(db, task.id)).find(
       (a) => a.id === row.creation_action_id,
     );
@@ -269,11 +288,10 @@ export class WorkCollaboration {
       if (child.status === "completed" && typeof child.result_summary !== "string")
         throw new WorkConflict("collaboration_result_missing");
       result = {
-        runId: row.child_work_run_id,
+        runId: row.child_source_run_id ?? row.child_work_run_id,
         botId: child.bot_id,
         status: child.status,
-        sourceKind: "task",
-        taskId: child.id,
+        ...(source.kind === "task" ? { sourceKind: "task", taskId: child.id } : {}),
         ...(child.status === "completed"
           ? { result: child.result_summary! }
           : { error: "child_" + child.status }),
@@ -287,9 +305,19 @@ export class WorkCollaboration {
     args: z.infer<typeof createInput>,
     session?: FileSession,
   ) {
-    const source = await nativeWorkSource(db, scope, "collaboration"),
+    const source = await resourceWorkSource(db, scope, "collaboration"),
       tree = workTree(source.task);
-    if (!source.native.value.request.collaboratorBotIds.includes(args.botId))
+    if (
+      source.kind === "channel" &&
+      !(
+        await db`SELECT 1 FROM channel_bots WHERE channel_id=${source.channel.channel_id} AND bot_id=${args.botId} FOR SHARE`
+      ).length
+    )
+      throw new WorkConflict("collaboration_target_not_granted");
+    if (
+      source.kind === "task" &&
+      !source.native!.value.request.collaboratorBotIds.includes(args.botId)
+    )
       throw new WorkConflict("collaboration_target_not_granted");
     if (tree.tasks.some((t) => t.bot_id === args.botId))
       throw new WorkConflict("collaboration_task_limit");
@@ -297,7 +325,8 @@ export class WorkCollaboration {
       await db`SELECT computer_profile,configuration->'model' AS selection FROM bots WHERE id=${args.botId} AND deleted_at IS NULL FOR SHARE`;
     if (!bot || !["none", "model"].includes(bot.computer_profile))
       throw new WorkConflict("collaboration_target_unavailable");
-    let selection = bot.computer_profile === "model" ? bot.selection : null;
+    let selection =
+      source.kind === "channel" || bot.computer_profile === "model" ? bot.selection : null;
     if (selection === null)
       selection =
         (await db`SELECT default_model FROM owner_preferences WHERE owner_id='owner' FOR SHARE`)[0]
@@ -307,14 +336,10 @@ export class WorkCollaboration {
       throw new WorkConflict("product_task_model_required");
     const refs = references(args.task),
       attachments = [];
+    const grant = sourceWorkAttachments(source, source.task.objective, session);
     for (const id of refs) {
-      const expected = source.native.value.attachments.find((a) => a.id === id);
-      if (!expected || !session) throw new WorkConflict("collaboration_attachment_not_granted");
-      if (
-        workCanonical(descriptor(session.content(null, id).item)).wire !==
-        workCanonical(expected).wire
-      )
-        throw new WorkConflict("native_attachment_changed");
+      const expected = grant.attachments.find((a) => a.id === id);
+      if (!expected) throw new WorkConflict("collaboration_attachment_not_granted");
       attachments.push({ id, sha256: expected.sha256 });
     }
     return {
@@ -331,7 +356,7 @@ export class WorkCollaboration {
     args: Record<string, WorkJson>,
     session?: FileSession,
   ) {
-    const source = await nativeWorkSource(db, scope, "collaboration");
+    const source = await resourceWorkSource(db, scope, "collaboration");
     if (name === "list_collaborators")
       return { kind: "product_collaboration", source: source.provenance };
     const tree = await workCreationTree(db, source.task, scope.binding.input.runId);
@@ -372,7 +397,7 @@ export class WorkCollaboration {
     )) {
       const value = await this.ledger.observed(db, action, "tool"),
         payload = this.payload(action, value);
-      const source = await nativeWorkSource(db, scope, "collaboration"),
+      const source = await resourceWorkSource(db, scope, "collaboration"),
         effect = action.intent.effect as Record<string, WorkJson>;
       if (workCanonical(effect.source).wire !== workCanonical(source.provenance).wire)
         throw new WorkConflict("collaboration_source_changed");
@@ -409,14 +434,19 @@ export class WorkCollaboration {
           a.status === "applied" &&
           a.correction_context_id === scope.contextId &&
           a.intent.tool === "wait_for_task" &&
-          (a.intent.arguments as Record<string, WorkJson>).runId === row.child_work_run_id,
+          (a.intent.arguments as Record<string, WorkJson>).runId ===
+            (row.child_source_run_id ?? row.child_work_run_id),
       );
       if (join)
         consumed.push({
           actionId: join.id,
           result: this.payload(join, await this.ledger.observed(db, join, "tool")),
         });
-      else pending.push({ creationActionId: row.creation_action_id, runId: row.child_work_run_id });
+      else
+        pending.push({
+          creationActionId: row.creation_action_id,
+          runId: row.child_source_run_id ?? row.child_work_run_id,
+        });
     }
     return { consumed, pending };
   }
@@ -472,43 +502,47 @@ export class WorkCollaboration {
               await db`SELECT count(*) AS n FROM work_collaborations WHERE root_task_id=${creation.rootTaskId}`;
             if (creation.depth > 2 || Number(count!.n) >= 4)
               throw new WorkConflict("collaboration_task_limit");
-            const native = tree.scopes.get(task.id)!;
-            const inherited = {
-              ...native!.value.request,
-              attachmentIds: references(selected.task),
-              collaboratorBotIds: native!.value.request.collaboratorBotIds
-                .filter((id) => id !== selected.botId && !tree.tasks.some((t) => t.bot_id === id))
-                .sort(),
-            };
-            const child = await createWork(
-              db,
-              {
-                botId: selected.botId,
-                objective: selected.task.trim(),
-                tokenLimit: Number(task.token_limit),
-                requestKey: "native-collaboration:" + action.id,
-                scope: inherited,
-              },
-              session,
-            );
-            const [profile] =
-              await db`SELECT execution_profile,model_selection FROM work_task_profiles WHERE task_id=${child.id}`;
-            if (
-              !profile ||
-              profile.execution_profile !== target.profile ||
-              workCanonical(profile.model_selection).wire !==
-                workCanonical(target.modelSelection).wire
-            )
-              throw new WorkConflict("collaboration_target_changed");
-            const runId = child.runs[0]!.id;
-            await db`INSERT INTO work_collaborations(creation_action_id,intent_digest,parent_task_id,parent_work_run_id,child_task_id,child_work_run_id,root_task_id,root_work_run_id,depth,deadline_at,source_kind)
+            if (tree.sources.has(task.id)) {
+              await createChannelChild(db, task, admitted, selected, target, creation);
+            } else {
+              const native = tree.scopes.get(task.id)!;
+              const inherited = {
+                ...native!.value.request,
+                attachmentIds: references(selected.task),
+                collaboratorBotIds: native!.value.request.collaboratorBotIds
+                  .filter((id) => id !== selected.botId && !tree.tasks.some((t) => t.bot_id === id))
+                  .sort(),
+              };
+              const child = await createWork(
+                db,
+                {
+                  botId: selected.botId,
+                  objective: selected.task.trim(),
+                  tokenLimit: Number(task.token_limit),
+                  requestKey: "native-collaboration:" + action.id,
+                  scope: inherited,
+                },
+                session,
+              );
+              const [profile] =
+                await db`SELECT execution_profile,model_selection FROM work_task_profiles WHERE task_id=${child.id}`;
+              if (
+                !profile ||
+                profile.execution_profile !== target.profile ||
+                workCanonical(profile.model_selection).wire !==
+                  workCanonical(target.modelSelection).wire
+              )
+                throw new WorkConflict("collaboration_target_changed");
+              const runId = child.runs[0]!.id;
+              await db`INSERT INTO work_collaborations(creation_action_id,intent_digest,parent_task_id,parent_work_run_id,child_task_id,child_work_run_id,root_task_id,root_work_run_id,depth,deadline_at,source_kind)
               VALUES(${action.id},${action.intent_digest},${task.id},${action.run_id},${child.id},${runId},${creation.rootTaskId},${creation.rootWorkRunId},${creation.depth},${creation.deadline},'task')`;
-            await workEvent(db, task.id, "collaboration.created", {
-              actionId: action.id,
-              childTaskId: child.id,
-              childRunId: runId,
-              sourceKind: "task",
-            });
+              await workEvent(db, task.id, "collaboration.created", {
+                actionId: action.id,
+                childTaskId: child.id,
+                childRunId: runId,
+                sourceKind: "task",
+              });
+            }
             observed = await collaborationReceipt(db, admitted);
           }
         }

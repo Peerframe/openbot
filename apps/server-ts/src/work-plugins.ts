@@ -12,7 +12,7 @@ import {
   type WorkScope,
 } from "./work-ledger.js";
 import type { WorkModelObservation, WorkTool } from "./work-model.js";
-import { nativeWorkSource } from "./work-scope.js";
+import { resourceWorkSource } from "./work-source.js";
 import { type WorkJson, workCanonical } from "./work-values.js";
 
 const identity = z
@@ -117,7 +117,7 @@ export class WorkPlugins {
     return this.plugins ? this.plugins.store.withRead(operation, signal) : operation();
   }
   async catalog(db: WorkDb, scope: WorkScope, state?: PluginState) {
-    const { task } = await nativeWorkSource(db, scope, "plugins");
+    const { task } = await resourceWorkSource(db, scope, "plugins");
     if (!state) throw new WorkConflict("work_plugins_unavailable");
     const tools: WorkJson[] = [],
       resources: WorkJson[] = [];
@@ -196,7 +196,7 @@ export class WorkPlugins {
     state: PluginState | undefined,
     intent: WorkAction["intent"],
   ) {
-    const source = await nativeWorkSource(db, scope, "plugins"),
+    const source = await resourceWorkSource(db, scope, "plugins"),
       fresh = selection(state, source.task.bot_id, String(intent.tool), intent.arguments),
       expected = this.expanded(intent);
     if (
@@ -246,7 +246,7 @@ export class WorkPlugins {
     const prepared = await this.lock(
       (state) =>
         this.transactions.run(async (db) => {
-          const source = await nativeWorkSource(db, scope, "plugins"),
+          const source = await resourceWorkSource(db, scope, "plugins"),
             selected = selection(state, source.task.bot_id, call.name, call.arguments);
           const { declaration, ...rest } = selected.value;
           const declarationBlob = this.ledger.files.put(
@@ -318,7 +318,7 @@ export class WorkPlugins {
           (publish) =>
             this.ledger.fresh(scope, action.id, async (db) => {
               // Fresh SQL authority, file audit and one-use dispatch marker commit before the POST.
-              const source = await nativeWorkSource(db, scope, "plugins");
+              const source = await resourceWorkSource(db, scope, "plugins");
               if (
                 source.task.bot_id !== botId ||
                 workCanonical(source.provenance).wire !== workCanonical(prepared.effect.source).wire
@@ -349,7 +349,7 @@ export class WorkPlugins {
         dispatched = true;
       };
       const botId = await this.transactions.run(
-        async (db) => (await nativeWorkSource(db, scope, "plugins")).task.bot_id,
+        async (db) => (await resourceWorkSource(db, scope, "plugins")).task.bot_id,
       );
       try {
         await withPlugin(

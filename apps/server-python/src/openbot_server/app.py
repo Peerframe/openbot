@@ -44,7 +44,9 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
                profiles: ProfileStore | None = None, tasks: TaskStore | None = None,
                run_commands: RunCommandStore | None = None, work=None, product=None,
                proxy_address: str | None = None, public_origin: str | None = None,
-               ts_read_group: str = "none", ts_write_group: str = "none", ts_auth_group: str = "none", ts_channel_read_group: str = "none", ts_product_group: str = "none") -> FastAPI:
+               ts_read_group: str = "none", ts_write_group: str = "none", ts_auth_group: str = "none", ts_channel_read_group: str = "none", ts_product_group: str = "none", ts_work_group: str = "none") -> FastAPI:
+    if ts_work_group not in ("none", "reports") or (ts_work_group != "none" and (ts_product_group != "p3" or product is None or work is None or proxy_address is None or public_origin is None)):
+        raise ValueError("TS Work ownership requires an explicit private P3 product proxy.")
     if ts_product_group not in ("none", "identity", "identity-models", "p3") or (ts_product_group != "none" and (product is None or proxy_address is None)):
         raise ValueError("TS product ownership requires an explicit private product proxy.")
     if ts_channel_read_group not in ("none", "channels") or (ts_channel_read_group != "none" and
@@ -113,8 +115,9 @@ def create_app(store: ReadStore, *, owner_name: str, secure_cookies: bool = True
 
     @app.middleware("http")
     async def private_response(request: Request, call_next):
-        from .ts_product_ownership import owns as ts_product_owns
-        if ts_product_group != "none" and ts_product_owns(request.method, request.url.path, ts_product_group):
+        from .ts_product_ownership import owns as ts_product_owns, work_owns
+        if ((ts_product_group != "none" and ts_product_owns(request.method, request.url.path, ts_product_group))
+                or (ts_work_group == "reports" and work_owns(request.method, request.url.path))):
             return JSONResponse({"error": "operation_owned_by_ts"}, status_code=503, headers={"Cache-Control":"no-store","X-Content-Type-Options":"nosniff","X-Frame-Options":"DENY"})
         auth_write = auth is not None and request.method == "POST" and request.url.path in (
             "/api/v1/auth/login", "/api/v1/auth/logout", "/api/v1/auth/password",

@@ -1,3 +1,4 @@
+import { Worker, type WorkflowBundle } from "@temporalio/worker";
 import assert from "node:assert/strict";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { mkdir, mkdtemp, readFile, realpath, rm } from "node:fs/promises";
@@ -28,6 +29,7 @@ export async function qualifyWorkProduct(
     address: string;
     tls: { ca: string; certificate: string; key: string; server_name: string };
   },
+  workflowBundle: WorkflowBundle,
 ) {
   const directory = await realpath(await mkdtemp(join(tmpdir(), "openbot-work-product-"))),
     sql = postgres(databaseUrl, { max: 2 });
@@ -36,6 +38,7 @@ export async function qualifyWorkProduct(
   const pluginPeer = await workPluginFixture();
   let webPeer: Awaited<ReturnType<typeof workWebFixture>> | undefined;
   const calls = new Map<string, number>();
+  const mediaRequests = new Map<string, unknown[][]>();
   let holdReview = false;
   let hold: string | undefined, release: (() => void) | undefined, reached: string | undefined;
   const transport: ModelTransport = async (request) => {
@@ -44,6 +47,13 @@ export async function qualifyWorkProduct(
     const input = JSON.parse(messages[1].content),
       objective = String(input.objective);
     const review = messages[0].content.startsWith("Independently review");
+    if (objective.startsWith("Original media")) {
+      const parts = messages.at(-1).content;
+      assert.ok(Array.isArray(parts));
+      const list = mediaRequests.get(objective) ?? [];
+      list.push(parts.slice(1));
+      mediaRequests.set(objective, list);
+    }
     calls.set(objective, (calls.get(objective) ?? 0) + 1);
     if (hold === objective && (!holdReview || review)) {
       reached = objective;
@@ -68,10 +78,11 @@ export async function qualifyWorkProduct(
     );
     const shouldRead =
       !review &&
-      input.attachments?.length &&
+      input.attachments?.some((a: { mode: string }) => a.mode !== "binary") &&
       !tools.some((t: { attachmentId?: string }) => t.attachmentId);
     const knowledge =
       !review &&
+      (!input.channel || objective.startsWith("Channel resources")) &&
       body.tools?.some(
         (t: { function: { name: string } }) => t.function.name === "knowledge_catalog",
       );
@@ -80,7 +91,7 @@ export async function qualifyWorkProduct(
       ? null
       : !catalog
         ? { name: "knowledge_catalog", arguments: {} }
-        : !tools.some((t: { markdown?: string }) => t.markdown)
+        : catalog.skills.length && !tools.some((t: { markdown?: string }) => t.markdown)
           ? { name: "read_skill", arguments: { skillId: catalog.skills[0].id } }
           : !tools.some((t: { memories?: unknown[] }) => Array.isArray(t.memories))
             ? { name: "read_employee_memory", arguments: {} }
@@ -94,7 +105,8 @@ export async function qualifyWorkProduct(
                   },
                 }
               : null;
-    const plugin = !review && input.plugins;
+    const plugin =
+      !review && (!input.channel || objective.startsWith("Channel resources")) && input.plugins;
     const pluginCall = !plugin
       ? null
       : !tools.some((t: { tool?: string }) => t.tool === "echo") && plugin.tools.length
@@ -117,7 +129,8 @@ export async function qualifyWorkProduct(
               },
             }
           : null;
-    const web = !review && input.web;
+    const web =
+      !review && (!input.channel || objective.startsWith("Channel resources")) && input.web;
     const webCall = !web
       ? null
       : objective.startsWith("Exhaust web calls")
@@ -134,7 +147,7 @@ export async function qualifyWorkProduct(
       input.collaborators?.length &&
       objective.startsWith("Collaboration root") &&
       !input.corrections?.length &&
-      !tools.some((t: { sourceKind?: string }) => t.sourceKind === "task")
+      !tools.some((t: { runId?: string }) => typeof t.runId === "string")
         ? {
             name: objective.includes("delegate") ? "delegate_task" : "start_task",
             arguments: {
@@ -145,97 +158,127 @@ export async function qualifyWorkProduct(
             },
           }
         : null;
-    const message = colleagueCall
+    const channelCall =
+      review || !input.channel
+        ? null
+        : !tools.some(
+              (t: unknown) => Array.isArray(t) && t.some((v) => v && typeof v.id === "string"),
+            )
+          ? { name: "read_channel_context", arguments: {} }
+          : !tools.some(
+                (t: unknown) => Array.isArray(t) && t.some((v) => v && typeof v.title === "string"),
+              )
+            ? { name: "read_task_status", arguments: {} }
+            : !tools.some((t: { bots?: unknown[] }) => Array.isArray(t?.bots))
+              ? { name: "list_channel_bots", arguments: {} }
+              : null;
+    const message = channelCall
       ? {
           role: "assistant",
           content: null,
           tool_calls: [
             {
-              id: "colleague-call",
+              id: "channel-" + channelCall.name,
               type: "function",
-              function: {
-                name: colleagueCall.name,
-                arguments: JSON.stringify(colleagueCall.arguments),
-              },
+              function: { name: channelCall.name, arguments: "{}" },
             },
           ],
         }
-      : webCall
+      : colleagueCall
         ? {
             role: "assistant",
             content: null,
             tool_calls: [
               {
-                id: "web-" + webCall.name + "-" + tools.length,
+                id: "colleague-call",
                 type: "function",
-                function: { name: webCall.name, arguments: JSON.stringify(webCall.arguments) },
+                function: {
+                  name: colleagueCall.name,
+                  arguments: JSON.stringify(colleagueCall.arguments),
+                },
               },
             ],
           }
-        : pluginCall
+        : webCall
           ? {
               role: "assistant",
               content: null,
               tool_calls: [
                 {
-                  id: "plugin-" + pluginCall.name,
+                  id: "web-" + webCall.name + "-" + tools.length,
                   type: "function",
-                  function: {
-                    name: pluginCall.name,
-                    arguments: JSON.stringify(pluginCall.arguments),
-                  },
+                  function: { name: webCall.name, arguments: JSON.stringify(webCall.arguments) },
                 },
               ],
             }
-          : knowledgeCall
+          : pluginCall
             ? {
                 role: "assistant",
                 content: null,
                 tool_calls: [
                   {
-                    id: "knowledge-" + knowledgeCall.name,
+                    id: "plugin-" + pluginCall.name,
                     type: "function",
                     function: {
-                      name: knowledgeCall.name,
-                      arguments: JSON.stringify(knowledgeCall.arguments),
+                      name: pluginCall.name,
+                      arguments: JSON.stringify(pluginCall.arguments),
                     },
                   },
                 ],
               }
-            : shouldRead
+            : knowledgeCall
               ? {
                   role: "assistant",
                   content: null,
                   tool_calls: [
                     {
-                      id: "attachment-call",
+                      id: "knowledge-" + knowledgeCall.name,
                       type: "function",
                       function: {
-                        name: "read_attachment",
-                        arguments: JSON.stringify({ attachmentId: input.attachments[0].id }),
+                        name: knowledgeCall.name,
+                        arguments: JSON.stringify(knowledgeCall.arguments),
                       },
                     },
                   ],
                 }
-              : !review && !hasReport
+              : shouldRead
                 ? {
                     role: "assistant",
                     content: null,
                     tool_calls: [
                       {
-                        id: "report-call",
+                        id: "attachment-call",
                         type: "function",
                         function: {
-                          name: "write_report",
+                          name: "read_attachment",
                           arguments: JSON.stringify({
-                            name: "Report.md",
-                            markdown: "# Synthetic report\n\n" + objective,
+                            attachmentId: input.attachments.find(
+                              (a: { mode: string }) => a.mode !== "binary",
+                            ).id,
                           }),
                         },
                       },
                     ],
                   }
-                : { role: "assistant", content: answer };
+                : !review && !hasReport
+                  ? {
+                      role: "assistant",
+                      content: null,
+                      tool_calls: [
+                        {
+                          id: "report-call",
+                          type: "function",
+                          function: {
+                            name: "write_report",
+                            arguments: JSON.stringify({
+                              name: "Report.md",
+                              markdown: "# Synthetic report\n\n" + objective,
+                            }),
+                          },
+                        },
+                      ],
+                    }
+                  : { role: "assistant", content: answer };
     const bytes = Buffer.from(
       JSON.stringify({
         id: "synthetic-completion",
@@ -276,6 +319,7 @@ export async function qualifyWorkProduct(
         models: { keyPath: join(directory, "model.key"), customBaseUrls: [] },
         modelTransport: transport,
         work: {
+          tokenLimit: 1000000,
           web: { client: webPeer.client, tavilyKey: randomBytes(24).toString("hex") },
           address: fixture.address,
           namespace: "default",
@@ -291,6 +335,19 @@ export async function qualifyWorkProduct(
         },
       },
     };
+    engineConnection = await Connection.connect({
+      address: fixture.address,
+      connectTimeout: 10000,
+      tls: {
+        serverNameOverride: fixture.tls.server_name,
+        serverRootCACertificate: await readFile(fixture.tls.ca),
+        clientCertPair: {
+          crt: await readFile(fixture.tls.certificate),
+          key: await readFile(fixture.tls.key),
+        },
+      },
+    });
+    const engineClient = new Client({ connection: engineConnection, namespace: "default" });
     const start = async () => {
       app = await createEntry(options);
       await app.listen({ host: "127.0.0.1", port });
@@ -334,10 +391,42 @@ export async function qualifyWorkProduct(
     const snapshot = async (id: string) => {
       const response = await request("/api/v1/tasks/" + id);
       assert.equal(response.status, 200, await response.clone().text());
-      return workSnapshotWireSchema.parse(await response.json());
+      const task = workSnapshotWireSchema.parse(await response.json());
+      if (
+        task.events.some(
+          (e) =>
+            e.kind === "task.failed" &&
+            e.payload.reason === "engine_terminal" &&
+            e.payload.publicCode === "engine_failed",
+        )
+      ) {
+        const history = await engineClient.workflow
+          .getHandle(WORKFLOW_ID_PREFIX + task.runs[0]!.id)
+          .fetchHistory();
+        const failures = history.events?.flatMap((e) =>
+          e.activityTaskFailedEventAttributes
+            ? [{ kind: "activity", failure: e.activityTaskFailedEventAttributes.failure }]
+            : e.activityTaskTimedOutEventAttributes
+              ? [
+                  {
+                    kind: "activity_timeout",
+                    failure: e.activityTaskTimedOutEventAttributes.failure,
+                  },
+                ]
+              : e.workflowExecutionFailedEventAttributes
+                ? [{ kind: "workflow", failure: e.workflowExecutionFailedEventAttributes.failure }]
+                : [],
+        );
+        console.error("Owned fixture engine failures", JSON.stringify(failures));
+      }
+      return task;
     };
-    const until = async <T>(read: () => Promise<T>, done: (value: T) => boolean): Promise<T> => {
-      const end = Date.now() + 40000;
+    const until = async <T>(
+      read: () => Promise<T>,
+      done: (value: T) => boolean,
+      milliseconds = 40000,
+    ): Promise<T> => {
+      const end = Date.now() + milliseconds;
       let value: T;
       do {
         value = await read();
@@ -488,6 +577,88 @@ export async function qualifyWorkProduct(
     );
     console.log(
       "PASS attachment revocation while review response is in flight prevents publication without erasing observed usage",
+    );
+
+    const mediaFixtures = JSON.parse(
+      await readFile(
+        new URL("../apps/server-python/tests/fixtures/retained_media_wire.json", import.meta.url),
+        "utf8",
+      ),
+    )[1].projection as { mediaType: string; data: string; name: string | null }[];
+    const mediaIds: string[] = [];
+    for (const [index, item] of mediaFixtures.entries()) {
+      const name = item.name ?? `original${index}.${index === 0 ? "png" : "jpg"}`;
+      const upload = await fetch(origin + "/api/v1/task-attachments", {
+        method: "POST",
+        headers: {
+          Origin: origin,
+          Cookie: "openbot_session=" + token,
+          "Content-Type": "application/octet-stream",
+          "X-OpenBot-Filename": encodeURIComponent(name),
+        },
+        body: Buffer.from(item.data, "base64"),
+      });
+      assert.equal(upload.status, 201, await upload.clone().text());
+      mediaIds.push(((await upload.json()) as { attachment: { id: string } }).attachment.id);
+    }
+    const mediaScope = { ...resourceScope, attachmentIds: mediaIds };
+    const mediaTask = await create("Original media report", mediaScope);
+    const mediaDone = await until(
+      () => snapshot(mediaTask.task.id),
+      (t) => ["completed", "failed"].includes(t.status),
+    );
+    assert.equal(mediaDone.status, "completed", JSON.stringify(mediaDone));
+    const wires = mediaRequests.get("Original media report")!;
+    assert.equal(wires.length, 3);
+    for (const parts of wires) {
+      const projection = (parts as any[]).map((part) => ({
+        mediaType: (part.file?.file_data ?? part.image_url.url).slice(5).split(";")[0],
+        data: (part.file?.file_data ?? part.image_url.url).split(",")[1],
+        name: part.file?.filename ?? null,
+      }));
+      assert.deepEqual(
+        projection,
+        mediaIds
+          .map((id, index) => ({ id, item: mediaFixtures[index] }))
+          .sort((a, b) => a.id.localeCompare(b.id))
+          .map((value) => value.item),
+      );
+    }
+    const anchors = mediaDone.events.filter((e) => e.kind === "model.media_bound");
+    assert.equal(anchors.length, 1);
+    for (const action of mediaDone.actions.filter((a) => a.intent.kind === "model"))
+      assert.deepEqual(action.intent.inputMedia, anchors[0]!.payload.inputMedia);
+    await engineClient.workflow.getHandle(WORKFLOW_ID_PREFIX + mediaDone.runs[0]!.id).result();
+    const mediaHistory = await engineClient.workflow
+      .getHandle(WORKFLOW_ID_PREFIX + mediaDone.runs[0]!.id)
+      .fetchHistory();
+    const historyWire = JSON.stringify(mediaHistory);
+    for (const item of mediaFixtures) assert.equal(historyWire.includes(item.data), false);
+    await Worker.runReplayHistory({ workflowBundle }, mediaHistory);
+    hold = "Original media revoked during review";
+    holdReview = true;
+    reached = undefined;
+    release = undefined;
+    const revokeMedia = await create(hold, mediaScope);
+    await until(
+      async () => reached,
+      (v) => v === hold,
+    );
+    assert.equal(
+      (await request(`/api/v1/task-attachments/${mediaIds[0]}`, "DELETE", {})).status,
+      200,
+    );
+    hold = undefined;
+    holdReview = false;
+    release!();
+    const mediaRevoked = await until(
+      () => snapshot(revokeMedia.task.id),
+      (t) => t.status === "failed",
+    );
+    assert.equal(mediaRevoked.artifacts.length, 0);
+    assert.ok(mediaRevoked.usage.spentTokens > 0);
+    console.log(
+      "PASS original PNG/JPEG/PDF bytes and retained names reach producer/reviewer through real Work; one immutable manifest, offline replay, no media in engine history and live revocation blocks publication",
     );
 
     const imported = await request(`/api/v1/bots/${botId}/skills/import`, "POST", {
@@ -734,6 +905,8 @@ export async function qualifyWorkProduct(
     console.log(
       "PASS dropped real MCP reply remains unknown; Owner reconciliation never reconnects or resends",
     );
+
+    pluginPeer.restoreReplies();
 
     const webScope = {
       version: 1,
@@ -1080,6 +1253,355 @@ export async function qualifyWorkProduct(
       "PASS correction supersedes the pending join and reconsumes the same child in the current semantic context before publication",
     );
 
+    const channelId = randomUUID(),
+      channelBot = randomUUID(),
+      channelChild = randomUUID();
+    for (const [id, name] of [
+      [channelBot, "Channel parent"],
+      [channelChild, "Channel child"],
+    ])
+      await sql`INSERT INTO bots(id,name,role,computer_profile,configuration) VALUES(${id!},${name!},'Synthetic channel acceptance','model',${sql.json({ model: { connectionId: created.connection.id, modelId: "synthetic-model" } })}::jsonb)`;
+    await sql`INSERT INTO channels(id,name,description) VALUES(${channelId},'P4 channel fixture','Disposable acceptance')`;
+    for (const id of [channelBot, channelChild])
+      await sql`INSERT INTO channel_bots(channel_id,bot_id) VALUES(${channelId},${id})`;
+    const priorMessage = randomUUID();
+    await sql`INSERT INTO messages(id,channel_id,author_type,content,created_at) VALUES(${priorMessage},${channelId},'human','Visible prior evidence',clock_timestamp()-interval '1 minute')`;
+    const submitChannel = async (content: string, bot = channelBot) => {
+      const response = await request(`/api/v1/channels/${channelId}/messages`, "POST", {
+        content,
+        botId: bot,
+      });
+      assert.equal(response.status, 201, await response.clone().text());
+      const result = (await response.json()) as {
+        message: { id: string };
+        run: { id: string; workTaskId: string };
+      };
+      assert.ok(result.run.workTaskId);
+      return result;
+    };
+    assert.equal(
+      (
+        await request(
+          `/api/v1/channels/${channelId}/messages`,
+          "POST",
+          { content: "Denied" },
+          false,
+        )
+      ).status,
+      401,
+    );
+    const channelTask = await submitChannel("Channel read report");
+    const futureMessage = randomUUID();
+    await sql`INSERT INTO messages(id,channel_id,author_type,content,created_at) VALUES(${futureMessage},${channelId},'human','Do not expose this later request',clock_timestamp()+interval '1 minute')`;
+    const channelDone = await until(
+      () => snapshot(channelTask.run.workTaskId),
+      (t) => ["completed", "failed"].includes(t.status),
+    );
+    assert.equal(channelDone.status, "completed", JSON.stringify(channelDone));
+    const sourceRows =
+      await sql`SELECT s.*,a.execution_owner FROM work_sources s JOIN work_runs r ON r.task_id=s.task_id JOIN work_admissions a ON a.run_id=r.id WHERE s.task_id=${channelDone.id}`;
+    assert.equal(sourceRows.length, 1);
+    assert.equal(sourceRows[0]!.legacy_run_id, channelTask.run.id);
+    assert.equal(sourceRows[0]!.execution_owner, "typescript-v1");
+    assert.equal(
+      (await sql`SELECT 1 FROM work_task_profiles WHERE task_id=${channelDone.id}`).length,
+      0,
+    );
+    const [published] =
+      await sql`SELECT * FROM messages WHERE id=${"work-result:" + channelDone.id}`;
+    assert.equal(published!.run_id, channelTask.run.id);
+    assert.equal(published!.reply_to_message_id, channelTask.message.id);
+    const channelRead = channelDone.actions.find((a) => a.intent.tool === "read_channel_context")!;
+    const [readBlob] =
+      await sql`SELECT t.sha256 FROM work_tool_results t WHERE t.action_id=${channelRead.id}`;
+    assert.ok(readBlob); // Read the actual immutable observation below using the established private blob layout.
+    const storedRead = JSON.parse(await readFile(join(files, readBlob.sha256), "utf8"));
+    assert.ok(storedRead.result.some((m: { id: string }) => m.id === priorMessage));
+    assert.ok(!storedRead.result.some((m: { id: string }) => m.id === futureMessage));
+    const crossChannel = randomUUID(),
+      foreignMessage = randomUUID();
+    await sql`INSERT INTO channels(id,name) VALUES(${crossChannel},'Other private fixture')`;
+    await sql`INSERT INTO messages(id,channel_id,author_type,content) VALUES(${foreignMessage},${crossChannel},'human','Outside task channel')`;
+    assert.equal(
+      (
+        await request(`/api/v1/channels/${channelId}/messages`, "POST", {
+          content: "Foreign reply",
+          botId: channelBot,
+          replyToMessageId: foreignMessage,
+        })
+      ).status,
+      422,
+    );
+    const denied = await request(`/api/v1/channels/${channelId}/messages`, "POST", {
+      content: "All or nothing recipients",
+      botIds: [channelBot, randomUUID()],
+    });
+    assert.equal(denied.status, 422);
+    assert.equal(
+      (
+        await sql`SELECT 1 FROM messages WHERE channel_id=${channelId} AND content='All or nothing recipients'`
+      ).length,
+      0,
+    );
+    console.log(
+      "PASS real channel message/Run/TS Work admission, fixed context boundary, atomic result publication and all-recipient authorization",
+    );
+
+    hold = "Channel steering";
+    holdReview = false;
+    reached = undefined;
+    release = undefined;
+    const steeringTask = await submitChannel(hold);
+    await until(
+      async () => reached,
+      (v) => v === hold,
+    );
+    const steering = await request(`/api/v1/runs/${steeringTask.run.id}/steer`, "POST", {
+      instruction: "Use only the corrected synthetic evidence",
+    });
+    assert.equal(steering.status, 202, await steering.clone().text());
+    hold = undefined;
+    release!();
+    const steered = await until(
+      () => snapshot(steeringTask.run.workTaskId),
+      (t) => ["completed", "failed"].includes(t.status),
+    );
+    assert.equal(steered.status, "completed", JSON.stringify(steered));
+    assert.equal((await sql`SELECT 1 FROM work_corrections WHERE task_id=${steered.id}`).length, 1);
+    hold = "Channel cancellation";
+    reached = undefined;
+    release = undefined;
+    const cancelChannel = await submitChannel(hold);
+    await until(
+      async () => reached,
+      (v) => v === hold,
+    );
+    const cancellation = await request(`/api/v1/runs/${cancelChannel.run.id}/cancel`, "POST", {});
+    assert.equal(cancellation.status, 200, await cancellation.clone().text());
+    hold = undefined;
+    release!();
+    const cancelledChannel = await until(
+      () => snapshot(cancelChannel.run.workTaskId),
+      (t) => t.status === "cancelled",
+    );
+    assert.equal(cancelledChannel.artifacts.length, 0);
+    assert.ok(cancelledChannel.usage.spentTokens > 0);
+    console.log(
+      "PASS channel Run steering bridges the same correction context; cancellation retains late actual usage without publication",
+    );
+
+    hold = "Collaboration child channel delegate";
+    reached = undefined;
+    release = undefined;
+    const channelTree = await submitChannel("Collaboration root channel delegate");
+    await until(
+      async () => reached,
+      (v) => v === hold,
+    );
+    const [channelRelation] =
+      await sql`SELECT * FROM work_collaborations WHERE parent_task_id=${channelTree.run.workTaskId}`;
+    assert.equal(channelRelation!.source_kind, "channel");
+    assert.ok(channelRelation!.child_source_run_id);
+    assert.ok(channelRelation!.assignment_message_id);
+    hold = undefined;
+    release!();
+    const treeDone = await until(
+      () => snapshot(channelTree.run.workTaskId),
+      (t) => ["completed", "failed"].includes(t.status),
+    );
+    assert.equal(treeDone.status, "completed", JSON.stringify(treeDone));
+    assert.equal((await snapshot(channelRelation!.child_task_id)).status, "completed");
+    assert.equal(
+      treeDone.actions.filter((a) => a.intent.tool === "wait_for_task" && a.status === "applied")
+        .length,
+      1,
+    );
+    assert.equal(
+      (await sql`SELECT 1 FROM work_task_scopes WHERE task_id=${channelRelation!.child_task_id}`)
+        .length,
+      0,
+    );
+    console.log(
+      "PASS channel delegate uses real assignment/source Run identities, durable join and atomic child/root messages",
+    );
+
+    const tooMany = await request(`/api/v1/channels/${channelId}/messages`, "POST", {
+      content: Array.from({ length: 9 }, () => `[OpenBot attachment: ${randomUUID()}]`).join(" "),
+      botId: channelBot,
+    });
+    assert.equal(tooMany.status, 413);
+    const parallelTrees = await Promise.all(
+      [0, 1].map((i) => submitChannel(`Collaboration root channel parallel ${i}`)),
+    );
+    for (const tree of parallelTrees) {
+      const done = await until(
+        () => snapshot(tree.run.workTaskId),
+        (t) => ["completed", "failed"].includes(t.status),
+        90000,
+      );
+      assert.equal(done.status, "completed", JSON.stringify(done));
+    }
+    console.log(
+      "PASS concurrent channel collaboration trees preserve separate source/ancestor locks and completion",
+    );
+
+    const resourceUpload = await fetch(origin + `/api/v1/channels/${channelId}/attachments`, {
+      method: "POST",
+      headers: {
+        Origin: origin,
+        Cookie: "openbot_session=" + token,
+        "Content-Type": "application/octet-stream",
+        "X-OpenBot-Filename": "channel-evidence.txt",
+      },
+      body: "Channel scoped synthetic evidence",
+    });
+    assert.equal(resourceUpload.status, 201, await resourceUpload.clone().text());
+    const channelAttachment = ((await resourceUpload.json()) as { attachment: { id: string } })
+      .attachment;
+    const channelGrant = await request(
+      `/api/v1/plugins/${installed.id}/grants/${channelBot}`,
+      "PUT",
+      {
+        revision: installed.revision,
+        tools: [{ name: "echo", mode: "read" }],
+        resources: ["fixture://evidence"],
+        prompts: [],
+      },
+    );
+    assert.equal(channelGrant.status, 200, await channelGrant.clone().text());
+    installed = ((await channelGrant.json()) as { plugin: typeof installed }).plugin;
+    const combined = await submitChannel(
+      `Channel resources https://example.com/evidence [OpenBot attachment: ${channelAttachment.id}]`,
+    );
+    const combinedDone = await until(
+      () => snapshot(combined.run.workTaskId),
+      (t) => ["completed", "failed"].includes(t.status),
+    );
+    assert.equal(combinedDone.status, "completed", JSON.stringify(combinedDone));
+    for (const tool of [
+      "read_attachment",
+      "knowledge_catalog",
+      "propose_memory",
+      "call_plugin",
+      "read_plugin_resource",
+      "read_public_page",
+      "web_search",
+    ])
+      assert.ok(
+        combinedDone.actions.some((a) => a.intent.tool === tool && a.status === "applied"),
+        tool,
+      );
+    const [channelProposal] =
+      await sql`SELECT * FROM knowledge_proposals WHERE source_run_id=${combined.run.id}`;
+    assert.equal(channelProposal!.source_kind, "channel");
+    assert.equal(channelProposal!.source_work_run_id, null);
+    assert.equal(channelProposal!.status, "pending");
+    assert.equal(
+      (
+        await sql`SELECT 1 FROM run_events WHERE run_id=${combined.run.id} AND type='KNOWLEDGE_PROPOSED'`
+      ).length,
+      1,
+    );
+    console.log(
+      "PASS channel-scoped attachments, knowledge proposal provenance, MCP and HTTPS evidence share the same live source authority",
+    );
+
+    hold = "Channel member revocation";
+    holdReview = true;
+    reached = undefined;
+    release = undefined;
+    const revokedMember = await submitChannel(hold);
+    await until(
+      async () => reached,
+      (v) => v === hold,
+    );
+    const removal = await request(`/api/v1/channels/${channelId}/bots/${channelBot}`, "DELETE");
+    assert.equal(removal.status, 200, await removal.clone().text());
+    hold = undefined;
+    holdReview = false;
+    release!();
+    const revokedChannel = await until(
+      () => snapshot(revokedMember.run.workTaskId),
+      (t) => t.status === "cancelled",
+    );
+    assert.equal(revokedChannel.artifacts.length, 0);
+    assert.equal(
+      (await sql`SELECT 1 FROM messages WHERE id=${"work-result:" + revokedChannel.id}`).length,
+      0,
+    );
+    console.log(
+      "PASS existing public member removal closes TS channel authority during review and prevents publication",
+    );
+
+    hold = "Channel automation";
+    reached = undefined;
+    release = undefined;
+    const scheduled = await request("/api/v1/automations", "POST", {
+      name: "P4 schedule",
+      channelId,
+      botId: channelChild,
+      prompt: hold,
+      intervalMinutes: 60,
+      firstRunAt: new Date(Date.now() + 60000).toISOString(),
+    });
+    assert.equal(scheduled.status, 201, await scheduled.clone().text());
+    const schedule = ((await scheduled.json()) as { automation: { id: string } }).automation;
+    await sql`UPDATE automations SET next_run_at=date_trunc('milliseconds',clock_timestamp())-interval '5 hours'+interval '333 microseconds' WHERE id=${schedule.id}`;
+    await until(
+      async () => reached,
+      (v) => v === hold,
+    );
+    const [occurrence] =
+      await sql`SELECT a.*,r.work_task_id FROM automations a JOIN runs_work_projection r ON r.id=a.last_run_id WHERE a.id=${schedule.id}`;
+    assert.equal(occurrence!.last_outcome, "submitted");
+    const [scheduleMessage] =
+      await sql`SELECT m.author_type FROM messages m JOIN runs r ON r.source_message_id=m.id WHERE r.id=${occurrence!.last_run_id}`;
+    assert.equal(scheduleMessage!.author_type, "system");
+    await sql`UPDATE automations SET next_run_at=date_trunc('milliseconds',clock_timestamp())-interval '5 hours'+interval '333 microseconds',last_outcome=NULL WHERE id=${schedule.id}`;
+    const skipped = await until(
+      async () =>
+        [
+          ...(await sql`SELECT *,next_run_at>clock_timestamp() AS future,extract(microseconds FROM next_run_at)::bigint%1000 AS remainder FROM automations WHERE id=${schedule.id}`),
+        ][0]!,
+      (a) => a.last_outcome === "skipped_active",
+    );
+    assert.equal(skipped.last_run_id, occurrence!.last_run_id);
+    assert.equal(skipped.future, true);
+    assert.equal(Number(skipped.remainder), 333);
+    hold = undefined;
+    release!();
+    assert.equal(
+      (
+        await until(
+          () => snapshot(occurrence!.work_task_id),
+          (t) => ["completed", "failed"].includes(t.status),
+        )
+      ).status,
+      "completed",
+    );
+    assert.equal(
+      (
+        await sql`SELECT 1 FROM run_events WHERE type='RUN_CREATED' AND payload->>'automationId'=${schedule.id}`
+      ).length,
+      1,
+    );
+    await sql`DELETE FROM channel_bots WHERE channel_id=${channelId} AND bot_id=${channelChild}`;
+    await sql`UPDATE automations SET next_run_at=clock_timestamp()-interval '1 second',last_outcome=NULL WHERE id=${schedule.id}`;
+    const unavailable = await until(
+      async () => [...(await sql`SELECT * FROM automations WHERE id=${schedule.id}`)][0]!,
+      (a) => a.last_outcome === "target_unavailable",
+    );
+    assert.equal(unavailable.enabled, false);
+    assert.equal(
+      (
+        await sql`SELECT 1 FROM run_events WHERE type='RUN_CREATED' AND payload->>'automationId'=${schedule.id}`
+      ).length,
+      1,
+    );
+    console.log(
+      "PASS sole TS automation admission creates system source Work, skips an active predecessor, advances missed intervals exactly and disables unavailable targets without partial writes",
+    );
+
     const lost = await create("Lost response");
     await until(
       () => snapshot(lost.task.id),
@@ -1110,19 +1632,6 @@ export async function qualifyWorkProduct(
       "PASS entry/Worker restart and Owner reconciliation remain lookup-only after lost provider response",
     );
 
-    engineConnection = await Connection.connect({
-      address: fixture.address,
-      connectTimeout: 10000,
-      tls: {
-        serverNameOverride: fixture.tls.server_name,
-        serverRootCACertificate: await readFile(fixture.tls.ca),
-        clientCertPair: {
-          crt: await readFile(fixture.tls.certificate),
-          key: await readFile(fixture.tls.key),
-        },
-      },
-    });
-    const engineClient = new Client({ connection: engineConnection, namespace: "default" });
     if (deadlineTask) {
       const [row] = await sql`SELECT id FROM work_runs WHERE task_id=${deadlineTask}`;
       assert.ok(row);

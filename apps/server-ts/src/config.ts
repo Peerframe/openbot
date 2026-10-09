@@ -203,6 +203,11 @@ export function validateOptions(options: EntryOptions): EntryOptions {
 export function entryOptions(environment: NodeJS.ProcessEnv): EntryOptions {
   const productGroup = environment.OPENBOT_TS_PRODUCT_GROUP ?? "none";
   const workGroup = environment.OPENBOT_TS_WORK_GROUP ?? "none";
+  if (
+    workGroup !== "none" &&
+    !/^[0-9]{1,10}$/.test(environment.OPENBOT_CONTROL_WORK_TOKEN_LIMIT ?? "100000")
+  )
+    throw new Error("Product Work token limit must be an explicit bounded integer.");
   if (!["none", "reports"].includes(workGroup) || (workGroup !== "none" && productGroup !== "p3"))
     throw new Error("Unknown or incomplete TS Work composition.");
   if (!["none", "identity", "identity-models", "p3"].includes(productGroup))
@@ -245,6 +250,7 @@ export function entryOptions(environment: NodeJS.ProcessEnv): EntryOptions {
                     taskQueue:
                       environment.OPENBOT_TS_TEMPORAL_QUEUE ?? "openbot-work-ts-v1-product",
                     executionTimeoutMs: 3600000,
+                    tokenLimit: Number(environment.OPENBOT_CONTROL_WORK_TOKEN_LIMIT ?? "100000"),
                     fileRoot: environment.OPENBOT_TS_WORK_FILE_ROOT ?? "",
                     ...(environment.TAVILY_API_KEY !== undefined
                       ? { web: { tavilyKey: environment.TAVILY_API_KEY } }

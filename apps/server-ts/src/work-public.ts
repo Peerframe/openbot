@@ -9,7 +9,7 @@ import {
   workSnapshotWireSchema,
 } from "@openbot/protocol";
 import { EXECUTION_OWNER, WorkConflict } from "@openbot/work";
-import type { z } from "zod";
+import { z } from "zod";
 import type { FileSession, OwnerFiles } from "./owner-files.js";
 import { refuse } from "./owner-transaction.js";
 import type { ProductRoute } from "./product-identity.js";
@@ -115,10 +115,18 @@ export async function workSnapshot(db: WorkDb, taskId: string) {
     eventsTruncated: Boolean(events[0] && events[0].revision > 1),
   });
 }
-export async function createWork(db: WorkDb, body: unknown, session?: FileSession) {
-  const value = workParse(createWorkRequestSchema, body);
+export async function createWork(db: WorkDb, body: unknown, session?: FileSession, source = false) {
+  const value = workParse(
+    source
+      ? createWorkRequestSchema.extend({
+          objective: z.string().min(1).max(32768),
+          scope: z.null().default(null),
+        })
+      : createWorkRequestSchema,
+    body,
+  );
   workText(value.botId, 128);
-  workText(value.objective, 16384);
+  workText(value.objective, source ? 32768 : 16384);
   workText(value.requestKey, 128);
   const digest = workCanonical(
     {
@@ -127,7 +135,7 @@ export async function createWork(db: WorkDb, body: unknown, session?: FileSessio
       tokenLimit: value.tokenLimit,
       ...(value.scope === null ? {} : { scope: value.scope }),
     },
-    value.scope === null ? 16384 : 131072,
+    !source && value.scope === null ? 16384 : 131072,
   ).digest;
   const [bot] =
     await db`SELECT computer_profile,configuration->'model' AS selection FROM bots WHERE id=${value.botId} AND deleted_at IS NULL FOR SHARE`;
@@ -145,28 +153,30 @@ export async function createWork(db: WorkDb, body: unknown, session?: FileSessio
     await lockWorkTask(db, prior.id);
     return workSnapshot(db, prior.id);
   }
-  if (!["none", "model"].includes(bot.computer_profile))
-    throw new WorkConflict("product_task_profile_required");
-  let selection = bot.computer_profile === "model" ? bot.selection : null;
-  if (selection === null) {
-    const [preferences] =
-      await db`SELECT default_model FROM owner_preferences WHERE owner_id='owner' FOR SHARE`;
-    selection = preferences?.default_model ?? null;
-  }
-  if (selection !== null) selection = workParse(modelSelectionSchema, selection);
-  if (bot.computer_profile === "model" && selection === null)
-    throw new WorkConflict("product_task_model_required");
-  const profile = {
-    kind: "work_task_profile",
-    version: 1,
-    taskId,
-    botId: value.botId,
-    executionProfile: bot.computer_profile,
-    modelSelection: selection,
-  };
-  await db`INSERT INTO work_task_profiles(task_id,bot_id,execution_profile,model_selection,profile_digest)
+  if (!source) {
+    if (!["none", "model"].includes(bot.computer_profile))
+      throw new WorkConflict("product_task_profile_required");
+    let selection = bot.computer_profile === "model" ? bot.selection : null;
+    if (selection === null) {
+      const [preferences] =
+        await db`SELECT default_model FROM owner_preferences WHERE owner_id='owner' FOR SHARE`;
+      selection = preferences?.default_model ?? null;
+    }
+    if (selection !== null) selection = workParse(modelSelectionSchema, selection);
+    if (bot.computer_profile === "model" && selection === null)
+      throw new WorkConflict("product_task_model_required");
+    const profile = {
+      kind: "work_task_profile",
+      version: 1,
+      taskId,
+      botId: value.botId,
+      executionProfile: bot.computer_profile,
+      modelSelection: selection,
+    };
+    await db`INSERT INTO work_task_profiles(task_id,bot_id,execution_profile,model_selection,profile_digest)
     VALUES(${taskId},${value.botId},${bot.computer_profile},${selection === null ? null : db.json(selection)}::jsonb,${workCanonical(profile).digest})`;
-  await captureWorkScope(db, taskId, value.botId, value.scope, session);
+    await captureWorkScope(db, taskId, value.botId, value.scope, session);
+  }
   await db`INSERT INTO work_runs(id,task_id,ordinal,corrections_enabled) VALUES(${runId},${taskId},1,true)`;
   await db`INSERT INTO work_admissions(run_id,execution_owner) VALUES(${runId},${EXECUTION_OWNER})`;
   await db`INSERT INTO work_events(task_id,revision,kind,payload) VALUES(${taskId},1,'task.created',${db.json({ runId })}::jsonb)`;

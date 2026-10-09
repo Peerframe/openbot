@@ -105,6 +105,9 @@ export async function workPluginFixture() {
     loseReply: () => {
       disconnect = true;
     },
+    restoreReplies: () => {
+      disconnect = false;
+    },
     async close() {
       server.closeAllConnections();
       server.close();

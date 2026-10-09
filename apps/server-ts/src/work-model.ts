@@ -1,3 +1,4 @@
+import { type WorkMediaItem, workMediaWire } from "./work-model-media.js";
 import Anthropic from "@anthropic-ai/sdk";
 import { WorkConflict } from "@openbot/work";
 import OpenAI from "openai";
@@ -158,7 +159,9 @@ export async function invokeWorkModel(
   fresh: () => Promise<void>,
   signal: AbortSignal,
   transport: ModelTransport = directModelTransport,
+  media: WorkMediaItem[] = [],
 ): Promise<WorkModelObservation> {
+  const mediaWire = workMediaWire(selected, media);
   signal = AbortSignal.any([signal, AbortSignal.timeout(45000)]);
   const tools = input.tools === true ? [reportTool] : input.tools === false ? [] : input.tools;
   if (tools.length > 32 || new Set(tools.map((t) => t.name)).size !== tools.length)
@@ -191,9 +194,10 @@ export async function invokeWorkModel(
       url !== endpoint ||
       init?.method?.toUpperCase() !== "POST" ||
       typeof init.body !== "string" ||
-      Buffer.byteLength(init.body) > 524288
+      Buffer.byteLength(init.body) > mediaWire.maximum
     )
       throw new WorkConflict("model_dispatch_invalid");
+    mediaWire.assert(init.body);
     signal.throwIfAborted();
     await fresh();
     signal.throwIfAborted();
@@ -250,6 +254,11 @@ export async function invokeWorkModel(
             })),
           });
       }
+      if (mediaWire.content.length)
+        messages.push({
+          role: "user",
+          content: mediaWire.content as Anthropic.ContentBlockParam[],
+        });
       const client = new Anthropic({
         apiKey: selected.apiKey,
         authToken: null,
@@ -297,6 +306,11 @@ export async function invokeWorkModel(
           })),
         );
       }
+      if (mediaWire.content.length)
+        messages.push({
+          role: "user",
+          content: mediaWire.content as OpenAI.Chat.Completions.ChatCompletionContentPart[],
+        });
       const completion =
         selected.presetId === "openai" ||
         (selected.presetId === "kimi" && selected.modelId === "kimi-k3");

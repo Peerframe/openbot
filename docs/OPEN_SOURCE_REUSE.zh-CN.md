@@ -688,3 +688,7 @@ Python 执行。SDK 的 source-map 加载把已有 `source-map-js` 纳入生产�
 1.2.2 补丁修复 CVE-2026-93749。精确上游、许可、安全和验证证据见
 [P4 记录](research/typescript-control-plane-p4.zh-CN.md)。产品运行时集成和完整排空仍未完成，合成
 控制 Activity 不代表产品任务完成验收。
+
+频道与媒体集成复用既有消息/Run 提交、0039/0040 协作、自动化 occurrence 领取和原始媒体合同；
+固定 OpenAI/Anthropic SDK 发送有界原始字节，同一 SQL 锁下的只读检查复用任务/来源后立即清除。
+见[组合证据与剩余门槛](research/typescript-control-plane-p4.zh-CN.md#频道提交自动化与媒体集成2026-10-09)。

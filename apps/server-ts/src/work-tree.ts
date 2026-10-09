@@ -24,6 +24,7 @@ export type WorkTree = {
   tasks: WorkTaskRow[];
   links: WorkRelation[];
   scopes: Map<string, NativeScope>;
+  sources: Map<string, ChannelWorkRow>;
   rootTaskId: string;
   rootWorkRunId: string | null;
   deadline: string | null;
@@ -87,9 +88,8 @@ export async function lockWorkTree(db: WorkDb, taskId: string): Promise<WorkTask
     : [taskId];
   if (links.length && (links[0]!.parent_task_id !== ids[0] || ids.at(-1) !== taskId))
     throw new WorkConflict("collaboration_ancestry_invalid");
-  // Channel source locking is installed with the channel admission adapter, never simulated here.
   if ((await db`SELECT 1 FROM work_sources WHERE task_id=${ids[0]!}`).length)
-    throw new WorkConflict("work_channel_not_migrated");
+    return lockChannelTree(db, taskId, links, ids);
   await db`SELECT pg_advisory_xact_lock(hashtextextended(${"native-task:" + ids[0]},731))`;
   const tasks: WorkTaskRow[] = [],
     scopes = new Map<string, NativeScope>();
@@ -170,6 +170,7 @@ export async function lockWorkTree(db: WorkDb, taskId: string): Promise<WorkTask
     tasks: tasks.map((t) => ({ ...t })),
     links,
     scopes,
+    sources: new Map(),
     rootTaskId: ids[0]!,
     rootWorkRunId: tree?.root_work_run_id ?? null,
     deadline,
@@ -256,4 +257,143 @@ export async function workTreeBudget(db: WorkDb, task: WorkTaskRow) {
     reserved: Number(usage!.reserved),
     spent: Number(usage!.spent),
   };
+}
+
+export type ChannelWorkRow = {
+  task_id: string;
+  legacy_run_id: string;
+  channel_id: string;
+  source_message_id: string;
+  bot_id: string;
+  parent_run_id: string | null;
+  root_run_id: string | null;
+  delegated_by_bot_id: string | null;
+  execution_profile: string;
+  node_id: string | null;
+  instruction: string;
+  model_selection: unknown;
+  run_channel: string;
+  run_message: string;
+  message_channel: string;
+  reply_to_message_id: string | null;
+  run_cutoff: string;
+  message_cutoff: string;
+};
+export async function channelWorkRow(db: WorkDb, id: string) {
+  const [source] = await db<
+    ChannelWorkRow[]
+  >`SELECT s.*,r.bot_id,r.parent_run_id,r.root_run_id,r.delegated_by_bot_id,
+    r.execution_profile,r.node_id,r.instruction,r.model_selection,r.channel_id AS run_channel,r.source_message_id AS run_message,
+    m.channel_id AS message_channel,m.reply_to_message_id,
+    to_char(r.created_at,'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS run_cutoff,
+    to_char(m.created_at,'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS message_cutoff
+    FROM work_sources s JOIN runs r ON r.id=s.legacy_run_id JOIN messages m ON m.id=s.source_message_id WHERE s.task_id=${id}`;
+  return source;
+}
+async function lockChannelTree(db: WorkDb, taskId: string, links: WorkRelation[], ids: string[]) {
+  const sources = new Map<string, ChannelWorkRow>();
+  for (const id of ids) {
+    const row = await channelWorkRow(db, id);
+    if (!row) throw new WorkConflict("collaboration_source_changed");
+    sources.set(id, row);
+  }
+  const channels = new Set([...sources.values()].map((s) => s.channel_id));
+  if (channels.size !== 1) throw new WorkConflict("collaboration_source_changed");
+  const channel = sources.get(ids[0]!)!.channel_id;
+  await db`SELECT pg_advisory_xact_lock(hashtextextended(${channel},731))`;
+  await db`SELECT id FROM channels WHERE id=${channel} FOR KEY SHARE`;
+  for (const id of ids) {
+    const source = sources.get(id)!;
+    await db`SELECT id FROM runs WHERE id=${source.legacy_run_id} FOR SHARE`;
+    if (workCanonical(await channelWorkRow(db, id)).wire !== workCanonical(source).wire)
+      throw new WorkConflict("collaboration_source_changed");
+  }
+  const tasks: WorkTaskRow[] = [];
+  for (const id of ids) {
+    const [task] = await db<WorkTaskRow[]>`SELECT * FROM work_tasks WHERE id=${id} FOR UPDATE`;
+    if (!task) throw new WorkConflict("work_not_found");
+    if (
+      (await db`SELECT 1 FROM work_task_profiles WHERE task_id=${id}`).length ||
+      (await db`SELECT 1 FROM work_task_scopes WHERE task_id=${id}`).length
+    )
+      throw new WorkConflict("product_source_ambiguous");
+    tasks.push(task);
+  }
+  if (JSON.stringify(await linksFor(db, taskId)) !== JSON.stringify(links))
+    throw new WorkConflict("collaboration_ancestry_changed");
+  for (const [i, link] of links.entries()) {
+    const parent = sources.get(ids[i]!)!,
+      child = sources.get(ids[i + 1]!)!;
+    if (
+      link.source_kind !== "channel" ||
+      link.depth !== i + 1 ||
+      link.root_task_id !== ids[0] ||
+      link.parent_task_id !== ids[i] ||
+      link.child_source_run_id !== child.legacy_run_id ||
+      link.assignment_message_id !== child.source_message_id ||
+      child.parent_run_id !== parent.legacy_run_id ||
+      child.root_run_id !== sources.get(ids[0]!)!.legacy_run_id ||
+      child.delegated_by_bot_id !== tasks[i]!.bot_id
+    )
+      throw new WorkConflict("collaboration_ancestry_invalid");
+    for (const [task, run] of [
+      [link.parent_task_id, link.parent_work_run_id],
+      [link.child_task_id, link.child_work_run_id],
+    ])
+      if (!(await db`SELECT 1 FROM work_runs WHERE task_id=${task!} AND id=${run!}`).length)
+        throw new WorkConflict("collaboration_ancestry_invalid");
+  }
+  const tree =
+    links[0] ??
+    (
+      await db<
+        WorkRelation[]
+      >`SELECT * FROM work_collaborations WHERE root_task_id=${taskId} ORDER BY created_at,creation_action_id LIMIT 1`
+    )[0];
+  const deadline = tree ? await rootWorkDeadline(db, ids[0]!, tree.root_work_run_id) : null;
+  let members = true;
+  if (tree) {
+    for (const link of [...links, tree]) {
+      if (link.source_kind !== "channel" || link.root_work_run_id !== tree.root_work_run_id)
+        throw new WorkConflict("collaboration_deadline_changed");
+      const [same] =
+        await db`SELECT deadline_at=${deadline!}::timestamptz AS valid FROM work_collaborations WHERE creation_action_id=${link.creation_action_id}`;
+      if (!same?.valid) throw new WorkConflict("collaboration_deadline_changed");
+    }
+    for (const task of tasks) {
+      const source = sources.get(task.id)!;
+      if (
+        source.bot_id !== task.bot_id ||
+        source.instruction !== task.objective ||
+        source.channel_id !== source.run_channel ||
+        source.channel_id !== source.message_channel ||
+        source.source_message_id !== source.run_message
+      )
+        throw new WorkConflict("collaboration_source_changed");
+      const [member] =
+        await db`SELECT b.computer_profile FROM channel_bots cb JOIN bots b ON b.id=cb.bot_id
+        WHERE cb.channel_id=${channel} AND cb.bot_id=${task.bot_id} AND b.deleted_at IS NULL FOR SHARE OF cb,b`;
+      members &&=
+        !!member &&
+        ["none", "model"].includes(member.computer_profile) &&
+        ["none", "model"].includes(source.execution_profile) &&
+        source.node_id === null;
+    }
+  }
+  const [clock] = deadline
+    ? await db`SELECT clock_timestamp()<${deadline}::timestamptz AS live`
+    : [{ live: true }];
+  const task = tasks.at(-1)!;
+  facts.set(task, {
+    tasks: tasks.map((t) => ({ ...t })),
+    links,
+    scopes: new Map(),
+    sources,
+    rootTaskId: ids[0]!,
+    rootWorkRunId: tree?.root_work_run_id ?? null,
+    deadline,
+    live: clock!.live,
+    members,
+  });
+  return task;
 }

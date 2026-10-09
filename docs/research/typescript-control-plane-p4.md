@@ -232,3 +232,67 @@ The existing S7 owned-fixture runner passed all 40 cases on macOS arm64 / Postgr
 target manifest, journal and0055/0056 SQL digests; no historical SQL was rewritten. This qualifies
 the existing synthetic historical upgrade/backup/transfer cases only. It does not establish restoration
 of model credentials, attachment journals, active Work/Temporal histories, installed-app drain or P4 completion.
+
+
+## Channel admission, schedules and media integration (2026-10-09)
+
+Reuse the current Python message/Run admission, channel collaboration, recurring submission and
+[original media contract](work-product-media.md). This extends the same P4 candidate and queue;
+no new scheduler, table, public protocol or dependency is introduced. `work_sources` retains real
+channel message and Run identities. Channel advisory/source locks precede root-to-leaf Task locks;
+all-recipient admission is atomic. Context reads use the original root message/Run cutoffs, preserve
+reply provenance and consume the existing channel membership. Cancel/steer bridges retain the same
+Work authority and observed usage. Verified completion publishes the Bot message in the same SQL
+transaction. Native Tasks continue to have no fabricated channel/Run or expanded grants.
+
+The paired Python `ts_work_group=reports` setting quarantines the eleven migrated operations and
+disables its schedule submitter, while leaving Python-owned histories available for drain. TS uses
+the existing ten-row `FOR UPDATE SKIP LOCKED` occurrence claim, skips active predecessors, advances
+elapsed intervals without replaying a backlog, and disables unavailable targets. Candidate API
+integration does not qualify a running installed pair or the final drain gate.
+
+The actual disposable PostgreSQL/Temporal/mTLS/HTTP/MCP/HTTPS journey passed channel submission,
+source context, atomic publication, steering/cancel, real delegated Runs/joins, member revocation,
+combined attachment/knowledge/plugin/web evidence and schedule admission/skip/disable. The paired
+Python focused tests passed 23 without warnings. Full repository `check` also passed after media integration and the contention change.
+One earlier channel parent engine failure was not reproduced after failure-history diagnostics were
+added; its root cause remains unconfirmed and is retained as an integration concern. A subsequent
+MCP unknown outcome was traced to the test peer's intentionally persistent lost-reply switch;
+restoring responses after its no-resend assertion fixes fixture isolation, without changing product
+timeouts or retries.
+
+Media keeps the reviewed per-item5-MiB PNG/JPEG and10-MiB PDF limits,20-MiB aggregate, eight items,
+8192-token host reservation per original binary, and12-KiB immutable manifest. Explicit extraction
+continues to use validated derived text; no automatic OCR or provider-upload fallback is added.
+The manifest binds source, Run, original metadata and derived digest before the first Action.
+Correction, recovery, disclosure and final publication revalidate the same bytes under the current
+file lease/source/fence. Only the admitted model Activity hydrates originals. Work storage/history
+and model Action intents carry descriptors, never base64. Independent review receives the same
+original media. Unknown model outcomes remain lookup-only.
+
+Reuse the P0-reviewed Apache-2.0 OpenAI7.28.0 (`fb6955621e1cf6653659adb75094ebace83ebfe9`)
+and MIT Anthropic0.131.0 (`d49bdab458000bcdffe77bd84b03293f31824fb3`) SDKs. Rechecked the installed
+exact-release Chat content-part and Messages base64 document/image types and the pinned
+[Anthropic Messages source](https://github.com/anthropics/anthropic-sdk-typescript/blob/d49bdab458000bcdffe77bd84b03293f31824fb3/src/resources/messages/messages.ts).
+The corresponding pinned OpenAI web fetch missed cache; the installed package source and already
+accepted P0 evidence supply that check. The narrow adapter supplies typed inline bytes/name/title,
+then compares the SDK JSON's exact parts before its existing one-use send. URLs, provider file IDs,
+other presets and unreviewed media forms fail closed. No upstream implementation is copied.
+SDK focused tests compare against the existing retained media projection and exercise20-MiB raw
+inputs in both supported protocols. They passed together with existing model/attachment tests
+(10 cases). The combined real HTTP/PG/Temporal/mTLS/MCP/HTTPS journey subsequently passed,
+including original PNG/JPEG/PDF producer/reviewer bytes, immutable-manifest replay, live revocation,
+two concurrent channel collaboration trees and schedule recovery. Providers are deterministic;
+this is not installed-app or paid-provider evidence.
+
+One full-suite run observed a Task GET 503 while full repository checks ran concurrently. A later
+owned PostgreSQL diagnostic run recorded 200–233-ms channel advisory-lock waits, with no lock
+error, and exceeded the original single-task 40-second fixture wait for two concurrent trees.
+This does not establish the original 503 or earlier engine failure's exact cause. The read-only
+resource-validation pass now reuses its locked Task/source facts within the same SQL transaction,
+then discards them before dispatch or writes; file/grant/receipt/child checks remain live and the
+execution fence is checked again at the end. Regression tests cover cross-transaction rejection,
+authority changes after the pass and expiry. The expanded aggregate harness allows 600 seconds
+and the two-tree case 90 seconds; product SQL/HTTP/Activity/deadline values are unchanged.
+The combined run then passed without a 503. Preserve the unresolved earlier failure evidence;
+required UI acceptance, Worker execution, installed-app drain and final P4 completion remain open.

@@ -41,3 +41,28 @@ def test_invalidation_listener_filters_payload_and_fails_closed(monkeypatch):
         await bridge.close()
         connection.close.assert_awaited_once()
     asyncio.run(scenario())
+
+
+def test_p4_selection_quarantines_only_migrated_work_operations():
+    from fastapi.testclient import TestClient
+    from openbot_server.ts_product_ownership import WORK_ROUTES, work_owns
+    for group in ('reports', 'unknown'):
+        with pytest.raises(ValueError, match='TS Work ownership'):
+            create_app(AsyncMock(), owner_name='Owner', ts_work_group=group)
+    assert not work_owns('GET', '/api/v1/runs/example/progress')
+    assert not work_owns('GET', '/api/v1/execution/health')
+    assert not work_owns('GET', '/api/v1/tasks/example/extra')
+    reader, product, work = AsyncMock(), AsyncMock(), AsyncMock()
+    product.write_routes = []
+    selected = create_app(reader, owner_name='Owner', product=product, work=work,
+        ts_product_group='p3', ts_work_group='reports', proxy_address='127.0.0.1',
+        public_origin='http://public.example', allowed_origins=('http://public.example',))
+    with TestClient(selected, client=('127.0.0.1', 4400)) as api:
+        for method, pattern in WORK_ROUTES:
+            path = pattern.replace('[^/]+', 'fixture')
+            response = api.request(method, path, headers={'Forwarded':'for=127.0.0.2'},
+                **({'json':{}} if method == 'POST' else {}))
+            assert response.status_code == 503
+            assert response.json() == {'error':'operation_owned_by_ts'}
+    work.create.assert_not_called()
+    work.snapshot.assert_not_called()

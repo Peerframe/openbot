@@ -18,7 +18,7 @@ import {
   type WorkScope,
 } from "./work-ledger.js";
 import type { WorkModelObservation, WorkTool } from "./work-model.js";
-import { nativeWorkSource } from "./work-scope.js";
+import { resourceWorkSource } from "./work-source.js";
 import { sha256, type WorkJson, workCanonical } from "./work-values.js";
 
 export const workWebNames = ["fetch", "read_public_page", "web_search"] as const;
@@ -95,12 +95,9 @@ export class WorkWeb {
     db: WorkDb,
     scope: WorkScope,
   ): Promise<SearchConfiguration | null> {
-    const { task } = await nativeWorkSource(db, scope, "web");
+    const source = await resourceWorkSource(db, scope, "web");
     if (this.tavily) return this.tavily;
-    const [profile] =
-      await db`SELECT model_selection FROM work_task_profiles WHERE task_id=${task.id} FOR SHARE`;
-    if (!profile) throw new WorkConflict("work_web_profile_changed");
-    const selected = await this.models.resolve(db, profile.model_selection);
+    const selected = await this.models.resolve(db, source.selection);
     if (
       !selected ||
       selected.presetId !== "kimi" ||
@@ -117,7 +114,7 @@ export class WorkWeb {
     };
   }
   async catalog(db: WorkDb, scope: WorkScope): Promise<Catalog> {
-    const { task } = await nativeWorkSource(db, scope, "web"),
+    const { task } = await resourceWorkSource(db, scope, "web"),
       search = await this.searchConfiguration(db, scope);
     return {
       sourceUrls: workSourceUrls(task.objective),
@@ -126,7 +123,7 @@ export class WorkWeb {
     };
   }
   private async selected(db: WorkDb, scope: WorkScope, tool: string, raw: unknown) {
-    const source = await nativeWorkSource(db, scope, "web");
+    const source = await resourceWorkSource(db, scope, "web");
     if (tool === "web_search") {
       const args = z.strictObject({ query: z.string() }).parse(raw);
       webQuery(args.query);

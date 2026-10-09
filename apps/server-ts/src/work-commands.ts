@@ -28,9 +28,14 @@ function correctionView(row: Record<string, unknown>) {
     createdAt: workDate(row.created_at as Date),
   };
 }
-export async function requestCorrection(db: WorkDb, taskId: string, value: CorrectionInput) {
+export async function requestCorrection(
+  db: WorkDb,
+  taskId: string,
+  value: CorrectionInput,
+  source = false,
+) {
   workText(value.runId, 128);
-  workText(value.instruction, 4096);
+  workText(value.instruction, source ? 16384 : 4096);
   workText(value.requestKey, 128);
   const digest = workCanonical(
     {

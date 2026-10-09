@@ -2,7 +2,6 @@ import { nativeTaskScopeRequestSchema } from "@openbot/protocol";
 import { WorkConflict } from "@openbot/work";
 import type { Attachment, FileSession } from "./owner-files.js";
 import type { WorkDb, WorkTaskRow } from "./work-handoff.js";
-import { currentWork, type WorkScope } from "./work-ledger.js";
 import { workCanonical } from "./work-values.js";
 export function descriptor(item: Attachment) {
   if (item.deletedAt) throw new WorkConflict("native_attachment_unavailable");
@@ -73,45 +72,5 @@ export async function nativeWorkScope(db: WorkDb, task: WorkTaskRow) {
       attachments: value.attachments as ReturnType<typeof descriptor>[],
     },
     sha256: String(row.scope_digest),
-  };
-}
-export async function nativeWorkSource(
-  db: WorkDb,
-  scope: WorkScope,
-  capability: "attachments" | "knowledge" | "plugins" | "web" | "collaboration",
-) {
-  const task = await currentWork(db, scope),
-    native = await nativeWorkScope(db, task);
-  const [profile] = await db`SELECT * FROM work_task_profiles WHERE task_id=${task.id} FOR SHARE`;
-  const enabled =
-    native &&
-    (capability === "attachments"
-      ? native.value.request.attachmentIds.length
-      : capability === "collaboration"
-        ? native.value.request.collaboratorBotIds.length
-        : native.value.request[capability]);
-  if (!native || !profile || !enabled) throw new WorkConflict("native_task_capability_unavailable");
-  if (
-    profile.bot_id !== task.bot_id ||
-    !["none", "model"].includes(profile.execution_profile) ||
-    workCanonical({
-      kind: "work_task_profile",
-      version: 1,
-      taskId: task.id,
-      botId: task.bot_id,
-      executionProfile: profile.execution_profile,
-      modelSelection: profile.model_selection,
-    }).digest !== profile.profile_digest
-  )
-    throw new WorkConflict("product_task_profile_changed");
-  return {
-    task,
-    native,
-    provenance: {
-      kind: "task" as const,
-      taskId: task.id,
-      profileSha256: profile.profile_digest as string,
-      scopeSha256: native.sha256,
-    },
   };
 }

@@ -40,9 +40,12 @@ def main():
     authority = os.environ.get("OPENBOT_CONTROL_AUTHORITY", "read-only")
     if authority not in ("read-only", "owner-auth", "identity", "tasks", "work", "product"):
         raise SystemExit("Unknown control-plane authority mode.")
+    ts_work_group = os.environ.get("OPENBOT_CONTROL_TS_WORK_GROUP", "none")
     ts_product_group = os.environ.get("OPENBOT_CONTROL_TS_PRODUCT_GROUP", "none")
     if ts_product_group not in ("none", "identity", "identity-models", "p3") or (ts_product_group != "none" and (authority != "product" or proxy_address is None)):
         raise ValueError("TS product ownership requires an explicit private product proxy.")
+    if ts_work_group not in ("none", "reports") or (ts_work_group != "none" and ts_product_group != "p3"):
+        raise SystemExit("TS Work ownership requires explicit private P3 product mode.")
     ts_channel_read_group = os.environ.get("OPENBOT_CONTROL_TS_CHANNEL_READ_GROUP", "none")
     if ts_channel_read_group not in ("none", "channels") or (ts_channel_read_group != "none" and
             (authority != "product" or proxy_address is None)):
@@ -197,10 +200,10 @@ def main():
                 return ProductWorkRuntime(work,client,scope,product,tavily_key=search_key,sources=sources,
                                           command_driver=driver).options()
             product.work_runtime = ProductWorkService(work,engine_config,compose=compose,
-                                                      automations=product.automations)
+                                                      automations=product.automations if ts_work_group == "none" else None)
     app = create_app(PostgresReadStore(dsn), owner_name=owner_name,
                      secure_cookies=cookie_mode == "secure", allowed_origins=origins, auth=auth,
-                     proxy_address=proxy_address, public_origin=public_origin, ts_read_group=ts_read_group, ts_write_group=ts_write_group, ts_auth_group=ts_auth_group, ts_channel_read_group=ts_channel_read_group, ts_product_group=ts_product_group,
+                     proxy_address=proxy_address, public_origin=public_origin, ts_read_group=ts_read_group, ts_write_group=ts_write_group, ts_auth_group=ts_auth_group, ts_channel_read_group=ts_channel_read_group, ts_product_group=ts_product_group, ts_work_group=ts_work_group,
                      identity=PostgresIdentityStore(dsn,model_connections=product.model_connections if product else None) if authority in ("identity", "tasks", "work", "product") else None, conversations=conversations, profiles=profiles, tasks=tasks, run_commands=run_commands, work=work, product=product)
     web_root = os.environ.get("OPENBOT_CONTROL_WEB_ROOT")
     if web_root:

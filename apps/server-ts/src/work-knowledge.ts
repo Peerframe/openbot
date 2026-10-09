@@ -1,3 +1,4 @@
+import { channelAudit } from "./work-channel.js";
 import { randomUUID } from "node:crypto";
 import { scanSensitiveText } from "@openbot/employee-publisher/sensitive-content";
 import { WorkConflict } from "@openbot/work";
@@ -13,7 +14,7 @@ import {
   type WorkScope,
 } from "./work-ledger.js";
 import type { WorkModelObservation, WorkTool } from "./work-model.js";
-import { nativeWorkSource } from "./work-scope.js";
+import { resourceWorkSource } from "./work-source.js";
 import { sha256, type WorkJson, workCanonical } from "./work-values.js";
 
 // Employee learning remains inspired by Hermes Agent. Knowledge is untrusted reference, never authority.
@@ -74,19 +75,37 @@ const reference = z
     fingerprint: z.string().regex(/^[a-f0-9]{64}$/),
   })
   .strict();
-const sourceSchema = z
-  .object({
-    kind: z.literal("task"),
-    taskId: z.string(),
-    profileSha256: z.string(),
-    scopeSha256: z.string(),
-    botId: z.string(),
-    runId: z.string(),
-    contextId: z.string(),
-    generation: z.number().int().positive(),
-    epoch: z.number().int().positive(),
-  })
-  .strict();
+const sourceFields = {
+  taskId: z.string(),
+  botId: z.string(),
+  runId: z.string(),
+  contextId: z.string(),
+  generation: z.number().int().positive(),
+  epoch: z.number().int().positive(),
+};
+const sourceSchema = z.discriminatedUnion("kind", [
+  z
+    .object({
+      ...sourceFields,
+      kind: z.literal("task"),
+      profileSha256: z.string(),
+      scopeSha256: z.string(),
+    })
+    .strict(),
+  z
+    .object({
+      ...sourceFields,
+      kind: z.literal("channel"),
+      sourceRunId: z.string(),
+      channelId: z.string(),
+      messageId: z.string(),
+      messageCutoff: z.string(),
+      runCutoff: z.string(),
+      replyTo: z.string().nullable(),
+      instructionSha256: z.string(),
+    })
+    .strict(),
+]);
 const receiptSchema = z
   .object({
     schema: z.literal("openbot.work-knowledge-ts/v1"),
@@ -208,15 +227,15 @@ export class WorkKnowledge {
     readonly ledger: WorkLedger,
   ) {}
   private async source(db: WorkDb, scope: WorkScope) {
-    const current = await nativeWorkSource(db, scope, "knowledge");
-    return {
+    const current = await resourceWorkSource(db, scope, "knowledge");
+    return sourceSchema.parse({
       ...current.provenance,
       botId: current.task.bot_id,
       runId: scope.binding.input.runId,
       contextId: scope.contextId,
       generation: Number(current.task.authority_generation),
       epoch: scope.fence.epoch,
-    };
+    });
   }
   private async provenance(db: WorkDb, row: Row) {
     const p = row.provenance;
@@ -544,6 +563,16 @@ export class WorkKnowledge {
       throw new WorkConflict("knowledge_completion_transaction_changed");
     const { source, draft } = prepared,
       value = proposalInput(draft.receipt.proposal);
+    const audit = async (kind: string, payload: Record<string, WorkJson>) => {
+      await workEvent(db, source.taskId, kind, payload);
+      if (source.kind === "channel")
+        await channelAudit(
+          db,
+          { id: source.sourceRunId, channel_id: source.channelId, bot_id: source.botId },
+          kind,
+          payload,
+        );
+    };
     const [task] = await db`SELECT * FROM work_tasks WHERE id=${source.taskId}`;
     const [run] =
       await db`SELECT * FROM work_runs WHERE id=${source.runId} AND task_id=${source.taskId}`;
@@ -560,12 +589,14 @@ export class WorkKnowledge {
       throw new WorkConflict("knowledge_completion_not_verified");
     await checkWorkFence(db, scope.fence);
     const [prior] =
-      await db`SELECT id FROM knowledge_proposals WHERE source_work_run_id=${source.runId} FOR UPDATE`;
+      source.kind === "task"
+        ? await db`SELECT id FROM knowledge_proposals WHERE source_work_run_id=${source.runId} FOR UPDATE`
+        : await db`SELECT id FROM knowledge_proposals WHERE source_run_id=${source.sourceRunId} FOR UPDATE`;
     if (prior) throw new WorkConflict("knowledge_proposal_changed");
     const [count] =
       await db`SELECT count(*) AS n FROM knowledge_proposals WHERE bot_id=${source.botId} AND status='pending'`;
     if (Number(count!.n) >= 50) {
-      await workEvent(db, source.taskId, "KNOWLEDGE_PROPOSAL_SKIPPED", {
+      await audit("KNOWLEDGE_PROPOSAL_SKIPPED", {
         executor: "work-agent",
         taskId: source.taskId,
         workRunId: source.runId,
@@ -575,8 +606,11 @@ export class WorkKnowledge {
       return;
     }
     const id = randomUUID();
-    await db`INSERT INTO knowledge_proposals(id,bot_id,source_kind,source_work_run_id,kind,title,content) VALUES(${id},${source.botId},'task',${source.runId},${value.kind},${value.title},${value.content})`;
-    await workEvent(db, source.taskId, "KNOWLEDGE_PROPOSED", {
+    if (source.kind === "task")
+      await db`INSERT INTO knowledge_proposals(id,bot_id,source_kind,source_work_run_id,kind,title,content) VALUES(${id},${source.botId},'task',${source.runId},${value.kind},${value.title},${value.content})`;
+    else
+      await db`INSERT INTO knowledge_proposals(id,bot_id,source_kind,source_run_id,kind,title,content) VALUES(${id},${source.botId},'channel',${source.sourceRunId},${value.kind},${value.title},${value.content})`;
+    await audit("KNOWLEDGE_PROPOSED", {
       executor: "work-agent",
       taskId: source.taskId,
       workRunId: source.runId,

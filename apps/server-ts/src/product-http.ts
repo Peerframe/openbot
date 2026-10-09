@@ -44,6 +44,7 @@ import { workspaceRoutes } from "./product-workspace.js";
 import { RuntimePort } from "./runtime-port.js";
 import { StorageService } from "./storage-service.js";
 import { ownerCookie } from "./transcription-read.js";
+import { workChannelRoutes } from "./work-channel.js";
 import { workRoutes } from "./work-public.js";
 import { WorkService } from "./work-service.js";
 import { boundedJson } from "./write-input.js";
@@ -123,7 +124,12 @@ export function productHandler(
   const workerIdentities = runtime ? new WorkerIdentities(options.databaseUrl) : undefined;
   const publisher = options.publisher ? loadEmployeePublisher(options.publisher) : undefined;
   const routes = [
-    ...(work ? workRoutes(work.files, files) : []),
+    ...(work
+      ? [
+          ...workRoutes(work.files, files),
+          ...workChannelRoutes(files, work.options.tokenLimit ?? 100000),
+        ]
+      : []),
     ...(browsers ? browserRoutes(browsers) : []),
     ...(workerIdentities ? nodeRoutes(workerIdentities) : []),
     ...(runtime ? portabilityRoutes(publisher) : []),

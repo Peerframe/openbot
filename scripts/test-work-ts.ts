@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 // Real Temporal/mTLS + disposable PostgreSQL qualification. The Activity below is an explicit
 // synthetic control probe: it verifies handoff/recovery/fences, not product model/tool completion.
 import assert from "node:assert/strict";
@@ -61,17 +62,20 @@ let database: ReturnType<typeof createDatabase> | undefined;
 let transactionsToClose: ReturnType<typeof workTransactions> | undefined;
 let connection: Connection | undefined;
 let native: NativeConnection | undefined;
+const postgresName = `openbot-p4-${randomBytes(6).toString("hex")}`;
 try {
-  const dsn = await startControlPostgres(
-    docker,
-    `openbot-p4-${randomBytes(6).toString("hex")}`,
-    randomBytes(24).toString("hex"),
-  );
+  const dsn = await startControlPostgres(docker, postgresName, randomBytes(24).toString("hex"));
   database = createDatabase(dsn);
   const transactions = workTransactions(dsn);
   transactionsToClose = transactions;
   await database.migrate();
   const sql = database.client;
+  // Owned, empty fixture only. Retain lock diagnostics without parameter values for regression triage.
+  await sql.unsafe("ALTER SYSTEM SET log_lock_waits='on'");
+  await sql.unsafe("ALTER SYSTEM SET deadlock_timeout='200ms'");
+  await sql.unsafe("ALTER SYSTEM SET log_parameter_max_length=0");
+  await sql.unsafe("ALTER SYSTEM SET log_parameter_max_length_on_error=0");
+  await sql`SELECT pg_reload_conf()`;
   const botId = randomUUID();
   await sql`INSERT INTO bots(id,name,role) VALUES (${botId},'Synthetic P4 control probe','fixture')`;
   async function seed(owner: "python-v1" | "typescript-v1" = "typescript-v1") {
@@ -336,7 +340,25 @@ try {
   console.log(
     "PASS early Activity waits for durable acknowledgement without failing or gaining authority",
   );
-  await qualifyWorkProduct(dsn, fixture);
+  await qualifyWorkProduct(dsn, fixture, workflowBundle);
+} catch (error) {
+  const logged = spawnSync("docker", ["logs", "--tail", "300", postgresName], {
+    env: environment,
+    encoding: "utf8",
+    timeout: 5000,
+    maxBuffer: 1024 * 1024,
+  });
+  if (logged.status === 0)
+    console.error(
+      "Owned PostgreSQL diagnostics",
+      logged.stderr
+        .split("\n")
+        .filter((line) =>
+          /ERROR:|still waiting for|acquired.*after|DETAIL:|CONTEXT:|STATEMENT:/.test(line),
+        )
+        .join("\n"),
+    );
+  throw error;
 } finally {
   const closed = await Promise.allSettled([
     native?.close(),

@@ -1224,3 +1224,8 @@ P4 public-source extraction directly uses MIT htmlparser2 10.1.0, commit
 No upstream source copied; keep the package and transitive MIT/BSD notices in the native closure.
 Reviewed parser alternatives, open issues, exact source and hostile-input/HTTPS evidence are in
 [the P4 extraction decision](research/typescript-control-plane-p4.md#public-source-extraction-decision-2026-10-09).
+
+Channel and media integration reuses the retained message/Run admission,0039/0040 collaboration,
+automation occurrence claim and original-media contracts. The current pinned OpenAI/Anthropic
+SDKs carry bounded inline originals; source/identity reuse is confined to one read-only validation
+pass under its existing SQL locks. See the [combined evidence and remaining gates](research/typescript-control-plane-p4.md#channel-admission-schedules-and-media-integration-2026-10-09).
