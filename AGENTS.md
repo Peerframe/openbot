@@ -66,7 +66,7 @@ the decision in an ADR, a research record or the PR. Say whether any source was 
 ## Working rules
 
 - English is canonical for code, comments, ADRs and docs. Keep a Chinese translation only for
-  user-facing docs (the READMEs, `THIRD_PARTY_NOTICES`, and in `docs/` the installation, onboarding,
+  user-facing docs (the root README, `THIRD_PARTY_NOTICES`, and in `docs/` the installation, onboarding,
   Windows Desktop, node enrollment, plugin and cross-platform guides), the contributor entry
   (`AGENTS`, `CONTRIBUTING`) and `docs/design`.
 - Comments explain authority, security, concurrency, lifecycle and upstream constraints, not syntax.

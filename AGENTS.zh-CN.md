@@ -55,7 +55,7 @@
 
 ## 工作规则
 
-- 代码、注释、ADR 和文档以英文为准。只有这些保留中文翻译：面向用户的文档（各 README、`THIRD_PARTY_NOTICES`，
+- 代码、注释、ADR 和文档以英文为准。只有这些保留中文翻译：面向用户的文档（根目录 README、`THIRD_PARTY_NOTICES`，
   以及 `docs/` 里的安装、新手引导、Windows 桌面版、节点注册、插件和跨平台说明）、贡献入口（`AGENTS`、`CONTRIBUTING`）
   和 `docs/design`。
 - 注释解释权限、安全、并发、生命周期和上游约束，不复述语法。
