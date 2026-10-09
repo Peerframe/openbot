@@ -1,11 +1,24 @@
-import { type Dirent, lstatSync, readdirSync, readFileSync } from "node:fs";
+import { type Dirent, existsSync, lstatSync, readdirSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
+
+// The root map stays a map: agents load it on every task, so detail belongs in nested rules,
+// CONTRIBUTING or the docs it links. Raise the budget only together with a reason in review.
+export const ROOT_RULES_MAX_LINES = 90;
 
 // The repository deliberately uses plain files and scalar metadata. Native Codex discovery is a
 // separate acceptance exercise; this check catches broken contributor routing without a model call.
 export function validateDeveloperEntrypoints(root: string): string[] {
   const failures: string[] = [];
   const rules = readFileSync(join(root, "AGENTS.md"), "utf8");
+  const lines = rules.trimEnd().split("\n").length;
+  if (lines > ROOT_RULES_MAX_LINES)
+    failures.push(
+      `AGENTS.md has ${lines} lines; keep the root map within ${ROOT_RULES_MAX_LINES} and move detail into nested rules or CONTRIBUTING`,
+    );
+  // Claude Code reads CLAUDE.md rather than AGENTS.md, so it must import the same map.
+  const claude = join(root, "CLAUDE.md");
+  if (!existsSync(claude) || !readFileSync(claude, "utf8").includes("@AGENTS.md"))
+    failures.push("CLAUDE.md must exist and import the root map with @AGENTS.md");
   const directory = join(root, ".agents/skills");
   let folders: Dirent[];
   try {

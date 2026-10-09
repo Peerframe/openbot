@@ -102,4 +102,4 @@ Desktop 和 Web 共用 React 界面。Server 统一管理 Bot 身份、路由、
 
 采用 [MIT](LICENSE) 许可，上游归属见[第三方声明](THIRD_PARTY_NOTICES.md)。Bot 演化与学习方向借鉴 [Hermes Agent 的学习图](https://github.com/NousResearch/hermes-agent/blob/63279301bcbdc185c1b07b98a9312eb0c862f26d/agent/learning_graph.py)。
 
-OpenBot 是其他项目也在使用的工作名称，本项目与 xAI、腾讯、CopilotKit、OpenClaw 无隶属关系。[日文](README.ja.md)和[葡萄牙文](README.pt-BR.md)翻译目前对应较早版本。
+OpenBot 是其他项目也在使用的工作名称，本项目与 xAI、腾讯、CopilotKit、OpenClaw 无隶属关系。

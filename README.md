@@ -103,4 +103,4 @@ See the [repository map](docs/REPOSITORY_MAP.md), [architecture](docs/ARCHITECTU
 
 [MIT](LICENSE). Upstream attribution is maintained in [Third-party notices](THIRD_PARTY_NOTICES.md). Bot evolution and learning are inspired by [Hermes Agent's learning graph](https://github.com/NousResearch/hermes-agent/blob/63279301bcbdc185c1b07b98a9312eb0c862f26d/agent/learning_graph.py).
 
-OpenBot is a working project name shared with other projects. This project is independent of xAI, Tencent, CopilotKit and OpenClaw. [Japanese](README.ja.md) and [Portuguese](README.pt-BR.md) translations currently describe an earlier release.
+OpenBot is a working project name shared with other projects. This project is independent of xAI, Tencent, CopilotKit and OpenClaw.
