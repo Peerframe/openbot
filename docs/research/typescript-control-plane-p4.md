@@ -2,7 +2,7 @@
 
 English · [简体中文](typescript-control-plane-p4.zh-CN.md)
 
-- Status: Integrated P4 candidate installed locally; actual isolated-executor and hosted qualification remain open
+- Status: Integrated P4 candidate qualified for unified review; all hosted checks on the actual PR HEAD remain mandatory
 - Date: 2026-10-09
 - Owner: @yxflc11
 - Decision: [ADR-0050](../decisions/0050-typescript-control-plane.md)
@@ -11,6 +11,54 @@ English · [简体中文](typescript-control-plane-p4.zh-CN.md)
   restarting a Worker or losing a response never repeats an unknown effect.
 - Security boundary: Server owns admission, identity, root budget, claims, approval and publication.
   Temporal is the only recovery owner. Python retains all existing histories and their dependencies.
+
+## Integrated acceptance evidence (2026-10-09)
+
+The explicit `OPENBOT_TS_WORK_GROUP=p4` composition covers all remaining Work routes, the sole
+Worker registry/socket, native/channel Tasks, schedules, root-first collaboration and the existing
+model/media/knowledge/plugin/web/browser/approved-command tools. Python rejects the selected
+public execution routes, retains original histories and helper dependencies, and is not retired.
+Immutable SQL ownership, distinct versioned TS workflows/queue and full legacy SQL/Temporal drain
+prevent concurrent ownership. Unknown effects remain lookup-only and cannot be resent or published.
+
+Native qualification is fixed to implementation HEAD
+`e8ea2e4c1ca25118a81b3d75aa0ace78bdf38bc3` and
+[CI37931711385, job113824077529](https://github.com/Peerframe/openbot/actions/runs/37931711385/job/113824077529).
+The actual command step passed at12:46:50 UTC and isolated-browser step at12:56:58 UTC. These are
+real Linux/runsc executions, not the earlier local or ordinary Ubuntu Chromium proof. Content-free
+results are retained in that run's `p4-native-product-results` artifact and the
+[existing candidate receipt](typescript-control-plane-p2-native.json), under
+`currentP4CompletionCandidate`. Every hosted check on the **actual published PR HEAD** must pass
+before completion/review; this immutable evidence does not assert a future CI result or authorize merge.
+
+| Acceptance | Evidence and limits |
+| --- | --- |
+| Protected command | Actual UID62425/SO_PEERCRED and runsc; original claim held across approval; one command/reservation, exact CSV/report downloads, independent review and official binary history replay. Original unit expiry, empty cgroup, bounded stop, released unit, key/socket/runtime removal and unchanged host state passed. |
+| Isolated browser | Actual separate runsc Chromium/Squid namespaces, thirteen kernel/socket cases, generated-CA HTTPS and wrong-host/unknown-CA refusal. Four approvals and navigate/type/click/read each once; independent state, downloaded report and binary replay. Graceful container replacement preserves persistent cookie/localStorage/IndexedDB and drops session cookies; human pause/explicit return does not replay an effect. Already-open verified TLS tunnel revocation, original600-second expiry, empty cgroup, complete owned cleanup and unchanged host state passed. |
+| Work recovery and races | Actual PostgreSQL/mTLS Temporal suite49 checks, including five real process SIGKILL windows; controlled command-claim and positive/negative tree-close acknowledgement interleavings, official history replay and no repeated unknown effects. Models and selected peers are deterministic fixtures. |
+| Python drain | Complete105-row paginated SQL/Temporal checks and concurrent-change refusals. Installed-data read-only audit found two terminal Runs and no active/unconfirmed/unknown-effect/unfinished-repair obligation; one missing terminal history is recorded separately. Startup still rechecks the full drain; the audit does not cancel or settle user Work. |
+| Web/UI | Existing12-step acceptance passed against the actual P4 engine:112 responses, zero unexpected responses, page errors or workspace503; saved primary Bot survives restart. This reuses its recorded revision because subsequent authority/native-helper changes do not change UI bytes. |
+| Package and installed app | Canonical macOS arm64 package passed34 resource/13 portability checks and real PostgreSQL/mTLS paired lifecycle; package crypto callback is synthetic. The same installed app separately passed actual Keychain workspace/realtime startup, normal Quit/service stop and restart. Latest read-only health returned200 / `typescript-v1` / running; installed product module hashes match source. User profile and all three complete app/profile rollback copies are preserved. |
+| Repository gates | Full `npm run check` passed after the final helper correction;30 test tasks/20 builds reused unchanged cache while other required gates executed. Complete focused Work-journey discovery passed208, including generated CA identity, actual local process/pipes and rejection of partial native success. Final-head hosted gates are checked independently through [draft PR212](https://github.com/Peerframe/openbot/pull/212). |
+
+Product runtime bytes last changed at `45daf316931ce2e69e8872a238ccd9fe0830edf0`; later native
+packet/tests and evidence changes do not require reinstalling identical modules. Command execution
+SHA-256 is `f59d018c0f539bfa317a1ee63d69bf82bfd30580f50c7d28fd1cba51d68c65b1`, Work workflow is
+`2a2a405e72dfd3dc1ce181195127da517d8432b8f1806d56928d988a400a9747` in both source build and installed payload.
+
+The original navigation `unknown` and every failed preparation/native attempt remain below.
+Clock mismatch supports a pre-dispatch expiry inference: Docker database/engine about07:45:38 UTC,
+Action expiry07:50:38 UTC and Mac model receipt08:00:10 UTC. The original exception was not retained;
+the inference is not a confirmed original trace. Six actual WebSocket authority/expiry checks pass.
+The first Node24.21.0 package smoke `setTypeOfService EINVAL` also remains recorded; no HTTP driver
+patch was made. Later successful runs do not erase these failures.
+
+Qualification uses disposable owned fixtures and deterministic model responses. It does not prove
+paid-model quality, arbitrary external-service availability, distribution signing, new platform
+support, production-data changes or P5 Python/package retirement. PR212 remains draft and unmerged.
+
+The sections below preserve chronological checkpoints. Statements about a current candidate or
+remaining work describe that checkpoint; the integrated scope and evidence above supersede them.
 
 ## Trigger and existing decision
 

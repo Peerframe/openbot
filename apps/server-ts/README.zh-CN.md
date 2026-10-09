@@ -249,4 +249,7 @@ PostgreSQL。`npm run test:work:ts` 保留真实 PostgreSQL/mTLS 恢复及实际
 `npm run ui:acceptance -- --entry ts` 现在管理同一真实 PostgreSQL/mTLS 引擎夹具，先确认 TS 执行
 所有者健康，再执行未改动的12步界面检查。测试不使用安装资料或付费账号。独立的安装环境
 排空、启动、退出和重启验收见 [P4 记录](../../docs/research/typescript-control-plane-p4.zh-CN.md#已安装候选验收2026-10-09)。
-真实隔离执行端与托管验收仍待完成；本地候选不代表已验收的 P4 完成或 P5 退役。
+真实保护 Linux/runsc 命令和隔离浏览器已通过原到期、隧道撤销、空 cgroup、拥有资源清理与宿主
+状态一致检查，见固定的 [P4 验收证据](../../docs/research/typescript-control-plane-p4.zh-CN.md#集成验收证据2026-10-09)。
+统一评估仍要求实际发布 PR HEAD 的全部检查通过。Python 退役与包体缩减属于 P5；此候选不授权
+合并或生产切换。

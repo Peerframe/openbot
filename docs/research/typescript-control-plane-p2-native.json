@@ -1535,7 +1535,7 @@
       "noTemporalOrLiveProviderCalls": true
     }
   },
-  "currentCheckpointKey": "currentP3CompletionCandidate",
+  "currentCheckpointKey": "currentP4CompletionCandidate",
   "currentP3Candidate": {
     "date": "2026-10-07 (Asia/Singapore)",
     "branch": "codex/ts-control-plane-p3-settings",
@@ -3512,5 +3512,319 @@
       "previousRuntime": "apps/desktop/out/ts-product-model-runtime-baseline",
       "incrementalStaging": "After normal v7 staging, synchronized the two changed compiled product modules and their three source maps; all641 files matched source/stage/package. Both actual payload probes passed."
     }
+  },
+  "currentP4CompletionCandidate": {
+    "date": "2026-10-09",
+    "status": "local-and-native-qualification-complete",
+    "branch": "codex/ts-control-plane-p4",
+    "implementationHead": "e8ea2e4c1ca25118a81b3d75aa0ace78bdf38bc3",
+    "productRuntimeHead": "45daf316931ce2e69e8872a238ccd9fe0830edf0",
+    "baseHead": "a4c1fdc6478350edecd3e94e5b162477b90b56fc",
+    "scope": "Explicit P4 composition: all remaining Work routes, sole Worker registry/socket, versioned TS Temporal supervisor, native/channel Tasks, schedules, root-first collaboration and existing model/media/knowledge/plugin/web/browser/approved-command tools. Python retains original histories and helper dependencies; P5 retirement is excluded.",
+    "selection": {
+      "ts": "OPENBOT_TS_WORK_GROUP=p4",
+      "python": "OPENBOT_CONTROL_TS_WORK_GROUP=p4",
+      "desktopManifest": "openbot.desktop.ts-control/v8"
+    },
+    "ownership": "Immutable SQL execution owner; distinct TS workflow types/queue; all legacy SQL and Temporal pages checked before admission. Unknown effects are lookup-only, never resent or published.",
+    "requiredHostedGate": "The actual published PR212 HEAD must pass every required hosted check including the final summary and security. Read the current PR checks; a prior HEAD or partial pass is not substitute evidence. This immutable receipt does not predict later CI or authorize merge.",
+    "publication": {
+      "pullRequest": "https://github.com/Peerframe/openbot/pull/212",
+      "base": "main",
+      "draft": true,
+      "mergeAuthorized": false
+    },
+    "nativeQualification": {
+      "sourceHead": "e8ea2e4c1ca25118a81b3d75aa0ace78bdf38bc3",
+      "runId": 37931711385,
+      "jobId": 113824077529,
+      "url": "https://github.com/Peerframe/openbot/actions/runs/37931711385/job/113824077529",
+      "artifact": "p4-native-product-results",
+      "artifactId": 11616604646,
+      "resultSha256": {
+        "openbot-browser-ts-native/RESULT.json": "5c239a403862e85402cac2a422d882402b8607e7ad13ca206e0ffcc3af82377f",
+        "openbot-command-ts-native/result.json": "c40f45972af4ff0a1a762298feb6257f2a84b296310ec57f8b8ca28f94584577",
+        "openbot-command-ts-native/remote-result.json": "b9e7aed4019d67ac99471a6221dbaa228a214c281808f359651e22aa9b08f24c"
+      },
+      "browser": {
+        "accepted": true,
+        "entry": "ts",
+        "readUnavailablePolls": 0,
+        "scope": "synthetic page on isolated Linux Chromium through Squid and native packet enforcement",
+        "actualProductEntry": true,
+        "actualNode": true,
+        "actualChromium": true,
+        "actualPostgres": true,
+        "mutualTLS": true,
+        "canonicalMigrations": 57,
+        "actualWorkApprovals": 4,
+        "modelHTTP": "synthetic",
+        "browserCalls": {
+          "navigate": 1,
+          "type": 1,
+          "click": 1,
+          "read": 1
+        },
+        "modelCalls": {
+          "navigate": 1,
+          "type": 1,
+          "click": 1,
+          "read": 1,
+          "report": 1,
+          "final": 1,
+          "review": 1
+        },
+        "approvedWhileWorkerStopped": false,
+        "sameNodeConnectionRetained": true,
+        "originalClickOnlyOnce": true,
+        "actualTargetIndependentState": true,
+        "reportDownloaded": true,
+        "offlineReplay": true,
+        "publicEgressQualified": false,
+        "isolatedLinuxBrowserProduct": true,
+        "mode": "linux-replacement",
+        "browserProcessRestarted": true,
+        "browserServiceProcessRestarted": true,
+        "originalBrowserExitedBeforeReplacement": true,
+        "samePrivateProfileReused": true,
+        "localStorageRetained": true,
+        "expiringCookieRetained": true,
+        "sessionCookieDropped": true,
+        "indexedDBRetained": true,
+        "humanPauseSurvived": true,
+        "explicitReturnRequired": true,
+        "agentCallsUnchangedAfterBrowserRestart": true,
+        "actualContainerReplacement": true,
+        "remoteNativeCleanupPending": false,
+        "ownedFixturesClosed": true,
+        "nativeAcceptance": {
+          "accepted": true,
+          "actualProductJourney": true,
+          "actualRunsc": true,
+          "actualSquid": true,
+          "existingContainerCount": 0,
+          "format": "openbot-linux-browser-composition",
+          "kernelSocketCases": [
+            {
+              "denied": true,
+              "name": "direct-public"
+            },
+            {
+              "denied": true,
+              "name": "direct-public-v6"
+            },
+            {
+              "denied": true,
+              "name": "private"
+            },
+            {
+              "denied": true,
+              "name": "private-v6"
+            },
+            {
+              "denied": true,
+              "name": "metadata"
+            },
+            {
+              "denied": true,
+              "name": "management"
+            },
+            {
+              "denied": true,
+              "name": "gateway"
+            },
+            {
+              "name": "public",
+              "status": 200
+            },
+            {
+              "name": "public-v6",
+              "status": 200
+            },
+            {
+              "name": "private-dns",
+              "status": 403
+            },
+            {
+              "name": "metadata-dns",
+              "status": 403
+            },
+            {
+              "name": "management-dns",
+              "status": 403
+            },
+            {
+              "name": "wrong-domain",
+              "status": 403
+            }
+          ],
+          "nativeDeadlineSeconds": 600,
+          "originalNativeExpiryVerified": true,
+          "ownedRuntimeRemoved": true,
+          "productionUnchanged": true,
+          "publicInternetQualified": false,
+          "version": 1
+        },
+        "nativeCleanupComplete": true
+      },
+      "commandProduct": {
+        "entry": "ts",
+        "approvalWhileOriginalClaimHeld": true,
+        "case": "product-command-native-ci",
+        "actualOwnerHTTP": true,
+        "actualWorkApproval": true,
+        "actualPostgres": true,
+        "canonicalMigrations": 57,
+        "mutualTLS": true,
+        "actualProductEntry": true,
+        "actualNodeClient": true,
+        "actualWebSocket": true,
+        "actualUnixTransport": true,
+        "actualHostCrypto": true,
+        "syntheticNative": false,
+        "syntheticPeerIdentity": false,
+        "linuxIsolationQualified": true,
+        "oneOriginalCommand": true,
+        "fullOutputSha256": "5accdf8fd1100f960b927385c800db12e45b22727f4fa95b3c3f7b143b5a5409",
+        "independentlyReviewed": true,
+        "artifactsDownloaded": 2,
+        "offlineReplay": true,
+        "modelCounts": {
+          "command": 1,
+          "report": 1,
+          "final": 1,
+          "review": 1
+        }
+      },
+      "commandEnforcement": {
+        "actionCount": 1,
+        "native": {
+          "unit": "openbot-command-5c3ad83cd9db418cb636d3ecfa20128a.service",
+          "invocationId": "ed665654f7b24ea1ba475eddb7a6641b",
+          "result": "timeout",
+          "originalCgroupEmpty": true,
+          "stopObservedWithin5SecondMargin": true,
+          "unitReleased": true,
+          "reservationRetained": true,
+          "privateRuntimeAbsent": true,
+          "backingAbsent": true
+        },
+        "before": {
+          "containerCount": 3,
+          "identitiesAndStateUnchanged": true,
+          "ipv4Ipv6SemanticsUnchanged": true
+        },
+        "after": {
+          "containerCount": 3,
+          "identitiesAndStateUnchanged": true,
+          "ipv4Ipv6SemanticsUnchanged": true
+        },
+        "enforcerKeyRemoved": true,
+        "socketAbsent": true,
+        "runnerWithin150s": true,
+        "runnerSucceeded": true,
+        "fixtureEnvironment": "disposable-github-linux",
+        "actualNativeHost": true,
+        "actualPeerUid": 62425
+      },
+      "enforcementSourceSha256": {
+        "experiments/browser-execution/composition/run.py": "cf996b56b7469106b8bde659a29b24c2c527501ecb8726c5c266a9990ac50baf",
+        "experiments/work-journey/p4_native_browser.py": "ab676b1349eef5acac4b567befe731037b6419b28366ea38ccf773470cc6a054",
+        "experiments/work-journey/p4_native_ci.py": "e6d4a404303f077ba3905c3dec7a6ff19aa50527edfc4a51281de2df0587b3ad"
+      },
+      "scope": "Real disposable Linux/runsc, low-UID/SO_PEERCRED protected command and separate Chromium/Squid namespaces. Generated fixture CA only. Original expiry, verified TLS-tunnel revocation, empty cgroups, owned cleanup and host-state comparison passed. No public-internet or paid-model qualification."
+    },
+    "workRecovery": {
+      "actualPostgres": true,
+      "mutualTLS": true,
+      "namedChecks": 49,
+      "actualSigkillWindows": 5,
+      "controlledClaimAndTreeClosureRaces": true,
+      "positiveNegativeOfficialBinaryReplay": true,
+      "modelResponses": "deterministic fixtures"
+    },
+    "drain": {
+      "paginatedRows": 105,
+      "actualSqlTemporalAndRaceRefusals": true,
+      "installedDataReadOnlyAudit": {
+        "terminalRuns": 2,
+        "activeOrUnconfirmedOrUnknownEffectOrUnfinishedRepairObligations": 0,
+        "missingTerminalHistoryRecordedSeparately": 1,
+        "canonicalMigrations": 57
+      },
+      "startupRechecksDrain": true,
+      "productionWorkMutated": false
+    },
+    "ui": {
+      "passedSteps": 12,
+      "apiResponses": 112,
+      "unexpectedResponses": 0,
+      "pageErrors": 0,
+      "workspace503": 0,
+      "actualP4Engine": true,
+      "evidenceReuse": "Recorded UI revision unchanged by subsequent authority/native helper corrections."
+    },
+    "repositoryChecks": {
+      "fullCheckExitCode": 0,
+      "testTasks": 30,
+      "cachedTestTasks": 30,
+      "buildTasks": 20,
+      "cachedBuildTasks": 20,
+      "otherRequiredGatesActuallyExecuted": true,
+      "focusedWorkJourneyPassed": 208,
+      "futureHostedResultNotInferred": true
+    },
+    "installed": {
+      "platform": "macOS arm64",
+      "sameAppCandidateUpdated": true,
+      "actualKeychainWorkspaceRealtime": true,
+      "normalQuitStoppedAppPairedServicesAndPostgres": true,
+      "secondLaunchAuthenticated": true,
+      "readOnlyHealthVerifiedUtc": "2026-10-09T12:56:40.061141+00:00",
+      "readOnlyHealth": {
+        "ok": true,
+        "service": "openbot-server",
+        "phase": "typescript-product-candidate",
+        "execution": {
+          "owner": "typescript-v1",
+          "state": "running"
+        },
+        "time": "2026-10-09T12:56:40.070Z"
+      },
+      "packageResourceChecks": 34,
+      "packagePortabilityChecks": 13,
+      "packageCryptoCallback": "synthetic",
+      "packageActualPostgresMutualTlsLifecycle": true,
+      "moduleSha256": {
+        "apps/server-ts/dist/work-execution.js": "f59d018c0f539bfa317a1ee63d69bf82bfd30580f50c7d28fd1cba51d68c65b1",
+        "packages/work/dist/workflows.js": "2a2a405e72dfd3dc1ce181195127da517d8432b8f1806d56928d988a400a9747"
+      },
+      "sourceAndInstalledHashesEqual": true,
+      "profilePreserved": true,
+      "completeAppProfileRollbackCopiesPreserved": 3
+    },
+    "preservedFailures": {
+      "navigationUnknown": {
+        "originalFailureRetained": true,
+        "originalExceptionRetained": false,
+        "attribution": "inferred pre-dispatch expiry from clock mismatch",
+        "dockerDatabaseEngineUtc": "about07:45:38",
+        "actionExpiryUtc": "07:50:38",
+        "macModelReceiptUtc": "08:00:10",
+        "realWebSocketAuthorityExpiryChecksPassed": 6
+      },
+      "nativeFailuresRetainedInBilingualRecord": true,
+      "previousNativePartialAcceptedFalseRetained": true,
+      "firstNode2421PackageSmoke": "setTypeOfService EINVAL; same bytes later passed, no HTTP driver patch"
+    },
+    "excluded": [
+      "P5 Python retirement/package reduction",
+      "merge",
+      "production-data changes",
+      "paid-model quality",
+      "arbitrary external-service availability",
+      "distribution signing",
+      "new platform support"
+    ]
   }
 }

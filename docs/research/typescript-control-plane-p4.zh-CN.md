@@ -2,12 +2,52 @@
 
 [English](typescript-control-plane-p4.md) · 简体中文
 
-- 状态：完整 P4 候选已在本机安装；真实隔离执行端与托管验收仍待完成
+- 状态：完整 P4 候选已具备统一评估证据；实际 PR HEAD 的全部托管检查仍为必需门槛
 - 日期：2026-10-09
 - 负责人：@yxflc11
 - 决策：[ADR-0050](../decisions/0050-typescript-control-plane.zh-CN.md)
 - 验收链路：现有 Owner 任务接口 → 独立版本的 TS Temporal 工作流 → 有界模型与报告 Activity
   → 不可变回执 → 校验与原子发布 → 产物下载。Worker 重启和响应丢失不得重复执行未知副作用。
+
+## 集成验收证据（2026-10-09）
+
+显式 `OPENBOT_TS_WORK_GROUP=p4` 已接通剩余全部 Work 接口、唯一 Worker 注册表/套接字、原生与
+频道任务、周期提交、根任务优先协作及既有模型/媒体/知识/插件/网页/浏览器/审批命令工具。
+Python 拒绝已选公开执行接口，保留原历史和辅助依赖，尚未退役。不可变 SQL 归属、独立版本化
+TS 工作流/队列及完整旧 SQL/Temporal 排空防止双重所有权；未知结果只能查原回执，不能重发或发布。
+
+原生验收固定于实现提交 `e8ea2e4c1ca25118a81b3d75aa0ace78bdf38bc3` 和
+[CI37931711385、作业113824077529](https://github.com/Peerframe/openbot/actions/runs/37931711385/job/113824077529)。
+真实命令步骤于12:46:50 UTC、隔离浏览器于12:56:58 UTC 通过。这是实际 Linux/runsc 执行；先前
+本机或普通 Ubuntu Chromium 不能替代。无内容结果保存在该运行的 `p4-native-product-results`
+产物和[既有候选收据](typescript-control-plane-p2-native.json)的 `currentP4CompletionCandidate`。
+完成与统一评估前仍必须核对**实际发布 PR HEAD** 的全部托管检查；这份固定证据不预报后续 CI，
+也不授权合并。
+
+| 验收 | 证据与范围 |
+| --- | --- |
+| 保护命令 | 实际 UID62425/SO_PEERCRED 与 runsc；原占用跨审批保留，命令与预留各一次，精确 CSV/报告下载、独立审核、官方二进制历史重放。原单元到期、空 cgroup、有界停止、单元释放、密钥/socket/运行时清理及宿主状态一致均通过。 |
+| 隔离浏览器 | 实际分离的 runsc Chromium/Squid 命名空间、13项内核/socket检查、生成 CA HTTPS 和错误主机/未知 CA 拒绝。四次审批，navigate/type/click/read 各一次，独立目标状态、报告下载与二进制重放。平滑替换保留持久 cookie/localStorage/IndexedDB、丢弃会话 cookie；人工暂停/明确返回不重放效果。已打开且验证 TLS 的隧道撤销、原600秒到期、空 cgroup、完整拥有资源清理和宿主状态一致均通过。 |
+| Work 恢复与竞态 | 真实 PostgreSQL/mTLS Temporal 全套49项，含五个实际进程 SIGKILL 窗口；受控命令占用和树关闭回执成功/失败竞态、官方历史重放及未知效果不重复。模型和部分 peer 使用确定性夹具。 |
+| Python 排空 | 完整105行跨页 SQL/Temporal 和并发变化拒绝。安装数据只读审计有两个终结 Run，无活跃/未确认/未知效果/未完对账义务；一个缺失终结历史单列。启动仍重新检查完整排空，不取消或结算用户任务。 |
+| 网页/UI | 真实 P4 引擎的既有12步验收通过：112个响应，零非预期响应、页面错误或 workspace503；主 Bot 保存后重启仍保留。后续权限/原生夹具改动没有改变 UI 字节，复用原记录版本的证据。 |
+| 打包与安装应用 | canonical macOS arm64 包通过34项资源/13项导入导出及真实 PostgreSQL/mTLS 双服务生命周期；包探针加密回调为合成。同一安装应用另行通过实际 Keychain 工作区/实时连接、正常退出/服务停止和重启。最新只读健康为200 / `typescript-v1` / running，产品模块指纹与源码构建一致；用户资料和三份完整应用/资料回滚副本均保留。 |
+| 仓库门禁 | 最终夹具修正后 `npm run check` 通过；30项测试任务/20项构建复用未变缓存，其余必需门禁实际执行。完整 Work-journey 聚焦208项通过，包含生成 CA 指纹、实际本地进程/管道和局部原生结果不得升级为成功。最终 HEAD 托管门禁通过[草稿 PR212](https://github.com/Peerframe/openbot/pull/212)独立核对。 |
+
+产品运行时最后变更为 `45daf316931ce2e69e8872a238ccd9fe0830edf0`；之后原生 packet、测试和证据
+改动无需重复安装相同模块。命令执行 SHA-256 为
+`f59d018c0f539bfa317a1ee63d69bf82bfd30580f50c7d28fd1cba51d68c65b1`，Work 工作流为
+`2a2a405e72dfd3dc1ce181195127da517d8432b8f1806d56928d988a400a9747`，源码构建与安装负载一致。
+
+原始导航 `unknown` 和每次准备/原生失败都保留在下文。时钟差异支持派发前已到期的推断：Docker
+数据库/引擎约07:45:38 UTC，Action 在07:50:38 UTC 到期，Mac 模型回执为08:00:10 UTC；原异常
+未保留，因此不能称为已确认原始异常归因。六项真实 WebSocket 权限/到期检查通过。首次
+Node24.21.0 包烟测的 `setTypeOfService EINVAL` 也保留，未修改 HTTP 驱动；后续通过不抹去失败。
+
+验收采用拥有的一次性夹具和确定性模型回复，不证明付费模型质量、任意外部服务可用、发行签名、
+新增平台支持、生产数据修改或 P5 Python/包体退役。PR212 仍为草稿，未合并。
+
+下文按时间保留各检查点；其中“当前候选”和“剩余”均指当时状态，以本节集成范围和证据为准。
 
 P4 沿用 P0 已批准的官方 Temporal TS SDK `1.24.0`，固定提交
 `1fd1c81a0383f5f5c7923dd735472c7d1ffdc867`（MIT）。2026-10-09 复核了官方发布、npm 元数据、

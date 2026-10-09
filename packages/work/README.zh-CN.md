@@ -12,8 +12,8 @@ Activity，覆盖原生/频道任务、周期任务、根任务优先协作、�
 SQL 拒绝修改归属。新 TS 准入前必须完成旧 SQL/Temporal 全部分页义务排空。
 
 Desktop v8 选择同一组合并要求私有引擎配置。macOS arm64 完整候选已安装，实际认证启动、正常
-双服务退出与重启验收通过。真实隔离 Linux 命令/浏览器及当前 HEAD 全部托管检查仍是 P4 完成门槛；
-Python 退役属于 P5。见[已批准决策](../../docs/decisions/0050-typescript-control-plane.zh-CN.md)和
+双服务退出与重启验收通过。真实保护 Linux/runsc 命令与隔离浏览器也已通过原到期及完整拥有资源
+清理验收。统一评估要求实际 PR HEAD 的全部托管检查通过；Python 退役属于 P5。见[已批准决策](../../docs/decisions/0050-typescript-control-plane.zh-CN.md)和
 [实现证据](../../docs/research/typescript-control-plane-p4.zh-CN.md)。
 
 ## 检查

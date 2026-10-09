@@ -16,8 +16,9 @@ SQL/Temporal drain of legacy obligations before new TS admission.
 
 Desktop v8 selects the same composition and requires its private engine configuration. The
 canonical macOS arm64 candidate is installed and has passed actual authenticated startup,
-normal paired-service shutdown and restart. Actual isolated Linux command/browser and all hosted
-checks still gate P4 completion; Python retirement remains P5. See
+normal paired-service shutdown and restart. Actual protected Linux/runsc command and isolated
+browser acceptance also passed, including original expiry and complete owned cleanup. Unified
+review requires all hosted checks on the actual PR HEAD; Python retirement remains P5. See
 [the accepted decision](../../docs/decisions/0050-typescript-control-plane.md) and
 [implementation evidence](../../docs/research/typescript-control-plane-p4.md).
 

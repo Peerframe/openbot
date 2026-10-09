@@ -327,5 +327,8 @@ The probe owns its temporary mTLS/SQLite engine; the product database is native 
 requires a healthy TS execution owner before the12 unchanged interface steps. These tests use no
 installed profile or paid account. The separate installed-app drain/start/quit/restart acceptance
 is recorded in the [P4 record](../../docs/research/typescript-control-plane-p4.md#installed-candidate-acceptance-2026-10-09).
-Actual isolated-executor and hosted qualification remain open; this candidate is not an accepted
-P4 completion or P5 retirement.
+Actual protected Linux/runsc command and isolated-browser qualification passed with original
+expiry, tunnel revocation, empty cgroups, owned cleanup and unchanged host state; see the fixed
+[P4 acceptance evidence](../../docs/research/typescript-control-plane-p4.md#integrated-acceptance-evidence-2026-10-09).
+All checks on the actual published PR HEAD remain required for unified review. Python retirement
+and package reduction remain P5; the candidate does not authorize merge or a production cutover.
