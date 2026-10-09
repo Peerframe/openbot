@@ -173,7 +173,7 @@ npm、GitHub Actions 和 Docker 通过 `open-pull-requests-limit: 0` 暂停普�
 开关与此配置文件分开管理。
 
 普通更新先选择有限批次，审查精确上游版本和已有复用记录，写入研究证据，再同步修改
-manifest 与锁文件。触发 CI 前填写 PR 的七项研究字段，执行干净安装和 `npm run check`，
+manifest 与锁文件。触发 CI 前填写 PR 的研究部分，执行干净安装和 `npm run check`，
 等待最新云端 `check` 通过后合并。Dependabot 自动发布说明是待审提议，不能视为已完成研究。
 参见[流程决定](docs/research/dependency-update-intake.zh-CN.md)。
 
@@ -182,51 +182,13 @@ manifest 与锁文件。触发 CI 前填写 PR 的七项研究字段，执行干
 
 ### 研究依据与文档豁免
 
-根据实际差异选择 PR 证据，不能只看“修复”标题：
-
-| 变化 | 证据 |
-| --- | --- |
-| 既定决定内的普通修复/接线 | 引用原决定、范围、不变假设及相关回归，不新做候选调查 |
-| 新依赖/版本、公共协议、授权/安全、持久数据边界或重大架构 | 受影响选择的针对性审查、版本固定和负向/兼容测试 |
-| 纯拼写、忠实翻译、段落排版 | 以下有界文字豁免，行为和主张不变 |
-
-已接受设计内的普通内部修复，无论位于哪个目录，都可将 `## Open-source research` 下七项替换为：
-
-```markdown
-- Research reuse: docs/research/channel-member-layout.md
-- Reuse scope: Restore focus after the existing member menu closes.
-- Unchanged assumptions: Same event contract; dependency, protocol, authority, persistence and architecture boundaries unchanged.
-- Source copied or substantially adapted: no
-```
-
-引用实际相关决定，不默认套用示例。内部 import、提取辅助模块、旧源码退出或目录不同，本身都不
-要求另一张研究表。普通源码、测试、样式和说明文档共用此路径；npm 命令接线在依赖、运行时、公开
-导出及安装/发布 hook 不变时也可复用。
-
-CI 读取有界的 base/head 不可变 blob，包括移动两端；缺失内容、混合表单、二进制/软链接及可执行位
-变化仍拒绝。已知权限、凭据、预算、恢复、存储和公开契约所有者，以及依赖/锁、schema、安全声明、
-CI 和指令/prompt 变化，仍要求针对性审查。错误列出文件及原因；完整表可引用已有决定及固定版本，
-不要求重新调查。
-
-这些是保守的证据检查，不是语义证明或批准。独立源码审查和必需测试必须追踪**每个**修改的真实
-消费者：普通 helper 中新增权限、持久化、公开协议或重大架构变化，也须针对性依据，不能靠复用
-标签隐藏。仅重开变化的假设；复制/改编源码保留许可与声明审查。已有证据足够时，两条路径都不
-要求新建 ADR 或重复研究记录。
+仅当 PR 修改依赖（`package.json` 依赖字段、锁文件、Python requirements 或 `pyproject.toml`）、
+容器基础镜像，或协议、安全、持久化契约（`packages/protocol/`、迁移、schema、entitlements）时，
+CI 才要求 PR 正文包含 `## Open-source research`：其中需链接一份研究记录、ADR 或此前的 PR，
+并写明 `Source copied or substantially adapted: yes|no`。其他 PR 自动豁免。
 
 重要且持久的决定确需 ADR 时，按决定调整[提纲](docs/decisions/TEMPLATE.md)。审查理由、后果及
 必要来源，不按编号或目录要求固定标题；现有 ADR 无须迁移格式。
-
-普通文字行为/主张不变时，可替换为：
-
-```markdown
-- Research exemption: spelling
-- Exemption reason: Correct the README introduction's spelling; instructions and product claims are unchanged.
-```
-
-类别为 `spelling`、`translation`、`mechanical-formatting`。CI 验证实际 diff，仅根 README、普通
-`docs/` Markdown 和 workspace README 可用，命令、代码、链接、标记和元数据不变。规则、skill、
-提示词、ADR/研究、源码、配置、依赖和可执行位不能豁免。翻译忠实与主张不变由审查负责。表单不得
-混用；只编辑 PR 正文不触发 CI；历史缺失/浅克隆时失败关闭。
 
 ### AI 开发入口与验证
 

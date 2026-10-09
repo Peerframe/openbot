@@ -14,8 +14,8 @@ by fit, license and total delivery/maintenance cost, and pin the reviewed releas
 record may be amended with the changed assumption; a boundary change still needs targeted review.
 An issue can hold equivalent durable evidence. Use an ADR for a long-lived contract or architecture.
 No candidate fitting the requirement means recording the actual queries/candidates and precise gap,
-not dropping attribution/license review. [PR evidence paths](../../CONTRIBUTING.md#research-evidence-and-documentation-exemptions)
-retain the seven-field form, existing-decision reuse and the narrow unchanged-prose exemption.
+not dropping attribution/license review. [The PR gate](../../CONTRIBUTING.md#research-evidence-and-documentation-exemptions)
+asks for a record link and a source line only for dependency, protocol, security or persistence changes.
 
 Accepted records include [Owner-managed Employee memory](owner-managed-employee-memory.md), which
 attributes the evolution/memory direction to Hermes and compares Letta, Mem0, and LangMem before

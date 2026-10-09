@@ -216,7 +216,7 @@ controls are managed separately from this file.
 
 For an ordinary update, select a bounded batch, review the exact upstream versions and existing
 reuse records, write the research evidence, then update manifests and lockfiles together. Fill
-the seven PR research fields before triggering CI, run a clean install and `npm run check`, and
+the PR research section before triggering CI, run a clean install and `npm run check`, and
 wait for the latest hosted `check` before merging. A generated Dependabot release summary is a
 proposal, not completed research. See the [intake decision](docs/research/dependency-update-intake.md).
 
@@ -226,59 +226,15 @@ proposals, not proposals per week. Preserve security updates and existing major-
 
 ### Research evidence and documentation exemptions
 
-Choose one PR evidence path based on the actual change, not its title:
-
-| Change | Evidence |
-| --- | --- |
-| Ordinary fix/wiring within a valid decision | Cite that decision, scope, unchanged assumptions and focused regression; no fresh candidate survey |
-| New dependency/version, public protocol, authorization/security, persistent-data boundary or material architecture | Targeted review of the affected choice, pinned evidence and negative/compatibility tests |
-| Pure spelling, faithful translation, mechanical prose formatting | Bounded prose exemption below; unchanged behavior and claims |
-
-For ordinary internal repairs within an accepted design, in any directory, replace the seven
-fields under `## Open-source research` with:
-
-```markdown
-- Research reuse: docs/research/channel-member-layout.md
-- Reuse scope: Restore focus after the existing member menu closes.
-- Unchanged assumptions: Same event contract; dependency, protocol, authority, persistence and architecture boundaries unchanged.
-- Source copied or substantially adapted: no
-```
-
-Cite the relevant existing decision, not this example by default. An internal import, helper
-extraction, source retirement or different directory does not by itself require another research
-table. The same form covers ordinary source, tests, styles and explanatory documentation. npm
-script wiring can qualify when dependencies, runtime, exports and install/publish hooks are unchanged.
-
-CI reads bounded immutable base/head blobs, including both sides of moves, and rejects missing
-content, mixed forms, binary/symlink or executable-mode changes. Known authority, credential,
-budget, recovery, storage and public-contract owners retain targeted review, as do dependency/lock,
-schema, security declaration, CI and instruction/prompt changes. The failure names the affected
-file and reason; the full form can cite its existing decision and reviewed pins without a new survey.
-
-These are conservative evidence checks, not semantic proof or approval. Independent review must
-trace real consumers and required tests for **every** changed file: a new permission, persistence,
-public protocol or material architecture change in an ordinary helper still requires targeted
-evidence. Do not use the reuse label to hide one. Reopen only changed assumptions; keep license and
-notice review for copied/adapted source. Neither route requires a new ADR or duplicate research
-record when existing evidence covers the change.
+CI requires `## Open-source research` in the PR body only when a PR changes dependencies
+(`package.json` dependency fields, lock files, Python requirements or `pyproject.toml`), container
+base images, or a protocol, security or persistence contract (`packages/protocol/`, migrations,
+schemas, entitlements). It then needs a link to a research record, ADR or prior PR and a
+`Source copied or substantially adapted: yes|no` line; all other PRs are exempt automatically.
 
 When a durable decision needs an ADR, adapt the [outline](docs/decisions/TEMPLATE.md) to the decision.
 Review reasons, consequences and necessary sources; neither its number nor directory requires a
 fixed set of headings. Existing ADRs need no formatting migration.
-
-For unchanged ordinary prose, replace all seven fields with:
-
-```markdown
-- Research exemption: spelling
-- Exemption reason: Correct the README introduction's spelling; instructions and product claims are unchanged.
-```
-
-Choose `spelling`, `translation`, or `mechanical-formatting`. CI verifies the committed diff. Only
-root READMEs, ordinary `docs/` Markdown and workspace READMEs qualify; commands, code, links,
-markup and metadata must remain unchanged. Policy, skills, prompts, ADR/research records, source,
-configuration, dependencies and executable modes cannot use this exemption. Translation faithfulness
-and unchanged claims remain review responsibilities. Do not mix evidence paths. PR-body edits alone
-do not trigger CI; missing/shallow history fails closed.
 
 ### AI development entry and validation
 
