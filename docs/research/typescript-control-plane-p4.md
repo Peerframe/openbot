@@ -344,3 +344,45 @@ runsc. A configured Linux Worker Host is an explicit dependency for final isolat
 qualification; do not discover a personal SSH target or reuse consumed historical remote
 reservations. Command authority/transport integration, actual process-death windows, paired
 packaging, UI12/12, complete installed SQL/engine drain and installed-app acceptance remain open.
+
+
+## Approved command integration (2026-10-09)
+
+The explicit P4 Worker composition now accepts the existing private command installation file.
+It reuses the [command authority](work-command-authority.md), [SQL transactions](work-command-transactions.md),
+[v2 readiness](work-command-readiness.md) and [protected Host](command-protected-host.md) decisions.
+The already reviewed MIT jose6.2.12 and Apache-2.0 canonicalize5.0.0 become direct Server production
+edges without changing or installing versions. Released JOSE/JCS implementations perform signing
+and canonicalization; no upstream source or cryptographic implementation is copied. The strict
+adapter rejects duplicate JSON keys, non-integer numeric tokens, unexpected headers and role/key
+confusion before accepting any signed authority. Actual Python/TypeScript APIs exchange all nine
+v2 purposes, lookup/stop variants and retained operation fingerprints.
+
+A channel or automation with a deployment-routed docker-linux Bot captures the existing immutable
+command profile. Its model sees only the original input descriptors, offline policy and bounded
+command proposal tool. Each command needs a fresh Owner decision. Preparation fixes the original
+Activity claim, approval, source/files, profile, connection and native deadlines before admission.
+SQL admission and dispatch creation commit together; consumption commits one permit and its digest
+before any wire reply. Original opaque handles, four-frame/64-KiB pressure limits and five-second
+pending deadlines apply to the actual Node/Unix channel. Identity locks and SQL transactions never
+contain wire sends. Reconnection, process replacement or uncertain commit cannot create another
+preparation, ticket or permit. Process-local preparation clocks and Activity authority are released
+when the attempt ends; historical evidence cannot recreate them.
+
+The 120-second claim applies only to an already approved command action with a frozen command
+profile. Other claims remain 60 seconds. The first root deadline, Action expiry, readiness-bound
+native lifetime and five-second launch window are never extended. Signed original observations and
+exact bounded UTF-8 output are verified before recording; independent review receives the full
+text before atomic publication. Local receipt recovery never re-executes the command.
+
+The first combined actual PostgreSQL/Temporal/Owner HTTP/Node/WebSocket/Unix journey executed one
+approved command and downloaded the exact reviewed CSV. Its initial failure was a fixture that
+incorrectly expected repeated approval after task closure to succeed; the product correctly returned
+409. The corrected combined journey passed, including subsequent rejection and real Unix reply
+loss after execution. Node reconnect and Owner reconciliation leave that Action unknown with no
+second preparation or permit and no artifact; SQL checks confirm one preparation/consumption/permit
+per executed Action and none for rejection. The three focused files passed ten cases. Native
+isolation and Unix peer identity remain explicitly synthetic. The full repository check passed:
+Server159, Desktop578 with3platform skips, Web695 and Node129 with3platform skips; final build20/20
+with16cached. Actual Linux/runsc qualification, Desktop composition, process-death windows,
+UI12/12 and installed drain remain open.

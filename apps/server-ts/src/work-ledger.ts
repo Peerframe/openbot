@@ -35,11 +35,13 @@ export type WorkAction = {
   unexpired: boolean;
 };
 import type { WorkBrowserProfiles } from "./work-browser-profiles.js";
+import type { WorkCommandProfiles } from "./work-command-profiles.js";
 export type WorkScope = {
   binding: ActivityBinding;
   fence: WorkFence;
   contextId: string;
   browserProfiles?: WorkBrowserProfiles | undefined;
+  commandProfiles?: WorkCommandProfiles | undefined;
 };
 const validationTasks = new WeakMap<WorkScope, { db: WorkDb; task: WorkTaskRow }>();
 /** Reuse only the locked Task during a read-only resource validation pass. The private scope

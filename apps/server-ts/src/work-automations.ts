@@ -9,6 +9,7 @@ import { WriteFailure } from "./primary-bot-write.js";
 import { submitChannelWork } from "./work-channel.js";
 import type { WorkTransactions } from "./work-handoff.js";
 import { workAttachmentIds } from "./work-source.js";
+import type { WorkCommandProfiles } from "./work-command-profiles.js";
 import type { WorkBrowserProfiles } from "./work-browser-profiles.js";
 /** Port of the existing schedule admission pass: SQL occurrence claims only, never execution or backlog replay. */
 export async function submitDueWork(
@@ -17,6 +18,7 @@ export async function submitDueWork(
   tokenLimit: number,
   signal: AbortSignal,
   browser?: WorkBrowserProfiles,
+  commands?: WorkCommandProfiles,
 ) {
   const run = (session?: FileSession) =>
     transactions.run(async (db) => {
@@ -55,6 +57,7 @@ export async function submitDueWork(
                   tokenLimit,
                   row.id,
                   browser,
+                  commands,
                 ),
               );
               runId = submitted.run!.id;

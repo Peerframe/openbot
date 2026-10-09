@@ -2,10 +2,19 @@ import { randomUUID } from "node:crypto";
 import { once } from "node:events";
 import { createServer } from "node:http";
 import { setTimeout as delay } from "node:timers/promises";
-import { protocolVersion, type BrowserCommand, type ServerMessage } from "@openbot/protocol";
+import {
+  commandProtocolVersion,
+  protocolVersion,
+  type BrowserCommand,
+  type ServerMessage,
+  type CommandServerFrame,
+  type CommandPreparationBinding,
+} from "@openbot/protocol";
 import { WebSocket } from "ws";
 import { expect, it, vi } from "vitest";
 import { WorkerHostRegistry } from "./worker-host-registry.js";
+
+import type { CommandNotifications, CommandPending } from "./worker-command-channel.js";
 
 const hello = () => ({
   type: "node.hello",
@@ -19,7 +28,7 @@ const hello = () => ({
   credential: "obn_" + "q".repeat(43),
   sentAt: new Date().toISOString(),
 });
-async function fixture(authenticate = async () => "a".repeat(64)) {
+async function fixture(authenticate = async () => "a".repeat(64), commands?: CommandNotifications) {
   const events = vi.fn(async () => {}),
     run = vi.fn(),
     unavailable = vi.fn();
@@ -35,6 +44,7 @@ async function fixture(authenticate = async () => "a".repeat(64)) {
       },
     },
     { run, unavailable },
+    commands,
   );
   const server = createServer();
   server.listen(0, "127.0.0.1");
@@ -47,11 +57,13 @@ async function fixture(authenticate = async () => "a".repeat(64)) {
   const peer = async () => {
     const socket = new WebSocket(origin.replace("http:", "ws:") + "/ws/nodes");
     clients.add(socket);
-    const frames: ServerMessage[] = [];
+    const frames: (ServerMessage | CommandServerFrame)[] = [];
     socket.on("message", (raw) => frames.push(JSON.parse(raw.toString())));
     socket.on("error", () => {});
     await once(socket, "open");
-    const frame = async (accept: (message: ServerMessage) => boolean = () => true) => {
+    const frame = async (
+      accept: (message: ServerMessage | CommandServerFrame) => boolean = () => true,
+    ) => {
       const until = Date.now() + 3000;
       while (Date.now() < until) {
         const index = frames.findIndex(accept);
@@ -60,9 +72,18 @@ async function fixture(authenticate = async () => "a".repeat(64)) {
       }
       throw new Error("Expected Worker fixture frame");
     };
-    const enroll = async () => {
-      socket.send(JSON.stringify(hello()));
-      expect(await frame()).toMatchObject({ type: "server.ack", accepted: true });
+    const enroll = async (commandChannel = false) => {
+      socket.send(
+        JSON.stringify({
+          ...hello(),
+          ...(commandChannel
+            ? { commandChannel: { protocolVersion: commandProtocolVersion } }
+            : {}),
+        }),
+      );
+      const received = await frame();
+      expect(received).toMatchObject({ type: "server.ack", accepted: true });
+      return received;
     };
     return { socket, frame, enroll, send: (value: unknown) => socket.send(JSON.stringify(value)) };
   };
@@ -216,6 +237,139 @@ it("does not send without a successful authority guard, or after the command exp
       f.registry.browserCommand(expired, binding, guard, AbortSignal.timeout(3000)),
     ).rejects.toThrow();
     expect(f.registry.list()).toHaveLength(1);
+  } finally {
+    await f.close();
+  }
+});
+
+const preparation = (connectionId: string): CommandPreparationBinding => ({
+  taskId: randomUUID(),
+  runId: randomUUID(),
+  actionId: randomUUID(),
+  preparationId: randomUUID(),
+  connectionId,
+  originalEpoch: 1,
+  authorityGeneration: 1,
+  profileDigest: "b".repeat(64),
+  intentDigest: "c".repeat(64),
+  operationFingerprint: "d".repeat(64),
+  nodeId: hello().nodeId,
+  providerId: "offline-command",
+  enforcementKeyId: "fixture-enforcer",
+  ledgerId: randomUUID(),
+});
+const challenge = (binding: CommandPreparationBinding) => ({
+  type: "work.command.prepare_challenge",
+  protocolVersion: commandProtocolVersion,
+  nodeId: binding.nodeId,
+  preparationId: binding.preparationId,
+  requestId: binding.preparationId,
+  payload: { token: "header.payload.signature" },
+});
+
+it("negotiates commands once and correlates a single reply on the original opaque connection", async () => {
+  const frames: CommandPending[] = [];
+  const f = await fixture(undefined, {
+    frame: (value) => {
+      frames.push(value);
+      return true;
+    },
+  });
+  try {
+    const p = await f.peer(),
+      ack = await p.enroll(true);
+    const commands = f.registry.commands!,
+      handle = commands.connection(hello().nodeId),
+      binding = preparation(handle.live.connectionId);
+    expect(ack).toMatchObject({
+      commandChannel: {
+        protocolVersion: commandProtocolVersion,
+        connectionId: handle.live.connectionId,
+      },
+    });
+    const prepare: CommandServerFrame = {
+      type: "work.command.prepare_open",
+      protocolVersion: commandProtocolVersion,
+      nodeId: binding.nodeId,
+      preparationId: binding.preparationId,
+      requestId: binding.preparationId,
+      payload: binding,
+    };
+    await expect(commands.send({ ...handle }, prepare)).rejects.toThrow(
+      "command_channel_unavailable",
+    );
+    await expect(
+      commands.guard(handle, AbortSignal.timeout(3000), async () => commands.send(handle, prepare)),
+    ).rejects.toThrow("command_channel_unavailable");
+    await commands.send(handle, prepare);
+    expect(await p.frame()).toEqual(prepare);
+    p.send(challenge(binding));
+    await vi.waitFor(() => expect(frames).toHaveLength(1));
+    const pending = frames[0]!;
+    pending.frame.payload = { token: "changed.token.bytes" };
+    expect(pending.frame.payload).toEqual({ token: "header.payload.signature" });
+    const reply: CommandServerFrame = {
+      ...prepare,
+      type: "work.command.prepare_authorize",
+      payload: { token: "response.payload.signature" },
+    };
+    await expect(commands.reply({ ...pending }, reply)).rejects.toThrow();
+    await commands.reply(pending, reply);
+    expect(await p.frame()).toEqual(reply);
+    await expect(commands.reply(pending, reply)).rejects.toThrow();
+    commands.complete(pending);
+    expect(() => commands.complete(pending)).toThrow();
+    p.send({
+      type: "node.heartbeat",
+      protocolVersion,
+      nodeId: hello().nodeId,
+      activeRunIds: [],
+      sentAt: new Date().toISOString(),
+    });
+    expect(await p.frame()).not.toHaveProperty("commandChannel");
+    const replacement = await f.peer();
+    await replacement.enroll(true);
+    expect(commands.connection(hello().nodeId).live.connectionId).not.toBe(
+      handle.live.connectionId,
+    );
+    await expect(commands.send(handle, prepare)).rejects.toThrow();
+    await expect(commands.send(commands.connection(hello().nodeId), prepare)).rejects.toThrow();
+  } finally {
+    await f.close();
+  }
+});
+
+it("closes unnegotiated commands, duplicate wire keys and a fifth unresolved observation", async () => {
+  const frames: CommandPending[] = [];
+  const f = await fixture(undefined, {
+    frame: (value) => {
+      frames.push(value);
+      return true;
+    },
+  });
+  try {
+    const unnegotiated = await f.peer();
+    await unnegotiated.enroll();
+    let closed = once(unnegotiated.socket, "close");
+    unnegotiated.send(challenge(preparation(randomUUID())));
+    await closed;
+    const duplicate = await f.peer();
+    await duplicate.enroll(true);
+    const binding = preparation(f.registry.commands!.connection(hello().nodeId).live.connectionId);
+    closed = once(duplicate.socket, "close");
+    duplicate.socket.send(JSON.stringify(challenge(binding)).replace("{", '{"nodeId":"shadow",'));
+    await closed;
+    expect(frames).toHaveLength(0);
+    const flooded = await f.peer();
+    await flooded.enroll(true);
+    for (let index = 1; index <= 4; index++) {
+      flooded.send(challenge(binding));
+      await vi.waitFor(() => expect(frames).toHaveLength(index));
+    }
+    closed = once(flooded.socket, "close");
+    flooded.send(challenge(binding));
+    await closed;
+    expect(f.registry.list()).toEqual([]);
   } finally {
     await f.close();
   }

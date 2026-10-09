@@ -36,10 +36,14 @@ import {
 import { type WorkJson, workCanonical } from "./work-values.js";
 import { WorkWeb, type WorkWebOptions, workWebNames } from "./work-web.js";
 
+import { WorkCommands } from "./work-command.js";
+import type { WorkCommandSetup } from "./work-command-installation.js";
+
 /** File lease always precedes SQL identity/Task locks, including model disclosure and publication. */
 export class WorkResources {
   readonly media: WorkMedia;
   readonly browser: WorkBrowser | undefined;
+  readonly commands: WorkCommands | undefined;
   readonly channel: WorkChannelReads;
   readonly collaboration: WorkCollaboration;
   readonly knowledge: WorkKnowledge;
@@ -53,7 +57,11 @@ export class WorkResources {
     plugins?: Plugins,
     web?: WorkWebOptions,
     browser?: WorkBrowserServices,
+    command?: WorkCommandSetup,
   ) {
+    this.commands = command
+      ? new WorkCommands(transactions, ledger, command, attachments)
+      : undefined;
     this.browser = browser ? new WorkBrowser(transactions, ledger, browser) : undefined;
     this.media = new WorkMedia(ledger.files);
     this.channel = new WorkChannelReads(transactions, ledger);
@@ -125,6 +133,7 @@ export class WorkResources {
     return withWorkSource(db, scope, async (scope) => {
       const media = await this.media.validate(db, scope, session);
       await this.browser?.revalidate(db, scope);
+      await this.commands?.revalidate(db, scope, session);
       await this.channel.revalidate(db, scope);
       await this.collaboration.revalidate(db, scope);
       await this.plugins.revalidate(db, scope, plugins);
@@ -132,7 +141,7 @@ export class WorkResources {
       await this.knowledge.revalidate(db, scope);
       const task = await currentWork(db, scope);
       sourceWorkAttachments(
-        await resolveWorkSource(db, task, scope.browserProfiles),
+        await resolveWorkSource(db, task, scope.browserProfiles, scope.commandProfiles),
         task.objective,
         session,
       );
@@ -171,6 +180,10 @@ export class WorkResources {
     };
   }
   payload(action: WorkAction, observation: WorkJson | null) {
+    if (action.intent.tool === "run_command") {
+      if (!this.commands) throw new WorkConflict("command_composition_required");
+      return this.commands.payload(action, observation);
+    }
     if (workBrowserNames.includes(action.intent.tool as never)) {
       if (!this.browser) throw new WorkConflict("browser_composition_required");
       return this.browser.payload(action, observation);
@@ -209,6 +222,10 @@ export class WorkResources {
     call: WorkModelObservation["calls"][number],
     signal: AbortSignal,
   ) {
+    if (call.name === "run_command") {
+      if (!this.commands) throw new WorkConflict("command_composition_required");
+      return this.commands.execute(scope, key, call, signal);
+    }
     if (workBrowserNames.includes(call.name as never)) {
       if (!this.browser) throw new WorkConflict("browser_composition_required");
       return this.lock(

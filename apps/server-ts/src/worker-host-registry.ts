@@ -4,6 +4,8 @@ import type { Server as HttpsServer } from "node:https";
 import type { Duplex } from "node:stream";
 import {
   browserCommandSchema,
+  commandProtocolVersion,
+  parseCommandFrame,
   nodeMessageSchema,
   protocolVersion,
   serverMessageSchema,
@@ -18,6 +20,13 @@ import { forbiddenHeader, safeRequestTarget } from "./config.js";
 import type { WorkerIdentities } from "./product-nodes.js";
 import type { RuntimeBinding } from "./runtime-port.js";
 
+import {
+  WorkerCommandChannel,
+  type CommandHandle,
+  type CommandNotifications,
+} from "./worker-command-channel.js";
+import { strictCommandJson } from "./work-command-values.js";
+
 const payloadLimit = 32 * 1024 * 1024;
 const stamp = () => new Date().toISOString();
 const unavailable = () => new Error("worker_runtime_unavailable");
@@ -26,6 +35,7 @@ type Connection = {
   phase: "hello" | "authenticating" | "live" | "closed";
   node?: ExecutionNodeWire;
   binding?: RuntimeBinding;
+  commandHandle?: CommandHandle;
   stop: AbortController;
   enrolled: NodeJS.Timeout;
   ping: NodeJS.Timeout;
@@ -63,12 +73,16 @@ export class WorkerHostRegistry {
   private revision = 0;
   private socketServer?: WebSocketServer;
   private removeUpgrade?: () => void;
+  readonly commands?: WorkerCommandChannel;
   constructor(
     readonly identities: Pick<WorkerIdentities, "authenticate" | "connectionEvent"> & {
       fence: Pick<WorkerIdentities["fence"], "run">;
     },
     private readonly notifications: WorkerNotifications = {},
-  ) {}
+    commandNotifications?: CommandNotifications,
+  ) {
+    if (commandNotifications) this.commands = new WorkerCommandChannel(commandNotifications);
+  }
   list() {
     return [...this.nodes.values()].map((connection) => structuredClone(connection.node!));
   }
@@ -99,6 +113,7 @@ export class WorkerHostRegistry {
   }
   private detach(connection: Connection, reason: string, notify = true) {
     if (!connection.node || this.nodes.get(connection.node.id) !== connection) return;
+    if (connection.commandHandle) this.commands?.detach(connection.commandHandle);
     this.nodes.delete(connection.node.id);
     this.revision++;
     for (const [id, pending] of this.pending)
@@ -146,22 +161,33 @@ export class WorkerHostRegistry {
   }
   private async send(connection: Connection, value: ServerMessage, requireCurrent = false) {
     const wire = JSON.stringify(serverMessageSchema.parse(value));
+    await this.sendWire(connection, wire, () => {
+      if (requireCurrent && !this.current(connection)) throw unavailable();
+      if (value.type === "browser.command" && Date.parse(value.expiresAt) <= Date.now())
+        throw unavailable();
+    });
+  }
+  private async sendWire(connection: Connection, wire: string, check: () => void) {
     if (Buffer.byteLength(wire) > payloadLimit) throw unavailable();
-    const outgoing = connection.outgoing.then(async () => {
+    // The write budget includes queue time, so a stalled predecessor cannot extend a permit.
+    let timer: NodeJS.Timeout | undefined;
+    const timeout = new Promise<never>((_resolve, reject) => {
+      timer = setTimeout(() => {
+        this.closeConnection(connection, 1011, "send-unavailable");
+        reject(unavailable());
+      }, 5000);
+    });
+    const queued = connection.outgoing.then(async () => {
       if (
         connection.stop.signal.aborted ||
         connection.socket.readyState !== WebSocket.OPEN ||
-        (requireCurrent && !this.current(connection)) ||
         connection.socket.bufferedAmount > payloadLimit
       )
         throw unavailable();
-      if (value.type === "browser.command" && Date.parse(value.expiresAt) <= Date.now())
-        throw unavailable();
+      check();
       await new Promise<void>((resolve, reject) => {
-        const timer = setTimeout(() => reject(unavailable()), 5000);
         const aborted = () => finish(unavailable());
         const finish = (error?: Error | null) => {
-          clearTimeout(timer);
           connection.stop.signal.removeEventListener("abort", aborted);
           error ? reject(error) : resolve();
         };
@@ -169,18 +195,27 @@ export class WorkerHostRegistry {
         connection.socket.send(wire, finish);
       });
     });
+    const outgoing = Promise.race([queued, timeout]).finally(() => clearTimeout(timer));
     connection.outgoing = outgoing.catch(() => {
       this.closeConnection(connection, 1011, "send-unavailable");
     });
     await outgoing;
   }
-  private ack(connection: Connection, accepted: boolean, reason?: string) {
+  private ack(connection: Connection, accepted: boolean, reason?: string, initial = false) {
     return this.send(connection, {
       type: "server.ack",
       protocolVersion,
       accepted,
       receivedAt: stamp(),
       ...(reason ? { reason } : {}),
+      ...(initial && connection.commandHandle
+        ? {
+            commandChannel: {
+              protocolVersion: commandProtocolVersion,
+              connectionId: connection.binding!.connectionId,
+            },
+          }
+        : {}),
     });
   }
   private async reject(connection: Connection, reason: string, closeReason: string) {
@@ -241,14 +276,44 @@ export class WorkerHostRegistry {
       this.nodes.set(hello.nodeId, connection);
       this.revision++;
       clearTimeout(connection.enrolled);
-      await this.ack(connection, true);
+      if (this.commands && hello.commandChannel)
+        connection.commandHandle = this.commands.activate({
+          binding: connection.binding!,
+          current: () => this.current(connection),
+          send: (wire, check) => this.sendWire(connection, wire, check),
+          close: () => this.closeConnection(connection, 1008, "command-unavailable"),
+          guard: (signal, operation) =>
+            this.identities.fence.run(
+              hello.nodeId,
+              AbortSignal.any([signal, connection.stop.signal, this.stop.signal]),
+              operation,
+            ),
+        });
+      await this.ack(connection, true, undefined, true);
       this.notify("available", connection);
     });
   }
   private async receive(connection: Connection, wire: Buffer) {
-    const message = nodeMessageSchema.parse(
-      JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(wire)),
-    );
+    const value: unknown = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(wire));
+    if (
+      value &&
+      typeof value === "object" &&
+      "type" in value &&
+      typeof value.type === "string" &&
+      value.type.startsWith("work.command.")
+    ) {
+      if (
+        !this.current(connection) ||
+        !this.commands ||
+        !connection.commandHandle ||
+        wire.length > 32768
+      )
+        throw unavailable();
+      const frame = await parseCommandFrame(strictCommandJson(wire, 32768), { server: false });
+      this.commands.receive(connection.commandHandle, frame, wire.length);
+      return;
+    }
+    const message = nodeMessageSchema.parse(value);
     if (connection.phase === "authenticating") {
       if (message.type !== "node.hello") throw unavailable();
       await this.authenticate(connection, message);

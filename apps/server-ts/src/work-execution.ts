@@ -79,7 +79,7 @@ export async function checkWorkFence(db: WorkDb, fence: WorkFence): Promise<void
 }
 export class WorkExecution {
   constructor(readonly transactions: WorkTransactions) {}
-  async claim(binding: ActivityBinding): Promise<WorkFence> {
+  async claim(binding: ActivityBinding, commandRuntime = false): Promise<WorkFence> {
     // SDK Activity attempts are distinct writers; retry can supersede a crashed writer but
     // never renew its old claim, reservation or permission to send an admitted effect.
     const claimId = createHash("sha256")
@@ -99,8 +99,15 @@ export class WorkExecution {
       const epoch = Number(rows[0]?.execution_epoch) + 1;
       if (!Number.isInteger(epoch) || epoch > 10000) throw new WorkConflict("attempt_limit");
       await db`UPDATE work_runs SET execution_epoch=${epoch},status='running' WHERE id=${runId}`;
+      const command =
+        commandRuntime &&
+        (
+          await db`SELECT 1 FROM work_actions a JOIN work_command_profiles p ON p.task_id=a.task_id WHERE a.run_id=${runId} AND a.status='proposed' AND a.intent->>'tool'='run_command' AND a.requires_approval AND a.decision='approved' AND a.expires_at>clock_timestamp() LIMIT 1`
+        ).length > 0;
+      // Only the approved command preparation/runtime/stop envelope needs the retained 120s claim.
+      // Existing claims keep their original expiry; this does not renew other Task Activities.
       await db`INSERT INTO work_claims(run_id,claim_id,epoch,expires_at)
-        VALUES (${runId},${claimId},${epoch},clock_timestamp()+interval '60 seconds')`;
+        VALUES (${runId},${claimId},${epoch},clock_timestamp()+${command ? 120 : 60}*interval '1 second')`;
       await db`UPDATE work_tasks SET status='open' WHERE id=${binding.input.taskId}`;
       await workEvent(db, binding.input.taskId, "run.claimed", { runId, epoch });
       const fence = { runId, claimId, epoch };

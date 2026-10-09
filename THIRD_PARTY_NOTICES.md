@@ -6,6 +6,10 @@ OpenBot's Server, Worker Hosts and Desktop build reference the following compone
 versions are recorded in checked-in lockfiles; release artifacts must also carry generated SBOMs
 and notices.
 
+- `jose`6.2.12 — Copyright (c)2018 Filip Skokan; MIT License.
+- `canonicalize`5.0.0 — Apache License2.0. Both packages retain their unmodified upstream
+  license files in the native Server dependency closure. P4 uses their released APIs; no
+  implementation is copied. See [command reuse](docs/research/work-command-authority.md).
 - Temporal TypeScript SDK 1.24.0 (`@temporalio/activity`, `client`, `common`, `worker`,
   `workflow` and transitive SDK packages) — Copyright (c) 2021-2025 Temporal Technologies Inc.;
   MIT License. Upstream LICENSE files remain in the dependency closure. No upstream implementation

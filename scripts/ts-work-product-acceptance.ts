@@ -1,4 +1,3 @@
-import { Worker, type WorkflowBundle } from "@temporalio/worker";
 import assert from "node:assert/strict";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { mkdir, mkdtemp, readFile, realpath, rm } from "node:fs/promises";
@@ -7,6 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { Client as McpClient } from "@modelcontextprotocol/sdk/client/index.js";
+import { Worker, type WorkflowBundle } from "@temporalio/worker";
 import postgres from "postgres";
 import { createEntry } from "../apps/server-ts/dist/app.js";
 import type { EntryOptions } from "../apps/server-ts/dist/config.js";
@@ -20,15 +20,17 @@ import {
   observeEngineClosure,
   WORKFLOW_ID_PREFIX,
 } from "../packages/work/dist/index.js";
-import { workPluginFixture } from "./ts-work-plugin-fixture.ts";
 import { qualifyBrowserWork } from "./ts-browser-work-acceptance.ts";
-import { qualifyWorkerProduct } from "./ts-worker-product-acceptance.ts";
+import { commandArguments, commandWorkFixture } from "./ts-command-work-acceptance.ts";
+import { workPluginFixture } from "./ts-work-plugin-fixture.ts";
 import { workWebFixture } from "./ts-work-web-fixture.ts";
+import { qualifyWorkerProduct } from "./ts-worker-product-acceptance.ts";
 
 export async function qualifyWorkProduct(
   databaseUrl: string,
   fixture: {
     address: string;
+    python: string;
     tls: { ca: string; certificate: string; key: string; server_name: string };
   },
   workflowBundle: WorkflowBundle,
@@ -38,6 +40,7 @@ export async function qualifyWorkProduct(
   let engineConnection: Connection | undefined;
   let app: Awaited<ReturnType<typeof createEntry>> | undefined;
   const pluginPeer = await workPluginFixture();
+  let commandPeer: Awaited<ReturnType<typeof commandWorkFixture>> | undefined;
   let webPeer: Awaited<ReturnType<typeof workWebFixture>> | undefined;
   const calls = new Map<string, number>();
   const mediaRequests = new Map<string, unknown[][]>();
@@ -207,128 +210,162 @@ export async function qualifyWorkProduct(
                   : browserObservations.length === 2
                     ? { name: "read_browser", arguments: {} }
                     : null;
-    const message = browserCall
+    const commandCall =
+      !review &&
+      objective.startsWith("Command Task") &&
+      !tools.some((t: { status?: string }) => t.status === "exited");
+    if (objective.startsWith("Command Task")) {
+      if (review) {
+        assert.equal(input.commandArtifacts.length, 1);
+        assert.equal(input.commandArtifacts[0].text, "label,value\nalpha,12\nbeta,8\ngamma,5\n");
+      } else {
+        assert(input.command?.requiresOwnerApproval);
+        assert(
+          !body.tools.some((t: { function: { name: string } }) =>
+            ["call_plugin", "web_search", "create_task", "knowledge_catalog"].includes(
+              t.function.name,
+            ),
+          ),
+        );
+      }
+    }
+    const message = commandCall
       ? {
           role: "assistant",
           content: null,
           tool_calls: [
             {
-              id: "browser-" + tools.length,
+              id: "command-call",
               type: "function",
-              function: {
-                name: browserCall.name,
-                arguments: JSON.stringify(browserCall.arguments),
-              },
+              function: { name: "run_command", arguments: JSON.stringify(commandArguments) },
             },
           ],
         }
-      : channelCall
+      : browserCall
         ? {
             role: "assistant",
             content: null,
             tool_calls: [
               {
-                id: "channel-" + channelCall.name,
+                id: "browser-" + tools.length,
                 type: "function",
-                function: { name: channelCall.name, arguments: "{}" },
+                function: {
+                  name: browserCall.name,
+                  arguments: JSON.stringify(browserCall.arguments),
+                },
               },
             ],
           }
-        : colleagueCall
+        : channelCall
           ? {
               role: "assistant",
               content: null,
               tool_calls: [
                 {
-                  id: "colleague-call",
+                  id: "channel-" + channelCall.name,
                   type: "function",
-                  function: {
-                    name: colleagueCall.name,
-                    arguments: JSON.stringify(colleagueCall.arguments),
-                  },
+                  function: { name: channelCall.name, arguments: "{}" },
                 },
               ],
             }
-          : webCall
+          : colleagueCall
             ? {
                 role: "assistant",
                 content: null,
                 tool_calls: [
                   {
-                    id: "web-" + webCall.name + "-" + tools.length,
+                    id: "colleague-call",
                     type: "function",
-                    function: { name: webCall.name, arguments: JSON.stringify(webCall.arguments) },
+                    function: {
+                      name: colleagueCall.name,
+                      arguments: JSON.stringify(colleagueCall.arguments),
+                    },
                   },
                 ],
               }
-            : pluginCall
+            : webCall
               ? {
                   role: "assistant",
                   content: null,
                   tool_calls: [
                     {
-                      id: "plugin-" + pluginCall.name,
+                      id: "web-" + webCall.name + "-" + tools.length,
                       type: "function",
                       function: {
-                        name: pluginCall.name,
-                        arguments: JSON.stringify(pluginCall.arguments),
+                        name: webCall.name,
+                        arguments: JSON.stringify(webCall.arguments),
                       },
                     },
                   ],
                 }
-              : knowledgeCall
+              : pluginCall
                 ? {
                     role: "assistant",
                     content: null,
                     tool_calls: [
                       {
-                        id: "knowledge-" + knowledgeCall.name,
+                        id: "plugin-" + pluginCall.name,
                         type: "function",
                         function: {
-                          name: knowledgeCall.name,
-                          arguments: JSON.stringify(knowledgeCall.arguments),
+                          name: pluginCall.name,
+                          arguments: JSON.stringify(pluginCall.arguments),
                         },
                       },
                     ],
                   }
-                : shouldRead
+                : knowledgeCall
                   ? {
                       role: "assistant",
                       content: null,
                       tool_calls: [
                         {
-                          id: "attachment-call",
+                          id: "knowledge-" + knowledgeCall.name,
                           type: "function",
                           function: {
-                            name: "read_attachment",
-                            arguments: JSON.stringify({
-                              attachmentId: input.attachments.find(
-                                (a: { mode: string }) => a.mode !== "binary",
-                              ).id,
-                            }),
+                            name: knowledgeCall.name,
+                            arguments: JSON.stringify(knowledgeCall.arguments),
                           },
                         },
                       ],
                     }
-                  : !review && !hasReport
+                  : shouldRead
                     ? {
                         role: "assistant",
                         content: null,
                         tool_calls: [
                           {
-                            id: "report-call",
+                            id: "attachment-call",
                             type: "function",
                             function: {
-                              name: "write_report",
+                              name: "read_attachment",
                               arguments: JSON.stringify({
-                                name: "Report.md",
-                                markdown: "# Synthetic report\n\n" + objective,
+                                attachmentId: input.attachments.find(
+                                  (a: { mode: string }) => a.mode !== "binary",
+                                ).id,
                               }),
                             },
                           },
                         ],
                       }
-                    : { role: "assistant", content: answer };
+                    : !review && !hasReport
+                      ? {
+                          role: "assistant",
+                          content: null,
+                          tool_calls: [
+                            {
+                              id: "report-call",
+                              type: "function",
+                              function: {
+                                name: "write_report",
+                                arguments: JSON.stringify({
+                                  name: "Report.md",
+                                  markdown: "# Synthetic report\n\n" + objective,
+                                }),
+                              },
+                            },
+                          ],
+                        }
+                      : { role: "assistant", content: answer };
     const bytes = Buffer.from(
       JSON.stringify({
         id: "synthetic-completion",
@@ -343,6 +380,7 @@ export async function qualifyWorkProduct(
   };
   try {
     webPeer = await workWebFixture();
+    commandPeer = await commandWorkFixture(fixture.python);
     const files = join(directory, "work");
     await mkdir(files, { mode: 0o700 });
     const listener = createServer();
@@ -365,6 +403,7 @@ export async function qualifyWorkProduct(
         databaseUrl,
         controlReads: true,
         workerRuntime: {
+          command: commandPeer.configPath,
           browserRoutes: { [browserBot]: workerNode },
           pageOrigins: { [browserBot]: ["https://fixture.invalid"] },
           humanControl: true,
@@ -438,6 +477,37 @@ export async function qualifyWorkProduct(
     await sql`INSERT INTO channel_bots(channel_id,bot_id) VALUES(${browserChannel},${browserBot})`;
     await qualifyWorkerProduct(origin, token, browserBot, workerNode, (context) =>
       qualifyBrowserWork(context, browserBot, browserChannel),
+    );
+    const commandResult = await commandPeer.exercise(origin, token, created.connection.id);
+    assert.equal(
+      (
+        await sql`SELECT 1 FROM work_events WHERE task_id=${commandResult.taskId} AND kind='command.permit_issued'`
+      ).length,
+      1,
+    );
+    for (const taskId of [commandResult.taskId, commandResult.lostTaskId]) {
+      assert.equal(
+        (await sql`SELECT 1 FROM work_command_preparations WHERE task_id=${taskId}`).length,
+        1,
+      );
+      assert.equal(
+        (
+          await sql`SELECT 1 FROM work_command_dispatches WHERE task_id=${taskId} AND state='consumed'`
+        ).length,
+        1,
+      );
+      assert.equal(
+        (
+          await sql`SELECT 1 FROM work_events WHERE task_id=${taskId} AND kind='command.permit_issued'`
+        ).length,
+        1,
+      );
+    }
+    assert.equal(
+      (
+        await sql`SELECT 1 FROM work_command_preparations WHERE task_id=${commandResult.deniedTaskId}`
+      ).length,
+      0,
     );
     const botId = randomUUID();
     await sql`INSERT INTO bots(id,name,role,computer_profile,configuration) VALUES(${botId},'Work fixture','Synthetic acceptance','model',
@@ -1774,6 +1844,7 @@ export async function qualifyWorkProduct(
     try {
       await app?.close();
     } finally {
+      await commandPeer?.close();
       await pluginPeer.close();
       await webPeer?.close();
       await engineConnection?.close();

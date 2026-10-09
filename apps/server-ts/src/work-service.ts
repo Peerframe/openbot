@@ -29,6 +29,9 @@ import type { WorkerRuntime } from "./worker-runtime.js";
 import { WorkBrowserProfiles } from "./work-browser-profiles.js";
 import { DatabaseFence } from "./database-fence.js";
 import type { WorkBrowserServices } from "./work-browser.js";
+import { WorkCommandProfiles } from "./work-command-profiles.js";
+import type { WorkCommandSetup } from "./work-command-installation.js";
+
 export type WorkOptions = EngineSettings & {
   web?: WorkWebOptions;
   tokenLimit?: number;
@@ -88,6 +91,7 @@ export class WorkService {
   readonly files: WorkFiles;
   readonly runtime: WorkRuntime;
   readonly browser: WorkBrowserServices | undefined;
+  readonly commands: WorkCommandSetup | undefined;
   readonly handoff: WorkHandoff;
   readonly terminal: WorkTerminal;
   private readonly stopped = new AbortController();
@@ -119,6 +123,20 @@ export class WorkService {
           gate: new DatabaseFence(databaseUrl, 1326850642, 35000, "browser_busy"),
         }
       : undefined;
+    const config = worker?.commandConfiguration();
+    this.commands = config
+      ? {
+          configuration: config,
+          inbox: worker!.commandInbox!,
+          profiles: new WorkCommandProfiles(models, {
+            route: config.route,
+            policyId: config.policy.id,
+            policies: {
+              [config.policy.id]: { image: config.policy.image, limits: config.policy.limits },
+            },
+          }),
+        }
+      : undefined;
     this.runtime = new WorkRuntime(
       this.transactions,
       this.files,
@@ -128,6 +146,7 @@ export class WorkService {
       plugins,
       options.web,
       this.browser,
+      this.commands,
     );
     this.handoff = new WorkHandoff(this.transactions);
     this.terminal = new WorkTerminal(this.transactions, this.runtime.ledger);
@@ -143,6 +162,7 @@ export class WorkService {
       },
     };
     try {
+      await this.runtime.resources.commands?.start();
       this.connection = await Connection.connect({
         address: this.options.address,
         tls,
@@ -207,6 +227,7 @@ export class WorkService {
           this.options.tokenLimit ?? 100000,
           this.stopped.signal,
           this.browser?.profiles,
+          this.commands?.profiles,
         );
       } catch {
         /* A failed occurrence remains due; it must not prevent the independent handoff/repair pass. */
@@ -280,6 +301,7 @@ export class WorkService {
     return !this.failed && !this.stopped.signal.aborted && this.worker !== undefined;
   }
   async close() {
+    this.runtime.resources.commands?.close();
     this.stopped.abort();
     await Promise.all([this.loop, this.worker?.close()]);
     await this.workerRun;

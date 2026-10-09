@@ -20,6 +20,7 @@ import { cascadeWork } from "./work-tree.js";
 import { workText } from "./work-values.js";
 import type { WorkBrowserProfiles } from "./work-browser-profiles.js";
 import { lockWorkTask } from "./work-handoff.js";
+import type { WorkCommandProfiles } from "./work-command-profiles.js";
 type Row = Record<string, any>;
 export function taskTitle(content: string) {
   if (content.length <= 80) return content;
@@ -49,8 +50,11 @@ export async function admitChannelWork(
   run: Row,
   tokenLimit: number,
   browser?: WorkBrowserProfiles,
+  commands?: WorkCommandProfiles,
 ) {
-  const isolated = run.execution_profile === "docker-linux" && browser?.has(run.bot_id);
+  const browserTask = run.execution_profile === "docker-linux" && browser?.has(run.bot_id);
+  const isolated = browserTask || (run.execution_profile === "docker-linux" && !!commands);
+  const profiles = browserTask ? browser : commands;
   if (!["none", "model"].includes(run.execution_profile) && !isolated)
     throw new WorkConflict("isolated_execution_unqualified");
   const task = await createWork(
@@ -67,11 +71,11 @@ export async function admitChannelWork(
       prior.source_message_id !== run.source_message_id
     )
       throw new WorkConflict("source_content_changed");
-    if (isolated) await browser!.resolve(db, await lockWorkTask(db, task.id));
+    if (isolated) await profiles!.resolve(db, await lockWorkTask(db, task.id));
     return task;
   }
   await db`INSERT INTO work_sources(task_id,legacy_run_id,channel_id,source_message_id) VALUES(${task.id},${run.id},${run.channel_id},${run.source_message_id})`;
-  if (isolated) await browser!.capture(db, await lockWorkTask(db, task.id));
+  if (isolated) await profiles!.capture(db, await lockWorkTask(db, task.id));
   await workEvent(db, task.id, "source.admitted", { sourceRunId: run.id });
   return task;
 }
@@ -128,6 +132,7 @@ export async function submitChannelWork(
   tokenLimit: number,
   automationId?: string,
   browser?: WorkBrowserProfiles,
+  commands?: WorkCommandProfiles,
 ) {
   channelIdentity(channelId);
   const value = workParse(createMessageInputSchema, body);
@@ -180,7 +185,7 @@ export async function submitChannelWork(
     const [run] =
       await db`INSERT INTO runs(id,channel_id,bot_id,source_message_id,execution_profile,instruction,title,status,model_selection,created_at,updated_at)
       VALUES(${index === 0 ? firstRunId : randomUUID()},${channelId},${bot.id},${messageId},${bot.computer_profile},${value.content},${title},'queued',${selection === null ? null : db.json(selection)},${clock!.created_at},${clock!.created_at}) RETURNING *`;
-    const task = await admitChannelWork(db, run!, tokenLimit, browser);
+    const task = await admitChannelWork(db, run!, tokenLimit, browser, commands);
     runs.push(runProjection({ ...run, work_task_id: task.id }));
     await channelAudit(db, run!, "RUN_CREATED", {
       sourceMessageId: messageId,
@@ -295,6 +300,7 @@ export function workChannelRoutes(
   files: OwnerFiles | undefined,
   tokenLimit: number,
   browser?: WorkBrowserProfiles,
+  commands?: WorkCommandProfiles,
 ): ProductRoute[] {
   const guard = async <T>(operation: () => Promise<T>) => {
     try {
@@ -319,13 +325,31 @@ export function workChannelRoutes(
                 (session) =>
                   owner(
                     (db) =>
-                      submitChannelWork(db, session, ids[0]!, body, tokenLimit, undefined, browser),
+                      submitChannelWork(
+                        db,
+                        session,
+                        ids[0]!,
+                        body,
+                        tokenLimit,
+                        undefined,
+                        browser,
+                        commands,
+                      ),
                     session.signal,
                   ),
                 signal,
               )
             : owner((db) =>
-                submitChannelWork(db, undefined, ids[0]!, body, tokenLimit, undefined, browser),
+                submitChannelWork(
+                  db,
+                  undefined,
+                  ids[0]!,
+                  body,
+                  tokenLimit,
+                  undefined,
+                  browser,
+                  commands,
+                ),
               ),
         ),
       execute: async () => {

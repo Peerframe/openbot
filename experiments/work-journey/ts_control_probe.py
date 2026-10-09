@@ -19,7 +19,7 @@ async def qualify(node):
             server.start()
             await server.connect()
             receipt = Path(directory) / 'fixture.json'
-            receipt.write_text(json.dumps(dict(address=server.address, tls=server.client_settings)))
+            receipt.write_text(json.dumps(dict(address=server.address, tls=server.client_settings, python=sys.executable)))
             receipt.chmod(0o600)
             child = await asyncio.create_subprocess_exec(node, 'scripts/test-work-ts.ts', str(receipt), cwd=ROOT)
             try:

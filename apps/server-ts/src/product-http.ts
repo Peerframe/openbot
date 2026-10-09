@@ -139,7 +139,12 @@ export function productHandler(
     ...(work
       ? [
           ...workRoutes(work.files, files),
-          ...workChannelRoutes(files, work.options.tokenLimit ?? 100000, work.browser?.profiles),
+          ...workChannelRoutes(
+            files,
+            work.options.tokenLimit ?? 100000,
+            work.browser?.profiles,
+            work.commands?.profiles,
+          ),
         ]
       : []),
     ...(browsers ? browserRoutes(browsers) : []),

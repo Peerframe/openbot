@@ -3,6 +3,8 @@ import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import { allowlistedEnvironment } from "./python-acceptance-fixture.ts";
 
+import { qualifyCommandInterop } from "./ts-work-command-interop.ts";
+
 const root = fileURLToPath(new URL("../", import.meta.url));
 const python =
   process.env.OPENBOT_TEMPORAL_TEST_PYTHON ??
@@ -24,6 +26,7 @@ if (verified.error || verified.status !== 0)
   throw new Error(
     "The existing pinned Worker environment is required; no installation was attempted.",
   );
+await qualifyCommandInterop(python);
 const child = spawn(
   python,
   ["-I", "experiments/work-journey/ts_control_probe.py", "--node", process.execPath],

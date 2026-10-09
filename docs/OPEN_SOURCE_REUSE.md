@@ -1241,3 +1241,13 @@ Linux/installed-app acceptance.
 P4 原生 Worker/浏览器任务将已审核的 ws8.21.3 提升为生产依赖，版本不变；复用共享契约、
 身份/人工接管锁及 Python 原有审批/回执语义，不新增浏览器管理器或数据库结构。详见上述记录，
 真实传输/引擎证据与可控浏览器 peer、待验收 Linux/已安装环境明确区分。
+
+
+P4's approved command adapter promotes the already reviewed jose6.2.12 and canonicalize5.0.0
+releases into the TS Server production closure. It ports the retained OpenBot v2 contract,
+preparation clock, SQL admission/consumption and product adapter over those released libraries;
+no copied upstream source, new version, custom JOSE/JCS or alternate execution engine. Python/TS
+interop uses production APIs. See the [command integration record](research/typescript-control-plane-p4.md#approved-command-integration-2026-10-09).
+
+P4 审批命令复用已审核的 jose6.2.12/canonicalize5.0.0，增加 TS Server 生产依赖边；沿用原
+v2 契约、准备时钟、SQL 单次许可和产品适配，真实 Python/TS API 互验，不新增版本或自写密码算法。

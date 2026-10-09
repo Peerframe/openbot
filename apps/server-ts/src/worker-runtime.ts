@@ -14,11 +14,15 @@ import { runtimeSnapshotSchema, type RuntimeAccess } from "./runtime-port.js";
 import { WorkerHostRegistry } from "./worker-host-registry.js";
 
 import { workBrowserRoutesSchema } from "./work-browser-profiles.js";
+import { loadWorkCommandConfiguration } from "./work-command-installation.js";
+import { CommandInbox } from "./work-command-inbox.js";
+
 const configuration = z.strictObject({
   browserRoutes: z
     .record(z.string().uuid(), nodeIdSchema)
     .refine((routes) => Object.keys(routes).length <= 32),
   pageOrigins: workBrowserRoutesSchema.shape.pageOrigins,
+  command: z.string().min(1).max(4096).optional(),
   humanControl: z.boolean(),
   legacyHumanControl: z.boolean(),
 });
@@ -34,14 +38,24 @@ const documentSchema = z.strictObject({
 export class WorkerRuntime {
   readonly identities: WorkerIdentities;
   readonly registry: WorkerHostRegistry;
+  readonly commandInbox: CommandInbox | undefined;
+  private readonly commandConfig;
   private readonly owner;
   private readonly options: WorkerRuntimeOptions;
   private readonly stop = new AbortController();
   constructor(databaseUrl: string, options: WorkerRuntimeOptions) {
     this.options = configuration.parse(options);
     this.identities = new WorkerIdentities(databaseUrl);
-    this.registry = new WorkerHostRegistry(this.identities);
+    this.commandConfig = options.command
+      ? loadWorkCommandConfiguration(options.command)
+      : undefined;
+    this.commandInbox = this.commandConfig ? new CommandInbox() : undefined;
+    this.registry = new WorkerHostRegistry(this.identities, {}, this.commandInbox?.notifications);
+    if (this.commandInbox) this.commandInbox.attach(this.registry.commands!);
     this.owner = ownerTransactions(databaseUrl);
+  }
+  commandConfiguration() {
+    return this.commandConfig ? structuredClone(this.commandConfig) : undefined;
   }
   browserConfiguration() {
     return structuredClone({
