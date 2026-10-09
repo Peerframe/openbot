@@ -1,6 +1,8 @@
 # Research: S5 scoped memory, reviewed skills, and offline evaluation
 
 - Status: Implemented offline fixture; product integration is not approved by this record
+- Removed: the unused `experiments/s5-memory-skills/` directory was deleted on 2026-10-10; recover it
+  from Git history at `a4c1fdc6478350edecd3e94e5b162477b90b56fc`.
 - Date: 2026-09-24
 - Owner: OpenBot contributors
 - Related plan: S5 in `docs/ARCHITECTURE_MIGRATION_PLAN.md`
@@ -61,7 +63,7 @@ This experiment uses synthetic IDs only and performs no product write. It does n
 
 ## Completed experiment and corrections
 
-The [experiment](../../experiments/s5-memory-skills/README.md) uses training-only correction
+The experiment (since removed) uses training-only correction
 pairs to infer a bounded decimal scale, emits a single-file Agent Skills candidate and compares
 new input/output tasks against a separate static answer key. This follows the pinned
 [Agent Skills evaluation guide](https://github.com/agentskills/agentskills/blob/69ef37e9424c0a7ea9dd2293b559e43ec8176379/docs/skill-creation/evaluating-skills.mdx)
@@ -89,7 +91,7 @@ This is parser compatibility evidence, not an import or an official skills-ref r
 
 `npm run check` passed using existing Turbo caches for unchanged workspace tasks. Its normal
 environment-dependent skips remain; no new PostgreSQL, provider, native platform or S3/S4
-qualification was performed. The [committed report](../../experiments/s5-memory-skills/evidence/local-result.json)
+qualification was performed. The committed report `evidence/local-result.json` (removed with the experiment)
 contains full synthetic failure/pass outputs and limits. S5 remains pending product integration
 and real-model evaluation.
 

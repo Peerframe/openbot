@@ -6,7 +6,9 @@ Employee learning/provenance remains inspired by Hermes Agent.
 ## Reviewed inputs and first viable reuse
 
 - Accepted offline S5 selection `df1c24d`, integrated unchanged as `ace87c8`:
-  `experiments/s5-memory-skills/selection_port.py`, `study.py`, `SELECTION_PORT.md`,
+  `experiments/s5-memory-skills/selection_port.py`, `study.py`, `SELECTION_PORT.md` (that
+  experiment was removed on 2026-10-10; recover it from Git history at
+  `a4c1fdc6478350edecd3e94e5b162477b90b56fc`),
   `docs/research/s5-memory-skills.md`, and migration/reuse ledgers.
 - Existing product algorithms: `apps/server/src/postgres-agent-store.ts::knowledge`,
   `postgres-agent-skills.ts::{skillCatalog,readSkillDocument,assertSkillReferences}`,
