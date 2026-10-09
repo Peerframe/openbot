@@ -3,7 +3,7 @@
 2026-09-25. This extends the completed, stopped product restore qualification with existing
 model-connection persistence. No product behavior, dependency, protocol or cryptography changes.
 Reuse the accepted [Python service review](python-model-services.md), the S6
-[ciphertext/key/AAD preservation requirement](s6-compatibility.md), and the pinned PostgreSQL
+ciphertext/key/AAD preservation requirement, and the pinned PostgreSQL
 17.11 [native restore review](s7-migration-qualification.md). PyCA cryptography remains 50.0.1
 at `ffde75a2b594822c740a2e4748b56c00548302bf`; PostgreSQL remains `REL_17_11` and its already
 pinned image. No upstream source is copied or adapted by this probe.

@@ -87,8 +87,8 @@ The public safe projection is
 The integrated controller now retains bounded private stderr after stdout failure. The fixture
 records a bounded error category and trusted source location, independently cleans only an
 unreserved ephemeral key, and requires an explicit canonical fresh directory; see
-[fixture identity research](product-command-fixture-identity.md) and
-[capture research](product-command-failure-capture.md). Their 155 local checks pass.
+fixture identity research and
+capture research. Their 155 local checks pass.
 No accepted Native/Host/crypto pin or 50/150-second limit changes. The new product2 package is
 prepared separately; it has not been uploaded or qualified by the product1 authorization.
 

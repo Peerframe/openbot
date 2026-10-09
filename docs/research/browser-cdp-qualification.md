@@ -3,7 +3,7 @@
 - Status: offline boundary candidate; Linux browser acceptance remains open
 - Date:2026-09-25
 - Owner: OpenBot contributors
-- Related records: [Linux browser review](linux-browser-qualification.md), [browser sessions](python-browser-sessions.md), [reuse ledger](../OPEN_SOURCE_REUSE.md)
+- Related records: Linux browser review, browser sessions, [reuse ledger](../OPEN_SOURCE_REUSE.md)
 - Acceptance journey: one separately authorized native180-second case retains synthetic DOM/PNG, closes and reopens the same profile, proves internal namespace/seccomp diagnostics, then proves original Invocation cleanup and unchanged production state.
 - Security boundary: Server authority is unchanged. Models/webpages/browser/worker output remain untrusted; this grants no product capability. No new syscall permission, capability, network access or sandbox-disabling option.
 

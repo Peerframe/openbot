@@ -24,7 +24,6 @@
   - [Owner-managed memory](owner-managed-employee-memory.md).
   - [Reviewed knowledge](agent-reviewed-knowledge.md), which reviewed Hermes Agent at
     `63279301bcbdc185c1b07b98a9312eb0c862f26d`.
-  - [Profile details](owner-employee-profile-details.md).
   - Under these, a model may only *propose* memory and skills, which wait in 候选经验 for Owner
     review. Name, tag and 介绍 change only from the Owner's own controls.
 - Changed assumption: the Owner decided on 2026-10-06 to follow Grok Bot. In the Owner's words, AI

@@ -10,7 +10,7 @@ CopilotKit/OpenBot agent-computer at `257c1280d684089be9adb0b35cce262efc7064bf`,
 1.62.1 (Apache-2.0), and PostgreSQL 17.11. No new driver, dependency, protocol version or copied
 third-party source is needed. The reviewed source, tests, licenses, release/platform fit and
 known issues are recorded in [the original click review](controlled-browser-click.md),
-[Python session review](python-browser-sessions.md) and [approval ordering repair](browser-approval-handover.md).
+Python session review and approval ordering repair.
 
 GitHub searches rechecked `repo:CopilotKit/openbot agent-computer control human screenshot playwright`
 and `repo:microsoft/playwright actionability human keyboard mouse screenshot`. The maintained

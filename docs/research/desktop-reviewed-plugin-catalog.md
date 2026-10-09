@@ -4,8 +4,8 @@
 - Decision: explicit source-review records in a bundled catalog; optionally a private operator catalog.
 
 Reuse the existing bounded Python plugin DTOs, Owner transactions and MCP install/manifest/grant
-flow recorded in [the Python plugin decision](python-plugins.md) and
-[the starter review](plugin-platform-completion.md). Compared the public MCP Registry, a dynamic
+flow recorded in the Python plugin decision and
+the starter review. Compared the public MCP Registry, a dynamic
 remote feed, and explicit locally reviewed records. The Registry proves publication metadata, not
 OpenBot security review; a remote feed adds a new mutable authority. Choose a bounded versioned
 catalog shipped with source, or an explicitly configured owner-private operator file. Only records

@@ -9,9 +9,9 @@ credentials and PostgreSQL volumes are not deleted or silently converted.
 ## Reuse decision
 
 Promote the already reviewed product composition, not a new backend. Exact dependency
-and source/license reviews remain in [Python Desktop](desktop-python-product.md),
-[product container](python-product-container.md), [parser separation](python-parser-runtime-retirement.md)
-and [frozen oracle](legacy-server-test-oracle.md). They pin CPython3.12.13, Node24.21.0,
+and source/license reviews remain in Python Desktop,
+[product container](python-product-container.md), parser separation
+and frozen oracle. They pin CPython3.12.13, Node24.21.0,
 Electron44.3.0, Packager20.3.0, PostgreSQL17 and the existing Worker lock. No new
 dependency, copied upstream implementation or permissive runtime fallback is introduced.
 

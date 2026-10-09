@@ -19,7 +19,7 @@ failures retain `task_failed`; admitted or unknown effects keep their original l
 The existing Web mapping already recognizes `model_unavailable`; frontend translation belongs to
 its Owner and is outside this backend change.
 
-Reuse the existing [failure catalogue decision](native-failure-classification.md) and
+Reuse the existing failure catalogue decision and
 [P4 SDK/ledger decision](#trigger-and-existing-decision). Rechecked
 [RFC9457](https://www.rfc-editor.org/rfc/rfc9457.html) classification/detail and security principles,
 and PostgreSQL17's [CREATE OR REPLACE VIEW contract](https://www.postgresql.org/docs/17/sql-createview.html)
@@ -437,8 +437,8 @@ packaging, UI12/12, complete installed SQL/engine drain and installed-app accept
 ## Approved command integration (2026-10-09)
 
 The explicit P4 Worker composition now accepts the existing private command installation file.
-It reuses the [command authority](work-command-authority.md), [SQL transactions](work-command-transactions.md),
-[v2 readiness](work-command-readiness.md) and [protected Host](command-protected-host.md) decisions.
+It reuses the [command authority](work-command-authority.md), SQL transactions,
+v2 readiness and protected Host decisions.
 The already reviewed MIT jose6.2.12 and Apache-2.0 canonicalize5.0.0 become direct Server production
 edges without changing or installing versions. Released JOSE/JCS implementations perform signing
 and canonicalization; no upstream source or cryptographic implementation is copied. The strict

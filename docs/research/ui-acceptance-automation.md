@@ -25,9 +25,9 @@
 
 - Trigger: a new development dependency.
 - Existing decision:
-  - [Linux browser qualification](linux-browser-qualification.md) reviewed Playwright 1.62.1 as a
+  - Linux browser qualification reviewed Playwright 1.62.1 as a
     container image for the 员工浏览器 runtime;
-  - [starter DOM regressions](starter-dom-regressions.md) deferred an axe/Playwright accessibility
+  - starter DOM regressions deferred an axe/Playwright accessibility
     CI gate.
 
   Neither added a Node browser-automation package to the repository.
