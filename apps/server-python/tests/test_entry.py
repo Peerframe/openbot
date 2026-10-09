@@ -10,6 +10,8 @@ SCRIPT = Path(__file__).resolve().parents[1] / "scripts/serve.py"
 
 
 @pytest.mark.parametrize("overrides, message", [
+    ({"OPENBOT_CONTROL_TS_WORK_GROUP": "reports"}, "TS Work ownership requires"),
+    ({"OPENBOT_CONTROL_TS_WORK_GROUP": "unknown"}, "TS Work ownership requires"),
     ({"OPENBOT_CONTROL_DATABASE_URL": ""}, "explicit OPENBOT_CONTROL_DATABASE_URL"),
     ({"OPENBOT_CONTROL_AUTHORITY": "identity"}, "explicit control-plane Owner password"),
     ({"OPENBOT_CONTROL_AUTHORITY": "unexpected"}, "Unknown control-plane authority"),

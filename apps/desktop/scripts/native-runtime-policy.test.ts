@@ -85,7 +85,7 @@ it("fails closed on unresolved parser packages and invalid retained DB workspace
   );
 });
 
-it("adds the pinned TS entry to the Python closure without WS tests or the retired oracle", async () => {
+it("adds the pinned TS entry and Worker transport to the Python closure without the retired oracle", async () => {
   const lock = JSON.parse(
     await readFile(new URL("../../../package-lock.json", import.meta.url), "utf8"),
   );
@@ -97,14 +97,17 @@ it("adds the pinned TS entry to the Python closure without WS tests or the retir
     "packages/domain",
     "packages/employee-publisher",
     "packages/protocol",
+    "packages/work",
   ]);
   for (const key of python.packageKeys) expect(mixed.packageKeys).toContain(key);
   expect(new Set(mixed.packageKeys).size).toBe(mixed.packageKeys.length);
   expect(mixed.packageKeys).toContain("node_modules/fastify");
   expect(mixed.packageKeys).toContain("node_modules/@fastify/reply-from");
-  expect(
-    mixed.packageKeys.some((key) => key.endsWith("/ws") || key.includes("legacy-server")),
-  ).toBe(false);
+  expect(mixed.packageKeys).toContain("node_modules/@temporalio/core-bridge");
+  expect(mixed.packageKeys).toContain("node_modules/@temporalio/worker");
+  expect(mixed.packageKeys).toContain("node_modules/ws");
+  expect(lock.packages["node_modules/ws"].version).toBe("8.21.3");
+  expect(mixed.packageKeys.some((key) => key.includes("legacy-server"))).toBe(false);
   lock.packages["node_modules/@fastify/reply-from"].version = "12.6.4";
   expect(() => mixedCandidateGraph(lock)).toThrow("reviewed pin");
 });

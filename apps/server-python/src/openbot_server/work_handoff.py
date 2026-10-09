@@ -45,7 +45,7 @@ class HandoffStore:
                 'JOIN work_admissions a ON a.run_id=r.id '
                 "WHERE t.authority_active AND NOT t.cancel_requested AND t.status IN ('queued','open') "
                 "AND r.status IN ('queued','running') AND a.state='pending' "
-                'AND a.submission_attempted_at IS NULL '
+                "AND a.execution_owner='python-v1' AND a.submission_attempted_at IS NULL "
                 'ORDER BY t.created_at,t.id,r.ordinal,r.id LIMIT %s', (limit,))
             return [{'taskId': row['task_id'], 'runId': row['run_id']} for row in await cursor.fetchall()]
 
@@ -61,7 +61,7 @@ class HandoffStore:
                 'SELECT r.task_id,r.id AS run_id,a.submission_reference,a.submission_attempt_id '
                 'FROM work_admissions a '
                 'JOIN work_runs r ON r.id=a.run_id '
-                "WHERE a.state='pending' AND a.submission_attempted_at IS NOT NULL "
+                "WHERE a.execution_owner='python-v1' AND a.state='pending' AND a.submission_attempted_at IS NOT NULL "
                 'ORDER BY a.submission_attempted_at,r.id LIMIT %s', (limit,))
             return [{'taskId': row['task_id'], 'runId': row['run_id'],
                      'engineReference': row['submission_reference'],
@@ -76,7 +76,7 @@ class HandoffStore:
                 'FROM work_admissions a '
                 'JOIN work_runs r ON r.id=a.run_id '
                 "WHERE r.task_id=%s AND r.id=%s AND a.state='pending' "
-                'AND a.submission_attempted_at IS NOT NULL', (task_id, run_id))
+                "AND a.execution_owner='python-v1' AND a.submission_attempted_at IS NOT NULL", (task_id, run_id))
             row = await cursor.fetchone()
             if row is None:
                 return None
@@ -98,12 +98,14 @@ class HandoffStore:
             task = await self._store._task(connection, task_id)
             cursor = await connection.execute(
                 'SELECT r.status AS run_status,a.state,a.engine_reference,a.submission_reference,'
-                'a.submission_attempt_id '
+                'a.submission_attempt_id,a.execution_owner '
                 'FROM work_runs r JOIN work_admissions a ON a.run_id=r.id '
                 'WHERE r.task_id=%s AND r.id=%s FOR UPDATE OF r,a', (task_id, run_id))
             handoff = await cursor.fetchone()
             if handoff is None:
                 raise WorkNotFound()
+            if handoff['execution_owner'] != 'python-v1':
+                raise WorkConflict('handoff_execution_owner_mismatch')
             existing = handoff['submission_reference'] or handoff['engine_reference']
             if existing is not None:
                 if existing != engine_reference:
@@ -141,13 +143,15 @@ class HandoffStore:
             await self._store._task(connection, task_id)
             cursor = await connection.execute(
                 'SELECT a.state,a.engine_reference,a.submission_reference,a.submission_attempt_id,'
-                'a.engine_first_run_id '
+                'a.engine_first_run_id,a.execution_owner '
                 'FROM work_runs r '
                 'JOIN work_admissions a ON a.run_id=r.id '
                 'WHERE r.task_id=%s AND r.id=%s FOR UPDATE OF r,a', (task_id, run_id))
             handoff = await cursor.fetchone()
             if handoff is None:
                 raise WorkNotFound()
+            if handoff['execution_owner'] != 'python-v1':
+                raise WorkConflict('handoff_execution_owner_mismatch')
             if handoff['state'] == 'acknowledged':
                 if handoff['engine_reference'] != engine_reference:
                     raise WorkConflict('handoff_reference_changed')

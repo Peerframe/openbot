@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { configureNativeWorkFixture, runNativeWorkFixture } from "./native-work-fixture.ts";
 import { confirmProcessesStopped, loadDesktopModules } from "./python-product-probe.ts";
 
 const desktopDist = fileURLToPath(new URL("../dist/", import.meta.url));
@@ -79,7 +80,12 @@ function statistics(values: readonly number[]) {
   };
 }
 
-async function sampleRequests(base: string, cookie: string, target: "health" | "channels") {
+async function sampleRequests(
+  base: string,
+  cookie: string,
+  target: "health" | "channels",
+  phase: string,
+) {
   const samplesMs: number[] = [];
   const batchDeadline = AbortSignal.timeout(60_000);
   for (let index = 0; index < 110; index++) {
@@ -92,9 +98,7 @@ async function sampleRequests(base: string, cookie: string, target: "health" | "
     assert.equal(response.status, 200, "Measured request did not succeed.");
     const value = (await response.json()) as { phase?: unknown; channels?: unknown };
     assert(
-      target === "health"
-        ? value.phase === "python-product-candidate"
-        : Array.isArray(value.channels),
+      target === "health" ? value.phase === phase : Array.isArray(value.channels),
       "Measured response has an unexpected shape.",
     );
     if (index >= 10) samplesMs.push(Math.round((performance.now() - started) * 1000) / 1000);
@@ -178,12 +182,13 @@ export async function measureTsProduct(runtimeRoot: string) {
         let ids: readonly number[] = [];
         let base = "";
         let cookie = "";
+        const phase =
+          composition === "python-direct"
+            ? "python-product-candidate"
+            : "typescript-product-candidate";
         const login = async (url: string, password: string) => {
           const health = await fetch(`${url}/health`, { signal: AbortSignal.timeout(3000) });
-          assert.equal(
-            ((await health.json()) as { phase: unknown }).phase,
-            "python-product-candidate",
-          );
+          assert.equal(((await health.json()) as { phase: unknown }).phase, phase);
           const response = await fetch(`${url}/api/v1/auth/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json", Origin: url },
@@ -197,11 +202,12 @@ export async function measureTsProduct(runtimeRoot: string) {
           base = url;
         };
         const dataRoot = join(root, `${trial}-${composition}`);
+        await configureNativeWorkFixture(dataRoot);
         const controller = new NativeServerController({
           runtimeRoot,
           dataRoot,
           platform: process.platform,
-          // Match P0's API-only fixture callbacks. This does not measure Electron or Keychain.
+          // Synthetic callbacks only; the engine is real. This does not measure Electron or Keychain.
           encrypt: (value) => Buffer.from(value).toString("base64"),
           decrypt: (value) => Buffer.from(value, "base64").toString(),
           launchServer: async (environment) => {
@@ -236,8 +242,8 @@ export async function measureTsProduct(runtimeRoot: string) {
               await delay(500);
             }
             const requests = {
-              health: await sampleRequests(base, cookie, "health"),
-              channels: await sampleRequests(base, cookie, "channels"),
+              health: await sampleRequests(base, cookie, "health", phase),
+              channels: await sampleRequests(base, cookie, "channels", phase),
             };
             results.push({
               trial,
@@ -299,7 +305,7 @@ export async function measureTsProduct(runtimeRoot: string) {
       ),
     }));
     return {
-      kind: "same-source-native-api-only-forwarding-overhead",
+      kind: "same-source-native-idle-work-overhead",
       date: new Date().toISOString(),
       node: process.version,
       platform: process.platform,
@@ -329,6 +335,8 @@ export async function measureTsProduct(runtimeRoot: string) {
         rssScope: "controller descendants, excluding ps",
         syntheticEncryption: true,
         liveModelCalls: 0,
+        engine: "Temporal1.32.0/SQLite/mTLS",
+        workerConnected: true,
       },
       summary,
       results,
@@ -337,7 +345,7 @@ export async function measureTsProduct(runtimeRoot: string) {
       unqualified: [
         "Electron renderer/Keychain timing",
         "public TLS/network throughput",
-        "active Work/Temporal",
+        "in-flight Work execution cost",
         "hosted platforms",
       ],
     };
@@ -350,5 +358,6 @@ export async function measureTsProduct(runtimeRoot: string) {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   if (process.argv.length !== 3 || !process.argv[2])
     throw new Error("Usage: measure-ts-product <candidate-native-runtime>");
-  console.log(JSON.stringify(await measureTsProduct(resolve(process.argv[2])), null, 2));
+  if (!(await runNativeWorkFixture("measure", resolve(process.argv[2]))))
+    console.log(JSON.stringify(await measureTsProduct(resolve(process.argv[2])), null, 2));
 }

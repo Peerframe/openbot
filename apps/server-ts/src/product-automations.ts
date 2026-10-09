@@ -192,3 +192,5 @@ export function automationRoutes(files: OwnerFiles): readonly ProductRoute[] {
     },
   ];
 }
+
+export { projection as automationProjection, selection as automationSelection };

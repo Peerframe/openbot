@@ -37,3 +37,14 @@ BROWSER_ROUTES = (("POST","/api/v1/bots/[^/]+/browser"),("POST","/api/v1/bots/[^
 
 def owns(method, path, group='identity'):
     return any(method == verb and re.fullmatch(pattern, path) for verb, pattern in (ROUTES + MODEL_ROUTES + READ_ROUTES + FILE_ROUTES + STORAGE_ROUTES + KNOWLEDGE_ROUTES + APPROVAL_ROUTES + AUTOMATION_ROUTES + PLUGIN_ROUTES + CREATION_LIFECYCLE_ROUTES + WORKSPACE_ROUTES + PORTABILITY_ROUTES + NODE_ROUTES + BROWSER_ROUTES if group == 'p3' else ROUTES + MODEL_ROUTES if group == 'identity-models' else ROUTES))
+
+
+# Explicit P4 candidate quarantine. Retained internal adapters and old Temporal queues still drain.
+WORK_ROUTES = (('POST','/api/v1/tasks'),('GET','/api/v1/tasks/[^/]+'),
+    ('GET','/api/v1/tasks/[^/]+/scope'),('POST','/api/v1/tasks/[^/]+/cancel'),
+    ('POST','/api/v1/tasks/[^/]+/corrections'),('POST','/api/v1/actions/[^/]+/decision'),
+    ('POST','/api/v1/actions/[^/]+/reconcile'),('GET','/api/v1/artifacts/[^/]+'),
+    ('POST','/api/v1/channels/[^/]+/messages'),('POST','/api/v1/runs/[^/]+/cancel'),('POST','/api/v1/runs/[^/]+/steer'))
+
+def work_owns(method, path):
+    return any(method == verb and re.fullmatch(pattern, path) for verb, pattern in WORK_ROUTES)

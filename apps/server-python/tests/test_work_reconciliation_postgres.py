@@ -469,3 +469,19 @@ def test_resolution_and_command_finish_roll_back_together_on_audit_failure(fixtu
         final = await service.resolve(value['id'], applied=True, actual_tokens=3, evidence=evidence())
         assert final['actions'][0]['reconciliation']['outcome']=='resolved'
     asyncio.run(check())
+
+
+def test_python_repair_scan_excludes_typescript_obligations(fixture):
+    async def check():
+        service, commands, task, value = await prepared(fixture)
+        command = await commands.request(fixture['token'], value['id'], **arguments(value))
+        # The fixture has no engine submission. Construct the admission a TS creator would
+        # have inserted; never disable the immutable-owner trigger in the actual product.
+        with psycopg.connect(fixture['dsn']) as db:
+            db.execute('DELETE FROM work_admissions WHERE run_id=%s', (value['runId'],))
+            db.execute("INSERT INTO work_admissions(run_id,execution_owner) VALUES(%s,'typescript-v1')", (value['runId'],))
+        assert not any(row['commandId'] == command['id'] for row in await commands.pending(128))
+        snapshot = await service.snapshot(fixture['token'], task['id'])
+        assert snapshot['actions'][0]['status'] == 'unknown'
+        assert snapshot['actions'][0]['reconciliation']['outcome'] is None
+    asyncio.run(check())

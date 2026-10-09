@@ -5,7 +5,15 @@
 import assert from "node:assert/strict";
 import { type ChildProcess, spawn } from "node:child_process";
 import { randomBytes, randomUUID } from "node:crypto";
-import { existsSync, mkdirSync, openSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  openSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -89,6 +97,41 @@ try {
   console.error(error instanceof Error ? error.message : String(error));
   process.exit(2);
 }
+// The TS UI gate owns the same real engine fixture as Work acceptance. Credentials stay in
+// its private receipt; this wrapper cannot select the installed application's configuration.
+if (options.entry === "ts" && !process.env.OPENBOT_UI_TEMPORAL_FIXTURE) {
+  const child = spawn(
+    python,
+    [
+      "-I",
+      "experiments/work-journey/ts_control_probe.py",
+      "--node",
+      process.execPath,
+      "--ui",
+      ...process.argv.slice(2),
+    ],
+    {
+      cwd: root,
+      env: allowlistedEnvironment([
+        "PATH",
+        "HOME",
+        "TMPDIR",
+        "DOCKER_HOST",
+        "DOCKER_CONTEXT",
+        "DOCKER_CONFIG",
+      ]),
+      stdio: "inherit",
+    },
+  );
+  for (const signal of ["SIGINT", "SIGTERM"] as const)
+    process.once(signal, () => child.kill(signal));
+  const code = await new Promise<number>((resolve, reject) => {
+    child.once("error", reject);
+    child.once("exit", (value) => resolve(value ?? 1));
+  });
+  process.exit(code);
+}
+
 const requestedWork = join(options.out ?? tmpdir(), `openbot-ui-acceptance-${Date.now()}`);
 mkdirSync(requestedWork, { recursive: true, mode: 0o700 });
 // macOS TMPDIR can traverse /var; protected storage requires the actual owned path.
@@ -171,6 +214,21 @@ try {
     env: { ...environment, OPENBOT_DATABASE_URL: databaseUrl },
   });
 
+  const temporalPath = join(data, "temporal.json");
+  if (options.entry === "ts") {
+    const fixture = JSON.parse(readFileSync(process.env.OPENBOT_UI_TEMPORAL_FIXTURE!, "utf8"));
+    assert.match(fixture.address, /^127\.0\.0\.1:\d+$/);
+    writeFileSync(
+      temporalPath,
+      JSON.stringify({
+        temporal_address: fixture.address,
+        namespace: "default",
+        queue: "openbot-ui-python-" + randomUUID(),
+        tls: fixture.tls,
+      }),
+      { mode: 0o600 },
+    );
+  }
   const publicPort = await freePort();
   const pythonPort = options.entry === "ts" ? await freePort() : publicPort;
   const origin = `http://127.0.0.1:${publicPort}`;
@@ -199,6 +257,7 @@ try {
           OPENBOT_CONTROL_TS_WRITE_GROUP: "primary-bot",
           OPENBOT_CONTROL_TS_AUTH_GROUP: "owner",
           OPENBOT_CONTROL_TS_PRODUCT_GROUP: "p3",
+          OPENBOT_CONTROL_TS_WORK_GROUP: "p4",
           OPENBOT_CONTROL_TS_CHANNEL_READ_GROUP: "channels",
         }
       : {}),
@@ -214,6 +273,9 @@ try {
     OPENBOT_TS_WRITE_GROUP: "primary-bot",
     OPENBOT_TS_AUTH_GROUP: "owner",
     OPENBOT_TS_PRODUCT_GROUP: "p3",
+    OPENBOT_TS_WORK_GROUP: "p4",
+    OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH: temporalPath,
+    OPENBOT_TS_WORK_FILE_ROOT: join(data, "artifacts"),
     OPENBOT_TS_OBJECT_ROOT: join(data, "objects"),
     OPENBOT_TS_ARTIFACT_ROOT: join(data, "artifacts"),
     OPENBOT_TS_MODEL_CONNECTION_KEY_PATH: join(data, "objects", "model-connections.key"),
@@ -233,6 +295,13 @@ try {
     publicProcess = startEntry();
   }
   await waitForHttp(`${origin}/`);
+  if (options.entry === "ts") {
+    const health = await fetch(`${origin}/health`);
+    assert.equal(health.status, 200);
+    const value = (await health.json()) as { phase?: unknown; execution?: unknown };
+    assert.equal(value.phase, "typescript-product-candidate");
+    assert.deepEqual(value.execution, { owner: "typescript-v1", state: "running" });
+  }
   console.log(`Stack ready at ${origin}`);
 
   browser = await chromium.launch({
@@ -420,6 +489,7 @@ try {
     failedSteps.length === 0 && tally.unexpected.length === 0 && pageErrors.length === 0;
   const receipt = {
     entry: options.entry,
+    workGroup: options.entry === "ts" ? "p4" : "none",
     passed,
     steps,
     responses: {

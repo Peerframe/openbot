@@ -454,3 +454,21 @@ def test_start_context_pending_is_unproven_then_requires_full_binding(fixture, m
             task_id, run_id, task['botId'], task['objective'], task['usage']['tokenLimit'])
         assert await store.snapshot(fixture['token'], task_id) == before
     asyncio.run(check())
+
+
+def test_python_activity_gate_rejects_a_typescript_owned_admission(fixture):
+    async def check():
+        store = PostgresWorkStore(fixture['dsn']); task = await new(fixture, store)
+        task_id, run_id = task['id'], task['runs'][0]['id']
+        # Even matching Python engine facts cannot turn a TS-created row into a Python grant.
+        with psycopg.connect(fixture['dsn']) as db:
+            db.execute('DELETE FROM work_admissions WHERE run_id=%s', (run_id,))
+            db.execute("INSERT INTO work_admissions(run_id,execution_owner,state,submission_reference,"
+                'submission_attempt_id,submission_attempted_at,engine_reference,engine_first_run_id) '
+                "VALUES (%s,'typescript-v1','acknowledged',%s,%s,clock_timestamp(),%s,%s)",
+                (run_id, reference(run_id), OTHER_ATTEMPT_ID, reference(run_id), FIRST_RUN_ID))
+        with pytest.raises(WorkConflict, match='handoff_execution_owner_mismatch'):
+            await assert_accepted_workflow(store, {'taskId': task_id, 'runId': run_id},
+                facts(task_id, run_id, OTHER_ATTEMPT_ID), **settings())
+        assert recorded(fixture, task)[3] == 1
+    asyncio.run(check())

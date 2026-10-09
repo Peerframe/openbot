@@ -495,3 +495,33 @@ fixture and the same actual product approvals/replay/profile checks. See the
 native lifetime and cleanup. Control/Node credentials stay local. A product `RESULT.json` with
 `remoteNativeCleanupPending:true` is provisional: only the paired native result can qualify
 isolation closure. The repository does not select a personal SSH host or provision one automatically.
+
+
+## TS P4 native disposable CI
+
+The disposable runner uses fixed Ubuntu Skopeo1.13.3 (`1.13.3+ds1-2ubuntu0.24.04.3`) for
+anonymous TLS-verified OCI copies. Registry manifests/configs are verified separately; legacy
+Docker save archives cannot establish the original native repository digest. The temporary tool
+is outside the product closure. Failed native preparation is never an executor pass.
+
+The existing browser-product Ubuntu24.04 job prepares `p4_native_ci.py` from the reviewed fixed
+Docker/runsc binaries and image contents. This is a single-use root-private test packet, never a
+Host installer. It records new offline export hashes, copies the existing protected Host algorithms,
+allocates a fresh browser identity, and preserves original native expiry and owned cleanup.
+It never discovers SSH or reuses consumed product3/comp5. See [the current P4 evidence](../../docs/research/typescript-control-plane-p4.md#fresh-native-ci-qualification-and-approval-race-2026-10-09).
+
+`product_command_probe.py --entry ts` selects the actual P4 production entry with only synthetic model
+responses. `--claim-approval-race` holds an actual SDK claim while Owner approval commits and requires
+a single command, exact CSV/report content and binary history replay. Its ordinary local Native/peer
+remain synthetic. `--native-ci-config` instead selects the preprovisioned fixed Linux fixture; the
+unchanged Host verifies SO_PEERCRED and root-private authority before real runsc execution.
+`p4_native_browser.py` joins the TS journey to the existing native composition, proves replacement
+and profile continuity, then requires the original600-second unit to expire with an empty cgroup.
+Both result records remain unsuccessful until native cleanup and host-state comparisons pass.
+Only content-free result JSON is retained by CI; private logs, keys and histories are not uploaded.
+
+The packet/admission regressions can run without a Linux runtime or remote credentials:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=experiments/work-journey:experiments/linux-execution:apps/server-python/src:packages/harness/src apps/server-python/.worker-venv/bin/python -m pytest -p no:cacheprovider -q experiments/work-journey/test_p4_native_ci.py experiments/work-journey/test_product_command_remote.py experiments/work-journey/test_product_host_fixture.py
+```
