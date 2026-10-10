@@ -504,7 +504,7 @@ jobs:
         run: |
           npm install --global --ignore-scripts npm@10.9.9
           npm ci --ignore-scripts --audit=false
-          npm exec -- turbo run build --filter=@openbot/node^... --filter=@openbot/db --filter=@openbot/server
+          npm exec -- turbo run build --filter=@openbot/node... --filter=@openbot/db --filter=@openbot/server
       - name: Prepare the exact product Worker environment
         shell: bash
         run: |

@@ -34,6 +34,7 @@ import {
 import { qualifyPythonDrain } from "./work-drain.ts";
 import { qualifyWorkProcessRecovery } from "./work-process.ts";
 import { qualifyDeadlineCloseRace } from "./work-deadline.ts";
+import { qualifyHandoffCollisions } from "./work-handoff-collisions.ts";
 
 export async function qualifyWorkControl(fixture: {
   address: string; tls: { ca: string; certificate: string; key: string; server_name: string };
@@ -224,6 +225,7 @@ try {
       new URL("../../packages/work/dist/workflows.js", import.meta.url),
     );
     const workflowBundle = await bundleWorkflowCode({ workflowsPath });
+    await qualifyHandoffCollisions({ sql, transactions, client, address: fixture.address, tls, seed });
     await qualifyDeadlineCloseRace(client, native, workflowBundle);
     const makeWorker = () =>
       Worker.create({
