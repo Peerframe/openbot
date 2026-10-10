@@ -67,7 +67,7 @@ async function main() {
   directory("/opt", 0, false);
   requireFact(!existsSync(base), "fresh_native_root_required");
   mkdirSync(base, { mode: 0o700 });
-  for (const name of ["units", "secrets", "state", "code", "code/node_modules"])
+  for (const name of ["secrets", "state", "code", "code/node_modules"])
     mkdirSync(join(base, name), { mode: 0o700 });
   cpSync(realpathSync(process.execPath), join(base, "code/node"), {
     errorOnExist: true,
@@ -87,7 +87,7 @@ async function main() {
   );
   const archive = join(packet, "downloads/python-amd64.tar"),
     config: NativeConfiguration = {
-      base: join(base, "units"),
+      base,
       binaries: join(packet, "bin"),
       archive,
       archiveSha256: digest(archive),
@@ -219,6 +219,36 @@ async function main() {
     checks.pid1OriginalExpiry = true;
   } catch (error) {
     failure = error;
+    if (record) {
+      try {
+        const state = await native.show(record.unit);
+        const journal = await native.command(
+          [
+            "/usr/bin/journalctl",
+            "--unit=" + record.unit,
+            "--no-pager",
+            "--output=json",
+            "--lines=30",
+          ],
+          3000,
+          262144,
+        );
+        const helperCodes = journal
+          .split("\n")
+          .filter(Boolean)
+          .map((line) => JSON.parse(line).MESSAGE as unknown)
+          .filter(
+            (value): value is string => typeof value === "string" && /^[a-z_]{1,80}$/.test(value),
+          );
+        process.stderr.write(
+          JSON.stringify({
+            nativeFailure: { active: state.ActiveState, result: state.Result, helperCodes },
+          }) + "\n",
+        );
+      } catch {
+        /* Diagnostics must not replace the original qualification failure. */
+      }
+    }
   }
   if (record) {
     try {

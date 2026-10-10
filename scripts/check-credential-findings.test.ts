@@ -38,6 +38,14 @@ function fixture(index = 0): Finding {
         raw: syntheticUrl("https://example.invalid", "user", "synthetic").replace(/\/$/, ""),
         rawV2: syntheticUrl("https://example.invalid/v1", "user", "synthetic"),
       },
+      {
+        detectorType: 87,
+        detectorName: "SentryToken",
+        file: "experiments/linux-execution/native-config.ts",
+        line: 17,
+        raw: "aff3ed7dfac54b04aab14de2dde53e02" + "1402f0ba238bc7ece3ac7d4b6604b055",
+        rawV2: "",
+      },
     ];
     const item = definitions[index - 27];
     if (!item) throw new RangeError("Unknown P5 credential fixture");
@@ -432,9 +440,9 @@ function migrationFixture(index: number): Finding {
   return finding;
 }
 
-test("accepts clean scans and only the thirty exact reviewed historical findings", () => {
+test("accepts clean scans and only the thirty-one exact reviewed historical findings", () => {
   assert.deepEqual(checkCredentialFindings("", 0), { reviewedFixtures: 0 });
-  const findings = Array.from({ length: 30 }, (_, index) => index).map((index) =>
+  const findings = Array.from({ length: 31 }, (_, index) => index).map((index) =>
     JSON.stringify(fixture(index)),
   );
   for (const [index, finding] of findings.entries())
@@ -442,7 +450,7 @@ test("accepts clean scans and only the thirty exact reviewed historical findings
       () => assert.deepEqual(checkCredentialFindings(finding, 183), { reviewedFixtures: 1 }),
       `fixture ${index}`,
     );
-  assert.deepEqual(checkCredentialFindings(findings.join("\n"), 183), { reviewedFixtures: 30 });
+  assert.deepEqual(checkCredentialFindings(findings.join("\n"), 183), { reviewedFixtures: 31 });
 });
 
 test("does not exempt another value, detector, verified result, or source location", () => {
@@ -480,7 +488,7 @@ test("does not exempt another value, detector, verified result, or source locati
       value.SourceMetadata.Data.Git.line += 1;
     },
   ];
-  for (const index of Array.from({ length: 30 }, (_, index) => index))
+  for (const index of Array.from({ length: 31 }, (_, index) => index))
     for (const mutate of mutations) {
       const value = fixture(index);
       mutate(value);

@@ -333,8 +333,8 @@ security and protected `check` for the independent PR remain required before mai
 
 ## P5 relocation and logging-fixture triage (2026-10-10)
 
-The unchanged pinned offline scanner reports three exact additions at `eea54455`: the synthetic
-PostgreSQL URL in the new logging redaction test; the already reviewed public gVisor binary digest
+The unchanged pinned offline scanner reports four exact additions at `eea54455`: the synthetic
+PostgreSQL URL in the new logging redaction test; the two already reviewed public gVisor binary digests
 relocated to the TS native configuration; and the already reviewed reserved-domain URI now stored
 in the inert Web contract corpus. None is an account credential. Their immutable commit, file,
 line, detector and both candidate hashes are added to the existing adapter; all-field mutation

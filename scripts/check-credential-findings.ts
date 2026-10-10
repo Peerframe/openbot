@@ -298,6 +298,15 @@ const REVIEWED_FIXTURES: readonly ReviewedFixture[] = Object.freeze([
     raw: "e06cc9e19ac9e1a142ddd18d57a2580ca1843e10b32b66c7c0d7b172ec04584e",
     rawV2: "7a94e3cfc283b30c4c15eaecd68e74bca9a9c6d91945a93dec4cb9df2af9f322",
   },
+  {
+    detectorType: 87,
+    detectorName: "SentryToken",
+    commit: "eea544559a88ea70addf935624b7e00ee21cd22f",
+    file: "experiments/linux-execution/native-config.ts",
+    line: 17,
+    raw: "15ff853549b0957c0de5f3e8db4edc74d4fbdc10fda10276d0bedf1b31c0d75f",
+    rawV2: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  },
 ]);
 
 function digest(value: unknown): string | undefined {

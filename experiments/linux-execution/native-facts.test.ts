@@ -82,6 +82,8 @@ test("valid guard and exact native lifetime retain kill and secrets policy", (t)
 });
 test("libnetwork and hashed shim socket paths fit kernel limit", () => {
   preflightPaths("/opt/obh/a123456789ab");
+  preflightPaths("/opt/obp5/0123456789ab");
+  assert.throws(() => preflightPaths("/opt/obp5/units/0123456789ab"), /native_socket_path_too_long/);
   assert.throws(() => preflightPaths("/opt/" + "a".repeat(70)));
   assert(socketPaths("/opt/x").some((v) => v.includes("libnetwork/0123456789ab.sock")));
 });

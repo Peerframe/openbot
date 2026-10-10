@@ -524,7 +524,7 @@ jobs:
           PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/openbot-browser-binaries
           PLAYWRIGHT_DOWNLOAD_CONNECTION_TIMEOUT: 120000
         run: |
-          python3.12 -B experiments/work-journey/product_browser_upstream.py "$RUNNER_TEMP/openbot-browser-upstream"
+          node experiments/work-journey/product-browser-upstream.ts "$RUNNER_TEMP/openbot-browser-upstream"
           npm ci --ignore-scripts --prefix "$RUNNER_TEMP/openbot-browser-upstream"
           node "$RUNNER_TEMP/openbot-browser-upstream/node_modules/playwright/cli.js" install --with-deps chromium
       - name: Prepare a fresh root-private Linux/runsc P4 qualification packet
