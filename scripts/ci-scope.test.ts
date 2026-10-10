@@ -411,7 +411,7 @@ test("browser probe and boundary test edits execute their actual regression suit
     "experiments/browser-execution/probe-artifacts.ts",
     "experiments/browser-execution/egress_probe.ts",
     "experiments/browser-execution/probe.test.ts",
-    "experiments/browser-execution/test_network.py",
+    "experiments/browser-execution/qualify-egress.ts",
   ]) {
     const plan = select(file);
     assert(plan.rootChecks.includes("test:browser:boundary"), file);
@@ -424,9 +424,9 @@ test("browser probe and boundary test edits execute their actual regression suit
 
 test("shared browser helpers and Work request schemas select their actual consumers", () => {
   for (const file of [
-    "experiments/linux-execution/deadline_probe.py",
-    "experiments/linux-execution/sandbox.py",
-    "experiments/linux-execution/output_capacity.py",
+    "experiments/linux-execution/native-unit.ts",
+    "experiments/linux-execution/command-sandbox.ts",
+    "experiments/linux-execution/output-capacity.ts",
   ]) {
     const plan = select(file);
     assert(plan.rootChecks.includes("test:browser:boundary"), file);

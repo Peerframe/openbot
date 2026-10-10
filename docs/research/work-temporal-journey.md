@@ -461,7 +461,7 @@ passed, with its Turbo lint/typecheck/test/build task output served from cache.
 
 ## One constructor-time Agent across two concurrent Runs (2026-09-24, revision 2)
 
-The [disposable probe](../../experiments/work-journey/multirun_port_probe.py) asks whether one
+The [disposable probe](https://github.com/Peerframe/openbot/blob/50837bea7bf63290aab250f84fe1b705f942efdb/experiments/work-journey/multirun_port_probe.py) asks whether one
 Agent built once **before** Worker startup can serve two concurrent Workflows with separate Run
 inputs. It requires a disposable Temporal frontend address via `--address` and pins the SDK
 versions at startup. Reviewed pins are unchanged:

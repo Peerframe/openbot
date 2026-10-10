@@ -83,7 +83,7 @@ these are implemented and independently verified.
 ## Executed evidence
 
 The original local harness passed all ten cases on 2026-09-23, including the deliberately
-unsafe negative control. See [the reproducible experiment](../../experiments/durable-execution/README.md).
+unsafe negative control. See [the reproducible experiment](https://github.com/Peerframe/openbot/blob/50837bea7bf63290aab250f84fe1b705f942efdb/experiments/durable-execution/README.md).
 This validates the narrow fixture behavior and leaves the selection gates above open.
 
 Additional controlled suspension cases keep the old process alive: SIGSTOP before external
