@@ -1,3 +1,5 @@
+// Hook for popover lists past eight rows: scroll inside, fade edges with hidden rows, and keep the
+// keyboard selection in view (LongLists rule).
 import { useEffect, useLayoutEffect, useState } from "react";
 
 /**

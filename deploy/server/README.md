@@ -15,8 +15,8 @@ node deploy/server/smoke-product.ts openbot-server:candidate
 ```
 
 The smoke owns random-name PostgreSQL/API containers, a PostgreSQL-backed mTLS Temporal fixture,
-private TLS configuration and state volumes. It checks real HTTPS Owner login, built Web, all58
-canonical migrations, one Node PID1, UID1000, read-only rootfs, dropped capabilities, session/channel
+private TLS configuration and state volumes. It checks real HTTPS Owner login, built Web, all 58
+canonical migrations, one Node PID 1, UID 1000, read-only rootfs, dropped capabilities, session/channel
 restart, original document bytes and the private model-key hash. Actual DOCX/PDF extraction and
 blank-image OCR use the packaged parser and offline language data. Blank OCR proves initialization,
 not recognition quality. Synthetic data and generated passwords stay within these disposable
@@ -27,7 +27,7 @@ state/key and Temporal backups. Supply `OPENBOT_POSTGRES_PASSWORD`, `OPENBOT_OWN
 `OPENBOT_TS_PUBLIC_ORIGIN` (an exact HTTPS origin) and `OPENBOT_PRODUCT_CONFIG_DIRECTORY` through
 the trusted runtime environment. The configuration directory contains `server.pem`, `server.key`,
 `server-ca.pem` and `temporal.json` plus the TLS files it references. Its private files must be owned
-by UID1000 with mode0600. Use container paths in `temporal.json`, for example:
+by UID 1000 with mode 0600. Use container paths in `temporal.json`, for example:
 
 ```json
 {
@@ -52,9 +52,9 @@ docker compose -p openbot-product-candidate -f deploy/server/compose.yaml build
 docker compose -p openbot-product-candidate -f deploy/server/compose.yaml up -d
 ```
 
-Compose publishes only127.0.0.1:3001 and keeps PostgreSQL private. The HTTPS certificate must match
+Compose publishes only 127.0.0.1:3001 and keeps PostgreSQL private. The HTTPS certificate must match
 the public origin. Host and Origin validation remain exact; cookies use Secure/HttpOnly/SameSite
-and the `__Host-` name. The runtime uses UID/GID1000, a read-only rootfs and a128MiB private tmpfs.
+and the `__Host-` name. The runtime uses UID/GID 1000, a read-only rootfs and a128MiB private tmpfs.
 The final dependency tree is projected from the reviewed npm lock. Web/compiler inputs remain in
 the build stage; the runtime keeps the required Node, PostgreSQL and third-party notices.
 

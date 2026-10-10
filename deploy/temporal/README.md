@@ -27,21 +27,21 @@ administrators remain trusted, and PostgreSQL traffic on the private bridge is n
 
 ## Reproduce the acceptance
 
-Use the separate Python experiment environment described in the journey README, Docker Compose,
-and already-built repository dependencies:
+From the repository root, with Docker running and the locked dependencies installed (`npm ci`),
+run the TypeScript qualification that required CI also runs:
 
 ```sh
-/tmp/openbot-work-reference/bin/python -B -m unittest discover -s experiments/work-journey -p 'test_*.py' -v
-/tmp/openbot-work-reference/bin/python -B experiments/work-journey/probe.py --engine postgres-mtls
+npm run test:work:ts
+npm run test:temporal:boundary
 ```
 
-The mTLS path also needs an OpenSSL CLI on PATH. It creates disposable test CAs/certificates,
+The mTLS fixture also needs the OpenSSL CLI at `/usr/bin/openssl`. It creates disposable test CAs/certificates,
 rejects plaintext, missing certificates, unknown client roots and the wrong server name; it proves
 valid access before and after each rejection. At approval it stops the engine, changes the client
 CA, rejects the old credential and resumes the same task with a new one. This is stopped-service
 rotation, not immediate revocation of established connections or a production PKI. Histories at
 approval and completion replay in memory without effects; a deliberately incompatible definition
-must fail. `--engine postgres` retains the explicit plaintext comparison mode.
+must fail.
 
 For an operator-owned mTLS instance, set `OPENBOT_TEMPORAL_TLS_DIRECTORY` in the private env file
 to an absolute directory with `server.pem`, `server.key`, `server-ca.pem`, `client-ca.pem`. The
@@ -49,7 +49,7 @@ engine leaf needs server/client auth and SAN `temporal.openbot.internal`; the se
 client issuer signs trusted client leaves. Keep CA signing keys and client private keys outside
 this mounted directory. Parent permissions must restrict host access while the four individual
 read-only mounts remain readable by the engine UID. Add `--file deploy/temporal/compose.mtls.yaml`
-to **every** Compose command and `--mtls` to `maintain.py`. Missing TLS fields/files fail startup.
+to **every** Compose command and `--mtls` to `maintain.ts`. Missing TLS fields/files fail startup.
 The manual commands below intentionally demonstrate the plaintext base profile only.
 
 The runner creates random project names, private temporary credentials and new named volumes. It
@@ -65,16 +65,16 @@ Supply the official **1.31.3 Linux archive matching the Docker daemon architectu
 download, unverified extraction or fallback version:
 
 ```sh
-/tmp/openbot-work-reference/bin/python -B experiments/work-journey/probe.py --engine postgres-mtls --upgrade-archive /absolute/path/to/temporal_1.31.3_linux_arm64.tar.gz
+OPENBOT_TEMPORAL_PREVIOUS_ARCHIVE=/absolute/path/to/temporal_1.31.3_linux_arm64.tar.gz npm run test:temporal:upgrade
 ```
 
 The archive and both exact regular binary members must match their pinned sizes/SHA-256. Only
 the server and SQL-tool binaries are mounted over the existing pinned 1.32.0 base images; this is
 an **official-binary substitution fixture, not an official 1.31.3 container image**. Schema files
-are byte-identical in these releases (history1.19, visibility1.14), so this tests a service upgrade,
+are byte-identical in these releases (history 1.19, visibility 1.14), so this tests a service upgrade,
 not a schema-DDL change. Original binaries receive 600 seconds of successful health observations
 before task creation; this wait cannot be disabled. The upgrade stops the engine, checks all four
-shards and unchanged schema history, runs official target maintenance and verifies runtime1.32.0.
+shards and unchanged schema history, runs official target maintenance and verifies runtime 1.32.0.
 
 Approval-waiting and published-but-unacknowledged tasks first resume on the upgraded original
 volume. Only then is an older engine snapshot restored into a new volume against newer business
@@ -93,17 +93,17 @@ A trusted operator can retain a private reference instance. From repository root
 credential file outside the repository; the example intentionally refuses to overwrite it:
 
 ```sh
-python3 - <<'PY'
-import os, secrets
-path = '/tmp/openbot-temporal-reference.env'
-fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-with os.fdopen(fd, 'w') as stream:
-    stream.write('OPENBOT_TEMPORAL_SCHEMA_PASSWORD=' + secrets.token_hex(32) + '\n')
-    stream.write('OPENBOT_TEMPORAL_RUNTIME_PASSWORD=' + secrets.token_hex(32) + '\n')
-    stream.write('OPENBOT_TEMPORAL_PORT=7233\n')
-PY
+node --input-type=module -e "
+import { randomBytes } from 'node:crypto';
+import { writeFileSync } from 'node:fs';
+const hex = () => randomBytes(32).toString('hex');
+writeFileSync('/tmp/openbot-temporal-reference.env',
+  'OPENBOT_TEMPORAL_SCHEMA_PASSWORD=' + hex() + '\\n' +
+  'OPENBOT_TEMPORAL_RUNTIME_PASSWORD=' + hex() + '\\n' +
+  'OPENBOT_TEMPORAL_PORT=7233\\n', { flag: 'wx', mode: 0o600 });
+"
 docker compose --env-file /tmp/openbot-temporal-reference.env --project-name openbot-temporal-reference --file deploy/temporal/compose.yaml up -d --wait postgresql
-python3 deploy/temporal/maintain.py initialize --env-file /tmp/openbot-temporal-reference.env --project openbot-temporal-reference
+node deploy/temporal/maintain.ts initialize --env-file /tmp/openbot-temporal-reference.env --project openbot-temporal-reference
 docker compose --env-file /tmp/openbot-temporal-reference.env --project-name openbot-temporal-reference --file deploy/temporal/compose.yaml up -d temporal
 ```
 
@@ -122,7 +122,7 @@ schema before retrying. Do not invoke `schema.sh` or the raw tools to bypass the
 
 ```sh
 docker compose --env-file /tmp/openbot-temporal-reference.env --project-name openbot-temporal-reference --file deploy/temporal/compose.yaml stop temporal
-python3 deploy/temporal/maintain.py upgrade --env-file /tmp/openbot-temporal-reference.env --project openbot-temporal-reference
+node deploy/temporal/maintain.ts upgrade --env-file /tmp/openbot-temporal-reference.env --project openbot-temporal-reference
 ```
 
 The base profile verifies same-version maintenance and rejection boundaries. The explicit adjacent

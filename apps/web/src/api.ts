@@ -1,3 +1,5 @@
+// Browser client for the Server's /api/v1 routes and realtime streams. Responses are validated
+// before the UI uses them; the Server stays the source of truth for state and authorization.
 import type {
   Approval,
   ApprovalDecision,
@@ -55,7 +57,6 @@ import {
   type ApprovalSettings,
   type ApprovalSettingsInput,
   approvalSettingsSchema,
-  type UpdateBotAppearanceInput,
   type BotAppearanceResult,
   type BrowserMaintenanceResult,
   browserMaintenanceResultSchema,
@@ -71,8 +72,9 @@ import {
   type TranscriptionSettingsInput,
   transcriptionSettingsInputSchema,
   transcriptionSettingsSchema,
-  workspacePrimaryBotSchema,
+  type UpdateBotAppearanceInput,
   workspacePrimaryBotInputSchema,
+  workspacePrimaryBotSchema,
 } from "@openbot/protocol";
 import { openEventStream, type RealtimeConnectionState } from "./event-stream";
 

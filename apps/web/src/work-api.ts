@@ -1,3 +1,4 @@
+// Client for the Work task routes used by 任务监督: list Bots, create, read and cancel a task.
 import {
   type CancelWorkInput,
   type CreateWorkInput,

@@ -1,3 +1,5 @@
+// Per-device display preferences in localStorage (panels, density, font size, theme, send key,
+// notifications), validated on every read and write.
 import { useSyncExternalStore } from "react";
 
 export interface WorkspacePreferences {

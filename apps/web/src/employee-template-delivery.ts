@@ -1,3 +1,4 @@
+// Saves a reviewed Bot template package: through the Desktop save dialog, else a browser download.
 import type { EmployeeExportPreview } from "@openbot/domain";
 import { ApiError, fetchEmployeeTemplate } from "./api";
 import { getOpenBotDesktopBridge } from "./desktop-runtime";

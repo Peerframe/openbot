@@ -1,3 +1,4 @@
+// Hook for the settings nav badges (SettingsNav artboard): model, host, plugin and routine counts.
 import { useEffect, useState } from "react";
 import { getModelServices, listNodeIdentities } from "./api";
 import type { DesktopSettingsSection } from "./components/DesktopSettingsScreen";

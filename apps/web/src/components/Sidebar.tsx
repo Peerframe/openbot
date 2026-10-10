@@ -1,3 +1,5 @@
+// Left sidebar (Sidebar artboard): search, 「+」, 主 Bot, pinned and grouped conversations with unread
+// and activity, the plugins row and the 「我」 account menu.
 import type { Bot, Channel, ChannelMessagePreview, Run } from "@openbot/domain";
 import {
   type KeyboardEvent,
@@ -75,6 +77,15 @@ interface SidebarProps {
 }
 
 /** The shared sidebar of the design contract (docs/design/desktop-ui-2026-10/Sidebar.dc.html). */
+const primaryHintKey = "openbot.sidebar.primaryHintDismissed";
+function readPrimaryHintDismissed() {
+  try {
+    return window.localStorage.getItem(primaryHintKey) === "1";
+  } catch {
+    return false;
+  }
+}
+
 export function Sidebar({
   creatingBot,
   onWork,
@@ -175,6 +186,22 @@ export function Sidebar({
   const primaryEntry = primaryBotId
     ? entries.find((entry) => entry.key === `bot:${primaryBotId}`)
     : undefined;
+  // A workspace upgraded from before 主 Bot existed has none; nudge once, per device, until the
+  // Owner picks one or dismisses it. The Server never elects one silently during an upgrade.
+  const [primaryHintDismissed, setPrimaryHintDismissed] = useState(readPrimaryHintDismissed);
+  const suggestPrimary =
+    primaryBotId === null &&
+    bots.length > 0 &&
+    onSetPrimaryBot !== undefined &&
+    !primaryHintDismissed;
+  function dismissPrimaryHint() {
+    setPrimaryHintDismissed(true);
+    try {
+      window.localStorage.setItem(primaryHintKey, "1");
+    } catch {
+      // Storage can be unavailable (private window); the hint then hides for this session only.
+    }
+  }
   const sections = arrangeSidebar(
     primaryEntry ? entries.filter((entry) => entry !== primaryEntry) : entries,
     organization,
@@ -438,6 +465,17 @@ export function Sidebar({
       <>
         {primaryEntry ? (
           <div className="sb-section sb-primary">{renderRow(primaryEntry, "", true)}</div>
+        ) : suggestPrimary ? (
+          <div className="sb-primary-hint" role="note">
+            <CrownGlyph />
+            <span>
+              <strong>选一个主 Bot</strong>
+              <small>没有 @ 人的消息会先交给它。右键任意 Bot，选「设为主 Bot」。</small>
+            </span>
+            <button type="button" aria-label="不再提示" onClick={dismissPrimaryHint}>
+              <ClearGlyph />
+            </button>
+          </div>
         ) : null}
         {sections.map((section) => (
           <div className="sb-section" key={section.group?.id ?? "ungrouped"}>

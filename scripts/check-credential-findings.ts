@@ -307,7 +307,7 @@ const REVIEWED_FIXTURES: readonly ReviewedFixture[] = Object.freeze([
     raw: "15ff853549b0957c0de5f3e8db4edc74d4fbdc10fda10276d0bedf1b31c0d75f",
     rawV2: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   },
-  // P5 squash retains reviewed fixture content at its new immutable source locations.
+  // #222 was squash-merged, so the same reviewed fixtures reappear under its merge commit.
   {
     detectorType: 87,
     detectorName: "SentryToken",

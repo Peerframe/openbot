@@ -44,6 +44,11 @@ routing. External code executes behind the Server policy boundary and a typed Pr
 
 Audit date: 2026-09-04. Commit pins are research baselines, not automatic dependencies.
 
+Dated entries below that select Python Server, Worker or harness components are historical. P5
+retired that implementation; the TypeScript Server in `apps/server` is the only control plane
+([ADR-0050](decisions/0050-typescript-control-plane.md)). Those entries remain decision evidence,
+not current dependencies.
+
 This table is also the retroactive review ledger for non-trivial code already present on this
 branch. A feature that is not mapped here, in an ADR, or in its issue is blocked from further
 expansion of the affected decision until relevant upstream/license evidence is recorded. Ordinary
@@ -463,9 +468,9 @@ see [frozen lifecycle design and acceptance](research/python-task-authority.md).
 
 ## Python model settings and provider services (2026-09-23)
 
-Reuse released OpenAI3.17.0/8c72a700 (Apache-2.0), Anthropic1.8.0/4421d56a (MIT),
-PyCA cryptography50.0.1/ffde75a2 (Apache-2.0 OR BSD-3-Clause) and the reviewed
-HTTPX2 2.13.0 transport. Preserve the current11 provider endpoint allowlists and AES-GCM settings
+Reuse released OpenAI 3.17.0/8c72a700 (Apache-2.0), Anthropic 1.8.0/4421d56a (MIT),
+PyCA cryptography 50.0.1/ffde75a2 (Apache-2.0 OR BSD-3-Clause) and the reviewed
+HTTPX2 2.13.0 transport. Preserve the current 11 provider endpoint allowlists and AES-GCM settings
 envelope; keep all keys, settings authority, retries and output checks in the Python control layer.
 No SDK source copied/patched; retain dependency notices. See [review](research/python-model-services.md).
 
@@ -504,7 +509,7 @@ files stay in a private control-owned root. See [publication research](research/
 ## Official SDK durability composition (2026-09-23)
 
 The [eight-case integration probe](research/sdk-durability-integration.md) uses existing pinned
-Pydantic AI 2.47.0, DBOS3.0.0 and Temporal Python 1.33.0 public adapters (MIT); no upstream source
+Pydantic AI 2.47.0, DBOS 3.0.0 and Temporal Python 1.33.0 public adapters (MIT); no upstream source
 copied or changed. Its separate environment composes the existing lock files. Temporal is the next
 public-work reference candidate, not a production engine selection; DBOS/deferred JSON remains
 viable. Product dependencies, default dispatch and private data remain unchanged.
@@ -533,19 +538,19 @@ control-owned effects. No new dependency or copied upstream code. See
 
 ## Temporal persistence and Linux boundary review (2026-09-23)
 
-The [PostgreSQL profile](research/temporal-postgres-operations.md) uses Temporal Server/admin1.32.0
+The [PostgreSQL profile](research/temporal-postgres-operations.md) uses Temporal Server/admin 1.32.0
 `d94e34a1ebba5410a2e7d07119a76896909591aa` (MIT), existing PostgreSQL 17.11 and official SQL/backup
 tools. Compose topology is adapted from samples-server `f811a033a5e79402cab9f792cea132f50344bd17`;
 its full MIT notice is retained in deploy/temporal/THIRD_PARTY_NOTICES.md. No engine source copy,
 custom migrator or product dependency change. The [Linux design](research/linux-execution-boundary.md)
 reviews OCI 1.3, Docker 29.8.1, runsc release-20260914.0 (Apache-2.0), Squid 7.7 (GPL-2.0 separate
-process), Firecracker1.17 and OpenSandbox1.1 candidates, with exact commits and limits there.
-The [VPS qualification extension](research/linux-vps-qualification.md) reuses these exact pins and systemd255 namespace primitives; implementation is in progress, not qualified. No upstream source is copied. Browser mechanics retain the
+process), Firecracker 1.17 and OpenSandbox 1.1 candidates, with exact commits and limits there.
+The [VPS qualification extension](research/linux-vps-qualification.md) reuses these exact pins and systemd 255 namespace primitives; implementation is in progress, not qualified. No upstream source is copied. Browser mechanics retain the
 existing MIT attribution. Command and browser authority/resource/egress gates remain explicit.
 
 ## Trusted engine transport and history replay (2026-09-23)
 
-Reuse Temporal Server1.32.0 native mTLS and Temporal Python 1.33.0 TLSConfig/Replayer with the
+Reuse Temporal Server 1.32.0 native mTLS and Temporal Python 1.33.0 TLSConfig/Replayer with the
 existing Pydantic AI 2.47.0 plugin (all MIT; exact commits in the research). Disposable PKI uses
 OpenSSL CLI only as a test issuer, not a shipped CA or custom crypto. The Compose overlay follows
 the already-attributed upstream topology. No copied engine/SDK implementation, new dependency or
@@ -563,7 +568,7 @@ The two releases share the entire PostgreSQL schema tree. See [pins and actual q
 
 ## Durable model observations and optional OpenAI port (2026-09-24)
 
-Reuse Pydantic AI 2.47.0 and OpenAI3.17.0 with explicit control-owned configuration, bounded
+Reuse Pydantic AI 2.47.0 and OpenAI 3.17.0 with explicit control-owned configuration, bounded
 transport and SDK retries disabled. Existing Action authority and immutable LocalWorkFiles retain
 model replies before engine acknowledgement. Missing receipts remain unknown, never permission
 to resend. Activity recovery and historical settlement grant no new authority. The initial port
@@ -605,7 +610,7 @@ existing proposal/admission/publication gates. No SDK fork or source copy; see
 
 ## Python plugins, model connections and Worker transport (2026-09-25)
 
-Reuse official MCP1.29.0 (MIT), jsonschema4.26.0 (MIT), websockets17.0.1 (BSD-3-Clause),
+Reuse official MCP 1.29.0 (MIT), jsonschema 4.26.0 (MIT), websockets 17.0.1 (BSD-3-Clause),
 and the already pinned HTTP/Pydantic/PostgreSQL/cryptography dependencies. Thin adapters preserve
 Server authority, original encrypted storage, Owner grants and the retained Host protocol.
 Per-Bot model connections translate original
@@ -652,7 +657,7 @@ DeepSeek implemented the thin TypeScript adapter; integration retains exact-orig
 new-Task page scope, original observation/reference/connection checks and no-retry recovery. No
 production dependency or upstream implementation is copied. The reproducible fixture separately
 fetches hash-pinned MIT upstream sources with their license and locks the existing Playwright pair.
-Official MIT setup-bun2.2.0 (commit0c5077e51419868618aeaa5fe8019c62421857d6) installs Bun 1.3.14 in CI;
+Official MIT setup-bun 2.2.0 (commit 0c5077e51419868618aeaa5fe8019c62421857d6) installs Bun 1.3.14 in CI;
 source, tests, release and open issues are recorded in the review. Actual local Worker restart,
 approvals, Unicode input, read/report/download and replay passed with synthetic model HTTP.
 Public egress and isolated Linux browser product execution remain unqualified.
@@ -683,11 +688,11 @@ The native and continuation adapters reuse the same pinned stack: immutable non-
 profiles, SQL-owned child relations, released Temporal timers and finite historical failure
 closure. See [original media](research/work-product-media.md). OpenBot's retained MIT collaboration and
 multimodal contracts are adapted with attribution; no third-party implementation is copied.
-Complete plugin declarations reuse the existing24KiB contract through private content-addressed
-blobs; schema12KiB, arguments8KiB and Action16KiB limits remain unchanged.
+Complete plugin declarations reuse the existing 24KiB contract through private content-addressed
+blobs; schema 12KiB, arguments 8KiB and Action 16KiB limits remain unchanged.
 
 Explicit native Task attachments, knowledge, plugins, web and collaborator scope reuse these
-pins and existing Server gates. Thin source adapters and migration0040 bind real Work provenance
+pins and existing Server gates. Thin source adapters and migration 0040 bind real Work provenance
 without fabricating channels. Private knowledge receipts bind profile/scope; children inherit
 only narrowing grants and reuse fixed deadlines and unknown-no-resend behavior. Hermes learning
 attribution remains. No new dependency or third-party code copy; see the
@@ -695,9 +700,9 @@ attribution remains. No new dependency or third-party code copy; see the
 
 ## Work command identity and fingerprints (2026-09-25)
 
-Reuse RFC8725/8785/9864, released joserfc1.7.5 /357c319119773c021bc8da433bdf31e42f77974b
+Reuse RFC8725/8785/9864, released joserfc 1.7.5 /357c319119773c021bc8da433bdf31e42f77974b
 (BSD-3-Clause), rfc8785 0.1.4 /4d9b161f6054301d98d0566e813d020fb019ee10 (Apache-2.0),
-existing cryptography50.0.1, and reviewed TypeScript jose6.2.12/canonicalize5.0.0.
+existing cryptography 50.0.1, and reviewed TypeScript jose 6.2.12/canonicalize 5.0.0.
 Strict bounded schemas and role-separated Compact JWS adapt those libraries; no custom signing
 algorithm or JCS serializer. No upstream source copied. Bundled notices are preserved in
 `apps/desktop/resources/python-notices/COMMAND_DEPENDENCIES.md`. Mandatory Python/TypeScript
@@ -707,31 +712,31 @@ See [source, release, issue, advisory and license review](research/work-command-
 
 The same-transaction command authority adapter reuses
 PostgreSQL 17 locks, existing Work admission/fences, ModelConnections and OwnerFiles snapshots.
-Migration0041 has no historical backfill; the later explicit product composition remains default-off.
+Migration 0041 has no historical backfill; the later explicit product composition remains default-off.
 The dedicated disposable PostgreSQL fixture is included in the existing Worker gate. No new
 dependency, upstream implementation, clock service or execution/recovery framework is added.
 
 The v2 readiness adapter reuses these exact JOSE/JCS pins,
-systemd v255 and Linux BOOTTIME primitives. Migration0042 preserves historical dispatches; the
-Node-only frame mirror reuses existing Zod4.6.2 and native WebCrypto. No source copied or dependency
+systemd v255 and Linux BOOTTIME primitives. Migration 0042 preserves historical dispatches; the
+Node-only frame mirror reuses existing Zod 4.6.2 and native WebCrypto. No source copied or dependency
 added. Command transport, protected Host and product routing are integrated behind explicit configuration;
 real Linux product qualification remains open.
 
 ## Protected command Host and Unix transport (2026-09-25)
 
-The protected Host reuses the reviewed systemd255,
-Docker 29.8.1/containerd2.3.5/runsc release-20260914.0, existing bounded sandbox and output capacity
-helpers, and the pinned JOSE/JCS contracts. Its58 local tests include actual Unix peer credentials,
+The protected Host reuses the reviewed systemd 255,
+Docker 29.8.1/containerd 2.3.5/runsc release-20260914.0, existing bounded sandbox and output capacity
+helpers, and the pinned JOSE/JCS contracts. Its 58 local tests include actual Unix peer credentials,
 with synthetic native effects; Linux acceptance remains open. The Node transport
 uses reviewed Node 22.23.2 built-in Duplex/Buffer/TextDecoder APIs without a new dependency. Dsh
-implemented the public-spec candidate; root integrated and checked53 cases, including a real local
+implemented the public-spec candidate; root integrated and checked 53 cases, including a real local
 Unix connection. Neither transport grants execution authority. No upstream source was copied.
 
 The product command adapter keeps the existing deferred
 Action, approval, admission, ToolResults and final content review. Complete output is retained in
 the existing private Work blob store; the model receives a bounded untrusted excerpt. The
 [trusted installation](research/work-command-installation.md) reuses existing strict parsers,
-owned-file loading and cryptography50.0.1 serialization with no ambient key/route discovery.
+owned-file loading and cryptography 50.0.1 serialization with no ambient key/route discovery.
 The [full-entry qualification](research/work-command-product-qualification.md) uses existing
 Owner HTTP, PostgreSQL/mTLS Temporal, OpenBotNodeClient and Unix transport fixtures. Synthetic
 Native evidence remains distinct from actual Linux enforcement.
@@ -749,7 +754,7 @@ container/bridge and real remote/browser qualification gates still precede final
 
 ## Fixed-image browser CDP qualification (2026-09-25)
 
-The [CDP boundary candidate](research/browser-cdp-qualification.md) reuses Chromium151.0.7922.34's
+The [CDP boundary candidate](research/browser-cdp-qualification.md) reuses Chromium 151.0.7922.34's
 released pipe protocol, narrowly adapted Playwright 1.62.1 ASCII-NUL framing (Apache-2.0), and
 Node 24.18.1 built-in streams/zlib. Existing runsc release-20260914.0 and native helpers are reused
 without copies or new permissions. The experimental clone3/chroot seccomp derivative remains
@@ -762,14 +767,14 @@ Product authority/profile mapping, egress and human takeover remain open; no cap
 
 The [retained offline developer tools](research/retained-developer-tools.md) move the existing
 MIT publisher CLI and MCP example into dedicated workspaces. They reuse the reviewed Node
-22.23.2 key APIs, @sigstore/core4.0.1, write-file-atomic8.0.0 and MCP SDK1.30.0; no new dependency
+22.23.2 key APIs, @sigstore/core 4.0.1, write-file-atomic 8.0.0 and MCP SDK 1.30.0; no new dependency
 release or cryptographic implementation is added. Source notices/hashes are preserved, the
 CLI keeps its historical relative-path base, and the scaffolder uses the existing locked
-Zod4.6.2. Neither tool depends on the legacy business Server or test oracle.
+Zod 4.6.2. Neither tool depends on the legacy business Server or test oracle.
 
 [离线开发工具迁移](research/retained-developer-tools.md)将原 MIT 发布者 CLI 与 MCP 示例移入独立
 工作区，沿用已审核的 Node 密钥 API、Sigstore、原子文件写入与 MCP SDK 固定版本。源码许可与
-初始哈希保留，CLI 保持历史相对路径语义，生成器对齐现有 Zod4.6.2；不新增密码学实现或依赖
+初始哈希保留，CLI 保持历史相对路径语义，生成器对齐现有 Zod 4.6.2；不新增密码学实现或依赖
 版本，两项工具均不依赖旧业务 Server 或测试 oracle。
 
 ## Python product container (2026-09-25)
@@ -782,11 +787,11 @@ is added.
 
 The [direct product candidate](research/python-product-container.md) reuses the reviewed official
 Python 3.12.13 and Node 24.21.0 Bookworm image digests, unchanged 63-distribution Worker lock,
-retained43-entry Node parser/DB dependency closure and existing npm10.9.9 projection resolver.
+retained 43-entry Node parser/DB dependency closure and existing npm 10.9.9 projection resolver.
 The separate build projection adds only existing pinned Web/TypeScript roots; the final image
 ships no TS business Server, oracle or build tools. Original component notices are retained,
 no upstream source is copied and no dependency version is added. The explicitly approved listen
-setting preserves127.0.0.1 by default. Actual local Linux arm64 image and disposable Owner/Web/PG/
+setting preserves 127.0.0.1 by default. Actual local Linux arm64 image and disposable Owner/Web/PG/
 parser/restart checks passed; native matrix CI reuses the same smoke without publishing an image.
 
 [Python产品容器](research/python-product-container.md)复用已审核官方镜像摘要、63项Worker锁、
@@ -821,20 +826,20 @@ build/quality closures remain separate; exact references and tradeoffs are in
 ## Reviewed plugin catalog source (2026-10-01)
 
 The [catalog decision](research/desktop-reviewed-plugin-catalog.md) reuses the MIT first-party
-notebook template at main57341154b19d45686b2f71bce96fca38e1f07310, pinned MCP SDK1.30.0/Zod4.6.2,
+notebook template at main57341154b19d45686b2f71bce96fca38e1f07310, pinned MCP SDK 1.30.0/Zod 4.6.2,
 existing Owner transactions and bounded owned-file loading. Explicit commit/file/review records form
 the curated source; registry publication is not treated as review. No new dependency or copied source.
 The attempted public Docs MCP review failed its real DNS boundary and is not included as a reviewed service.
 
 The 2026-10-07 [SDK advisory repair](research/typescript-control-plane-p0.md#mcp-sdk-advisory-repair-2026-10-07)
-re-reviews catalog revision2 at `10f64b7a03e24c6b56003dedf5ca051d6458ea64`: MCP SDK1.32.1,
+re-reviews catalog revision 2 at `10f64b7a03e24c6b56003dedf5ca051d6458ea64`: MCP SDK 1.32.1,
 updated manifest hash and four unchanged source/license/provenance hashes. Source commit, review
 record and hashes move together; catalog authority and live grant/manifest checks stay unchanged.
 
 ## C10 avatar palette compatibility (2026-10-02)
 
 The [input review](research/python-identity-inputs.md#c10-additive-avatar-accents-2026-10-02)
-extends the existing Zod4.6.2 / Pydantic 2.13.5 closed appearance enum by four design-owned values.
+extends the existing Zod 4.6.2 / Pydantic 2.13.5 closed appearance enum by four design-owned values.
 The existing v1/v2 portable package carries them without another registry or format version.
 Old values, strict rejection, checksums and Owner import review remain intact. No new dependency,
 schema migration or source incorporation is added; geometry and UI selection remain separate.
@@ -861,7 +866,7 @@ the fork root LICENSE and the image MIT notice are retained.
 ## Retire singleton model settings (C28, 2026-10-05)
 
 Reuse C7 Owner preferences, PostgreSQL 17.10, the existing connection AES-GCM cipher and
-OpenAI3.17.0/8c72a700. One transactional import receipt retains original files/keys without restart
+OpenAI 3.17.0/8c72a700. One transactional import receipt retains original files/keys without restart
 resurrection; Owner selects an official OpenAI transcription connection. No new dependency or
 source copied. See [decision and evidence](research/retire-singleton-model.md).
 
@@ -878,7 +883,7 @@ Keep the accepted Fastify 5.12.5 framework and Server/Temporal authority split. 
 `@fastify/reply-from`12.6.5/5422fd6 (MIT) for HTTP streams with explicit zero retry; compare
 `@fastify/http-proxy`11.6.4/1bf6131 and the retained renderer proxy. Node 22.23.2 HTTP/duplex APIs
 cover the narrow WS upgrade integration gap without another protocol implementation.
-Fastify 5.12.5/reply-from12.6.5 are now installed exactly in the P2 workspace lock. Local raw-query/body,
+Fastify 5.12.5/reply-from 12.6.5 are now installed exactly in the P2 workspace lock. Local raw-query/body,
 cookie/status/bytes, backpressure/abort, fixed-target/forged-header and mixed Python/SQL/Web/Desktop
 checks pass. The mixed→direct→mixed switch preserves the same session/data/public URL and one writer.
 Production closure excludes the WS test dependency/oracle. Direct HTTPS reuses Node 24.21.0 TLS/X509
@@ -898,32 +903,32 @@ See [adapter evidence](research/typescript-control-plane-p0.md#p2-forwarding-ada
 and [ADR-0050](decisions/0050-typescript-control-plane.md).
 
 The migration integration's [transitive proxy trust review](research/retained-developer-tools.md#express-proxy-trust-transitive-patch-2026-10-06)
-selects MIT proxy-addr2.0.8 / a11ad82545698af5c33e59f3ed0b52eab79bf610 for the retained
-MCP SDK1.30.0/Express5.2.1 example. It preserves the existing API/dependency closure, copies no
+selects MIT proxy-addr 2.0.8 / a11ad82545698af5c33e59f3ed0b52eab79bf610 for the retained
+MCP SDK 1.30.0/Express 5.2.1 example. It preserves the existing API/dependency closure, copies no
 source, and requires scoped HTTP, trust-regression and audit evidence before qualification.
 
 ### P3 transcription settings read (2026-10-07)
 
 Reuse Unlicense Postgres.js 3.4.9 / `e7dfa14519f363229ccc3ead7b1b2f2051937efb`, the existing Owner
-session digest/READ COMMITTED/SHARE-lock decision and Zod4.6.2 strict shared DTO. TS performs only
+session digest/READ COMMITTED/SHARE-lock decision and Zod 4.6.2 strict shared DTO. TS performs only
 the explicitly selected GET; Python retains issuance/revocation, writes and model resolution.
 No new version, persistent format, cache or upstream copied source. Paired reverse selection keeps
 newer SQL data and issued sessions. Actual lock/expiry/revocation/abort tests, mixed HTTP/HTTPS,
-UI12/12 and uninstalled native qualification remain gates. See the
+UI 12/12 and uninstalled native qualification remain gates. See the
 [scoped decision](research/typescript-control-plane-p0.md#p3-transcription-read-decision-and-security-review-2026-10-07).
 
 ### P3 primary Bot manual selection (2026-10-08)
 
 Reuse the same reviewed Postgres.js 3.4.9/PostgreSQL 17 Owner/session guard, strict shared command,
 Python workspace-first locks and existing audit payload. Fastify 5.12.5's raw content-parser seam
-adds only this1024-byte/5s JSON input after Origin/session preflight. No new dependency, schema,
+adds only this 1024-byte/5s JSON input after Origin/session preflight. No new dependency, schema,
 credential access or source copy. Retain Python identity lifecycle and explicit paired rollback;
 see [decision](research/typescript-control-plane-p0.md#p3-primary-bot-selection-decision-2026-10-08).
 
 ### P3 Owner authentication (2026-10-08)
 
 Reuse Node's native asynchronous scrypt and existing PostgreSQL/session contracts without a new
-crypto dependency, data migration or source copy. Reviewed Node 22.22.2 and @noble/hashes2.4.0 as
+crypto dependency, data migration or source copy. Reviewed Node 22.22.2 and @noble/hashes 2.4.0 as
 recorded in the [scoped decision](research/typescript-control-plane-p0.md#p3-owner-authentication-decision-2026-10-08).
 Six operations remain explicitly selected and require real concurrency, reverse-switch and UI gates.
 
@@ -936,7 +941,7 @@ upstream source copy or execution authority; see [decision](research/typescript-
 
 ### P3 conversation and identity editing (2026-10-08)
 
-Reuse the current Python SQL contracts and ADR0050 pins; no new dependency or schema. A temporary
+Reuse the current Python SQL contracts and ADR-0050 pins; no new dependency or schema. A temporary
 empty PostgreSQL transactional NOTIFY bridges TS generic mutations to the sole Python SSE owner.
 Reviewed PostgreSQL 17 semantics and locked Psycopg 3.3.6 source; shutdown, failure, no-op and rollback
 are explicit. No upstream code copied; remove the listener when SSE moves. See the
@@ -944,10 +949,10 @@ are explicit. No upstream code copied; remove the listener when SSE moves. See t
 
 ### P3 protected POSIX files (2026-10-08)
 
-Koffi3.3.2, MIT, upstream `390a0abb8b240188695084fb5662b965783e4e78`, adds fixed private libc
+Koffi 3.3.2, MIT, upstream `390a0abb8b240188695084fb5662b965783e4e78`, adds fixed private libc
 openat/mkdirat/linkat/unlinkat/flock calls missing from Node core. Preserve Python inode locks and
 key publication/encryption bytes; no public FFI, foreign callbacks, copied source or installed app.
-Reject fs-ext2.1.1 (no openat), path-only core adapters (race gap), and an additional custom addon
+Reject fs-ext 2.1.1 (no openat), path-only core adapters (race gap), and an additional custom addon
 (build/maintenance cost). Exact sources, platform/packaging constraints and required interchange
 checks are in the [P3 decision](research/typescript-control-plane-p0.md#p3-protected-files-and-model-credentials-decision-2026-10-08).
 
@@ -958,8 +963,8 @@ No parser source or native header is copied. See the [ownership extension and ru
 
 ### P3 optional identity greeting (2026-10-08)
 
-Reuse retained identity/audit/Work cancellation transactions and the reviewed OpenAI7.28.0 and
-Anthropic0.131.0 SDKs. The already locked entities8.0.0 decoder (BSD-2-Clause) becomes an explicit
+Reuse retained identity/audit/Work cancellation transactions and the reviewed OpenAI 7.28.0 and
+Anthropic 0.131.0 SDKs. The already locked entities 8.0.0 decoder (BSD-2-Clause) becomes an explicit
 runtime dependency for Python HTML-reference parity; no new install or copied upstream source.
 See the [lifecycle and greeting decision](research/typescript-control-plane-p0.md#p3-identity-lifecycle-and-optional-greeting-extension-2026-10-08).
 
@@ -999,7 +1004,7 @@ automation occurrence claim and original-media contracts. The current pinned Ope
 SDKs carry bounded inline originals; source/identity reuse is confined to one read-only validation
 pass under its existing SQL locks. See the [combined evidence and remaining gates](research/typescript-control-plane-p4.md#channel-admission-schedules-and-media-integration-2026-10-09).
 
-P4's explicit native Worker/browser Task composition promotes the already reviewed MIT ws8.21.3
+P4's explicit native Worker/browser Task composition promotes the already reviewed MIT ws 8.21.3
 into the server's production closure without changing its pin. It reuses existing shared schemas,
 PostgreSQL identity/human gates and retained Python browser profile/approval/receipt contracts;
 no browser manager, new persistence schema or copied upstream source is introduced. The
@@ -1007,17 +1012,17 @@ no browser manager, new persistence schema or copied upstream source is introduc
 distinguishes actual product transport/engine checks from synthetic browser peers and outstanding
 Linux/installed-app acceptance.
 
-P4 原生 Worker/浏览器任务将已审核的 ws8.21.3 提升为生产依赖，版本不变；复用共享契约、
+P4 原生 Worker/浏览器任务将已审核的 ws 8.21.3 提升为生产依赖，版本不变；复用共享契约、
 身份/人工接管锁及 Python 原有审批/回执语义，不新增浏览器管理器或数据库结构。详见上述记录，
 真实传输/引擎证据与可控浏览器 peer、待验收 Linux/已安装环境明确区分。
 
-P4's approved command adapter promotes the already reviewed jose6.2.12 and canonicalize5.0.0
+P4's approved command adapter promotes the already reviewed jose 6.2.12 and canonicalize 5.0.0
 releases into the TS Server production closure. It ports the retained OpenBot v2 contract,
 preparation clock, SQL admission/consumption and product adapter over those released libraries;
 no copied upstream source, new version, custom JOSE/JCS or alternate execution engine. Python/TS
 interop uses production APIs. See the [command integration record](research/typescript-control-plane-p4.md#approved-command-integration-2026-10-09).
 
-P4 审批命令复用已审核的 jose6.2.12/canonicalize5.0.0，增加 TS Server 生产依赖边；沿用原
+P4 审批命令复用已审核的 jose 6.2.12/canonicalize 5.0.0，增加 TS Server 生产依赖边；沿用原
 v2 契约、准备时钟、SQL 单次许可和产品适配，真实 Python/TS API 互验，不新增版本或自写密码算法。
 
 The P4 native package gate reuses the pinned Temporal 1.32.0 macOS arm64 Server as an owned
@@ -1038,7 +1043,7 @@ P4 原生 CI 沿用保护 Linux/runsc Host 与既有 Squid 7.7/Playwright 1.62.1
 工具沿用既有 Bun 1.3.14/Node 22.22.2/NSS 3.98。命令120秒 claim 同时覆盖 Activity 内提交待审批动作
 的时序，审批、原始到期及 native 期限独立保留；不新增产品依赖、持久 Host 服务或复制上游源码。
 
-P4 disposable native CI additionally uses Ubuntu24.04 Skopeo1.13.3 security package
+P4 disposable native CI additionally uses Ubuntu 24.04 Skopeo 1.13.3 security package
 `1.13.3+ds1-2ubuntu0.24.04.3`, upstream commit `9e29e4cede9bdaa4a54aa5b0af86efedb823bde4`
 (Apache-2.0), only for anonymous TLS-verified OCI image copying. Original registry/config digests,
 platform and archive hashes remain checked; no upstream source is copied or product closure added.
@@ -1074,7 +1079,7 @@ positive/negative checks. Runtime/production closures do not include this direct
 Source copied or substantially adapted from upstream: no.
 
 The P5 protected Linux fixture port retains the original kernel boundary using the already
-reviewed Koffi3.3.2 ABI adapter (see P0 POSIX evidence), not wire-supplied identity/time.
+reviewed Koffi 3.3.2 ABI adapter (see P0 POSIX evidence), not wire-supplied identity/time.
 Linux [SO_PEERCRED](https://man7.org/linux/man-pages/man7/unix.7.html) and
 [clock_gettime](https://man7.org/linux/man-pages/man2/clock_gettime.2.html) retain the accepted
 peer UID, CLOCK_MONOTONIC/CLOCK_BOOTTIME and boot-ID checks. The
@@ -1085,9 +1090,9 @@ cannot replace these kernel facts. This is fixture migration, not additional pla
 actual low-UID/runsc qualification remains required before retiring the old fixture.
 No upstream source is copied.
 
-P5's native helper keeps the reviewed systemd255/Docker 29.8.1/runsc packet and fixed binary/image
+P5's native helper keeps the reviewed systemd 255/Docker 29.8.1/runsc packet and fixed binary/image
 hashes. It replaces Python `setns` with the existing host's
-[util-linux nsenter2.39.3](https://github.com/util-linux/util-linux/blob/v2.39.3/sys-utils/nsenter.c)
+[util-linux nsenter 2.39.3](https://github.com/util-linux/util-linux/blob/v2.39.3/sys-utils/nsenter.c)
 (GPL-2.0-only executable, invoked separately; no source incorporation). Linux
 [setns](https://man7.org/linux/man-pages/man2/setns.2.html) forbids changing a mount namespace while
 sharing CLONE_FS; a direct call from multithreaded Node is therefore unsuitable. The single-threaded
@@ -1098,12 +1103,12 @@ A custom native launcher would add another build/security boundary without impro
 The existing Node 22.22.2 CI relay runtime and Owner-approved Node 24.21.0 remain the admitted versions;
 this does not qualify new product platforms. Missing or changed readbacks fail closed.
 
-The same Koffi3.3.2 adapter reads only the stable leading LP64 Linux `fstatvfs` fields from a
+The same Koffi 3.3.2 adapter reads only the stable leading LP64 Linux `fstatvfs` fields from a
 fixed 128-byte output buffer; the upstream
 [glibc statvfs layout](https://github.com/bminor/glibc/blob/glibc-2.39/sysdeps/unix/sysv/linux/bits/statvfs.h)
 and the required x64/arm64 kernel gates check the capacity/readonly facts. No structure pointer or field
 is provided by a caller. Root-private fixture code, original create/start reservations, typed empty
-stop hooks, dedicated ext4 capacity and PID1 lifetime remain required. Local synthetic regression
+stop hooks, dedicated ext4 capacity and PID 1 lifetime remain required. Local synthetic regression
 counts do not substitute for the selected actual systemd/runsc CI gate. Source copied or substantially
 adapted from upstream: no.
 
@@ -1126,9 +1131,9 @@ dependency. It replaces Python `ipaddress` in the existing pure policy compiler;
 Canonical CIDRs and IPv4-mapped overlap are checked explicitly. The old compiler's complete
 configuration is retained as inert test input; no upstream parser or Squid source was copied.
 
-The native CI packet now also uses that same tar7.5.22 read-only parser for Docker/gVisor
+The native CI packet now also uses that same tar 7.5.22 read-only parser for Docker/gVisor
 archives and OCI index/manifest/config validation. Node zlib handles gzip; bzip2 requires the
-existing distribution executable, pinned to Ubuntu24.04 amd64
+existing distribution executable, pinned to Ubuntu 24.04 amd64
 [bzip2 1.0.8-5.1ubuntu0.1](https://packages.ubuntu.com/noble/bzip2). The upstream
 [1.0.8 manual](https://www.sourceware.org/bzip2/manual/manual.html) documents the stream/CRC
 exit contract and environment-injected options. The adapter checks the complete download hash
@@ -1141,11 +1146,11 @@ disposable Linux CI boundary. No upstream source is copied.
 The browser certificate fixture reuses the existing system OpenSSL test-certificate approach
 with EC P-256 named curves, a two-day disposable CA, exact example.com SAN/serverAuth leaves,
 and a separate self-signed unknown-CA leaf. A fixed POSIX pipeline carries the CA signing
-key; the packet never stores it. The real Linux OpenSSL3 loader refuses reopening Node
+key; the packet never stores it. The real Linux OpenSSL 3 loader refuses reopening Node
 socketpair descriptors via /dev/fd, so the adapter supplies a kernel pipe using literal argv
 and a clean environment, with bounded capture and process-group termination. The
-[OpenSSL3 loader](https://github.com/openssl/openssl/blob/openssl-3.0.22/apps/lib/apps.c)
-and actual Linux3.0.22/macOS handshake tests verify this fixture-only integration. Generated public CA trust is imported only into the packet's
+[OpenSSL 3 loader](https://github.com/openssl/openssl/blob/openssl-3.0.22/apps/lib/apps.c)
+and actual Linux 3.0.22/macOS handshake tests verify this fixture-only integration. Generated public CA trust is imported only into the packet's
 new NSS database. Real TLS handshakes cover the valid name, wrong name and unknown CA.
 This replaces Python cryptography in fixture setup without changing product TLS provisioning.
 

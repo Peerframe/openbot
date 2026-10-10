@@ -1,3 +1,4 @@
+// Helpers for the Bot rail's 工作 → 成长 list: filter, label and date the Server's evolution events.
 import type {
   EmployeeEvidenceKind,
   EmployeeEvolutionEvent,

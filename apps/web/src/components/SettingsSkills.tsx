@@ -1,3 +1,4 @@
+// Settings → 技能 (SettingsSkills artboard): every Bot's skills in one list, with review and install.
 import type { Bot, EmployeeProfile, EmployeeSkill } from "@openbot/domain";
 import { useCallback, useEffect, useState } from "react";
 import { getEmployeeProfile } from "../api";

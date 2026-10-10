@@ -1,3 +1,4 @@
+// 需要处理 approval stack in the right rail (LongLists): soonest-expiring approval on top.
 import type { Approval, ApprovalDecision, Bot, Channel } from "@openbot/domain";
 import { useState } from "react";
 import { ApprovalCard } from "./ApprovalCard";

@@ -1,3 +1,5 @@
+// Website demo (demo.html): the real sidebar, conversation and 任务详情 driven by a scripted run,
+// with play/pause controls.
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ChannelWorkspace } from "../components/ChannelWorkspace";
 import { RobotAvatar } from "../components/RobotAvatar";

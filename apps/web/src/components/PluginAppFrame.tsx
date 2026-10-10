@@ -1,3 +1,5 @@
+// Sandboxed iframe that runs a plugin's own UI (MCP Apps) through AppBridge; every host capability
+// is denied unless wired explicitly here.
 import type { ReadResourceResult } from "@modelcontextprotocol/sdk/types.js";
 import { useEffect, useRef, useState } from "react";
 import { isBoundedPluginMessage, pluginProxyUrl } from "../plugin-app-sandbox";

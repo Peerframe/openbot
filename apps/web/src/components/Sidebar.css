@@ -190,6 +190,50 @@
 }
 /* 主 Bot leads the list as a raised card (PrimaryBot artboard); the hover and selection rules
    below still apply. */
+/* Upgraded workspaces without a 主 Bot get a dismissible nudge where the crowned card would be. */
+.sb .sb-primary-hint {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+  margin: 0 0 6px;
+  padding: 10px 10px 10px 12px;
+  border-radius: var(--ob-radius-row);
+  box-shadow: inset 0 0 0 1px var(--ob-divider);
+  color: var(--ob-text-secondary);
+}
+.sb .sb-primary-hint .ob-crown-glyph {
+  margin-top: 3px;
+}
+.sb .sb-primary-hint span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.sb .sb-primary-hint strong {
+  color: var(--ob-text);
+  font-size: 14px;
+  font-weight: 600;
+}
+.sb .sb-primary-hint small {
+  font-size: 12px;
+  line-height: 1.45;
+}
+.sb .sb-primary-hint button {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.sb .sb-primary-hint button:hover {
+  background: var(--ob-fill-hover);
+}
 .sb .sb-primary {
   padding-bottom: 2px;
 }

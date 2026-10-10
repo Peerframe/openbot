@@ -1,3 +1,5 @@
+// Entry point of the design preview (preview.html, dev only): the scene table and the page that
+// renders one scene on synthetic data for comparison with its artboard.
 import { installPreviewTransport } from "./transport";
 import { createWorld } from "./world";
 import "../global-styles";

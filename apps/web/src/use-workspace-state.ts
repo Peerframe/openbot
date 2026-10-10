@@ -1,3 +1,5 @@
+// Hook holding the workspace snapshot from the Server: initial read, realtime event projections,
+// and re-reads after a disconnect without losing newer events.
 import type {
   Approval,
   Artifact,

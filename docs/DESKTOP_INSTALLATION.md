@@ -1,6 +1,6 @@
 # Desktop downloads and installation
 
-Current source scope: only macOS arm64 bundles the local Python service. Windows, Intel Mac and Linux are remote clients. Earlier local-Server installation/qualification records below are historical, not claims for new builds. Existing installations, encrypted settings and databases are retained.
+Current source scope: only macOS arm64 (Apple Silicon) bundles the local TypeScript Server, with its own Node runtime and PostgreSQL. Windows, Intel Mac and Linux builds are remote clients that connect to an existing Server. The local service also needs a running mTLS Temporal engine: Desktop does not start one, and the local Server refuses to start until a private `temporal.json` in Desktop's local-server data directory points to it. The repository's [reference Temporal profile](../deploy/temporal/README.md) runs under Docker Compose, so keep Docker running, as when [running from source](../README.md#run-from-source). Earlier local-Server installation/qualification records below are historical, not claims for new builds. Existing installations, encrypted settings and databases are retained.
 
 [English](DESKTOP_INSTALLATION.md) · [简体中文](DESKTOP_INSTALLATION.zh-CN.md)
 

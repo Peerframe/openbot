@@ -1,3 +1,5 @@
+// Card and download link for a Bot's output file (PNG image or Markdown report). Downloads go
+// through the Desktop shell's save dialog when one is available, else the browser.
 import type { Artifact } from "@openbot/domain";
 import { type ReactNode, useState } from "react";
 import { getArtifactShellSaver } from "../artifact-shell-save";

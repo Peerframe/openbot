@@ -1,5 +1,10 @@
 # Isolated mTLS terminal qualification
 
+Historical P4 evidence: this probe imports the retired Python Server package, which P5 removed,
+so it no longer runs from `main`. Reproduce it from the
+[P4-era revision](https://github.com/Peerframe/openbot/tree/e25d91520dbda664705a77c76c1af456a064a39d);
+current qualification commands are listed in the [work journey README](../README.md).
+
 This probe imports the repository's integrated ProductWorkService /
 OpenBotWork Worker, and existing scripted approval/effect fixtures. It does not implement a
 Workflow, dispatcher or substitute model provider. Its model is the existing synthetic fixture;

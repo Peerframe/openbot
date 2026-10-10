@@ -1,3 +1,5 @@
+// The open conversation (Main and Composer artboards): message list with task cards and replies,
+// and the composer with @ recipients, / skills, attachments and voice input.
 import type {
   Approval,
   ApprovalDecision,

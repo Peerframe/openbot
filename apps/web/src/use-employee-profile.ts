@@ -1,3 +1,4 @@
+// Hook that reads one Bot's employee profile, re-reading on events and reconnects, cancellably.
 import type { EmployeeProfile } from "@openbot/domain";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getEmployeeProfile } from "./api";

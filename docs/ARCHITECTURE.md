@@ -29,10 +29,10 @@ to `apps/server`. The replacement retains the PostgreSQL schema (`packages/db`) 
 | P0–P2 | Done: shared contracts, the TS public entry, and forwarding to a private Python upstream |
 | P3 | Done: when selected, TS owns the Owner session and 109 of the 121 product operations, and is the only SSE publisher |
 | P4 | Done: when selected, TS also owns Work execution, its Temporal workers and the agent runtime; open Python histories drain on Python workers |
-| P5 | Source cutover complete: the default TS product is a single Server with direct Web/Worker entry and deployment-time legacy drain checks. The `apps/server` rename and Python control/harness retirement are implemented. Local package and UI acceptance passed; final hosted CI, review and installation qualification remain open. Standalone Node is retained after the Electron permission probe failed |
+| P5 | Done ([#222](https://github.com/Peerframe/openbot/pull/222)): the default TS product is a single Server with direct Web/Worker entry and deployment-time legacy drain checks. The `apps/server` rename and Python control/harness retirement are merged after hosted CI and review. Installation qualification of a new build remains open. Standalone Node is retained after the Electron permission probe failed |
 
-The P5 candidate removes group selection and forwarding. Default packaging uses TS with standalone
-Node; the existing installation changes only after review, backup and explicit installation approval.
+P5 removed group selection and forwarding. Default packaging uses TS with standalone Node; an
+existing installation changes only after review, backup and explicit installation approval.
 
 ## Runtime boundaries
 

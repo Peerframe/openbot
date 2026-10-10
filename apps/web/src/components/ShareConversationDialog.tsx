@@ -1,3 +1,5 @@
+// 分享 dialog (DialogShare artboard): save a 频道's outputs or pack one of its Bots as a template.
+// Produces files for the Owner only; nothing is sent or published.
 import type { Artifact, Bot, Channel, Run } from "@openbot/domain";
 import { useEffect, useRef, useState } from "react";
 import { extensionOf } from "../channel-attachment-client";

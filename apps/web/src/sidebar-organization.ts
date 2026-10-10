@@ -1,3 +1,5 @@
+// Per-device sidebar arrangement in localStorage: pins, groups, folding, hidden rows, mute and
+// unread marks, plus the sort and search used by the sidebar. Never a Server write.
 import { useSyncExternalStore } from "react";
 
 /**

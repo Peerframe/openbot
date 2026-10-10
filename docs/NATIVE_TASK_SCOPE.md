@@ -14,12 +14,12 @@ All write requests require the existing session cookie and accepted Origin. No t
 ```
 
 There is no channelId. Preserve filename/MIME/size/SHA in the displayed resource DTO; the Server
-checks actual bytes and never trusts the client MIME. Same retained upload limits: text256KiB,
-image5MiB, PDF/other supported input10MiB, at most8 selected inputs and20MiB total per Task.
+checks actual bytes and never trusts the client MIME. Same retained upload limits: text 256KiB,
+image 5MiB, PDF/other supported input 10MiB, at most 8 selected inputs and 20MiB total per Task.
 
 - `GET /api/v1/task-attachments` -> `{attachments: OwnerAttachment[]}` (includes deletedAt).
 - `GET /api/v1/task-attachments/{id}` -> `{attachment: OwnerAttachment}`.
-- `GET /api/v1/task-attachments/{id}/content` -> download bytes; deleted assets return404.
+- `GET /api/v1/task-attachments/{id}/content` -> download bytes; deleted assets return 404.
 - `DELETE /api/v1/task-attachments/{id}` with `{}` -> soft-delete DTO.
 - `POST /api/v1/task-attachments/{id}/restore` with `{}` -> restored DTO.
 - `POST /api/v1/task-attachments/{id}/process` with the existing `{operation: extract|ocr|transcribe,
@@ -40,12 +40,12 @@ existing explicit processing path. Do not silently request OCR/transcription fro
 ```
 
 All scope keys are required when scope is present. IDs must be valid unique UUIDs; the Server
-sorts/canonicalizes them. At most32 collaborator choices, no self, only current none/model
+sorts/canonicalizes them. At most 32 collaborator choices, no self, only current none/model
 Employees; actual child creation retains four-descendant/two-level/300-second bounds. The UI
 must label these choices as the Owner's grant for this Task, not a public catalog entitlement.
 
 Omitting scope preserves model/report/result_review only. Empty lists and false booleans grant
-nothing new. The same requestKey with a different scope returns409. An identical retry returns
+nothing new. The same requestKey with a different scope returns 409. An identical retry returns
 the original Task even after current attachment deletion or Bot changes; it never recaptures.
 No attachment IDs or collaborators may be added through corrections; create a new scoped Task.
 No channel is created or implicitly read. Channel attachment IDs cannot be used in this namespace.
@@ -98,5 +98,5 @@ legacy channel v1 receipts retain their exact serialized target fields. Neither 
 nor the scope digest grant authority, and neither is accepted from the model.
 
 Default or explicitly empty scopes continue to expose only model/report/result_review. The
-Python/SQL/SDK tests establish these adapter boundaries; they do not replace actual UI/Temporal
+retired Python/SQL/SDK tests established these adapter boundaries; they do not replace actual UI/Temporal
 or Linux qualification. Those integrations must use this same captured scope and fresh gates.

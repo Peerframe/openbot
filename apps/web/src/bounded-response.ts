@@ -1,3 +1,4 @@
+// Reads a fetch response body with a byte limit, so a large or endless body cannot exhaust memory.
 export interface BoundedResponseMessages {
   readonly missingBody: string;
   readonly tooLarge: string;
