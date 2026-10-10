@@ -1108,8 +1108,8 @@ counts do not substitute for the selected actual systemd/runsc CI gate. Source c
 adapted from upstream: no.
 
 P5's first hosted production audit found GHSA-q2hr-2g5m-vwhr, GHSA-qhr7-859c-m2p7 and
-GHSA-6j4f-fj2g-mc7p on `@fastify/static` → glob → minimatch → brace-expansion5.0.9.
-Only that resolved production node advances to MIT brace-expansion5.0.12
+GHSA-6j4f-fj2g-mc7p on `@fastify/static` → glob → minimatch → brace-expansion 5.0.9.
+Only that resolved production node advances to MIT brace-expansion 5.0.12
 ([release source f341015](https://github.com/juliangruber/brace-expansion/tree/f3410159d768f56c9d9f4511d3e1b46425fc1099));
 all other lock nodes and direct pins remain unchanged. The
 [upstream advisory](https://github.com/advisories/GHSA-q2hr-2g5m-vwhr) identifies 5.0.12 as the

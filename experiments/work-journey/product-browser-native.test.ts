@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { nativeBrowserAcceptance } from "./product-browser-native.ts";
 import { remoteBrowserConfiguration } from "./product-browser-probe.ts";
+
 const receipt = {
   accepted: true,
   actualRunsc: true,
@@ -105,4 +106,38 @@ test("native stage diagnostics accept only complete fixed lines and never leak r
       nativeBrowserFailure("readiness", { nativeStage: "private", log: "private" }),
     ).includes("private"),
   );
+});
+
+test("startup diagnostics retain only fixed checks, error codes and bounded bundle lines", async () => {
+  const { nativeBrowserStartupError, nativeBrowserFailure } = await import(
+    "./native-browser-protocol.ts"
+  );
+  const error = Object.assign(new Error("private payload"), {
+    code: "ERR_ASSERTION",
+    stack: "Error: private\n    at launch (/opt/obp4/browser-launcher.cjs:211:7)",
+  });
+  const direct = nativeBrowserFailure("readiness", {
+    launcherCheck: "program-pin",
+    ...nativeBrowserStartupError(error),
+  });
+  assert.equal(direct.nativeBrowserFailure.launcherCheck, "program-pin");
+  assert.equal(direct.nativeBrowserFailure.errorCode, "assertion");
+  assert.equal(direct.nativeBrowserFailure.launcherLine, 211);
+  assert.deepEqual(nativeBrowserFailure("readiness", direct), direct);
+  assert(!JSON.stringify(direct).includes("private"));
+  for (const launcherLine of [-1, 0, 1.5, 1000001, "private"])
+    assert.equal(
+      nativeBrowserFailure("readiness", { launcherLine }).nativeBrowserFailure.launcherLine,
+      undefined,
+    );
+  const refused = nativeBrowserFailure("readiness", {
+    launcherCheck: "private",
+    ...nativeBrowserStartupError(new Error("private")),
+  });
+  assert.equal(refused.nativeBrowserFailure.errorCode, "unknown");
+  assert.equal(
+    nativeBrowserFailure("readiness", { errorCode: "private" }).nativeBrowserFailure.errorCode,
+    undefined,
+  );
+  assert(!JSON.stringify(refused).includes("private"));
 });

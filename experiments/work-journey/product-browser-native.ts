@@ -6,9 +6,9 @@ import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import { z } from "zod";
-import { nativeBrowserFailure } from "./native-browser-protocol.ts";
 import { strictCommandJson } from "../../apps/server/dist/work-command-values.js";
 import { jsonFile, privateJson, record } from "./browser-product-fixture.ts";
+import { nativeBrowserFailure } from "./native-browser-protocol.ts";
 import { qualifyBrowser, remoteBrowserConfiguration } from "./product-browser-probe.ts";
 
 const MAXIMUM = 96 * 1024;
@@ -151,12 +151,12 @@ export async function qualifyNativeBrowser(
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
     }
-    if (product)
-      Object.assign(product, {
-        accepted: false,
-        nativeCleanupComplete: false,
-        nativeFailure: nativeBrowserFailure(phase, candidate).nativeBrowserFailure,
-      });
+    product ??= {};
+    Object.assign(product, {
+      accepted: false,
+      nativeCleanupComplete: false,
+      nativeFailure: nativeBrowserFailure(phase, candidate).nativeBrowserFailure,
+    });
   }
   if (product) await privateJson(join(options.directory, "RESULT.json"), product);
   if (failure) {

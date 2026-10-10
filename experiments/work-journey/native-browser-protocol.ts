@@ -26,6 +26,48 @@ export function nativeBrowserStage(log: string) {
     .filter((value) => nativeBrowserStages.some((stage) => stage === value))
     .at(-1);
 }
+const launcherChecks = [
+  "entry",
+  "ancestors",
+  "packet",
+  "plan",
+  "launcher-pin",
+  "program-pin",
+  "node-pin",
+  "fresh-root",
+  "log",
+  "child",
+  "relay",
+  "product",
+  "finish",
+  "expiry",
+];
+const startupCodes = [
+  "assertion",
+  "unsafe_path",
+  "unsafe_directory",
+  "unsafe_file",
+  "oversized_file",
+  "changed_file",
+  "ENOENT",
+  "EACCES",
+  "EPERM",
+  "EEXIST",
+  "unknown",
+];
+export function nativeBrowserStartupError(error: unknown) {
+  const item = error instanceof Error ? error : undefined;
+  const code = item && "code" in item ? item.code : undefined;
+  const errorCode =
+    code === "ERR_ASSERTION"
+      ? "assertion"
+      : ([code, item?.message].find(
+          (value) => typeof value === "string" && startupCodes.includes(value),
+        ) ?? "unknown");
+  const line = item?.stack?.match(/browser-launcher\.cjs:(\d+):\d+/)?.[1];
+  return { errorCode, ...(line ? { launcherLine: Number(line) } : {}) };
+}
+
 export function nativeBrowserFailure(phase: string, value: unknown) {
   const phases = ["readiness", "product", "finish", "expiry"];
   assert(phases.includes(phase), "Native failure phase changed");
@@ -64,6 +106,18 @@ export function nativeBrowserFailure(phase: string, value: unknown) {
         .map((k) => [k, flags[k]]),
     ),
   };
+  const startup = { ...outer, ...item };
+  if (typeof startup.launcherCheck === "string" && launcherChecks.includes(startup.launcherCheck))
+    result.launcherCheck = startup.launcherCheck;
+  if (typeof startup.errorCode === "string" && startupCodes.includes(startup.errorCode))
+    result.errorCode = startup.errorCode;
+  if (
+    typeof startup.launcherLine === "number" &&
+    Number.isSafeInteger(startup.launcherLine) &&
+    startup.launcherLine > 0 &&
+    startup.launcherLine <= 1000000
+  )
+    result.launcherLine = startup.launcherLine;
   const stage = item.nativeStage ?? outer.nativeStage;
   if (nativeBrowserStages.some((value) => value === stage)) result.nativeStage = stage;
   for (const name of ["nativeDeadlineSeconds", "existingContainerCount"]) {

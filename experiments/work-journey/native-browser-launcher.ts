@@ -1,17 +1,23 @@
 /** Root-only disposable browser relay; the original composition owns all native authority and expiry. */
 import assert from "node:assert/strict";
-import { spawn, type ChildProcess } from "node:child_process";
+import { type ChildProcess, spawn } from "node:child_process";
 import { closeSync, existsSync, lstatSync, openSync, realpathSync } from "node:fs";
 import { join } from "node:path";
-import { setTimeout as delay } from "node:timers/promises";
 import type { Readable } from "node:stream";
+import { setTimeout as delay } from "node:timers/promises";
 import { strictCommandJson } from "../../apps/server/dist/work-command-values.js";
-import { directory, digest, readBytes } from "../linux-execution/protected-io.ts";
-import { nativeBrowserFailure, nativeBrowserStage } from "./native-browser-protocol.ts";
+import { digest, directory, readBytes } from "../linux-execution/protected-io.ts";
+import {
+  nativeBrowserFailure,
+  nativeBrowserStage,
+  nativeBrowserStartupError,
+} from "./native-browser-protocol.ts";
 import { openNativeRelay } from "./native-browser-relay.ts";
+
 const BASE = "/opt/obp4",
   PROGRAM = BASE + "/browser-native.cjs",
   LAUNCHER = BASE + "/browser-launcher.cjs";
+let launcherCheck = "entry";
 const environment = { PATH: "/usr/sbin:/usr/bin:/sbin:/bin", LANG: "C.UTF-8" };
 async function bounded<T>(promise: Promise<T>, milliseconds: number) {
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -99,6 +105,7 @@ export async function launchNativeBrowser() {
     "Root CI packet required",
   );
   process.umask(0o077);
+  launcherCheck = "ancestors";
   for (const path of ["/opt", BASE]) {
     const info = lstatSync(path);
     assert(
@@ -106,13 +113,16 @@ export async function launchNativeBrowser() {
       "Root-owned packet ancestor required",
     );
   }
+  launcherCheck = "packet";
   directory(BASE);
+  launcherCheck = "plan";
   const plan = privateJson(BASE + "/PLAN.json");
-  for (const [path, expected] of [
-    [LAUNCHER, plan.browserLauncherSha256],
-    [PROGRAM, plan.browserProgramSha256],
-    [BASE + "/node", plan.browserNodeSha256],
+  for (const [path, expected, check] of [
+    [LAUNCHER, plan.browserLauncherSha256, "launcher-pin"],
+    [PROGRAM, plan.browserProgramSha256, "program-pin"],
+    [BASE + "/node", plan.browserNodeSha256, "node-pin"],
   ] as const) {
+    launcherCheck = check;
     const info = lstatSync(path);
     assert(
       info.isFile() && info.uid === 0 && info.nlink === 1 && !(info.mode & 0o022),
@@ -120,6 +130,7 @@ export async function launchNativeBrowser() {
     );
     assert.equal(digest(path), expected, "Native launcher pin changed");
   }
+  launcherCheck = "fresh-root";
   assert(
     typeof plan.nativeRoot === "string" &&
       /^\/opt\/obp4\/units\/deadline-a1-p4[a-f0-9]{6}$/.test(plan.nativeRoot),
@@ -133,8 +144,10 @@ export async function launchNativeBrowser() {
     result: unknown,
     failure: unknown,
     phase = "readiness";
+  launcherCheck = "log";
   const log = openSync(BASE + "/browser-private.log", "wx", 0o600);
   try {
+    launcherCheck = "child";
     child = spawn(BASE + "/node", [PROGRAM, "run"], {
       env: environment,
       stdio: ["ignore", log, log],
@@ -152,6 +165,7 @@ export async function launchNativeBrowser() {
       assert(performance.now() < end, "Native browser readiness unknown");
       await delay(100);
     }
+    launcherCheck = "relay";
     const urls: Record<string, string> = {};
     for (const name of ["control", "target"]) {
       const relay = await openNativeRelay(
@@ -172,11 +186,11 @@ export async function launchNativeBrowser() {
         token: "synthetic-linux-composition-fixture-only",
       }),
     );
-    phase = "product";
+    launcherCheck = phase = "product";
     const accepted = await productAcceptance(process.stdin);
-    phase = "finish";
+    launcherCheck = phase = "finish";
     await operation(accepted ? "finish" : "abort");
-    phase = "expiry";
+    launcherCheck = phase = "expiry";
     const code = await bounded(done, 620000);
     result = privateJson(join(root, "result.json"));
     const value = result as Record<string, unknown>;
@@ -249,6 +263,8 @@ export async function launchNativeBrowser() {
         nativeBrowserFailure(phase, {
           ...(result && typeof result === "object" ? result : {}),
           nativeStage,
+          launcherCheck,
+          ...nativeBrowserStartupError(failure),
         }),
       ),
     );
@@ -263,8 +279,12 @@ if (process.argv[1]?.endsWith("/browser-launcher.cjs")) {
     (code) => {
       process.exitCode = code;
     },
-    () => {
-      console.log(JSON.stringify(nativeBrowserFailure("readiness", undefined)));
+    (error: unknown) => {
+      console.log(
+        JSON.stringify(
+          nativeBrowserFailure("readiness", { launcherCheck, ...nativeBrowserStartupError(error) }),
+        ),
+      );
       process.exitCode = 1;
     },
   );
