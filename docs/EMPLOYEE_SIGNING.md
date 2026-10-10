@@ -38,7 +38,7 @@ OPENBOT_EMPLOYEE_PUBLISHER_KEYRING_PATH=./data/employee-publisher
 OPENBOT_EMPLOYEE_PUBLISHER_PASSPHRASE_FILE=./data/employee-publisher-secret/passphrase
 ```
 
-Those two variables configure the CLI and the legacy Server. The Python product entry point
+Those two variables configure the CLI. The TypeScript product entry point
 uses a separate explicit pair; set them to the **same absolute paths** selected above:
 
 ```dotenv
@@ -46,8 +46,8 @@ OPENBOT_CONTROL_PUBLISHER_DIRECTORY=/absolute/protected/employee-publisher
 OPENBOT_CONTROL_PUBLISHER_PASSPHRASE_FILE=/absolute/protected/employee-publisher-secret/passphrase
 ```
 
-Both Python variables are required together. They are not implicit aliases of the CLI
-variables, and Python does not inherit the launcher's historical relative-path base. Restart
+Both product variables are required together. They are not implicit aliases of the CLI
+variables, and the product entry does not inherit the launcher's historical relative-path base. Restart
 the selected Server after key or trust changes. The existing encrypted keyring, public trust
 manifest and DSSE format are unchanged. See [relocation research](research/retained-developer-tools.md).
 

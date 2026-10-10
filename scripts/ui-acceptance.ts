@@ -1,31 +1,24 @@
 // Whole-interface acceptance (docs/research/ui-acceptance-automation.md). Starts a disposable
 // stack — owned PostgreSQL, mTLS Temporal, and the TS Server serving the built Web — then drives the real interface in an installed Chrome. It writes a receipt and
 // screenshots, and removes every process, container and file it created.
-import { startTemporalFixture } from "./temporal-fixture.ts";
+
 import assert from "node:assert/strict";
 import { type ChildProcess, spawn } from "node:child_process";
 import { randomBytes, randomUUID } from "node:crypto";
-import {
-  existsSync,
-  mkdirSync,
-  openSync,
-  readFileSync,
-  realpathSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdirSync, openSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { type Browser, chromium, type Page } from "playwright-core";
-import { DevProcessOwner } from "./dev-processes.ts";
 import {
   allowlistedEnvironment,
   OwnedDockerFixture,
   runFixtureCommand,
   startControlPostgres,
 } from "./acceptance-fixture.ts";
+import { DevProcessOwner } from "./dev-processes.ts";
+import { startTemporalFixture } from "./temporal-fixture.ts";
 import {
   type AcceptanceOptions,
   classifyResponses,
@@ -35,7 +28,13 @@ import {
 } from "./ui-acceptance-report.ts";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
-const options = parseAcceptanceArgs(process.argv.slice(2));
+let options: AcceptanceOptions;
+try {
+  options = parseAcceptanceArgs(process.argv.slice(2));
+} catch (error) {
+  console.error(error instanceof Error ? error.message : "Invalid acceptance arguments.");
+  process.exit(2);
+}
 const webRoot = join(root, "apps/web/dist");
 const tsEntry = join(root, "apps/server/dist/serve.js");
 const STEP_TIMEOUT = 20_000;
@@ -69,7 +68,8 @@ async function waitForHttp(url: string, child: ChildProcess, timeoutMs = 60_000)
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     interrupted.signal.throwIfAborted();
-    if (child.exitCode !== null || child.signalCode !== null) throw new Error("Server exited before readiness; inspect its private lifecycle log.");
+    if (child.exitCode !== null || child.signalCode !== null)
+      throw new Error("Server exited before readiness; inspect its private lifecycle log.");
     try {
       const response = await fetch(url);
       if (response.status < 500) return;
@@ -190,10 +190,16 @@ try {
 
   temporal = await startTemporalFixture({ signal: interrupted.signal });
   const temporalPath = join(data, "temporal.json");
-  writeFileSync(temporalPath, JSON.stringify({
-    temporal_address: temporal.settings.address, namespace: "default",
-    queue: "openbot-ui-" + randomUUID(), tls: temporal.settings.tls,
-  }), { mode: 0o600 });
+  writeFileSync(
+    temporalPath,
+    JSON.stringify({
+      temporal_address: temporal.settings.address,
+      namespace: "default",
+      queue: "openbot-ui-" + randomUUID(),
+      tls: temporal.settings.tls,
+    }),
+    { mode: 0o600 },
+  );
   const publicPort = await freePort();
   const origin = `http://127.0.0.1:${publicPort}`;
   const tsEnv: NodeJS.ProcessEnv = {
@@ -440,7 +446,9 @@ try {
 } finally {
   await browser?.close().catch(() => undefined);
   await owner.stop().catch(() => undefined);
-  try { cleanup(); } finally {
+  try {
+    cleanup();
+  } finally {
     await temporal?.close();
     process.removeListener("SIGINT", onInterrupt);
     process.removeListener("SIGTERM", onTerminate);

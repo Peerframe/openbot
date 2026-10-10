@@ -1,6 +1,6 @@
 /** Fixed four-namespace kernel qualification: the original 150-second lifetime, canaries and revoke. */
 import assert from "node:assert/strict";
-import { spawn, type ChildProcess } from "node:child_process";
+import { type ChildProcess, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { createSocket } from "node:dgram";
 import {
@@ -8,17 +8,17 @@ import {
   existsSync,
   lstatSync,
   mkdirSync,
+  readdirSync,
   readFileSync,
   readlinkSync,
-  readdirSync,
   realpathSync,
   writeFileSync,
 } from "node:fs";
 import { createConnection, createServer, type Socket } from "node:net";
 import { setTimeout as delay } from "node:timers/promises";
 import {
-  openNamespace,
   namespaceCommand,
+  openNamespace,
   verifyEnteredNamespaces,
 } from "../../linux-execution/namespace-command.ts";
 import { SubprocessCommander } from "../../linux-execution/subprocess.ts";
@@ -30,6 +30,24 @@ const ENV = { PATH: "/usr/sbin:/usr/bin:/sbin:/bin", LANG: "C.UTF-8" };
 const PROGRAM = ROOT + "/network-qualification.cjs";
 const NODE = ROOT + "/node";
 const GROUP = "/system.slice/" + UNIT;
+let phase = "entry",
+  rootChecked = false;
+let failedCommand: { binary: string; status: number | null; timedOut: boolean } | undefined;
+function diagnostic(error: unknown) {
+  const value = error instanceof Error ? error : undefined;
+  const code = value && "code" in value && typeof value.code === "string" ? value.code : "";
+  const line = value?.stack?.match(/network-qualification\.cjs:(\d+):\d+/)?.[1];
+  return {
+    phase,
+    command: failedCommand,
+    code: /^(?:ERR_ASSERTION|ENOENT|ESRCH|EPERM|EACCES|EPIPE|ECONNREFUSED|ETIMEDOUT|EADDRINUSE)$/.test(
+      code,
+    )
+      ? code
+      : null,
+    line: line ? Number(line) : null,
+  };
+}
 const roles = {
   client: ["10.77.10.1/30", "10.77.10.2/30", "fd77:10::1/64", "fd77:10::2/64"],
   proxy: ["10.77.11.1/30", "10.77.11.2/30", "fd77:11::1/64", "fd77:11::2/64"],
@@ -75,6 +93,7 @@ function rootOnly() {
     assert(file.isFile() && file.uid === 0 && (file.mode & 0o022) === 0);
   }
   assert.equal(realpathSync(process.execPath), NODE);
+  rootChecked = true;
 }
 function isolated() {
   rootOnly();
@@ -88,6 +107,9 @@ async function command(argv: readonly string[], timeout = 8000) {
     captureLimit: 2 * 1024 ** 2,
   });
   const result = await runner.run(argv.slice(1), timeout);
+  failedCommand = result.ok
+    ? undefined
+    : { binary: argv[0]!.split("/").at(-1)!, status: result.status, timedOut: result.timedOut };
   assert.equal(result.ok, true, "fixed fixture command failed");
   return result.stdout.trim();
 }
@@ -349,6 +371,7 @@ async function reap(children: ChildProcess[]) {
   }
 }
 async function run() {
+  phase = "run-preflight";
   isolated();
   assert(!existsSync(ROOT + "/RESULT.json"));
   const original = namespace();
@@ -406,11 +429,13 @@ async function run() {
   };
   let close: undefined | (() => Promise<void>), failure: unknown;
   try {
+    phase = "topology-host";
     writeFileSync("/proc/sys/net/ipv4/ip_forward", "1");
     writeFileSync("/proc/sys/net/ipv6/conf/all/forwarding", "1");
     await ip("addr", "add", "93.184.216.35/32", "dev", "lo");
     close = await services("host");
     for (const [role, [gateway4, address4, gateway6, address6]] of Object.entries(roles)) {
+      phase = "topology-" + role;
       const child = spawn("/usr/bin/unshare", ["--net", "/usr/bin/sleep", "145"], {
         env: ENV,
         stdio: "ignore",
@@ -508,7 +533,7 @@ async function run() {
       await wait(async () =>
         ipv6Ready(await inNs(anchor, ["/usr/sbin/ip", "-6", "-json", "addr", "show"])),
       );
-    result.stage = "canaries";
+    phase = result.stage = "canaries";
     for (const source of ["client", "proxy"])
       for (const [name, , address, port, op] of targets)
         assert(
@@ -516,7 +541,7 @@ async function run() {
           source + "/" + name + " unavailable before policy",
         );
     result.allCanariesInitiallyReachable = true;
-    result.stage = "policy";
+    phase = result.stage = "policy";
     isolated();
     await command(["/usr/sbin/nft", "--check", "--file", ROOT + "/fixture.nft"]);
     await command(["/usr/sbin/nft", "--file", ROOT + "/fixture.nft"]);
@@ -532,7 +557,7 @@ async function run() {
         assert.equal(after - before, Number(allowed));
         result.cases.push({ source, target: name, allowed, targetRequests: after - before });
       }
-    result.stage = "revoke";
+    phase = result.stage = "revoke";
     assert((await rpc("client", { op: "hold" })).ok);
     const before = (await rpc("proxy", { op: "counts" })).tcp;
     isolated();
@@ -541,9 +566,10 @@ async function run() {
     assert.equal((await rpc("proxy", { op: "counts" })).tcp, before);
     result.originalConnectionRevoked = true;
     result.accepted = true;
-    result.stage = "cleanup";
+    phase = result.stage = "cleanup";
   } catch (error) {
     failure = error;
+    Object.assign(result, { failure: diagnostic(error) });
   } finally {
     await reap(children);
     await close?.();
@@ -565,6 +591,7 @@ function groupEmpty(path: string, count = { value: 0 }): boolean {
     .every((e) => groupEmpty(path + "/" + e.name, count));
 }
 async function launch() {
+  phase = "launch-preflight";
   rootOnly();
   assert.equal(namespace(), readlinkSync("/proc/1/ns/net"));
   assert(!existsSync(ROOT + "/STARTED"));
@@ -573,6 +600,7 @@ async function launch() {
     "not-found",
   );
   mkdirSync(ROOT + "/docker-config", { mode: 0o700 });
+  phase = "host-before";
   const before = await snapshotHost(command, "/usr/bin/docker", ROOT + "/docker-config");
   save("STARTED", { singleUse: true });
   const properties = {
@@ -592,6 +620,8 @@ async function launch() {
     TasksMax: "160",
   };
   let successful = false;
+  let unitExit: { status: number | null; timedOut: boolean; result: string | null } | undefined;
+  phase = "unit-run";
   try {
     const runner = new SubprocessCommander({
       binary: "/usr/bin/systemd-run",
@@ -616,11 +646,27 @@ async function launch() {
       mode: 0o600,
     });
     successful = completed.ok;
+    unitExit = {
+      status: completed.status,
+      timedOut: completed.timedOut,
+      result:
+        (completed.stdout + completed.stderr).match(
+          /(?:result|Result): (success|exit-code|oom-kill|timeout|signal|core-dump)\b/,
+        )?.[1] ?? null,
+    };
   } catch {
     /* Fixed public flags never include captured fixture output. */
   } finally {
-    await command(["/usr/bin/systemctl", "stop", UNIT], 10000);
+    phase = "unit-stop";
+    // --wait may already have unloaded the transient unit. A failed stop alone does not mean
+    // processes survived; the original unit/cgroup and unchanged-host checks below decide that.
+    await new SubprocessCommander({
+      binary: "/usr/bin/systemctl",
+      environment: ENV,
+      captureLimit: 16384,
+    }).run(["stop", UNIT], 10000);
   }
+  phase = "unit-readback";
   const state = await command([
     "/usr/bin/systemctl",
     "show",
@@ -630,8 +676,11 @@ async function launch() {
   assert(
     !state.split("\n").includes("ActiveState=active") && state.split("\n").includes("MainPID=0"),
   );
+  phase = "cgroup-empty";
   assert(groupEmpty("/sys/fs/cgroup" + GROUP));
+  phase = "host-after";
   assert.deepEqual(await snapshotHost(command, "/usr/bin/docker", ROOT + "/docker-config"), before);
+  phase = "result";
   const result = existsSync(ROOT + "/RESULT.json")
     ? JSON.parse(readFileSync(ROOT + "/RESULT.json", "utf8"))
     : { accepted: false };
@@ -641,6 +690,7 @@ async function launch() {
     productionUnchanged: true,
     existingContainerCount: before.containers.length,
     launcherExit: successful ? 0 : 1,
+    unitExit,
     sourceSha256: Object.fromEntries(
       ["network-qualification.cjs", "fixture.nft"].map((name) => [
         name,
@@ -672,7 +722,17 @@ export async function main(args: string[]) {
   }
 }
 if (process.argv[1]?.endsWith("/network-qualification.cjs"))
-  void main(process.argv.slice(2)).catch(() => {
-    process.stderr.write("native-kernel-qualification-failed\n");
+  void main(process.argv.slice(2)).catch((error: unknown) => {
+    // Only fixed phases, executable basenames, exit facts and a bundled line number are public.
+    // Never expose captured service output, RPC bodies, credentials or arbitrary error messages.
+    const failure = { accepted: false, failure: diagnostic(error) };
+    if (process.argv[2] === "launch" && rootChecked && !existsSync(ROOT + "/FINAL_RESULT.json")) {
+      try {
+        save("FINAL_RESULT.json", failure);
+      } catch {
+        /* Preserve the original failure. */
+      }
+    }
+    process.stderr.write("native-kernel-qualification-failed " + JSON.stringify(failure) + "\n");
     process.exitCode = 1;
   });

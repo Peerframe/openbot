@@ -120,7 +120,7 @@ After a persisted change, the existing authenticated workspace SSE publishes `wo
 as a reload hint on the next three-second poll, including changes from an independent store.
 Clients reload `GET /api/v1/workspace`; the event does not carry the preference as authoritative state.
 The shared TS snapshot keeps these two fields optional for pre-C26 Servers and frozen oracle
-fixtures; the current Python Server always returns both and the new PUT response requires both.
+fixtures; the current TypeScript Server always returns both and the new PUT response requires both.
 See [decision and validation scope](research/workspace-primary-bot.md).
 
 ## Owner password and sessions (C2)
@@ -559,7 +559,7 @@ only removes extra Owner confirmation; adapter mandatory approval can never be r
 no global auto-approve or grant-changing endpoint. Direct Owner operations keep their existing gates.
 
 Proposal computes added approval transactionally; admission and built-in read/web dispatch recheck
-current settings. Revocation/tightening refuses unapproved auto Actions with409
+current settings. Revocation/tightening refuses unapproved auto Actions with 409
 `approval_policy_changed`, requiring a fresh proposal; relaxing settings preserves pending decisions.
 Already approved exact Actions and historical receipt recovery remain valid. A web request already
 sent before a policy commit may finish; policy does not cancel remote effects or authorize replay.

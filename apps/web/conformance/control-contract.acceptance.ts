@@ -1,18 +1,23 @@
-import { frozenWebContracts } from "../../../scripts/frozen-web-contracts.ts";
 import {
-  quickCreateBotInputSchema, createBotInputSchema, createChannelInputSchema,
-  updateEmployeeProfileDetailsInputSchema, createMessageInputSchema, renameBotInputSchema, renameChannelInputSchema,
-  controlHttpSchemas,
-  lifecycleHttpSchemas,
-  resourceHttpSchemas,
-  employeeHttpSchemas,
   automationHttpSchemas,
+  browserHttpSchemas,
+  controlHttpSchemas,
+  createBotInputSchema,
+  createChannelInputSchema,
+  createMessageInputSchema,
+  employeeHttpSchemas,
+  lifecycleHttpSchemas,
   nodeHttpSchemas,
   pluginHttpSchemas,
-  browserHttpSchemas,
   portabilityHttpSchemas,
+  quickCreateBotInputSchema,
+  renameBotInputSchema,
+  renameChannelInputSchema,
+  resourceHttpSchemas,
+  updateEmployeeProfileDetailsInputSchema,
 } from "@openbot/protocol";
 import { expect, it } from "vitest";
+import { frozenWebContracts } from "../../../scripts/frozen-web-contracts.ts";
 
 const schemas = {
   ...controlHttpSchemas,
@@ -51,12 +56,23 @@ it.each(fixtures.projections)(
 );
 
 const identitySchemas = {
-  quickBot: quickCreateBotInputSchema, bot: createBotInputSchema, channel: createChannelInputSchema,
-  profile: updateEmployeeProfileDetailsInputSchema, task: createMessageInputSchema,
-  botRename: renameBotInputSchema, channelRename: renameChannelInputSchema,
+  quickBot: quickCreateBotInputSchema,
+  bot: createBotInputSchema,
+  channel: createChannelInputSchema,
+  profile: updateEmployeeProfileDetailsInputSchema,
+  task: createMessageInputSchema,
+  botRename: renameBotInputSchema,
+  channelRename: renameChannelInputSchema,
 };
-const identities = frozenWebContracts<{ id: string; schema: keyof typeof identitySchemas; input: unknown;
-  expected: { ok: boolean; value?: unknown } }[]>("identity");
+const identities =
+  frozenWebContracts<
+    {
+      id: string;
+      schema: keyof typeof identitySchemas;
+      input: unknown;
+      expected: { ok: boolean; value?: unknown };
+    }[]
+  >("identity");
 it("retains all 171 identity/profile/task/rename differential cases", () => {
   expect(identities).toHaveLength(171);
 });

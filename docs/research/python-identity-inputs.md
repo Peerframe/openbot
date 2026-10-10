@@ -90,7 +90,7 @@ DTOs remain the creation-input enum owner; retained current Zod and domain types
 closed set. Existing head/body/mobility/accessory values and template v1/v2 formats are unchanged.
 
 Rechecked the reviewed Zod4.6.2 commit `e359f7378fe56d695134701cda1e9055a08892dc` (MIT) and
-Pydantic2.13.5 (MIT), their existing repository tests and original source review. Targeted primary
+Pydantic 2.13.5 (MIT), their existing repository tests and original source review. Targeted primary
 queries `Zod enum fixed allowable values` and `Pydantic standard library Literal validation`
 confirm the selected mechanisms: [Zod enum](https://zod.dev/api#enums),
 [Pydantic literals](https://docs.pydantic.dev/latest/api/standard_library_types/#literals).

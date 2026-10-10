@@ -20,16 +20,16 @@ flowchart LR
 
 ## TypeScript Server migration
 
-[ADR-0050](decisions/0050-typescript-control-plane.md) moves the Server from `apps/server-python`
-to `apps/server` one route group at a time. Both use the same PostgreSQL schema
-(`packages/db`) and the same wire contracts (`packages/protocol`), so data never moves between them.
+[ADR-0050](decisions/0050-typescript-control-plane.md) records the completed P5 source cutover from the [retired Python Server](https://github.com/Peerframe/openbot/blob/e25d91520dbda664705a77c76c1af456a064a39d/apps/server-python)
+to `apps/server`. The replacement retains the PostgreSQL schema (`packages/db`) and wire contracts
+(`packages/protocol`); it does not copy data into a second store.
 
 | Phase | State |
 | --- | --- |
 | P0–P2 | Done: shared contracts, the TS public entry, and forwarding to a private Python upstream |
 | P3 | Done: when selected, TS owns the Owner session and 109 of the 121 product operations, and is the only SSE publisher |
 | P4 | Done: when selected, TS also owns Work execution, its Temporal workers and the agent runtime; open Python histories drain on Python workers |
-| P5 | In progress: the explicit TS candidate is a single Server with direct Web/Worker entry and deployment-time legacy drain checks. The `apps/server` rename and Python control/harness retirement are implemented; final CI, package, UI and installation qualification remain open. Standalone Node is retained after the Electron permission probe failed |
+| P5 | Source cutover complete: the default TS product is a single Server with direct Web/Worker entry and deployment-time legacy drain checks. The `apps/server` rename and Python control/harness retirement are implemented. Local package and UI acceptance passed; final hosted CI, review and installation qualification remain open. Standalone Node is retained after the Electron permission probe failed |
 
 The P5 candidate removes group selection and forwarding. Default packaging uses TS with standalone
 Node; the existing installation changes only after review, backup and explicit installation approval.

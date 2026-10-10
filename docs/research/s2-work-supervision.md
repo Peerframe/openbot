@@ -81,16 +81,18 @@ retained, not suppressed.
 
 ## Reproduce from a clean checkout
 
+P5 retains the same API-only acceptance scope with a TypeScript fixture. Historical Python
+results above remain dated evidence.
+
 ```sh
 npm ci
-npm run build -- --filter=@openbot/web --filter=@openbot/db
-sh apps/server-python/scripts/bootstrap.sh
-apps/server-python/.venv/bin/python apps/web/src/test/work-http-probe.py
+npm run build -- --filter=@openbot/web --filter=@openbot/db --filter=@openbot/server
+node scripts/work-http-probe.ts
 ```
 
 The probe creates a uniquely named loopback-only PostgreSQL container with tmpfs data, runs the
-repository migrator, starts the real Python app with built Web assets, exercises the public API,
-and removes only its own processes/container. Docker and the locked control Python environment
+repository migrator, starts the real TypeScript app with built Web assets, exercises the public API,
+and removes only its own processes/container. Docker and the locked Node/npm environment
 are required; it does not need a paid model account or maintainer-private credentials. Add
 `--serve` to print an ephemeral `#/tasks` URL and disposable Owner password for interactive browser
 verification; Ctrl+C cleans up the fixture. Open the displayed URL, log in, create an objective,
@@ -147,22 +149,22 @@ The first candidate was not integrated while those issues remained open.
 
 Integrated as `ef1e254` + `a61153e1145926a3aaf9af13c72624799db32871` on
 `codex/architecture-migration`, alongside S3 `76667ea` and offline S5 `ace87c8`. Before adding
-this evidence, all14 S2 files matched the reviewed candidate byte-for-byte and had no mainline
-path overlap. The14 frozen S3 code/test inputs also retained their verified SHA-256 values.
+this evidence, all 14 S2 files matched the reviewed candidate byte-for-byte and had no mainline
+path overlap. The 14 frozen S3 code/test inputs also retained their verified SHA-256 values.
 
-On combined code `a61153e`, `npm run check` actually ran and exited0: typecheck 28/31 cached, test 29/31 cached, build 17/18 cached. Web375 tests executed;
+On combined code `a61153e`, `npm run check` actually ran and exited 0: typecheck 28/31 cached, test 29/31 cached, build 17/18 cached. Web 375 tests executed;
 cached platform test text does not prove fresh execution of those tests. Environment-dependent
 skips in the cached Server/native lanes remain skips. Log:
 `/private/tmp/openbot-parallel-integrated-check-20260924-01.log`.
 
-`apps/server-python/.venv/bin/python -B apps/web/src/test/work-http-probe.py` then exited0
+`node scripts/work-http-probe.ts` is the current P5 equivalent of the Python probe that then exited 0
 against a new disposable PG/HTTP fixture, including login/Bot/create/read/cancel, exact retry,
 401/403/409/413/422, OpenAPI and logout. Log:
 `/private/tmp/openbot-parallel-integrated-http-20260924-01.log`. The oversized request created
 no task. Cleanup ran; no production data, account or default backend changed. Existing frozen
 S3 long recovery evidence was reused because its relevant inputs were unchanged.
 
-Integrated S5's15 new tests also executed successfully at `ace87c8`, with all8 imported files
+Integrated S5's 15 new tests also executed successfully at `ace87c8`, with all 8 imported files
 matching `df1c24d` before documentation updates; log `/private/tmp/openbot-integrated-s5-20260924-01.log`.
 Its acceptance remains offline-only. No S4 code was imported; its separate mount-refusal candidate
 was reviewed without claiming positive Linux/runsc isolation. These are incremental deliveries,

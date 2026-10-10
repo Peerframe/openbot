@@ -253,7 +253,7 @@ test("all migrated gates and real product recovery stay required when selected",
     ["temporal-qualification", "npm run test:work:ts"],
     ["contracts", "npm run contracts:check"],
     ["contracts", "npm run contracts:test"],
-    ["contracts", "node apps/web/src/test/work-http-probe.mjs"],
+    ["contracts", "node scripts/work-http-probe.ts"],
     [
       "contracts",
       "node --test experiments/work-journey/desktop-temporal/observe-pollers.test.ts experiments/work-journey/desktop-temporal/probe-support.test.ts",

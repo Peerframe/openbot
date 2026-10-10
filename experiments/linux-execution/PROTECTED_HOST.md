@@ -18,8 +18,9 @@ proofs. Browser is outside this host. Actual Linux/systemd/runsc acceptance is s
   original invocation, empty original cgroup, exact loop backing/inode/device before detach, and
   retains the original reservation/ledger. Unknown unit/loop identity refuses cleanup.
 
-Use the existing Python 3.12 environment with the already locked pure command dependencies and
-`apps/server-python/src` on PYTHONPATH. No model, PostgreSQL, Temporal service or provider account is
+This section records the retired P4 Python fixture. Its original source and environment remain
+in [the fixed P4-era revision](https://github.com/Peerframe/openbot/blob/e25d91520dbda664705a77c76c1af456a064a39d/apps/server-python/src).
+Current TS qualification uses `npm run test:linux:contracts` and the native CI lane. No model, PostgreSQL, Temporal service or provider account is
 required by the Host. Its pure v2 modules must be the integrated readiness version. The fixed native
 source directory must contain the three new source files plus existing sandbox, output_capacity
 and deadline_probe. Do not install a second execution framework or dynamically generate helper code.
@@ -102,7 +103,7 @@ Host instance before containerd and again before dockerd. No model argv is prese
 All producers belong to the original unit; a Host timeout is not the native kill guarantee.
 
 Send input_chunk after prepare_authorize, without waiting for ready. The Host acknowledges each
-continuous offset; at most eight flat files and20MiB total are accepted, each chunk<=16KiB. Ready is
+continuous offset; at most eight flat files and 20MiB total are accepted, each chunk<=16KiB. Ready is
 sent only after original length/hash verification and actual protected runtime/unit/cgroup/namespace
 readback. Empty manifests need no chunk. Dispatch must bind that ready digest and immutable operation.
 A fresh online consume challenge precedes the sole permit. The Host derives a conservative fixed
@@ -115,7 +116,7 @@ Lookup/stop use control_open/control_challenge and a current Server-signed exact
 reply. Stop never grants output. Lookup signs a bounded observation with a persistent sequence and
 original dispatch/epoch/permit. Each output chunk requires the same live includeOutput permission
 and fixed causal interval; changed/expired/closed scope prevents further disclosure. The live book
-has64 slots with no eviction; durable action roots also cap at64. Up to4096 observation records per
+has 64 slots with no eviction; durable action roots also cap at64. Up to4096 observation records per
 Action are retained. Exhaustion refuses; cleanup does not reopen the original Action or ledger.
 
 ## Validation and remaining acceptance
@@ -123,10 +124,7 @@ Action are retained. Exhaustion refuses; cleanup does not reopen the original Ac
 Focused tests run without native effects:
 
 ```sh
-PYTHONPATH=apps/server-python/src:experiments/linux-execution \
-  apps/server-python/.worker-venv/bin/python -m pytest -q \
-  experiments/linux-execution/protected_host_test.py \
-  experiments/linux-execution/protected_native_test.py
+npm run test:linux:contracts
 ```
 
 The packet runner accepts the checkout path and uses the same files.58 tests passed, including a

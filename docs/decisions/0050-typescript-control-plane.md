@@ -165,9 +165,9 @@ Inventory Python in probes, experiments, generators, developer commands and requ
 port or retire each dependency with retained replacement evidence. Historical test input may remain
 as inert provenance, but cannot leave Python necessary for mandatory setup/checks.
 
-Removing CPython is required. The Owner approved retaining standalone Node on2026-10-10:
-Electron44.3.0's utility Node24.20 did not enforce the required permission boundaries in the real
-probe, while standalone Node24.21 refused both forbidden file reads and child execution.
+Removing CPython is required. The Owner approved retaining standalone Node on 2026-10-10:
+Electron 44.3.0's utility Node 24.20 did not enforce the required permission boundaries in the real
+probe, while standalone Node 24.21 refused both forbidden file reads and child execution.
 Temporal, parser helpers and native loading continue using that reviewed Node distribution.
 Package-only-current-platform Temporal core-bridge is a post-P5 size optimization. PostgreSQL and
 Temporal deployment simplification remains out of scope.

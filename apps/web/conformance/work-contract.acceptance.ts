@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
-import { frozenWebContracts } from "../../../scripts/frozen-web-contracts.ts";
+
 import { workHttpOpenApi, workHttpOperations, workHttpSchemas } from "@openbot/protocol";
 import { afterEach, expect, it, vi } from "vitest";
+import { frozenWebContracts } from "../../../scripts/frozen-web-contracts.ts";
 import {
   type CreateWorkInput,
   cancelWorkTask,
@@ -39,7 +40,9 @@ it.each(fixtures.wireCases)("TS wire/frozen Python DTO parity: $schema/$name", (
 });
 
 it("retains all frozen Work route methods, operation IDs and successful statuses", () => {
-  const python = frozenWebContracts<{ paths: Record<string, Record<string, { operationId: string; responses: object }>> }>("workOpenApi");
+  const python = frozenWebContracts<{
+    paths: Record<string, Record<string, { operationId: string; responses: object }>>;
+  }>("workOpenApi");
   const actual = Object.entries(python.paths).flatMap(([path, methods]) =>
     Object.entries(methods as Record<string, { operationId: string; responses: object }>).map(
       ([method, operation]) => ({

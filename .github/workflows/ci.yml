@@ -724,7 +724,7 @@ jobs:
           npm run contracts:legacy
           npm run test:linux:contracts
           npm exec -- turbo run build --filter=@openbot/server --filter=@openbot/web
-          node apps/web/src/test/work-http-probe.mjs
+          node scripts/work-http-probe.ts
           node --test experiments/work-journey/desktop-temporal/observe-pollers.test.ts experiments/work-journey/desktop-temporal/probe-support.test.ts
           npm run contracts:http:ts
           npm run contracts:http:ts -- --suite publisher

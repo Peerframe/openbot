@@ -22,7 +22,7 @@ import {
   reviewedImageConfig,
 } from "../linux-execution/native-config.ts";
 import { command, type NativeCommand } from "../linux-execution/native-unit.ts";
-import { directory, digest } from "../linux-execution/protected-io.ts";
+import { digest, directory } from "../linux-execution/protected-io.ts";
 import { ociIdentity, pinnedNativeMembers } from "./native-packet-archives.ts";
 import { prepareNativeTls } from "./native-packet-tls.ts";
 import { patchListener, verifyBrowserUpstream } from "./product-browser-upstream.ts";
@@ -109,7 +109,11 @@ export async function downloadNative(
 export function exportArguments(image: string, path: string, manifest?: string, daemon = false) {
   const tag = image.split("@")[0]!,
     pin = image.split("@")[1] ?? manifest;
-  const immutable = pin ? tag.slice(0, tag.lastIndexOf(":")) + "@" + pin : image;
+  // A registry port is not an image tag; a digest-only reference has no tag to remove.
+  const colon = tag.lastIndexOf(":"),
+    slash = tag.lastIndexOf("/");
+  const repository = colon > slash ? tag.slice(0, colon) : tag;
+  const immutable = pin ? repository + "@" + pin : image;
   return [
     "/usr/bin/skopeo",
     "--override-os",

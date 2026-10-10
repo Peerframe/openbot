@@ -2,7 +2,7 @@
 
 [简体中文](DESKTOP_ONBOARDING.zh-CN.md)
 
-Current macOS arm64 builds include the local Python Server and PostgreSQL. Windows, Intel Mac
+Current macOS arm64 builds include the local TypeScript Server and PostgreSQL. Windows, Intel Mac
 and Linux builds are remote clients. Choose among the roles supported on this computer:
 
 - **Service computer (macOS arm64):** Desktop initializes an app-owned PostgreSQL 17 database, starts the
@@ -179,7 +179,7 @@ See [recurring-task research](research/server-automations.md).
 
 ## Current boundaries
 
-Current source supports a bundled local Python service only on macOS arm64. Windows, Intel Mac
+Current source supports a bundled local TypeScript service only on macOS arm64. Windows, Intel Mac
 and Linux connect to an existing Server. CI installer targets are macOS arm64, Windows x64 and
 Linux x64; an Intel remote-client source path is not an Intel installer qualification. Historical
 **0.1.0-alpha.9** artifacts and their hosted checks do not qualify the current source. Production
@@ -239,7 +239,7 @@ Remote clients cannot configure older Servers that do not implement the endpoint
 
 From the repository root, install locked dependencies, run `npm run check`, then run
 `npm run package --workspace @openbot/desktop` on the target OS. macOS arm64 packaging stages the
-Python Server, installed harness wheel, Node helper closure, PostgreSQL binaries and notices in
+TypeScript Server, its production dependency closure, standalone Node, PostgreSQL binaries and notices in
 `native-runtime`. Remote-client targets omit that runtime. The generated runtime is ignored by Git. A local development launch
 also needs `npm run prepare:native --workspace @openbot/desktop` before `npm start --workspace
 @openbot/desktop`. First launch does not download executable code.

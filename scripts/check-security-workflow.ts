@@ -225,7 +225,7 @@ export function validateSecurityWorkflow(source: string): void {
     [
       "npm run contracts:check",
       "npm run contracts:test",
-      "node apps/web/src/test/work-http-probe.mjs",
+      "node scripts/work-http-probe.ts",
       "node --test experiments/work-journey/desktop-temporal/observe-pollers.test.ts experiments/work-journey/desktop-temporal/probe-support.test.ts",
       "npm run contracts:http:ts",
       "npm run contracts:http:ts -- --suite publisher",

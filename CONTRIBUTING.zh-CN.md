@@ -66,11 +66,11 @@ npm run db:up
 npm run dev
 ```
 
-保持终端运行。scripts/dev-server.ts 通过 Turbo 构建共享包，再启动单一 Server 和 Web。
-打开 http://localhost:5173，使用 Owner 密码登录；Server 使用端口 3001。API 启动需要 Temporal，
-不会创建引擎；执行模型任务时另需模型设置。保留已有 checkout 的 .env 和数据目录。
-冷启动检查从没有构建产物的 checkout 运行 npm run dev:smoke；OPENBOT_DEV_SMOKE_DATABASE_URL
-须指向空的本机临时数据库，名称以 _dev_smoke 结尾。检查自建临时 Temporal，验证真实 Web、代理和 Owner 登录。
+保持终端运行。`scripts/dev-server.ts` 通过 Turbo 构建共享包，再启动单一 Server 和 Web。
+打开 `http://localhost:5173`，使用 Owner 密码登录；Server 使用端口 3001。API 启动需要 Temporal，
+不会创建引擎；执行模型任务时另需模型设置。保留已有 checkout 的 `.env` 和数据目录。
+冷启动检查从没有构建产物的 checkout 运行 `npm run dev:smoke`；`OPENBOT_DEV_SMOKE_DATABASE_URL`
+须指向空的本机临时数据库，名称以 `_dev_smoke` 结尾。检查自建临时 Temporal，验证真实 Web、代理和 Owner 登录。
 
 做一次小型 UI 修改时，先通过[仓库地图](docs/REPOSITORY_MAP.md)定位组件，在开发命令
 运行期间修改并检查真实页面。例如频道右栏位于
@@ -208,10 +208,10 @@ AGENTS 链接的 SKILL.md，记录实际生效方式。这里未配置 Claude �
 [既有设计索引](docs/design/README.zh-CN.md)、现有 tokens/组件及受影响状态。
 发现/读取验收只证明可以找到职责和检查，不代表实现、渲染验收或托管 CI 已完成。
 
-整体界面验收运行 npm run ui:acceptance，默认使用 TS，--entry python 会被拒绝。
-先构建 @openbot/server、@openbot/web 并启动 Docker。命令自建临时 PostgreSQL 和 mTLS Temporal，
-由真实 Server 提供构建后的 Web，驱动已安装 Chrome（--browser 可指定其他浏览器），输出收据和截图。
-每次较大退役改动后，当前候选须达到 PASS 12/12。非预期 503 会使验收失败，应检查对应步骤及自有服务日志。
+整体界面验收运行 `npm run ui:acceptance`，默认使用 TS，`--entry python` 会被拒绝。
+先构建 `@openbot/server`、`@openbot/web` 并启动 Docker。命令自建临时 PostgreSQL 和 mTLS Temporal，
+由真实 Server 提供构建后的 Web，驱动已安装 Chrome（`--browser` 可指定其他浏览器），输出收据和截图。
+每次较大退役改动后，当前候选须达到 `PASS 12/12`。非预期 503 会使验收失败，应检查对应步骤及自有服务日志。
 此流程无需 Python 环境；见[验收记录](docs/research/ui-acceptance-automation.md)。
 
 ## 提交 Pull Request

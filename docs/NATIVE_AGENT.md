@@ -221,30 +221,18 @@ subprocess termination belong to the composition and process adapter described b
 alone does not implement those lifecycle behaviors. See the
 [executor seam research](research/runtime-executor-seam.md).
 
-### Server gates for an external loop
+### Current Server execution boundary
 
-`AgentRuntimeHost` prepares declarative tool schemas, executes one model step at a time and admits
-only matching, unused model-issued tool intents. Credentials, executable tools, approval policy,
-shared budgets and durable usage stay in the Server. It rereads corrections on each step, checks
-authority across asynchronous boundaries, bounds history/results and refuses new media references.
-A pending tool call blocks another step or completion; any operation failure seals the invocation.
-Final text must match the latest completed model response before the runner may commit it.
+The TypeScript Server owns model credentials, tool admission, approvals, shared budgets, durable
+usage and publication. `apps/server/src/work-runtime.ts` and `packages/work` execute bounded steps
+and Temporal continuations under that authority; a pending or uncertain effect cannot authorize
+a replacement execution. Worker identity, cancellation, corrections and completion checks remain
+Server-owned.
 
-The headless report journey exercises this host with the real Server and disposable PostgreSQL;
-unit tests cover denial, cancellation, failed persistence, concurrent calls and altered tool intents.
-The driver in that integration test is a deterministic two-step fixture. The production default
-remains the existing TypeScript SDK loop. See [host research](research/python-runtime-host.md).
-
-`createPythonAgentExecutor` now composes the host with a fixed Python executable/entry point,
-a minimal environment, bounded newline transport and owned POSIX process-group cleanup. A child
-failure aborts in-flight Server operations; only a final response followed by clean child exit can
-reach host completion checks. Transport/lifecycle tests use adversarial Node child fixtures and
-cover flooding, malformed traffic, concurrent/repeated requests, crash, cancellation and stubborn
-descendants. The host also streams bounded public text directly from the Server while the child
-awaits a complete model response; reasoning stays private and failed streams are not retried.
-These Node fixtures alone do not establish Python integration or Linux product support; the
-paired acceptance below runs the actual Python child. See the [wire profile](AGENT_RUNTIME_PROTOCOL.md)
-and [transport research](research/python-runtime-transport.md).
+P5 retires the Python subprocess, wheel and runtime selector. The former `AgentRuntimeHost` and
+`createPythonAgentExecutor` composition is recorded in the [host boundary research](research/python-runtime-host.md),
+[wire profile](AGENT_RUNTIME_PROTOCOL.md) and [transport research](research/python-runtime-transport.md); those dated results do not qualify
+the current TypeScript implementation. Current acceptance uses the commands below.
 
 ### Runtime acceptance
 

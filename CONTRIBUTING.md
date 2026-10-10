@@ -84,12 +84,12 @@ npm run db:up
 npm run dev
 ```
 
-Keep this terminal open. scripts/dev-server.ts builds the required shared packages through Turbo,
-then starts the single Server and Web. Open http://localhost:5173 and sign in with the Owner
+Keep this terminal open. `scripts/dev-server.ts` builds the required shared packages through Turbo,
+then starts the single Server and Web. Open `http://localhost:5173` and sign in with the Owner
 password; the Server uses port 3001. API startup requires Temporal and never creates an engine.
-Model settings are needed only to execute model work. Preserve an existing checkout's .env and data.
-The cold-start check is npm run dev:smoke from an unbuilt checkout, with
-OPENBOT_DEV_SMOKE_DATABASE_URL pointing to an empty loopback database ending in _dev_smoke;
+Model settings are needed only to execute model work. Preserve an existing checkout's `.env` and data.
+The cold-start check is `npm run dev:smoke` from an unbuilt checkout, with
+`OPENBOT_DEV_SMOKE_DATABASE_URL` pointing to an empty loopback database ending in `_dev_smoke`;
 it supplies its own disposable Temporal fixture and checks the actual Web/proxy/Owner journey.
 
 For a small UI change, locate its component through the [repository map](docs/REPOSITORY_MAP.md),
@@ -257,11 +257,11 @@ Start from the current request and checkout; preserve local completion records. 
 tokens/components and affected rendered states. A discovery/reading exercise locates owners and
 checks; it does not establish a completed implementation, rendered acceptance or hosted CI.
 
-Whole-interface acceptance is npm run ui:acceptance; TS is the default and --entry python is
-refused. Build @openbot/server and @openbot/web first and start Docker. The command owns disposable
+Whole-interface acceptance is `npm run ui:acceptance`; TS is the default and `--entry python` is
+refused. Build `@openbot/server` and `@openbot/web` first and start Docker. The command owns disposable
 PostgreSQL and mTLS Temporal services, serves the built Web through the actual Server, and drives
-installed Chrome (--browser selects another executable). It writes a receipt and screenshots.
-After substantial retirement changes require PASS 12/12 on the current candidate. Unexpected 503s
+installed Chrome (`--browser` selects another executable). It writes a receipt and screenshots.
+After substantial retirement changes, require `PASS 12/12` on the current candidate. Unexpected 503s
 fail; inspect the recorded step and owned service logs. No Python environment is needed for this
 journey. See the [acceptance record](docs/research/ui-acceptance-automation.md).
 

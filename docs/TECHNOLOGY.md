@@ -8,8 +8,8 @@ platform status here.
 
 ## One-sentence decision
 
-OpenBot uses Python for the product Server control plane and the bounded Agent harness, TypeScript
-for Web, the Electron Desktop shell, retained Node helpers, React and
+OpenBot uses TypeScript for the product Server control plane, bounded Agent execution, Web,
+the Electron Desktop shell and Node helpers; React and
 Vite for the shared interface, PostgreSQL for authoritative state, and narrow Swift or C# adapters
 only where the operating system requires them.
 
@@ -20,16 +20,16 @@ only where the operating system requires them.
 | Business Server | TypeScript in `apps/server` (Fastify) | Single trusted product authority. |
 | Agent execution | TypeScript Server runtime and `packages/work` | Control retains authority and durable facts. |
 | Shared UI | TypeScript, React, Vite in `apps/web` | Also the Desktop renderer. |
-| Desktop shell | Electron main/preload around the shared Web UI | Supervises the Python product payload where that Desktop path is supported. |
+| Desktop shell | Electron main/preload around the shared Web UI | Supervises the TypeScript product payload where that Desktop path is supported. |
 | Retained Node surfaces | Node Worker Host, Providers, protocol helpers, tooling | Not a second business Server. |
 | Frozen TypeScript Server | `tests/oracles/legacy-server` | Comparison input only; never a product fallback. |
 | Persistence | PostgreSQL with migrations under `packages/db` | Unchanged authority for durable state. |
 | Optional durable Work engine | Explicit Temporal composition when configured | Not created by ordinary API startup. |
 
 Historical Desktop foundation ADRs and research remain the record of those decisions; they are not
-a claim that the Node/Hono Server is still the live control plane. Longer-term TypeScript consolidation remains a
-direction, starting with useful peripheral replacements. A core replacement needs its own verified
-cutover; this cleanup does not migrate the Python Server or harness core.
+a claim that the Node/Hono Server is still the live control plane. P5 completes the source cutover to the single TypeScript Server and execution path.
+Hosted native qualification, review and installation remain separate acceptance gates; source
+retirement does not update an installed application or move user data.
 
 ## Product surfaces
 
@@ -67,8 +67,8 @@ Versions below match this checkout unless a surface README states a narrower att
 | Windows-only service integration | C# on .NET | SCM, Credential Manager, Job Objects, installer integration, and other Windows-only contracts. |
 | External agent internals | Upstream language | Hermes may remain Python and another agent may use Rust, Go, or TypeScript; OpenBot integrates through a typed process or network adapter. |
 
-Rust and Go are not OpenBot product core languages. Python is core for Server and harness. TypeScript
-remains core for Web, Desktop, and retained Node helpers. A future dependency in another language
+TypeScript is the OpenBot core language for Server, bounded execution, Web, Desktop and Node helpers.
+Python, Rust and Go are not OpenBot product core languages. A future dependency in another language
 needs research that proves a maintained upstream closes a concrete gap better than the selected
 stack.
 

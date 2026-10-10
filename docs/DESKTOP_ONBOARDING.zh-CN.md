@@ -2,7 +2,7 @@
 
 [English](DESKTOP_ONBOARDING.md)
 
-当前 macOS arm64 构建包含本地 Python Server 与 PostgreSQL；Windows、Intel Mac 和 Linux
+当前 macOS arm64 构建包含本地 TypeScript Server 与 PostgreSQL；Windows、Intel Mac 和 Linux
 构建为远程客户端。首次使用时选择这台电脑支持的连接方式：
 
 - **服务电脑（macOS arm64）：** Desktop 初始化自己的 PostgreSQL 17 数据库、启动随包提供的 Server、创建
@@ -139,7 +139,7 @@ Bot 模板审核导入流程。档案读取失败明确显示不可用，不视�
 
 ## 当前边界
 
-当前源码仅在 macOS arm64 提供随包本地 Python 服务；Windows、Intel Mac 和 Linux 连接已有
+当前源码仅在 macOS arm64 提供随包本地 TypeScript 服务；Windows、Intel Mac 和 Linux 连接已有
 Server。CI 安装器目标为 macOS arm64、Windows x64 和 Linux x64；Intel 远程客户端源码路径
 不等于 Intel 安装器验收。历史 **0.1.0-alpha.9** 产物及托管检查不能证明当前源码已通过验收。
 正式签名、macOS 公证、Windows 真机桌面和 SmartScreen 验收仍未完成。版本产物和发行边界见
@@ -184,8 +184,7 @@ Server 保存唯一默认提供方/模型配置，由原生 Agent 任务共用�
 ## 构建与高级自部署
 
 在仓库根目录安装锁定依赖并运行 `npm run check`，然后在目标操作系统执行
-`npm run package --workspace @openbot/desktop`。macOS arm64 将 Python Server、已安装的 harness
-wheel、Node 辅助依赖、PostgreSQL 和许可通知放入 `native-runtime`；远程客户端目标不包含该运行时。生成目录不会进入 Git。
+`npm run package --workspace @openbot/desktop`。macOS arm64 将 TypeScript Server、生产依赖闭包、独立 Node、PostgreSQL 和许可通知放入 `native-runtime`；远程客户端目标不包含该运行时。生成目录不会进入 Git。
 本地开发启动前也需先运行 `npm run prepare:native --workspace @openbot/desktop`，再执行
 `npm start --workspace @openbot/desktop`。首次启动不下载可执行代码。
 

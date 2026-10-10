@@ -1,24 +1,25 @@
 /** Preserves packet transport, public-only trust and fresh-root boundaries without mutating a host. */
 import assert from "node:assert/strict";
 import { createHash, X509Certificate } from "node:crypto";
+import { once } from "node:events";
 import { lstat, mkdir, mkdtemp, readdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test, { type TestContext } from "node:test";
 import { connect, createServer } from "node:tls";
-import { once } from "node:events";
+import { SubprocessCommander } from "../linux-execution/subprocess.ts";
 import {
   browserTrust,
   downloadNative,
   exportArguments,
-  packetFiles,
   packetCaptureBytes,
+  packetFiles,
   prepareNativePacket,
   replaceExact,
   SQUID_TAG,
 } from "./native-packet-prepare.ts";
-import { SubprocessCommander } from "../linux-execution/subprocess.ts";
 import { prepareNativeTls } from "./native-packet-tls.ts";
+
 async function root(t: TestContext) {
   const path = await mkdtemp(join(tmpdir(), "openbot-native-input-"));
   t.after(() => rm(path, { recursive: true, force: true }));
@@ -232,4 +233,19 @@ test("multi-platform registry index remains distinct from the selected OCI manif
   );
   assert(args.includes("docker://mcr.microsoft.com/playwright@" + index));
   assert(!args.some((value) => value.includes(platform)));
+});
+
+test("digest-only repositories and registry ports survive the exact native export command", () => {
+  const digest = "sha256:" + "b".repeat(64);
+  for (const repository of ["node", "registry.example:5000/team/node"]) {
+    for (const suffix of ["", ":reviewed"]) {
+      const args = exportArguments(repository + suffix + "@" + digest, "/owned/image.tar");
+      assert(args.includes("docker://" + repository + "@" + digest));
+      assert(
+        args.includes("--src-no-creds") &&
+          args.includes("--src-tls-verify=true") &&
+          args.includes("--preserve-digests"),
+      );
+    }
+  }
 });
