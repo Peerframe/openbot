@@ -299,6 +299,8 @@ export function validatePythonProductWorkflow(source: string, migrationSource: s
   hasCommands(
     job("browser-product"),
     [
+      "experiments/work-journey/native-packet-prepare.ts",
+      "bzip2=1.0.8-5.1ubuntu0.1",
       "experiments/linux-execution/qualify-native.ts",
       "experiments/linux-execution/native-helper.ts",
       '"$(command -v node)" "$RUNNER_TEMP/openbot-native-qualify.cjs"',

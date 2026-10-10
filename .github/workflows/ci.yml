@@ -505,17 +505,6 @@ jobs:
           npm install --global --ignore-scripts npm@10.9.9
           npm ci --ignore-scripts --audit=false
           npm exec -- turbo run build --filter=@openbot/node... --filter=@openbot/db --filter=@openbot/server
-      - name: Prepare the exact product Worker environment
-        shell: bash
-        run: |
-          PYTHON=python3.12 packages/harness/scripts/bootstrap-build.sh
-          packages/harness/scripts/build.sh
-          python3.12 -m venv "$RUNNER_TEMP/openbot-work-reference"
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -m pip install \
-            -r apps/server-python/requirements-worker.lock
-          packages/harness/scripts/install-wheel.sh "$RUNNER_TEMP/openbot-work-reference/bin/python"
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -m pip check
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -I apps/server-python/scripts/verify_environment.py --worker
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: 1.3.14
@@ -529,23 +518,20 @@ jobs:
           node experiments/work-journey/product-browser-upstream.ts "$RUNNER_TEMP/openbot-browser-upstream"
           npm ci --ignore-scripts --prefix "$RUNNER_TEMP/openbot-browser-upstream"
           node "$RUNNER_TEMP/openbot-browser-upstream/node_modules/playwright/cli.js" install --with-deps chromium
-      - name: Prepare a fresh root-private Linux/runsc P4 qualification packet
+      - name: Prepare the TS root-private Linux/runsc qualification packet
         timeout-minutes: 15
         shell: bash
         run: |
           sudo apt-get update
-          sudo apt-get install --yes --no-install-recommends nftables skopeo=1.13.3+ds1-2ubuntu0.24.04.3
+          sudo apt-get install --yes --no-install-recommends nftables skopeo=1.13.3+ds1-2ubuntu0.24.04.3 bzip2=1.0.8-5.1ubuntu0.1
           node_modules/.bin/esbuild experiments/work-journey/product_command_node.ts \
             --bundle --platform=node --format=cjs --target=node22 \
             --outfile="$RUNNER_TEMP/openbot-command-node.cjs"
-          sudo env GITHUB_ACTIONS=true "$RUNNER_TEMP/openbot-work-reference/bin/python" -B \
-            experiments/work-journey/p4_native_ci.py \
-            --worker "$RUNNER_TEMP/openbot-work-reference/bin/python" \
+          sudo env GITHUB_ACTIONS=true "$(command -v node)" --experimental-strip-types \
+            experiments/work-journey/native-packet-prepare.ts \
+            --repository "$GITHUB_WORKSPACE" \
             --upstream "$RUNNER_TEMP/openbot-browser-upstream" \
-            --bun "$(command -v bun)" --node "$(command -v node)" \
-            --node-bundle "$RUNNER_TEMP/openbot-command-node.cjs" \
-            --output "$RUNNER_TEMP/openbot-native-command.json"
-          sudo chown "$(id -u):$(id -g)" "$RUNNER_TEMP/openbot-native-command.json"
+            --bun "$(command -v bun)" --node "$(command -v node)"
       - name: Qualify the migrated TS native adapter on original systemd and runsc
         timeout-minutes: 4
         shell: bash

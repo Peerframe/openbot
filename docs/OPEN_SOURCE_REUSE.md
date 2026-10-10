@@ -1125,3 +1125,22 @@ dependency. It replaces Python `ipaddress` in the existing pure policy compiler;
 7.7, kernel enforcement, fixed fixture image pins and all origin/denial assertions remain unchanged.
 Canonical CIDRs and IPv4-mapped overlap are checked explicitly. The old compiler's complete
 configuration is retained as inert test input; no upstream parser or Squid source was copied.
+
+The native CI packet now also uses that same tar7.5.22 read-only parser for Docker/gVisor
+archives and OCI index/manifest/config validation. Node zlib handles gzip; bzip2 requires the
+existing distribution executable, pinned to Ubuntu24.04 amd64
+[bzip2 1.0.8-5.1ubuntu0.1](https://packages.ubuntu.com/noble/bzip2). The upstream
+[1.0.8 manual](https://www.sourceware.org/bzip2/manual/manual.html) documents the stream/CRC
+exit contract and environment-injected options. The adapter checks the complete download hash
+before decoding, excludes BZIP/BZIP2 from the child environment, bounds expanded bytes and
+selected members, and requires successful complete-stream termination. This BSD-style licensed
+CLI adds no JavaScript codec or production dependency; tar alone lacks bzip2, while a new
+JavaScript codec or custom implementation would add maintenance without changing this fixed
+disposable Linux CI boundary. No upstream source is copied.
+
+The browser certificate fixture reuses the existing system OpenSSL test-certificate approach
+with EC P-256 named curves, a two-day disposable CA, exact example.com SAN/serverAuth leaves,
+and a separate self-signed unknown-CA leaf. A dedicated private pipe carries the CA signing
+key; the packet never stores it. Generated public CA trust is imported only into the packet's
+new NSS database. Real TLS handshakes cover the valid name, wrong name and unknown CA.
+This replaces Python cryptography in fixture setup without changing product TLS provisioning.
