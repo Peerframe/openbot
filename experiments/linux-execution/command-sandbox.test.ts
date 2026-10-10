@@ -314,6 +314,24 @@ test("cross-instance start reservations issue one attempt", async (t) => {
   assert.equal(results.filter((r) => r.status === "fulfilled").length, 1);
   assert.equal(f.ledger.counters("action", 1).startAttempts, 1);
 });
+test("separate processes cannot reserve the same durable start slot", async (t) => {
+  const f = await fixture(t),
+    created = await f.box.create(f.prepared),
+    module = new URL("./event-ledger.ts", import.meta.url).href,
+    script = `import {EventLedger} from ${JSON.stringify(module)};const ledger=new EventLedger(process.argv[1]);try{await ledger.reserveStart(JSON.parse(process.argv[2]));process.stdout.write('won');}catch(error){if(error.message!=='start_already_reserved')throw error;process.stdout.write('refused');}`;
+  const child = () =>
+    promisify(execFile)(
+      process.execPath,
+      ["--input-type=module", "-e", script, f.ledger.path, JSON.stringify(created)],
+      { env: { PATH: process.env.PATH }, timeout: 10000 },
+    );
+  const values = await Promise.all(Array.from({ length: 4 }, child));
+  assert.equal(values.filter((v) => v.stdout === "won").length, 1);
+  assert.equal(values.filter((v) => v.stdout === "refused").length, 3);
+  assert.equal((await child()).stdout, "refused");
+  assert.equal(f.ledger.counters("action", 1).startAttempts, 1);
+  assert.equal(f.calls.filter((args) => args[0] === "start").length, 0);
+});
 for (const mode of ["missing", "replaced", "restarted", "invalid_exit"])
   test(`recovery ${mode} only observes and stays unknown`, async (t) => {
     const f = await fixture(t),

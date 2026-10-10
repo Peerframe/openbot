@@ -1,13 +1,13 @@
-/** The production P4 entry with only model HTTP replaced; Node and Chromium stay real. */
+/** The production TS entry with only model HTTP replaced; Node and Chromium stay real. */
 import assert from "node:assert/strict";
 import { readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Worker } from "@temporalio/worker";
 import proto from "@temporalio/proto";
-import { entryOptions } from "../../apps/server/src/config.js";
-import { runEntry } from "../../apps/server/src/lifetime.js";
-import type { ModelTransport } from "../../apps/server/src/model-network.js";
+import { entryOptions } from "../../apps/server/dist/config.js";
+import { runEntry } from "../../apps/server/dist/lifetime.js";
+import type { ModelTransport } from "../../apps/server/dist/model-network.js";
 
 if (process.argv[2] === "--replay") {
   assert.equal(process.argv.length, 4);
@@ -132,17 +132,10 @@ if (process.argv[2] === "--replay") {
   };
   const options = entryOptions({
     ...process.env,
-    OPENBOT_TS_PRODUCT_GROUP: "p3",
-    OPENBOT_TS_WORK_GROUP: "p4",
-    OPENBOT_TS_AUTH_GROUP: "owner",
-    OPENBOT_TS_CHANNEL_READ_GROUP: "channels",
-    OPENBOT_TS_READ_GROUP: "transcription",
-    OPENBOT_TS_WRITE_GROUP: "primary-bot",
     OPENBOT_TS_DATABASE_URL: process.env.OPENBOT_CONTROL_DATABASE_URL,
     OPENBOT_TS_OWNER_PASSWORD: process.env.OPENBOT_CONTROL_OWNER_PASSWORD,
     OPENBOT_TS_PORT: process.env.OPENBOT_CONTROL_PORT,
     OPENBOT_TS_PUBLIC_ORIGIN: `http://127.0.0.1:${process.env.OPENBOT_CONTROL_PORT}`,
-    OPENBOT_TS_PYTHON_ORIGIN: "http://127.0.0.1:1",
     OPENBOT_TS_OBJECT_ROOT: process.env.OPENBOT_CONTROL_OBJECT_ROOT,
     OPENBOT_TS_ARTIFACT_ROOT: process.env.OPENBOT_CONTROL_ARTIFACT_ROOT,
     OPENBOT_TS_MODEL_CONNECTION_KEY_PATH: join(directory, "model.key"),
