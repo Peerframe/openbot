@@ -1,3 +1,5 @@
+// Settings → 存储空间 (SettingsStorage artboard): server disk use by category and channel, 回收站
+// cleanup, and each Bot's browser data measured on request.
 import type { Bot } from "@openbot/domain";
 import { useEffect, useState } from "react";
 import {

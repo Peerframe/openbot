@@ -1,3 +1,4 @@
+// Expandable list of a plugin's tools with their input schema and self-reported annotations.
 import type { PluginTool } from "../plugin-api";
 
 export function PluginToolList({ tools }: { tools: PluginTool[] }) {

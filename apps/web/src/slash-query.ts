@@ -1,3 +1,4 @@
+// Finds and removes the `/command` fragment at the composer caret, which opens the / skills menu.
 export interface SlashQuery {
   /** Index of the "/" that opened the command menu. */
   start: number;

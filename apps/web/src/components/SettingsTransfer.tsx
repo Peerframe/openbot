@@ -1,3 +1,4 @@
+// Settings → 导入与导出 (SettingsTransfer artboard): opens the Bot template import and export dialogs.
 import type { Bot } from "@openbot/domain";
 import { useState } from "react";
 import { useEmployeeProfiles } from "../use-employee-profiles";

@@ -1,3 +1,5 @@
+// 新建聊天 screen (New and NewGroup artboards): pick recipients and write the first message; one Bot
+// opens a 单聊, several a 频道. Nothing is created before the message is sent.
 import type { Bot } from "@openbot/domain";
 import {
   Fragment,

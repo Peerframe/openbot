@@ -1,3 +1,5 @@
+// Main column header (Main artboard): title pill that opens the right rail, avatar, 分享 and the
+// reopen-sidebar button.
 import type { Bot } from "@openbot/domain";
 import type { RealtimeConnectionState } from "../api";
 import { shortcutLabel } from "../desktop-shortcuts";

@@ -1,3 +1,5 @@
+// 任务监督 (WorkSupervision artboard): create a Work task for a Bot, look one up by ID, follow its
+// current step and request cancellation. Talks to work-api.
 import type { Bot } from "@openbot/domain";
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { ApiError } from "../api";

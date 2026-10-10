@@ -1,3 +1,5 @@
+// Light/dark/system colour scheme: resolves the Owner's choice and sets it on the page root. On
+// Desktop the main process owns the choice and this module syncs with it through the bridge.
 import { getOpenBotDesktopBridge } from "./desktop-runtime";
 import type { WorkspacePreferences } from "./workspace-preferences";
 

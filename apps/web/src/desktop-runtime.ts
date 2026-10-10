@@ -1,3 +1,4 @@
+// Typed access to the Desktop preload bridge (window.openbotDesktop); undefined in a plain browser.
 import type {
   OpenBotDesktopBridge as DesktopBridge,
   DesktopRuntimeInfo,

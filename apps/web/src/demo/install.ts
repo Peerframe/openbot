@@ -1,3 +1,4 @@
+// Swaps fetch, EventSource, storage and downloads for the demo adapter before any product UI loads.
 import type { DemoAdapter } from "./adapter";
 
 /** Called only by demo.html, before importing any product UI module. */

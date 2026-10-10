@@ -1,3 +1,5 @@
+// 导入 Bot 模板 dialog (DialogImport artboard): upload a package, review the Server's quarantine check,
+// then confirm to create a new Bot with no computer authority and skills pending review.
 import type {
   Bot,
   EmployeeImportActivationResult,

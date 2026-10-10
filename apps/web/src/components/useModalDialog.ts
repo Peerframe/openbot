@@ -1,3 +1,4 @@
+// Hook that opens a native modal <dialog> and reports its close or cancel back to React state.
 import { useCallback, useEffect, useRef } from "react";
 
 /**

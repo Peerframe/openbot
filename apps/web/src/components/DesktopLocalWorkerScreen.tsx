@@ -1,3 +1,4 @@
+// Desktop onboarding step 让这台电脑也能干活: register this computer as a work computer for Bots.
 import { type FormEvent, useState } from "react";
 import type {
   DesktopLocalWorkerOperationResult,

@@ -1,3 +1,5 @@
+// Hook that applies density, font size, reduced motion and colour scheme to the page root, and
+// tracks the Desktop sidebar material.
 import { useEffect, useState } from "react";
 import {
   applyColorScheme,

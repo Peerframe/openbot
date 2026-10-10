@@ -1,3 +1,5 @@
+// Bot 信息 rail beside a 单聊 (BotInfo artboard): details (name, tag, 介绍, avatar, approvals,
+// routines), work, library and computer tabs for one Bot. Edits go through revision-checked routes.
 import type {
   ApprovalDecision,
   Bot,

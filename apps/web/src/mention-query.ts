@@ -1,3 +1,4 @@
+// Finds and removes the `@name` fragment at the composer caret, which opens the @ recipient list.
 export interface MentionQuery {
   start: number;
   query: string;

@@ -1,3 +1,4 @@
+// Design preview scene that draws the README banner with the product avatars (`?scene=banner`).
 import type { Bot, BotAppearance } from "@openbot/domain";
 import { RobotAvatar } from "../components/RobotAvatar";
 

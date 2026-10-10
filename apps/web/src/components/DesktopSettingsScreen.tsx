@@ -1,3 +1,5 @@
+// Settings dialog (SettingsNav artboard): grouped section list with search, the 通用 section, and
+// the switch that renders every other Settings* section.
 import { useEffect, useState } from "react";
 import { colorSchemeAvailable, sendDesktopColorScheme } from "../color-scheme";
 import {

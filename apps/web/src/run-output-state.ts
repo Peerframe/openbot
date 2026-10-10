@@ -1,3 +1,5 @@
+// Merges a streamed reply draft into the channel's live drafts, keeping only the newest sequence
+// for a running model-only task of this channel.
 import type { Run, RunOutput } from "@openbot/domain";
 import { isRunOutputProjection } from "./api";
 

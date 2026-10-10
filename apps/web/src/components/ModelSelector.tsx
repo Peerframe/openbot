@@ -1,3 +1,5 @@
+// Model service and model picker for a Bot or the workspace default, plus the hook that loads the
+// Server's model connections. Used in onboarding, Settings and the Bot model editor.
 import type { ModelSelection, ModelServicesSnapshot } from "@openbot/domain";
 import { modelIdSchema } from "@openbot/protocol";
 import { useCallback, useEffect, useId, useRef, useState } from "react";

@@ -1,3 +1,5 @@
+// Composer voice recorder: record, review, re-record or discard an audio attachment. The microphone
+// opens only on an explicit click.
 import { useEffect, useRef, useState } from "react";
 import {
   type ComposerAttachment,

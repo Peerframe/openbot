@@ -1,3 +1,4 @@
+// Measures the caret's x position in the composer textarea so the @ and / lists open at the caret.
 const mirrored = [
   "boxSizing",
   "width",

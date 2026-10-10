@@ -1,3 +1,5 @@
+// Wires Desktop menu commands and the matching Web keyboard shortcuts (new conversation, back,
+// forward, settings, panel toggles) to the workspace's navigation actions.
 import { useEffect, useRef } from "react";
 import { type DesktopNavigationCommand, getOpenBotDesktopBridge } from "./desktop-runtime";
 import { updatePreferences, useWorkspacePreferences } from "./workspace-preferences";
