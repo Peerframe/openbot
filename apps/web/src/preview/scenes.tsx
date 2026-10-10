@@ -6,6 +6,7 @@ import { App } from "../App";
 import { AttachmentsManagerDialog } from "../components/AttachmentsManager";
 import { DeleteIdentityDialog } from "../components/DeleteIdentityDialog";
 import { DesktopConnectionScreen } from "../components/DesktopConnectionScreen";
+import { DesktopInstallScreen } from "../components/DesktopInstallScreen";
 import { DesktopLocalWorkerScreen } from "../components/DesktopLocalWorkerScreen";
 import {
   DesktopSettingsScreen,
@@ -25,6 +26,7 @@ import { ModelSettingsScreen } from "../components/ModelSettingsScreen";
 import { NodeManagerDialog } from "../components/NodeManagerDialog";
 import { LaunchScreen } from "../components/Onboarding";
 import { ShareConversationDialog } from "../components/ShareConversationDialog";
+import type { NativeServerState, OpenBotDesktopBridge } from "../desktop-runtime";
 import { setPreviewStartLocation, type WorkspaceLocation } from "../workspace-navigation";
 import { AvatarSpecimens, GroupSpecimens } from "./AvatarSpecimens";
 import type { scenes as sceneTable } from "./main";
@@ -104,19 +106,25 @@ const components: Record<string, () => ReactElement> = {
   banner: () => <ReadmeBanner />,
   groups: () => <GroupSpecimens />,
   launch: () => <LaunchScreen status="正在打开你的工作区" />,
+  // The real startup screen over a fake Desktop bridge, so the copy can never drift from the app.
   "launch-error": () => (
-    <LaunchScreen
-      error="没能启动本机服务。请确认钥匙串可以访问后重试；已有的 Bot、对话和设置都不会丢。"
-      actions={
-        <>
-          <button className="ob-setup-primary" type="button">
-            重试
-          </button>
-          <button className="ob-setup-secondary" type="button">
-            更改连接方式
-          </button>
-        </>
-      }
+    <DesktopInstallScreen
+      bridge={startupBridge(
+        { status: "idle", initialized: true },
+        Promise.resolve({ status: "failed", code: "installation_failed" }),
+      )}
+      onReady={() => undefined}
+      onBack={() => undefined}
+    />
+  ),
+  "launch-waiting": () => (
+    <DesktopInstallScreen
+      bridge={startupBridge(
+        { status: "waiting", mode: "resume", reason: "docker_unavailable", localDocker: true },
+        new Promise<NativeServerState>(() => undefined),
+      )}
+      onReady={() => undefined}
+      onBack={() => undefined}
     />
   ),
   welcome: () => (
@@ -188,4 +196,15 @@ function EditModelConnectionScene() {
       onReload={() => void refresh()}
     />
   );
+}
+
+/** A Desktop bridge that reports one startup state and answers the install call with `result`. */
+function startupBridge(
+  state: NativeServerState,
+  result: Promise<NativeServerState>,
+): OpenBotDesktopBridge {
+  return {
+    getNativeServerState: async () => state,
+    installNativeServer: () => result,
+  } as unknown as OpenBotDesktopBridge;
 }

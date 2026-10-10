@@ -97,6 +97,7 @@ export const scenes: Record<string, AppScene | ComponentScene> = {
   settings: { kind: "component", title: "设置（&section=…）", artboard: "Settings" },
   launch: { kind: "component", title: "启动画面", artboard: "Launch" },
   "launch-error": { kind: "component", title: "启动出错", artboard: "Launch" },
+  "launch-waiting": { kind: "component", title: "等待 Docker", artboard: "Launch" },
   welcome: { kind: "component", title: "首次使用", artboard: "Welcome" },
   connect: { kind: "component", title: "连接服务电脑", artboard: "Connect" },
   login: { kind: "component", title: "登录", artboard: "Login" },
