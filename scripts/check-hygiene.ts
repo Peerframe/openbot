@@ -24,6 +24,16 @@ const DATED_DOC = /(?:PLAN|ROADMAP|STATUS|WORKLOG|HANDOFF|CLEANUP|TODO)[^/]*\.md
 
 export const NESTED_RULES_MAX_LINES = 60;
 
+/** Python sources and packaging files. P5 (ADR-0050) retired the last Python runtime. */
+const PYTHON_FILE =
+  /(?:^|\/)(?:[^/]+\.py|requirements[^/]*\.txt|pyproject\.toml|\.python-version)$/u;
+
+/**
+ * Non-Python artifacts that must keep a Python-looking name. Empty by default; an entry needs a
+ * reason in the PR that adds it.
+ */
+export const PYTHON_NAME_ALLOWED: ReadonlySet<string> = new Set<string>();
+
 /** Paths written in backticks in living docs must exist. ADRs and research records are dated evidence. */
 const PATH_ROOTS = "apps|packages|providers|plugins|scripts|docs|experiments|tests|deploy";
 const GENERATED = new Set([
@@ -197,6 +207,11 @@ export function checkHygiene(input: HygieneInput): string[] {
         `${area}: only ${missing.length} files lack an opening comment now; lower undocumentedFiles["${area}"] in scripts/hygiene-baseline.json to ${missing.length}`,
       );
   }
+
+  // 8. Python stays retired: the control plane, Worker and probes are TypeScript.
+  for (const file of files)
+    if (PYTHON_FILE.test(file) && !PYTHON_NAME_ALLOWED.has(file))
+      failures.push(`${file}: Python was retired in P5 (ADR-0050); write this in TypeScript`);
 
   return failures;
 }
