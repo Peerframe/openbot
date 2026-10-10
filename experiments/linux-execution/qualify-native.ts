@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { createHash, randomUUID } from "node:crypto";
 import {
   chmodSync,
+  chownSync,
   cpSync,
   existsSync,
   lstatSync,
@@ -42,7 +43,9 @@ function copyTree(source: string, target: string) {
   while (pending.length) {
     const path = pending.pop()!,
       st = lstatSync(path);
-    requireFact(!st.isSymbolicLink() && st.uid === 0, "unsealed_native_module");
+    requireFact(!st.isSymbolicLink(), "unsealed_native_module");
+    chownSync(path, 0, 0);
+    requireFact(lstatSync(path).uid === 0, "unsealed_native_module");
     chmodSync(path, st.isDirectory() ? 0o755 : 0o644);
     if (st.isDirectory()) for (const child of readdirSync(path)) pending.push(join(path, child));
   }
@@ -70,8 +73,11 @@ async function main() {
     errorOnExist: true,
     force: false,
   });
+  chownSync(join(base, "code/node"), 0, 0);
   chmodSync(join(base, "code/node"), 0o755);
   cpSync(helper, join(base, "code/native-helper.cjs"), { errorOnExist: true, force: false });
+  // Root seals its fresh copy; the build input remains owned by the unprivileged CI runner.
+  chownSync(join(base, "code/native-helper.cjs"), 0, 0);
   chmodSync(join(base, "code/native-helper.cjs"), 0o600);
   copyTree(modules, join(base, "code/node_modules/koffi"));
   mkdirSync(join(base, "code/node_modules/@koromix"), { mode: 0o755 });

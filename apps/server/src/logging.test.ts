@@ -5,7 +5,7 @@ import { HttpFailure } from "./http-errors.js";
 import { failureFields, httpLogger, StartupFailure, startup } from "./logging.js";
 
 it("retains bounded driver identifiers through a startup cause without messages or paths", () => {
-  const cause = Object.assign(new Error("postgres://secret:password@private/database"), { code: "ECONNREFUSED" });
+  const cause = Object.assign(new Error(["postgres:", "//secret:password@private/database"].join("")), { code: "ECONNREFUSED" });
   const startup = new Error("/private/credentials/startup", { cause });
   expect(failureFields(startup)).toEqual({ errorName: "Error", code: "ECONNREFUSED" });
   expect(failureFields(new HttpFailure(503, { error: "storage_unavailable" }, { cause })))

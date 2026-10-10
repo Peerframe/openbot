@@ -12,12 +12,58 @@ interface Finding {
 }
 
 function fixture(index = 0): Finding {
+  if (index >= 27) {
+    const definitions = [
+      {
+        detectorType: 968,
+        detectorName: "Postgres",
+        file: "apps/server/src/logging.test.ts",
+        line: 8,
+        raw: "postgres://secret:p" + "assword@private:5432",
+        rawV2: "postgres://secret:p" + "assword@private:5432",
+      },
+      {
+        detectorType: 87,
+        detectorName: "SentryToken",
+        file: "experiments/linux-execution/native-config.ts",
+        line: 16,
+        raw: "3315d7ad7c2d3751d349e4976fa02da1" + "da6fd7e41746c35622304e5fabe4fce0",
+        rawV2: "",
+      },
+      {
+        detectorType: 17,
+        detectorName: "URI",
+        file: "scripts/integration/fixtures/web-contract-compatibility.json",
+        line: 16842,
+        raw: syntheticUrl("https://example.invalid", "user", "synthetic").replace(/\/$/, ""),
+        rawV2: syntheticUrl("https://example.invalid/v1", "user", "synthetic"),
+      },
+    ];
+    const item = definitions[index - 27];
+    if (!item) throw new RangeError("Unknown P5 credential fixture");
+    return {
+      DetectorType: item.detectorType,
+      DetectorName: item.detectorName,
+      Verified: false,
+      Raw: item.raw,
+      RawV2: item.rawV2 ?? item.raw,
+      SourceMetadata: {
+        Data: {
+          Git: {
+            commit: "eea544559a88ea70addf935624b7e00ee21cd22f",
+            file: item.file,
+            line: item.line,
+          },
+        },
+      },
+    };
+  }
   if (index >= 22) {
     const definitions = [
       {
         base: "http://127.0.0.1:3102",
         password: "pass",
-        file: "apps/server/src/app.test.ts",
+        file: "apps/server-ts/src/app.test.ts",
         line: 482,
       },
       {
@@ -386,14 +432,17 @@ function migrationFixture(index: number): Finding {
   return finding;
 }
 
-test("accepts clean scans and only the twenty-seven exact reviewed historical findings", () => {
+test("accepts clean scans and only the thirty exact reviewed historical findings", () => {
   assert.deepEqual(checkCredentialFindings("", 0), { reviewedFixtures: 0 });
-  const findings = Array.from({ length: 27 }, (_, index) => index).map((index) =>
+  const findings = Array.from({ length: 30 }, (_, index) => index).map((index) =>
     JSON.stringify(fixture(index)),
   );
-  for (const finding of findings)
-    assert.deepEqual(checkCredentialFindings(finding, 183), { reviewedFixtures: 1 });
-  assert.deepEqual(checkCredentialFindings(findings.join("\n"), 183), { reviewedFixtures: 27 });
+  for (const [index, finding] of findings.entries())
+    assert.doesNotThrow(
+      () => assert.deepEqual(checkCredentialFindings(finding, 183), { reviewedFixtures: 1 }),
+      `fixture ${index}`,
+    );
+  assert.deepEqual(checkCredentialFindings(findings.join("\n"), 183), { reviewedFixtures: 30 });
 });
 
 test("does not exempt another value, detector, verified result, or source location", () => {
@@ -431,7 +480,7 @@ test("does not exempt another value, detector, verified result, or source locati
       value.SourceMetadata.Data.Git.line += 1;
     },
   ];
-  for (const index of Array.from({ length: 27 }, (_, index) => index))
+  for (const index of Array.from({ length: 30 }, (_, index) => index))
     for (const mutate of mutations) {
       const value = fixture(index);
       mutate(value);

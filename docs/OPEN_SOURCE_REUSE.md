@@ -1117,3 +1117,11 @@ first patch for the remaining quadratic rewrite; the earlier recursion fixes and
 included. [The reviewed diff](https://github.com/juliangruber/brace-expansion/compare/v5.0.9...f3410159d768f56c9d9f4511d3e1b46425fc1099)
 changes the existing implementation/tests, not the API. A patch in the current supported range
 avoids replacing static serving or carrying a local fork. Source copied or substantially adapted: no.
+
+The P5 Squid qualification adapter reuses the already reviewed ipaddr.js 2.5.0 /
+`dc55282780d8702bac31ef012ca52e4a77fbca1f` (MIT;
+[existing address-parser evidence](research/agent-research-artifacts.md)) as an exact development
+dependency. It replaces Python `ipaddress` in the existing pure policy compiler; released Squid
+7.7, kernel enforcement, fixed fixture image pins and all origin/denial assertions remain unchanged.
+Canonical CIDRs and IPv4-mapped overlap are checked explicitly. The old compiler's complete
+configuration is retained as inert test input; no upstream parser or Squid source was copied.

@@ -330,3 +330,15 @@ A clean full-history clone based on exact main above, with local-only candidate 
 that same actual result; the repaired adapter accepts all23 exact reviewed findings. Raw candidates
 are private, never printed/uploaded. Subsequent edits add only this evidence paragraph. Final hosted
 security and protected `check` for the independent PR remain required before main merge.
+
+## P5 relocation and logging-fixture triage (2026-10-10)
+
+The unchanged pinned offline scanner reports three exact additions at `eea54455`: the synthetic
+PostgreSQL URL in the new logging redaction test; the already reviewed public gVisor binary digest
+relocated to the TS native configuration; and the already reviewed reserved-domain URI now stored
+in the inert Web contract corpus. None is an account credential. Their immutable commit, file,
+line, detector and both candidate hashes are added to the existing adapter; all-field mutation
+tests cover each entry. The logging test now constructs the same synthetic error in components.
+The older `a240b810` app test retains its historical server-ts path in the exception, even though
+the active product directory was renamed. No scan range, detector, verification policy or error
+refusal changes; actual raw output remains private and is never uploaded.

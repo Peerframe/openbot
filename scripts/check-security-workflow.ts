@@ -231,9 +231,6 @@ export function validateSecurityWorkflow(source: string): void {
       "npm run contracts:test",
       "node apps/web/src/test/work-http-probe.mjs",
       "node --test experiments/work-journey/desktop-temporal/observe-pollers.test.ts experiments/work-journey/desktop-temporal/probe-support.test.ts",
-      "npm run contracts:http:python",
-      "npm run contracts:http:python -- --suite publisher",
-      "npm run contracts:http:python -- --suite models",
       "npm run contracts:http:ts",
       "npm run contracts:http:ts -- --suite publisher",
       "npm run contracts:http:ts -- --suite models",
@@ -244,9 +241,6 @@ export function validateSecurityWorkflow(source: string): void {
     "Harness and contract",
   );
   for (const command of [
-    "npm run contracts:http:python",
-    "npm run contracts:http:python -- --suite publisher",
-    "npm run contracts:http:python -- --suite models",
     "npm run contracts:http:ts",
     "npm run contracts:http:ts -- --suite publisher",
     "npm run contracts:http:ts -- --suite models",
@@ -313,7 +307,7 @@ export function validatePythonProductWorkflow(source: string, migrationSource: s
     job("browser-egress"),
     [
       "experiments/browser-execution/egress-fixture.Dockerfile",
-      "experiments/browser-execution/qualify_egress.py",
+      "experiments/browser-execution/qualify-egress.ts",
       "--fixture-image",
       'sudo python3 -B "$root/run_probe.py" --docker /usr/bin/docker',
     ],

@@ -651,6 +651,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.2
+          cache: npm
+      - run: npm ci --ignore-scripts --audit=false
       - name: Build released proxy and disposable fixture tools
         timeout-minutes: 6
         run: |
@@ -661,7 +666,7 @@ jobs:
         timeout-minutes: 3
         run: |
           image_id="$(docker image inspect openbot-egress-fixture:ci --format '{{.Id}}')"
-          python3 -B experiments/browser-execution/qualify_egress.py \
+          node experiments/browser-execution/qualify-egress.ts \
             --fixture-image "$image_id" --output "$RUNNER_TEMP/openbot-egress-result"
       - name: Retain content-free proxy result
         if: always()
@@ -782,7 +787,7 @@ jobs:
           npm run harness:wheel
           npm run harness:quality
           apps/server-python/.worker-venv/bin/python -I apps/server-python/scripts/derive-product-lock.py --check
-      - name: Verify the real Python HTTP and TypeScript contract consumer
+      - name: Verify the real TS HTTP/HTTPS contract consumers
         run: |-
           npm run contracts:check
           npm run contracts:test
@@ -791,9 +796,6 @@ jobs:
           npm exec -- turbo run build --filter=@openbot/server --filter=@openbot/web
           node apps/web/src/test/work-http-probe.mjs
           node --test experiments/work-journey/desktop-temporal/observe-pollers.test.ts experiments/work-journey/desktop-temporal/probe-support.test.ts
-          npm run contracts:http:python
-          npm run contracts:http:python -- --suite publisher
-          npm run contracts:http:python -- --suite models
           npm run contracts:http:ts
           npm run contracts:http:ts -- --suite publisher
           npm run contracts:http:ts -- --suite models
