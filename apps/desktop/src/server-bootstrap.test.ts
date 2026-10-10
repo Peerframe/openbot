@@ -4,8 +4,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
 import {
-  productEnvironment,
+  fixedProcess,
   productConfigurationEnvironment,
+  productEnvironment,
+  TemporalUnavailableError,
 } from "./server-bootstrap.js";
 
 const directories: string[] = [];
@@ -200,9 +202,7 @@ it.runIf(process.platform === "win32").each([false, true])(
     const directory = await temporary();
     if (present) await writeFile(join(directory, "temporal.json"), "{}", { mode: 0o600 });
     const env = productEnvironment(directory, input(directory));
-    await expect(productConfigurationEnvironment(env)).rejects.toThrow(
-      "directory must be private",
-    );
+    await expect(productConfigurationEnvironment(env)).rejects.toThrow("directory must be private");
   },
 );
 
@@ -257,4 +257,26 @@ it("does not require or generate a singleton model key for a new bootstrap", asy
   expect(env.OPENBOT_CONTROL_MODEL_CONNECTION_KEY_PATH).toBe(
     join(directory, "model-connections.key"),
   );
+});
+
+it("distinguishes a real child dependency exit from other preflight errors and cancels a hung child", async () => {
+  const cwd = await temporary();
+  await expect(
+    fixedProcess(process.execPath, ["-e", "process.exit(75)"], {}, cwd, 5000),
+  ).rejects.toBeInstanceOf(TemporalUnavailableError);
+  await expect(
+    fixedProcess(process.execPath, ["-e", "process.exit(1)"], {}, cwd, 5000),
+  ).rejects.toThrow("Server preflight failed");
+  const signal = new AbortController();
+  const pending = fixedProcess(
+    process.execPath,
+    ["-e", "setInterval(()=>{},1000)"],
+    {},
+    cwd,
+    5000,
+    signal.signal,
+  );
+  const rejection = expect(pending).rejects.toMatchObject({ name: "AbortError" });
+  signal.abort();
+  await rejection;
 });

@@ -21,11 +21,17 @@ export function DesktopInstallScreen({
 }) {
   const [state, setState] = useState<NativeServerState>({ status: "idle" });
   const started = useRef(false);
+  const pending = useRef(false);
   const active = useRef(true);
   const retained = useRef(false);
   const ready = useRef(onReady);
   ready.current = onReady;
   const install = useCallback(async () => {
+    if (pending.current) {
+      void bridge.installNativeServer?.().catch(() => undefined);
+      return;
+    }
+    pending.current = true;
     try {
       const existing = await bridge.getNativeServerState?.();
       if (!active.current) return;
@@ -35,19 +41,25 @@ export function DesktopInstallScreen({
       }
       retained.current =
         (existing?.status === "idle" && existing.initialized === true) ||
-        (existing?.status === "installing" && existing.mode === "resume") ||
+        ((existing?.status === "installing" || existing?.status === "waiting") &&
+          existing.mode === "resume") ||
         retained.current;
-      setState({
-        status: "installing",
-        step: "checking",
-        mode: retained.current ? "resume" : "initialize",
-      });
+      if (existing?.status === "waiting") {
+        setState(existing);
+      } else
+        setState({
+          status: "installing",
+          step: "checking",
+          mode: retained.current ? "resume" : "initialize",
+        });
       const result = await bridge.installNativeServer?.();
       if (!active.current) return;
       setState(result ?? { status: "failed", code: "unsupported_platform" });
       if (result?.status === "ready") ready.current(result.serverUrl);
     } catch {
       if (active.current) setState({ status: "failed", code: "installation_failed" });
+    } finally {
+      pending.current = false;
     }
   }, [bridge]);
   useEffect(() => {
@@ -60,7 +72,8 @@ export function DesktopInstallScreen({
       void bridge
         .getNativeServerState?.()
         .then((next) => {
-          if (active.current && next.status === "installing") setState(next);
+          if (active.current && (next.status === "installing" || next.status === "waiting"))
+            setState(next);
         })
         .catch(() => undefined);
     }, 700);
@@ -72,6 +85,28 @@ export function DesktopInstallScreen({
   const resume = retained.current || (state.status === "installing" && state.mode === "resume");
   const preparing = state.status === "idle";
   const current = state.status === "installing" ? steps.findIndex(([id]) => id === state.step) : -1;
+  if (state.status === "waiting") {
+    return (
+      <LaunchScreen
+        error={
+          state.reason === "docker_unavailable"
+            ? "本机服务需要 Docker。请先打开 Docker，OpenBot 会自动继续；已有的 Bot、对话和设置都不会丢。"
+            : undefined
+        }
+        status={state.localDocker ? "正在等待 Docker 里的任务引擎启动…" : "正在等待任务引擎启动…"}
+        actions={
+          <>
+            <button className="ob-setup-primary" type="button" onClick={() => void install()}>
+              重试
+            </button>
+            <button className="ob-setup-secondary" type="button" onClick={onBack}>
+              更改连接方式
+            </button>
+          </>
+        }
+      />
+    );
+  }
   if (state.status === "failed") {
     return (
       <LaunchScreen
@@ -80,7 +115,7 @@ export function DesktopInstallScreen({
             ? "此安装包尚不支持本机服务，请使用 Windows 或 macOS 原生安装包，或连接已有服务。"
             : state.code === "credential_unavailable"
               ? "系统未允许读取已保存的凭据。请解锁钥匙串后重试，无需重新输入模型密钥。弹窗里的密码是这台电脑的登录密码；确认是你安装的 OpenBot 后，可以选「始终允许」。"
-              : "没能启动本机服务。请确认安装包完整、钥匙串可以访问后重试；已有的 Bot、对话和设置都不会丢。"
+              : "没能启动本机服务。请确认安装包完整后重试；已有的 Bot、对话和设置都不会丢。"
         }
         actions={
           <>

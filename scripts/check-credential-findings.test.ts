@@ -12,6 +12,12 @@ interface Finding {
 }
 
 function fixture(index = 0): Finding {
+  if (index >= 31 && index <= 33) {
+    // The squash changes commit identity, not the already reviewed binary digest or URL fixture.
+    const value = fixture(index - 3);
+    value.SourceMetadata.Data.Git.commit = "eadee8d53a3e0788f707e74d81c6cb054df349f4";
+    return value;
+  }
   if (index >= 27) {
     const definitions = [
       {
@@ -440,9 +446,9 @@ function migrationFixture(index: number): Finding {
   return finding;
 }
 
-test("accepts clean scans and only the thirty-one exact reviewed historical findings", () => {
+test("accepts clean scans and only the thirty-four exact reviewed historical findings", () => {
   assert.deepEqual(checkCredentialFindings("", 0), { reviewedFixtures: 0 });
-  const findings = Array.from({ length: 31 }, (_, index) => index).map((index) =>
+  const findings = Array.from({ length: 34 }, (_, index) => index).map((index) =>
     JSON.stringify(fixture(index)),
   );
   for (const [index, finding] of findings.entries())
@@ -450,7 +456,7 @@ test("accepts clean scans and only the thirty-one exact reviewed historical find
       () => assert.deepEqual(checkCredentialFindings(finding, 183), { reviewedFixtures: 1 }),
       `fixture ${index}`,
     );
-  assert.deepEqual(checkCredentialFindings(findings.join("\n"), 183), { reviewedFixtures: 31 });
+  assert.deepEqual(checkCredentialFindings(findings.join("\n"), 183), { reviewedFixtures: 34 });
 });
 
 test("does not exempt another value, detector, verified result, or source location", () => {
@@ -488,7 +494,7 @@ test("does not exempt another value, detector, verified result, or source locati
       value.SourceMetadata.Data.Git.line += 1;
     },
   ];
-  for (const index of Array.from({ length: 31 }, (_, index) => index))
+  for (const index of Array.from({ length: 34 }, (_, index) => index))
     for (const mutate of mutations) {
       const value = fixture(index);
       mutate(value);
