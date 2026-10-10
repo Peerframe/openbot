@@ -112,7 +112,7 @@ export async function downloadNative(
 }
 export function exportArguments(image: string, path: string, manifest?: string, daemon = false) {
   const tag = image.split("@")[0]!,
-    pin = manifest ?? image.split("@")[1];
+    pin = image.split("@")[1] ?? manifest;
   const immutable = pin ? tag.slice(0, tag.lastIndexOf(":")) + "@" + pin : image;
   return [
     "/usr/bin/skopeo",
@@ -140,7 +140,7 @@ async function exportImage(
   await chmod(path, 0o600);
   return {
     image,
-    ...(await ociIdentity(path, config, manifest ?? image.split("@")[1])),
+    ...(await ociIdentity(path, config, manifest)),
     archiveSha256: digest(path),
     archiveBytes: (await lstat(path)).size,
   };
@@ -311,6 +311,7 @@ export async function prepareNativePacket(
     CHROMIUM_IMAGE,
     join(BASE, "downloads/playwright-1.62.1-linux-amd64.tar"),
     CHROMIUM_CONFIG,
+    "sha256:c091b21d9fae78c76e85cd4356431e9b018402f172a214fc7d7a5e9a7e29d8ac",
   );
   await run(
     [

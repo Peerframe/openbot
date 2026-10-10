@@ -213,3 +213,15 @@ test("packet image/build capture fits the existing bounded commander", async () 
   );
   assert(!overflow.ok && overflow.outputTruncated && overflow.uncertain);
 });
+
+test("multi-platform registry index remains distinct from the selected OCI manifest", () => {
+  const index = "sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e";
+  const platform = "sha256:c091b21d9fae78c76e85cd4356431e9b018402f172a214fc7d7a5e9a7e29d8ac";
+  const args = exportArguments(
+    "mcr.microsoft.com/playwright:v1.62.1-noble@" + index,
+    "/owned/browser.tar",
+    platform,
+  );
+  assert(args.includes("docker://mcr.microsoft.com/playwright@" + index));
+  assert(!args.some((value) => value.includes(platform)));
+});
