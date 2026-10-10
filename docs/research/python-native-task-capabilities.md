@@ -73,6 +73,6 @@ No legacy channel/Run was fabricated. Two sanitized actual histories replayed wi
 SDK and no registered Activities; root reran those replays after integration.
 
 Portable source, exact assertions and safe evidence are in
-[the native capability journey](../../experiments/work-journey/native-capabilities/README.md).
+[the native capability journey](https://github.com/Peerframe/openbot/blob/50837bea7bf63290aab250f84fe1b705f942efdb/experiments/work-journey/native-capabilities/README.md).
 This qualifies real product orchestration and recovery with a synthetic model transport;
 separate live Kimi and Linux/browser tests must not inherit a positive result from it.

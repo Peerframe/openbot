@@ -4,15 +4,17 @@ import { lstat, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { Writable } from "node:stream";
 import { setTimeout as delay } from "node:timers/promises";
-import { type ManagedServerProcess } from "./native-server.js";
+import type { ManagedServerProcess, NativeStartupContext } from "./native-server.js";
 import {
   containedProductFile,
-  preparePrivateDirectories,
   fixedProcess,
+  preparePrivateDirectories,
   productConfigurationEnvironment,
   productEnvironment,
+  TemporalUnavailableError,
   verifyProductHealth,
 } from "./server-bootstrap.js";
+import { waitForProductDependencies } from "./startup-dependencies.js";
 import { TS_CANDIDATE } from "./ts-product-manifest.js";
 
 export async function selectsTsProduct(runtimeRoot: string): Promise<boolean> {
@@ -46,13 +48,15 @@ export async function selectsTsProduct(runtimeRoot: string): Promise<boolean> {
 export async function launchDesktopProductServer(
   runtimeRoot: string,
   source: Record<string, string>,
+  startup?: NativeStartupContext,
 ): Promise<ManagedServerProcess & { readonly processIds: readonly number[] }> {
-  return launchTsProductServer(runtimeRoot, source);
+  return launchTsProductServer(runtimeRoot, source, startup);
 }
 
 export async function launchTsProductServer(
   runtimeRoot: string,
   source: Record<string, string>,
+  startup?: NativeStartupContext,
 ): Promise<ManagedServerProcess & { readonly processIds: readonly number[] }> {
   if (!(await selectsTsProduct(runtimeRoot))) throw new Error("TS candidate is not selected.");
   const env = productEnvironment(runtimeRoot, source);
@@ -138,57 +142,69 @@ export async function launchTsProductServer(
   const migration = await containedProductFile(runtimeRoot, "desktop/product-migrate.mjs");
   await preparePrivateDirectories(env);
   const serverEnvironment = {
-        PATH: "/usr/bin:/bin",
-        LANG: "C.UTF-8",
-        LC_ALL: "C.UTF-8",
-        OPENBOT_TS_WORK_FILE_ROOT: env.OPENBOT_CONTROL_ARTIFACT_ROOT as string,
-        ...configuration,
-        ...(source.TAVILY_API_KEY === undefined ? {} : { TAVILY_API_KEY: source.TAVILY_API_KEY }),
-        OPENBOT_TS_OBJECT_ROOT: env.OPENBOT_CONTROL_OBJECT_ROOT as string,
-        OPENBOT_TS_ARTIFACT_ROOT: env.OPENBOT_CONTROL_ARTIFACT_ROOT as string,
-        OPENBOT_TS_PLUGIN_STORE_PATH: env.OPENBOT_CONTROL_PLUGIN_STORE_PATH as string,
-        OPENBOT_TS_PLUGIN_LOCAL_ENDPOINTS: env.OPENBOT_CONTROL_PLUGIN_LOCAL_ENDPOINTS as string,
-        OPENBOT_TS_PARSER_WORKER_PATH: join(
-          runtimeRoot,
-          "apps/server/dist/parser-worker.js",
-        ),
-        OPENBOT_TS_NODE_MODULE_ROOT: join(runtimeRoot, "node_modules"),
-        OPENBOT_TS_MODEL_CONNECTION_KEY_PATH:
-          env.OPENBOT_CONTROL_MODEL_CONNECTION_KEY_PATH as string,
-        OPENBOT_TS_OWNER_PASSWORD: env.OPENBOT_CONTROL_OWNER_PASSWORD as string,
-        OPENBOT_TS_AUTH_ALLOWED_ORIGINS: env.OPENBOT_CONTROL_ALLOWED_ORIGINS as string,
-        OPENBOT_TS_WRITE_ALLOWED_ORIGINS: env.OPENBOT_CONTROL_ALLOWED_ORIGINS as string,
-        OPENBOT_TS_READ_ALLOWED_ORIGINS: env.OPENBOT_CONTROL_ALLOWED_ORIGINS as string,
-        OPENBOT_TS_DATABASE_URL: env.OPENBOT_CONTROL_DATABASE_URL as string,
-        OPENBOT_TS_HOST: "127.0.0.1",
-        OPENBOT_CONTROL_WEB_ROOT: join(runtimeRoot, "apps/web/dist"),
-        OPENBOT_TS_PORT: env.OPENBOT_CONTROL_PORT as string,
-        OPENBOT_TS_PUBLIC_ORIGIN: env.OPENBOT_CONTROL_ALLOWED_ORIGINS as string,
+    PATH: "/usr/bin:/bin",
+    LANG: "C.UTF-8",
+    LC_ALL: "C.UTF-8",
+    OPENBOT_TS_WORK_FILE_ROOT: env.OPENBOT_CONTROL_ARTIFACT_ROOT as string,
+    ...configuration,
+    ...(source.TAVILY_API_KEY === undefined ? {} : { TAVILY_API_KEY: source.TAVILY_API_KEY }),
+    OPENBOT_TS_OBJECT_ROOT: env.OPENBOT_CONTROL_OBJECT_ROOT as string,
+    OPENBOT_TS_ARTIFACT_ROOT: env.OPENBOT_CONTROL_ARTIFACT_ROOT as string,
+    OPENBOT_TS_PLUGIN_STORE_PATH: env.OPENBOT_CONTROL_PLUGIN_STORE_PATH as string,
+    OPENBOT_TS_PLUGIN_LOCAL_ENDPOINTS: env.OPENBOT_CONTROL_PLUGIN_LOCAL_ENDPOINTS as string,
+    OPENBOT_TS_PARSER_WORKER_PATH: join(runtimeRoot, "apps/server/dist/parser-worker.js"),
+    OPENBOT_TS_NODE_MODULE_ROOT: join(runtimeRoot, "node_modules"),
+    OPENBOT_TS_MODEL_CONNECTION_KEY_PATH: env.OPENBOT_CONTROL_MODEL_CONNECTION_KEY_PATH as string,
+    OPENBOT_TS_OWNER_PASSWORD: env.OPENBOT_CONTROL_OWNER_PASSWORD as string,
+    OPENBOT_TS_AUTH_ALLOWED_ORIGINS: env.OPENBOT_CONTROL_ALLOWED_ORIGINS as string,
+    OPENBOT_TS_WRITE_ALLOWED_ORIGINS: env.OPENBOT_CONTROL_ALLOWED_ORIGINS as string,
+    OPENBOT_TS_READ_ALLOWED_ORIGINS: env.OPENBOT_CONTROL_ALLOWED_ORIGINS as string,
+    OPENBOT_TS_DATABASE_URL: env.OPENBOT_CONTROL_DATABASE_URL as string,
+    OPENBOT_TS_HOST: "127.0.0.1",
+    OPENBOT_CONTROL_WEB_ROOT: join(runtimeRoot, "apps/web/dist"),
+    OPENBOT_TS_PORT: env.OPENBOT_CONTROL_PORT as string,
+    OPENBOT_TS_PUBLIC_ORIGIN: env.OPENBOT_CONTROL_ALLOWED_ORIGINS as string,
   };
-  await fixedProcess(node, [migration], { ...serverEnvironment, OPENBOT_DATABASE_URL: env.OPENBOT_CONTROL_DATABASE_URL as string }, runtimeRoot, 60000);
-  const child: ChildProcessByStdio<Writable, null, null> = spawn(node, [entry], {
-    cwd: runtimeRoot, env: serverEnvironment, stdio: ["pipe", "ignore", "ignore"], shell: false,
-  });
-  let alive = true;
-  const closed = new Promise<void>((resolve) => {
-    const done = () => {
-      alive = false;
-      resolve();
-    };
-    child.once("error", done);
-    child.once("close", done);
-  });
-  child.stdin.on("error", () => undefined);
-  let stopping: Promise<void> | undefined;
-  const managed: ManagedServerProcess & {
-    readonly processIds: readonly number[];
-  } = {
-    processIds: child.pid === undefined ? [] : [child.pid],
-    isAlive: () => !stopping && alive,
-    stop() {
-      if (stopping) return stopping;
-      stopping = (async () => {
-        if (alive) {
+  const launch = async () => {
+    startup?.signal.throwIfAborted();
+    await fixedProcess(
+      node,
+      [migration],
+      { ...serverEnvironment, OPENBOT_DATABASE_URL: env.OPENBOT_CONTROL_DATABASE_URL as string },
+      runtimeRoot,
+      60000,
+      startup?.signal,
+    );
+    const child: ChildProcessByStdio<Writable, null, null> = spawn(node, [entry], {
+      cwd: runtimeRoot,
+      env: serverEnvironment,
+      stdio: ["pipe", "ignore", "ignore"],
+      shell: false,
+    });
+    let alive = true;
+    let exitCode: number | null = null;
+    const closed = new Promise<void>((resolve) => {
+      const done = () => {
+        alive = false;
+        resolve();
+      };
+      child.once("error", done);
+      child.once("close", (code) => {
+        exitCode = code;
+        done();
+      });
+    });
+    child.stdin.on("error", () => undefined);
+    let stopping: Promise<void> | undefined;
+    const managed: ManagedServerProcess & {
+      readonly processIds: readonly number[];
+    } = {
+      processIds: child.pid === undefined ? [] : [child.pid],
+      isAlive: () => !stopping && alive,
+      stop() {
+        if (stopping) return stopping;
+        stopping = (async () => {
+          if (alive) {
             child.stdin.end("SHUTDOWN\n");
             const timer = setTimeout(() => child.kill("SIGKILL"), 12000);
             try {
@@ -196,28 +212,36 @@ export async function launchTsProductServer(
             } finally {
               clearTimeout(timer);
             }
+          }
+        })();
+        return stopping;
+      },
+    };
+    try {
+      const deadline = Date.now() + 30000;
+      while (managed.isAlive() && Date.now() < deadline) {
+        startup?.signal.throwIfAborted();
+        if (
+          await verifyProductHealth(
+            env.OPENBOT_CONTROL_ALLOWED_ORIGINS as string,
+            "typescript-product-candidate",
+          )
+        ) {
+          if (managed.isAlive()) return managed;
+          break;
         }
-      })();
-      return stopping;
-    },
-  };
-  try {
-    const deadline = Date.now() + 30000;
-    while (managed.isAlive() && Date.now() < deadline) {
-      if (
-        await verifyProductHealth(
-          env.OPENBOT_CONTROL_ALLOWED_ORIGINS as string,
-          "typescript-product-candidate",
-        )
-      ) {
-        if (managed.isAlive()) return managed;
-        break;
+        await delay(100);
       }
-      await delay(100);
+      if (exitCode === 75) throw new TemporalUnavailableError();
+      throw new Error("TS product entry did not become ready.");
+    } catch (error) {
+      await managed.stop();
+      throw error;
     }
-    throw new Error("TS product entry did not become ready.");
-  } catch (error) {
-    await managed.stop();
-    throw error;
-  }
+  };
+  return waitForProductDependencies(
+    launch,
+    configuration.OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH,
+    startup,
+  );
 }

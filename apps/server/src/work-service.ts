@@ -1,6 +1,5 @@
 /** Composes the sole Work execution owner from validated ports and persisted authority. */
-import { reportFailure } from "./logging.js";
-import { LOCK_NAMESPACE } from "./database-locks.js";
+
 import { closeSync, constants, fstatSync, openSync, readFileSync } from "node:fs";
 import { isAbsolute } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
@@ -16,6 +15,8 @@ import {
   type WorkWorker,
 } from "@openbot/work";
 import { DatabaseFence } from "./database-fence.js";
+import { LOCK_NAMESPACE } from "./database-locks.js";
+import { reportFailure, startup } from "./logging.js";
 import type { ModelConnections } from "./model-connections.js";
 import type { ModelTransport } from "./model-network.js";
 import type { OwnerFiles } from "./owner-files.js";
@@ -164,12 +165,14 @@ export class WorkService {
       },
     };
     try {
-      this.connection = await Connection.connect({
-        address: this.options.address,
-        tls,
-        connectTimeout: 10000,
-        interceptors: [],
-      });
+      this.connection = await startup("temporal-connect", () =>
+        Connection.connect({
+          address: this.options.address,
+          tls,
+          connectTimeout: 10000,
+          interceptors: [],
+        }),
+      );
       const engine = new TemporalEngine(
         new Client({ connection: this.connection, namespace: this.options.namespace }),
       );

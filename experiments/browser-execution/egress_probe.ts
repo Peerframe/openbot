@@ -1,4 +1,4 @@
-// Actual Squid fixture, invoked only by qualify_egress.py in an owned network-none container.
+// Actual Squid fixture, invoked only by qualify-egress.ts in an owned network-none container.
 // All synthetic addresses, including public-shaped canaries, belong to its loopback namespace.
 import assert from "node:assert/strict";
 import { type ChildProcessByStdio, execFileSync, spawn } from "node:child_process";

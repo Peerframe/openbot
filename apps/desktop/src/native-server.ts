@@ -30,6 +30,11 @@ export interface ManagedServerProcess {
   stop(): Promise<void>;
   isAlive(): boolean;
 }
+export interface NativeStartupContext {
+  signal: AbortSignal;
+  waiting(reason: "docker_unavailable" | "temporal_unavailable", localDocker: boolean): void;
+  waitForRetry(): Promise<void>;
+}
 export interface NativeServerOptions {
   runtimeRoot: string;
   dataRoot: string;
@@ -37,7 +42,10 @@ export interface NativeServerOptions {
   localServiceSupported?: boolean;
   encrypt(value: string): string | Promise<string>;
   decrypt(value: string): string | Promise<string>;
-  launchServer(env: Record<string, string>): Promise<ManagedServerProcess>;
+  launchServer(
+    env: Record<string, string>,
+    startup: NativeStartupContext,
+  ): Promise<ManagedServerProcess>;
   connect(serverUrl: string, ownerPassword: string): Promise<void>;
   authenticate(serverUrl: string, ownerPassword: string): Promise<void>;
 }
@@ -51,6 +59,8 @@ export class NativeServerController {
   #windowsPostgres: WindowsPostgresProcess | undefined;
   #server: ManagedServerProcess | undefined;
   #stopping = false;
+  #startupAbort = new AbortController();
+  #retry: (() => void) | undefined;
   #ownedUrl: string | undefined;
   readonly #sessionRecovery = new LocalSessionRecovery();
 
@@ -79,9 +89,13 @@ export class NativeServerController {
 
   start(): Promise<NativeServerState> {
     if (this.#stopping) return Promise.resolve({ status: "failed", code: "stopping" });
-    if (this.#pending) return this.#pending;
+    if (this.#pending) {
+      this.#retry?.();
+      return this.#pending;
+    }
     if (this.#state.status === "ready" && this.#server?.isAlive())
       return Promise.resolve(this.getState());
+    this.#startupAbort = new AbortController();
     this.#pending = this.#start()
       .catch(async (error: unknown) => {
         // Trusted main-process diagnostics never cross the renderer state/IPC boundary.
@@ -246,22 +260,32 @@ export class NativeServerController {
     this.#state = { status: "installing", mode, step: "server" };
     const port = await availablePort();
     const url = `http://127.0.0.1:${port}`;
-    this.#server = await this.#options.launchServer({
-      ...nativeEnvironment(),
-      OPENBOT_HOST: "127.0.0.1",
-      OPENBOT_PORT: String(port),
-      OPENBOT_DATABASE_URL: databaseUrl,
-      OPENBOT_OWNER_PASSWORD: secrets.ownerPassword,
-      OPENBOT_ALLOWED_ORIGINS: url,
-      OPENBOT_OBJECT_STORE_PATH: join(dataRoot, "objects"),
-      OPENBOT_MODEL_SETTINGS_PATH: join(dataRoot, "model-settings.json"),
-      ...(secrets.modelKey ? { OPENBOT_MODEL_ENCRYPTION_KEY: secrets.modelKey } : {}),
-      ...(process.env.OPENBOT_PLUGIN_LOCAL_ENDPOINTS
-        ? { OPENBOT_PLUGIN_LOCAL_ENDPOINTS: process.env.OPENBOT_PLUGIN_LOCAL_ENDPOINTS }
-        : {}),
-      ...desktopSearchEnvironment(),
-      OPENBOT_LOG_LEVEL: "error",
-    });
+    this.#server = await this.#options.launchServer(
+      {
+        ...nativeEnvironment(),
+        OPENBOT_HOST: "127.0.0.1",
+        OPENBOT_PORT: String(port),
+        OPENBOT_DATABASE_URL: databaseUrl,
+        OPENBOT_OWNER_PASSWORD: secrets.ownerPassword,
+        OPENBOT_ALLOWED_ORIGINS: url,
+        OPENBOT_OBJECT_STORE_PATH: join(dataRoot, "objects"),
+        OPENBOT_MODEL_SETTINGS_PATH: join(dataRoot, "model-settings.json"),
+        ...(secrets.modelKey ? { OPENBOT_MODEL_ENCRYPTION_KEY: secrets.modelKey } : {}),
+        ...(process.env.OPENBOT_PLUGIN_LOCAL_ENDPOINTS
+          ? { OPENBOT_PLUGIN_LOCAL_ENDPOINTS: process.env.OPENBOT_PLUGIN_LOCAL_ENDPOINTS }
+          : {}),
+        ...desktopSearchEnvironment(),
+        OPENBOT_LOG_LEVEL: "error",
+      },
+      {
+        signal: this.#startupAbort.signal,
+        waiting: (reason, localDocker) => {
+          this.#state = { status: "waiting", mode, reason, localDocker };
+        },
+        waitForRetry: () => this.#waitForRetry(),
+      },
+    );
+    this.#startupAbort.signal.throwIfAborted();
     this.#ownedUrl = url;
     this.#state = { status: "installing", mode, step: "connecting" };
     await waitUntil(async () => {
@@ -283,8 +307,26 @@ export class NativeServerController {
     return this.getState();
   }
 
+  async #waitForRetry(): Promise<void> {
+    const signal = this.#startupAbort.signal;
+    signal.throwIfAborted();
+    await new Promise<void>((resolve, reject) => {
+      const finish = () => {
+        clearTimeout(timer);
+        signal.removeEventListener("abort", finish);
+        this.#retry = undefined;
+        if (signal.aborted) reject(signal.reason);
+        else resolve();
+      };
+      const timer = setTimeout(finish, 3000);
+      this.#retry = finish;
+      signal.addEventListener("abort", finish, { once: true });
+    });
+  }
+
   async stop(): Promise<void> {
     this.#stopping = true;
+    this.#startupAbort.abort();
     await this.#pending;
     await this.#stopChildren();
     this.#state = { status: "idle" };

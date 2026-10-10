@@ -1,6 +1,8 @@
 /** Read-only deployment preflight for retiring legacy execution; never imported by the running Server. */
+
 import { createHash } from "node:crypto";
 import { type Client, WorkflowNotFoundError } from "@openbot/work";
+import { startup } from "../../apps/server/dist/logging.js";
 import type { WorkDb, WorkTransactions } from "../../apps/server/dist/work-handoff.js";
 
 const legacyTypes = new Set(["OpenBotWorkV1", "OpenBotClosedRepairV1"]);
@@ -299,7 +301,12 @@ export function requireLegacyWork(report: LegacyWorkReport) {
 }
 
 /** Run after schema migration and before replacing the old process. It grants no execution authority. */
-export async function verifyLegacyWorkPreflight(databaseUrl: string, installed: ReturnType<typeof import("../../apps/server/dist/work-installation.js").loadWorkInstallation>) {
+export async function verifyLegacyWorkPreflight(
+  databaseUrl: string,
+  installed: ReturnType<
+    typeof import("../../apps/server/dist/work-installation.js").loadWorkInstallation
+  >,
+) {
   const { Connection, Client } = await import("@openbot/work");
   const { workTransactions } = await import("../../apps/server/dist/work-handoff.js");
   const { readWorkInstallationFile } = await import("../../apps/server/dist/work-installation.js");
@@ -307,13 +314,33 @@ export async function verifyLegacyWorkPreflight(databaseUrl: string, installed: 
   const transactions = workTransactions(databaseUrl);
   let connection: Awaited<ReturnType<typeof Connection.connect>> | undefined;
   try {
-    connection = await Connection.connect({ address: options.address, connectTimeout: 10000, interceptors: [], tls: {
+    // Read/validate credentials outside the connection phase: corrupt files are not an engine outage.
+    const tls = {
       serverNameOverride: options.tls.serverName,
       serverRootCACertificate: readWorkInstallationFile(options.tls.ca, false, 65536),
-      clientCertPair: { crt: readWorkInstallationFile(options.tls.certificate, false, 65536), key: readWorkInstallationFile(options.tls.key, true, 65536) },
-    } });
-    const report = await auditLegacyWork(transactions, new Client({ connection, namespace: options.namespace }), installed.legacyQueue, AbortSignal.timeout(25000));
+      clientCertPair: {
+        crt: readWorkInstallationFile(options.tls.certificate, false, 65536),
+        key: readWorkInstallationFile(options.tls.key, true, 65536),
+      },
+    };
+    connection = await startup("temporal-connect", () =>
+      Connection.connect({
+        address: options.address,
+        connectTimeout: 10000,
+        interceptors: [],
+        tls,
+      }),
+    );
+    const report = await auditLegacyWork(
+      transactions,
+      new Client({ connection, namespace: options.namespace }),
+      installed.legacyQueue,
+      AbortSignal.timeout(25000),
+    );
     requireLegacyWork(report);
     return report;
-  } finally { await transactions.close(); await connection?.close(); }
+  } finally {
+    await transactions.close();
+    await connection?.close();
+  }
 }

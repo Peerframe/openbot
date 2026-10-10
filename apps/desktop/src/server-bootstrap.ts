@@ -184,13 +184,22 @@ export async function preparePrivateDirectories(env: Record<string, string>) {
   }
 }
 
+/** Exit 75 is emitted only by the bundled Desktop entry's Temporal connection phase. */
+export class TemporalUnavailableError extends Error {
+  constructor() {
+    super("Temporal connection is unavailable.");
+  }
+}
+
 export async function fixedProcess(
   executable: string,
   args: string[],
   env: Record<string, string>,
   cwd: string,
   timeout: number,
+  signal?: AbortSignal,
 ) {
+  signal?.throwIfAborted();
   await new Promise<void>((resolve, reject) => {
     const child = spawn(executable, args, {
       cwd,
@@ -199,13 +208,24 @@ export async function fixedProcess(
       shell: false,
     });
     const timer = setTimeout(() => child.kill("SIGKILL"), timeout);
+    const abort = () => {
+      child.kill("SIGKILL");
+    };
+    signal?.addEventListener("abort", abort, { once: true });
     child.once("error", () => {
       clearTimeout(timer);
+      signal?.removeEventListener("abort", abort);
       reject(new Error("Server preflight failed."));
     });
     child.once("close", (code) => {
       clearTimeout(timer);
-      code === 0 ? resolve() : reject(new Error("Server preflight failed."));
+      signal?.removeEventListener("abort", abort);
+      if (signal?.aborted) reject(signal.reason);
+      else if (code === 0) resolve();
+      else
+        reject(
+          code === 75 ? new TemporalUnavailableError() : new Error("Server preflight failed."),
+        );
     });
   });
 }
