@@ -24,7 +24,7 @@ A self-hosted workspace for Bots that remember their roles, work together in cha
 
 ## Download
 
-Current source uses the Python Server. New builds provide a local service on Apple Silicon Mac; Windows and Intel Mac connect to a remote Python service. The published alpha.9 installers below remain historical artifacts; this source change does not update existing installations or convert their data.
+Current source uses the TypeScript Server. New builds provide a local service on Apple Silicon Mac; Windows and Intel Mac connect to a remote TypeScript service. The published alpha.9 installers below remain historical artifacts; this source change does not update existing installations or convert their data.
 
 **Desktop 0.1.0-alpha.9**
 
@@ -57,15 +57,15 @@ OpenBot currently serves one workspace Owner. Delegation is bounded, and compute
 
 ## Run from source
 
-Use **Node.js 22.22.2**, **npm 10.9.9** Python 3.12, and Docker for the local PostgreSQL service.
+Use **Node.js 22.22.2**, **npm 10.9.9**, Docker for PostgreSQL, and an explicit [mTLS Temporal configuration](deploy/temporal/README.md).
 
 ```sh
 git clone https://github.com/Peerframe/openbot.git
 cd openbot
 npm ci
-apps/server-python/scripts/bootstrap-worker.sh
 cp .env.example .env
-# Set OPENBOT_CONTROL_OWNER_PASSWORD in .env to a random password of at least 15 characters.
+# Set OPENBOT_TS_OWNER_PASSWORD to a random password of at least 15 characters.
+# Set OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH to your private Temporal configuration.
 npm run db:up
 npm run dev
 ```
@@ -86,7 +86,7 @@ Desktop and Web share a React interface. The Server owns Bot identities, routing
 | --- | --- |
 | [apps/web](apps/web) | Shared workspace UI |
 | [apps/desktop](apps/desktop) | Electron shell, local services and packaging |
-| [apps/server-python](apps/server-python) | API, model execution, collaboration and authorization |
+| [apps/server](apps/server) | API, model execution, collaboration and authorization |
 | [apps/node](apps/node) · [Worker Hosts](docs/NODE_ENROLLMENT.md) | Enrolled execution and native lifecycle |
 | [packages](packages) · [providers](providers) | Shared contracts and execution adapters |
 | [openbot-website](https://github.com/Peerframe/openbot-website) | Independent website, manuals and demo |

@@ -1,8 +1,8 @@
 #!/bin/sh
-# Called through maintain.py after both databases pass read-only preflight.
+# Called through maintain.ts after both databases pass read-only preflight.
 # This guard prevents accidental raw use; a trusted administrator can bypass it.
 set -eu
-[ "${OPENBOT_TEMPORAL_SCHEMA_PREFLIGHT:-}" = passed ] || { echo 'Use maintain.py for schema maintenance.' >&2; exit 2; }
+[ "${OPENBOT_TEMPORAL_SCHEMA_PREFLIGHT:-}" = passed ] || { echo 'Use maintain.ts for schema maintenance.' >&2; exit 2; }
 mode=${1:-}
 case "$mode" in initialize|upgrade) ;; *) exit 2 ;; esac
 for database in temporal temporal_visibility; do

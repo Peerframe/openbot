@@ -35,10 +35,6 @@
   ],
   "globalDependencies": [
     "scripts/**",
-    "apps/server-python/requirements*.lock",
-    "packages/harness/distribution.lock",
-    "packages/harness/pyproject.toml",
-    "packages/harness/scripts/**",
     ".github/workflows/**"
   ]
 }

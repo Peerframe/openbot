@@ -117,7 +117,7 @@ fixes reuse valid decisions and reviewed versions; they do not reopen the full l
 | Untrusted PNG validation candidates | [`image-js/fast-png` 8.0.0](https://github.com/image-js/fast-png/tree/v8.0.0) and [`sharp` 0.35.0](https://github.com/lovell/sharp/tree/v0.35.0) | MIT; Apache-2.0 | Defer full decode-and-normalize validation. `fast-png` does not expose an input-pixel resource limit; `sharp` does, but its native package must pass the Server's Linux x64/arm64 packaging matrix first. The current signature check is explicitly not a well-formedness claim. |
 | Node protocol input validation | [Zod 4.5.4 `e8e206fa`](https://github.com/colinhacks/zod/tree/e8e206fa33ac5fe7ce20a2beb12d57b1cb3df653), [OWASP Cheat Sheet Series `b8586414`](https://github.com/OWASP/CheatSheetSeries/tree/b8586414a5c47ae68911edb97d4e7b7bc6301035), and [MCP TypeScript SDK `5119ee7f`](https://github.com/modelcontextprotocol/typescript-sdk/tree/5119ee7fd7790e335a3fb60ef36f85334e2a6326) | MIT; documentation CC BY-SA 4.0; MIT | Reuse the existing pinned Zod dependency for strict envelopes and field bounds, and apply OWASP's allowlist/range guidance. OpenBot keeps only the protocol-specific bounded approval-evidence walk; MCP was reviewed as prior art but does not share the Node authority contract. No upstream source was copied. |
 | Bounded Server shutdown | [Node.js HTTP docs `2645dc73`](https://github.com/nodejs/node/blob/2645dc73720b1b4f27c49f395d3c66025ce126cc/doc/api/http.md), [`@hono/node-server` `73c03adf`](https://github.com/honojs/node-server/tree/73c03adfb01928fcd5f5b20faebd5d692f83fc93), [Fastify lifecycle docs `af079bd4`](https://github.com/fastify/fastify/blob/af079bd4c60c3cbebedc7640517d7288468fb5eb/docs/Reference/Server.md), and [`@godaddy/terminus` `aea2f6de`](https://github.com/godaddy/terminus/tree/aea2f6de06dbc9f631dd4ac8a21b91c052add3ce) | MIT | Reuse the native Node close/idle/force lifecycle already returned by Hono. Keep only OpenBot's missing dispatcher-tail drain locally; do not add Terminus because it cannot observe Server-owned Run commits. No upstream source was copied. |
-| Server production container | [Node.js `v24.21.0` LTS](https://nodejs.org/en/blog/release/v24.21.0), official [`node:24.21.0-bookworm-slim` source `93a7bafc`](https://github.com/nodejs/docker-node/tree/93a7bafc324a85ac1ee461604cff87cffacb6d7a/24/bookworm-slim) and OCI index `sha256:2fe369e969550cde8e867afc3fe370b260140cab4a23d467074295b42163d553`, [Dockerfile](https://docs.docker.com/reference/dockerfile/), [build-check](https://docs.docker.com/reference/build-checks/), and [multi-platform](https://docs.docker.com/build/building/multi-platform/) contracts; rejected official Node `24.20.0-alpine3.24`; Dependabot Docker `ignore` for `node` `version-update:semver-major` | Node.js license; MIT image source plus bundled Debian component licenses; Apache-2.0 documentation; rejected image has bundled Alpine licenses; GitHub Dependabot config terms | Select the exact multi-platform Bookworm-slim image because Node 24 glibc amd64 and arm64 are Tier 1, then use a thin local multi-stage adapter that keeps only the Server production closure, migrations, and a Node health probe under the unprivileged `node` user. Reject Alpine for this production baseline while musl remains Experimental and non-x64 musl images lack equivalent pre-release testing. Keep Node 24 Active LTS; ignore automatic Dependabot Docker major bumps (do not take Current Node 26 via Dependabot) until LTS + Corepack/npm prep + dual-arch health/migration re-review. Native hosted builds and PostgreSQL migration/health/restart/`SIGTERM` smoke are required, but do not publish an image or establish platform support. No upstream source is copied; see [research evidence](research/server-node24-production-container.md). |
+| Server production container | [Node.js `v24.21.0` LTS](https://nodejs.org/en/blog/release/v24.21.0), official [`node:24.21.0-bookworm-slim` source `93a7bafc`](https://github.com/nodejs/docker-node/tree/93a7bafc324a85ac1ee461604cff87cffacb6d7a/24/bookworm-slim) and OCI index `sha256:2fe369e969550cde8e867afc3fe370b260140cab4a23d467074295b42163d553`, [Dockerfile](https://docs.docker.com/reference/dockerfile/), [build-check](https://docs.docker.com/reference/build-checks/), and [multi-platform](https://docs.docker.com/build/building/multi-platform/) contracts; rejected official Node `24.20.0-alpine3.24`; Dependabot Docker `ignore` for `node` `version-update:semver-major` | Node.js license; MIT image source plus bundled Debian component licenses; Apache-2.0 documentation; rejected image has bundled Alpine licenses; GitHub Dependabot config terms | Select the exact multi-platform Bookworm-slim image because Node 24 glibc amd64 and arm64 are Tier 1, then use a thin local multi-stage adapter that keeps only the Server production closure, migrations, and a Node health probe under the unprivileged `node` user. Reject Alpine for this production baseline while musl remains Experimental and non-x64 musl images lack equivalent pre-release testing. Keep Node 24 Active LTS; ignore automatic Dependabot Docker major bumps (do not take Current Node 26 via Dependabot) until LTS + Corepack/npm prep + dual-arch health/migration re-review. Native hosted builds and PostgreSQL migration/health/restart/`SIGTERM` smoke are required, but do not publish an image or establish platform support. No upstream source is copied; see [research evidence](research/server-node 24-production-container.md). |
 | PostgreSQL migration integrity | [Drizzle ORM 0.45.2 `e7dfa145`](https://github.com/drizzle-team/drizzle-orm/tree/e7dfa14519f363229ccc3ead7b1b2f2051937efb), [Postgres.js 3.4.9](https://github.com/porsager/postgres/tree/v3.4.9), [PostgreSQL 17 `ec3f6a6a`](https://github.com/postgres/postgres/tree/ec3f6a6a7dd82a8ce455a0710ef75172f9f318d1), and [Docker Official Image `2603e26e`](https://github.com/docker-library/postgres/tree/2603e26e245e558218728ee14e0a42dcb020dc7f) | Apache-2.0; Unlicense; PostgreSQL License; MIT plus PostgreSQL components | Keep Drizzle's migrator with its required dedicated `max: 1` Postgres.js client. Add only a database advisory lock and exact-prefix hash/timestamp validation to close documented high-water and concurrent-start gaps. Pin PostgreSQL 17.11 bookworm for amd64/arm64 and test against a real CI service. No upstream source was copied. |
 | Server-authoritative approval policy | [CEL specification `v0.25.2` / `cb51b417`](https://github.com/google/cel-spec/tree/cb51b4176013ad19bd00df94be273c322916a620), [OPA `v1.16.2` / `85f6d990`](https://github.com/open-policy-agent/opa/tree/85f6d990d19094da38e829561813e7da7fbae272), and [Cerbos `v0.46.0`](https://github.com/cerbos/cerbos/tree/v0.46.0) | Apache-2.0 | Keep the existing local evaluator and add the missing Server-owned static action/target/minimum-risk catalog. CEL is the preferred future expression candidate, but CEL, OPA, and Cerbos do not supply OpenBot's signed policy distribution or capability-lease lifecycle and would add premature authority/configuration surfaces. No upstream source is copied; see [research evidence](research/dev-001-short-term-hardening.md). |
 | Capability lease protocol (DEV-001 H2 design) | [RFC 9449 DPoP](https://datatracker.ietf.org/doc/rfc9449/), [RFC 9396 RAR](https://datatracker.ietf.org/doc/rfc9396/), [RFC 7519 JWT](https://datatracker.ietf.org/doc/html/rfc7519), selected [`jose@6.2.12`](https://www.npmjs.com/package/jose/v/6.2.12) / tag object [`99eaf5ed`](https://github.com/panva/jose/tree/v6.2.12) → commit [`505a55b8f73536082367b2614cb77e927ba96ec1`](https://github.com/panva/jose/commit/505a55b8f73536082367b2614cb77e927ba96ec1) ([`JWTVerifyOptions`](https://github.com/panva/jose/blob/main/docs/jwt/verify/interfaces/JWTVerifyOptions.md); [Node alg matrix #262](https://github.com/panva/jose/issues/262) lists `EdDSA` + `Ed25519`), compared [SPIRE `v1.15.3` / `2f7861ae`](https://github.com/spiffe/spire/releases/tag/v1.15.3), [PASETO `4.0.1` / `5c7812e818c1`](https://github.com/panva/paseto/tree/5c7812e818c1d50a47ce3baf107614c42ae16c43), [`macaroons.js` `0.3.9` / `0a036117`](https://github.com/nitram509/macaroons.js/tree/0a0361174a07), [Branca `0.5.0` / `498bb5f7`](https://github.com/tuupola/branca-js/tree/498bb5f76316), and Node.js `crypto.generateKeyPairSync('ed25519')` on engines `^22.22.2 or ^24.15.0 or >=26.0.0` | IETF Trust; MIT (jose, zero runtime deps); compared Apache-2.0/MIT; Node.js license | Proposed CONVERGE (gate not closed): **select jose@6.2.12** for JWS Compact JWT encode/verify; pin header `alg` to fully-specified **`Ed25519`** (reject `EdDSA` unless signing API forces a documented single-alg freeze); Server signs with private key, Node verifies with pinned public `kid` only (no `jku`/`jwk` remote fetch); Server owns PostgreSQL atomic approve+issue and single-consume/revoke races — **"library lacks lease-store semantics" is not a reason to reject jose for signature encoding**. Adopt RFC 9449/9396 claim/binding ideas; required `providerId` for side effects; protocol downgrade rejection; token ≤8192 bytes. Do not add SPIRE/OAuth/PASETO/macaroons/Branca. No runtime change until Accept + coding slice; Providers stay disabled. See [research](research/capability-lease-protocol.md) and [ADR-0045](decisions/0045-capability-lease-protocol.md). |
@@ -125,7 +125,7 @@ fixes reuse valid decisions and reviewed versions; they do not reopen the full l
 | Structured redacted operational logging | [Pino `10.3.1` / `6b344980`](https://github.com/pinojs/pino/tree/6b344980eae3ebed904fc87caf4bba0ab9dbe946), [Winston `3.19.0`](https://github.com/winstonjs/winston/tree/v3.19.0), and [OWASP Cheat Sheet Series `b8586414`](https://github.com/OWASP/CheatSheetSeries/tree/b8586414a5c47ae68911edb97d4e7b7bc6301035) | MIT; MIT; documentation CC BY-SA 4.0 | Use Pino behind a narrow local allowlisted API for levels, child correlation fields, and redaction. Do not expose generic object/error logging from control-plane code. Winston's transport breadth is unnecessary. No upstream source is copied; see [research evidence](research/dev-001-short-term-hardening.md). |
 | Web component interaction tests | [jsdom `30.0.1` / `6584485f`](https://github.com/jsdom/jsdom/tree/6584485f094d5b271553005b68804c93a455c002), [Happy DOM `20.14.0` / `eac5a380`](https://github.com/capricorn86/happy-dom/tree/eac5a38026b0569f2d52b609b2bb4cbaa94d9644), and [Vitest `5.0.0` / `f441c6fa`](https://github.com/vitest-dev/vitest/tree/f441c6fab25e579c5b7dd3dd50538416f415fbae) (jsdom env; browser mode still future) | MIT | Use exact-pinned jsdom only as a development test environment for React form, focus, button, alert, and async-state behavior under the root Vitest 5.0.0 runner. It matches the repository Node floor and needs no browser download or application network access. Happy DOM has relevant open disabled-control/timer differences; Vitest browser mode remains the future rendered cross-browser layer. No upstream source is copied; see [research evidence](research/dev-001-short-term-hardening.md) and Vitest 5 migration. |
 | CI dependency and secret scanning | [TruffleHog `3.97.1` / `20652fbb`](https://github.com/trufflesecurity/trufflehog/tree/20652fbbdefffcdaa493a5bf57ab2ac6b1db715b), [Gitleaks `v8.27.2` / `c7acf33`](https://github.com/gitleaks/gitleaks/tree/c7acf33), and [npm CLI `10.9.9` / `745d8d90`](https://github.com/npm/cli/tree/745d8d90b5403110d26ba332ba83d8c5a51f0578) | AGPL-3.0; MIT; Artistic-2.0 | Run TruffleHog as a read-only, digest-pinned CI container with verification and updates disabled; it is not linked into or shipped with OpenBot. Select the exact reviewed npm CLI, use `npm ci --ignore-scripts` to validate and construct the complete lock tree, then run the production-only audit fail closed. Gitleaks remains the reserve static alternative; its official action's separate organization license is not adopted. See [research evidence](research/dev-001-short-term-hardening.md). See [exact historical fixture triage](research/credential-scan-fixture-triage.md) for the JSON adapter; full history and all detectors remain scanned. |
-| Browser egress hardening | [Squid7.7 `173863d3`](https://github.com/squid-cache/squid/tree/173863d3ec547d7fc5227ddbb5d8093c88b4842f), [OWASP SSRF Prevention Cheat Sheet `b8586414`](https://github.com/OWASP/CheatSheetSeries/blob/b8586414a5c47ae68911edb97d4e7b7bc6301035/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.md) and [agent-computer `257c1280`](https://github.com/CopilotKit/openbot/tree/257c1280d684089be9adb0b35cce262efc7064bf/agent-computer) | Separate Squid executable GPL-2.0-or-later; documentation CC BY-SA4.0; adapter MIT | Proxy-only qualification passed20 real cases; host enforcement remains unqualified. Squid exact name/port/source policy requires host packet enforcement and tunnel teardown; DNS preflight is not isolation. Keep product origins restricted to trusted fixtures. See [selected Linux boundary](research/linux-execution-boundary.md), [compiler/runtime record](research/browser-egress-policy.md) and [earlier gap](research/dev-001-short-term-hardening.md). |
+| Browser egress hardening | [Squid 7.7 `173863d3`](https://github.com/squid-cache/squid/tree/173863d3ec547d7fc5227ddbb5d8093c88b4842f), [OWASP SSRF Prevention Cheat Sheet `b8586414`](https://github.com/OWASP/CheatSheetSeries/blob/b8586414a5c47ae68911edb97d4e7b7bc6301035/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.md) and [agent-computer `257c1280`](https://github.com/CopilotKit/openbot/tree/257c1280d684089be9adb0b35cce262efc7064bf/agent-computer) | Separate Squid executable GPL-2.0-or-later; documentation CC BY-SA 4.0; adapter MIT | Proxy-only qualification passed 20 real cases; host enforcement remains unqualified. Squid exact name/port/source policy requires host packet enforcement and tunnel teardown; DNS preflight is not isolation. Keep product origins restricted to trusted fixtures. See [selected Linux boundary](research/linux-execution-boundary.md), [compiler/runtime record](research/browser-egress-policy.md) and [earlier gap](research/dev-001-short-term-hardening.md). |
 | Office visualization | Public Tencent Marvis product imagery supplied by the project owner | No reusable source-code license identified | Visual inspiration only. No Marvis code or assets are incorporated; the office remains a deferred optional plugin. |
 
 ## Retroactive coverage map
@@ -395,7 +395,7 @@ PostgreSQL rows and validates existing Owner sessions; the default TypeScript Se
 writes; explicit Owner-auth selection is reviewed below. The fixed SQL history, read-only transactions, bounded requests and revocation checks
 remain explicit. No upstream source copied, second migration engine or model authority added.
 Installed dependency notices remain intact. See [research](research/python-control-read-slice.md)
-and [development/paired fixture](../apps/server-python/README.md).
+and [development/paired fixture](https://github.com/Peerframe/openbot/blob/e25d91520dbda664705a77c76c1af456a064a39d/apps/server-python/README.md).
 
 ## Python Owner-auth reference (2026-09-23)
 
@@ -496,15 +496,15 @@ production checkpoint protocol or select an orchestration engine.
 
 ## Fenced work publication (2026-09-23)
 
-Reuse CPython3.12.13 POSIX descriptor/file APIs (PSF), PostgreSQL17.11 transactions and existing
-psycopg3.3.6, the reviewed OCI size/digest invariant and RFC6266 attachment disposition. No new
+Reuse CPython 3.12.13 POSIX descriptor/file APIs (PSF), PostgreSQL 17.11 transactions and existing
+psycopg 3.3.6, the reviewed OCI size/digest invariant and RFC6266 attachment disposition. No new
 dependency or copied upstream code. Application epochs fence writes but do not schedule retries;
 files stay in a private control-owned root. See [publication research](research/work-artifact-publication.md).
 
 ## Official SDK durability composition (2026-09-23)
 
 The [eight-case integration probe](research/sdk-durability-integration.md) uses existing pinned
-Pydantic AI2.47.0, DBOS3.0.0 and Temporal Python1.33.0 public adapters (MIT); no upstream source
+Pydantic AI 2.47.0, DBOS3.0.0 and Temporal Python 1.33.0 public adapters (MIT); no upstream source
 copied or changed. Its separate environment composes the existing lock files. Temporal is the next
 public-work reference candidate, not a production engine selection; DBOS/deferred JSON remains
 viable. Product dependencies, default dispatch and private data remain unchanged.
@@ -512,7 +512,7 @@ viable. Product dependencies, default dispatch and private data remain unchanged
 ## Public work recovery journey (2026-09-23)
 
 Reuse the pinned official Temporal/Pydantic AI adapters and existing PostgreSQL control stores.
-A thin acceptance adapter records engine facts under the existing Task lock; CPython3.12 sqlite3
+A thin acceptance adapter records engine facts under the existing Task lock; CPython 3.12 sqlite3
 (PSF) backs only the independent fake HTTP receipts. No new product dependency, recovery scheduler,
 public trusted-write route or upstream source copy. See [integration review](research/work-temporal-journey.md)
 and [executable reference](../experiments/work-journey/README.md).
@@ -534,19 +534,19 @@ control-owned effects. No new dependency or copied upstream code. See
 ## Temporal persistence and Linux boundary review (2026-09-23)
 
 The [PostgreSQL profile](research/temporal-postgres-operations.md) uses Temporal Server/admin1.32.0
-`d94e34a1ebba5410a2e7d07119a76896909591aa` (MIT), existing PostgreSQL17.11 and official SQL/backup
+`d94e34a1ebba5410a2e7d07119a76896909591aa` (MIT), existing PostgreSQL 17.11 and official SQL/backup
 tools. Compose topology is adapted from samples-server `f811a033a5e79402cab9f792cea132f50344bd17`;
 its full MIT notice is retained in deploy/temporal/THIRD_PARTY_NOTICES.md. No engine source copy,
 custom migrator or product dependency change. The [Linux design](research/linux-execution-boundary.md)
-reviews OCI1.3, Docker29.8.1, runsc release-20260914.0 (Apache-2.0), Squid7.7 (GPL-2.0 separate
+reviews OCI 1.3, Docker 29.8.1, runsc release-20260914.0 (Apache-2.0), Squid 7.7 (GPL-2.0 separate
 process), Firecracker1.17 and OpenSandbox1.1 candidates, with exact commits and limits there.
 The [VPS qualification extension](research/linux-vps-qualification.md) reuses these exact pins and systemd255 namespace primitives; implementation is in progress, not qualified. No upstream source is copied. Browser mechanics retain the
 existing MIT attribution. Command and browser authority/resource/egress gates remain explicit.
 
 ## Trusted engine transport and history replay (2026-09-23)
 
-Reuse Temporal Server1.32.0 native mTLS and Temporal Python1.33.0 TLSConfig/Replayer with the
-existing Pydantic AI2.47.0 plugin (all MIT; exact commits in the research). Disposable PKI uses
+Reuse Temporal Server1.32.0 native mTLS and Temporal Python 1.33.0 TLSConfig/Replayer with the
+existing Pydantic AI 2.47.0 plugin (all MIT; exact commits in the research). Disposable PKI uses
 OpenSSL CLI only as a test issuer, not a shipped CA or custom crypto. The Compose overlay follows
 the already-attributed upstream topology. No copied engine/SDK implementation, new dependency or
 product default change. See [transport](research/temporal-transport-security.md). mTLS authenticates one trusted control group, not
@@ -563,7 +563,7 @@ The two releases share the entire PostgreSQL schema tree. See [pins and actual q
 
 ## Durable model observations and optional OpenAI port (2026-09-24)
 
-Reuse Pydantic AI2.47.0 and OpenAI3.17.0 with explicit control-owned configuration, bounded
+Reuse Pydantic AI 2.47.0 and OpenAI3.17.0 with explicit control-owned configuration, bounded
 transport and SDK retries disabled. Existing Action authority and immutable LocalWorkFiles retain
 model replies before engine acknowledgement. Missing receipts remain unknown, never permission
 to resend. Activity recovery and historical settlement grant no new authority. The initial port
@@ -583,7 +583,7 @@ model oracles are retained with exact commit/hash for shallow checkouts. See
 
 ## Product deferred approval (2026-09-24)
 
-Reuse the same Pydantic AI2.47.0 ExternalToolset/DeferredToolResults and Temporal1.33.0
+Reuse the same Pydantic AI 2.47.0 ExternalToolset/DeferredToolResults and Temporal 1.33.0
 Activity/timer APIs, with the existing control Action, approval and reconciliation stores.
 Control retains immutable proposals and performs authorization; SDK declarations do not grant
 execution. No upstream code copied, dependency or schema added. See
@@ -591,14 +591,14 @@ execution. No upstream code copied, dependency or schema added. See
 
 ## Product closed-workflow lookup (2026-09-24)
 
-Reuse Temporal Python1.33.0 exact-history and REJECT_DUPLICATE APIs, the accepted closed-history
+Reuse Temporal Python 1.33.0 exact-history and REJECT_DUPLICATE APIs, the accepted closed-history
 reference and existing Action/reconciliation transactions. Historical binding proves origin only;
 lookup cannot resume execution. No new schema/dependency or upstream code copied. See
 [scope and independent review](research/work-closed-repair.md).
 
 ## Product Owner corrections (2026-09-24)
 
-Reuse pinned Pydantic AI2.47.0 history/DeferredToolResults, Temporal1.33.0 Activities and
+Reuse pinned Pydantic AI 2.47.0 history/DeferredToolResults, Temporal 1.33.0 Activities and
 PostgreSQL Task locks. Small additive domain records bind immutable instruction contexts to
 existing proposal/admission/publication gates. No SDK fork or source copy; see
 [review and acceptance boundary](research/work-owner-corrections.md).
@@ -652,7 +652,7 @@ DeepSeek implemented the thin TypeScript adapter; integration retains exact-orig
 new-Task page scope, original observation/reference/connection checks and no-retry recovery. No
 production dependency or upstream implementation is copied. The reproducible fixture separately
 fetches hash-pinned MIT upstream sources with their license and locks the existing Playwright pair.
-Official MIT setup-bun2.2.0 (commit0c5077e51419868618aeaa5fe8019c62421857d6) installs Bun1.3.14 in CI;
+Official MIT setup-bun2.2.0 (commit0c5077e51419868618aeaa5fe8019c62421857d6) installs Bun 1.3.14 in CI;
 source, tests, release and open issues are recorded in the review. Actual local Worker restart,
 approvals, Unicode input, read/report/download and replay passed with synthetic model HTTP.
 Public egress and isolated Linux browser product execution remain unqualified.
@@ -720,10 +720,10 @@ real Linux product qualification remains open.
 ## Protected command Host and Unix transport (2026-09-25)
 
 The protected Host reuses the reviewed systemd255,
-Docker29.8.1/containerd2.3.5/runsc release-20260914.0, existing bounded sandbox and output capacity
+Docker 29.8.1/containerd2.3.5/runsc release-20260914.0, existing bounded sandbox and output capacity
 helpers, and the pinned JOSE/JCS contracts. Its58 local tests include actual Unix peer credentials,
 with synthetic native effects; Linux acceptance remains open. The Node transport
-uses reviewed Node22.23.2 built-in Duplex/Buffer/TextDecoder APIs without a new dependency. Dsh
+uses reviewed Node 22.23.2 built-in Duplex/Buffer/TextDecoder APIs without a new dependency. Dsh
 implemented the public-spec candidate; root integrated and checked53 cases, including a real local
 Unix connection. Neither transport grants execution authority. No upstream source was copied.
 
@@ -750,8 +750,8 @@ container/bridge and real remote/browser qualification gates still precede final
 ## Fixed-image browser CDP qualification (2026-09-25)
 
 The [CDP boundary candidate](research/browser-cdp-qualification.md) reuses Chromium151.0.7922.34's
-released pipe protocol, narrowly adapted Playwright1.62.1 ASCII-NUL framing (Apache-2.0), and
-Node24.18.1 built-in streams/zlib. Existing runsc release-20260914.0 and native helpers are reused
+released pipe protocol, narrowly adapted Playwright 1.62.1 ASCII-NUL framing (Apache-2.0), and
+Node 24.18.1 built-in streams/zlib. Existing runsc release-20260914.0 and native helpers are reused
 without copies or new permissions. The experimental clone3/chroot seccomp derivative remains
 explicitly separate from the official profile; Apache notices and modification attribution are
 preserved in `experiments/browser-execution`. Forty offline tests are reproducible from a fresh
@@ -781,7 +781,7 @@ compatibility, and S7 participates in the protected aggregate. No dependency or 
 is added.
 
 The [direct product candidate](research/python-product-container.md) reuses the reviewed official
-Python3.12.13 and Node24.21.0 Bookworm image digests, unchanged63-distribution Worker lock,
+Python 3.12.13 and Node 24.21.0 Bookworm image digests, unchanged 63-distribution Worker lock,
 retained43-entry Node parser/DB dependency closure and existing npm10.9.9 projection resolver.
 The separate build projection adds only existing pinned Web/TypeScript roots; the final image
 ships no TS business Server, oracle or build tools. Original component notices are retained,
@@ -798,13 +798,13 @@ Desktop's fixed execution-file projection
 reuses its existing canonical private dataRoot/lstat/UID/mode checks and the Server's no-follow
 installation readers. The fixed browser.json and command.json paths close a real packaged-entry
 gap without another configuration system, environment forwarding, runtime dependency or copied
-source. Existing Node24.21.0 and CPython3.12.13 pins/licenses remain unchanged. Present invalid
+source. Existing Node 24.21.0 and CPython 3.12.13 pins/licenses remain unchanged. Present invalid
 configuration refuses startup; source/Host/Action authority still belongs to the Server.
 
 ## Final business Server retirement (2026-09-26)
 
 [Retirement decision](research/final-server-retirement.md) promotes the existing reviewed
-Python product, container and Desktop modules. Electron44.3.0 platform metadata gates
+Python product, container and Desktop modules. Electron 44.3.0 platform metadata gates
 macOS arm64 local hosting; Windows/Intel Mac are remote clients with retained old data.
 No new dependency or upstream implementation is copied. Frozen oracle and canonical
 SQL remain unchanged. Container, native artifact and public startup checks cover the
@@ -813,10 +813,10 @@ new defaults; historical evidence is not relabeled as current qualification.
 ## Installed Python harness and contributor tooling (2026-09-27)
 
 C2 preserves the reviewed execution/Temporal stack and extracts its single source to
-`packages/harness`. Hatchling 1.32.4 builds an explicitly selected typed wheel; Ruff 0.16.8 and
+[the now-retired harness package](https://github.com/Peerframe/openbot/blob/e25d91520dbda664705a77c76c1af456a064a39d/packages/harness). Hatchling 1.32.4 builds an explicitly selected typed wheel; Ruff 0.16.8 and
 mypy 2.3.1 are isolated development tools, all MIT, no copied upstream source. Runtime, test and
 build/quality closures remain separate; exact references and tradeoffs are in
-[the package research](../packages/harness/RESEARCH.md#10-c2-installed-harness-and-contributor-tools-2026-09-27).
+[the package research](https://github.com/Peerframe/openbot/blob/e25d91520dbda664705a77c76c1af456a064a39d/packages/harness/RESEARCH.md#10-c2-installed-harness-and-contributor-tools-2026-09-27).
 
 ## Reviewed plugin catalog source (2026-10-01)
 
@@ -834,7 +834,7 @@ record and hashes move together; catalog authority and live grant/manifest check
 ## C10 avatar palette compatibility (2026-10-02)
 
 The [input review](research/python-identity-inputs.md#c10-additive-avatar-accents-2026-10-02)
-extends the existing Zod4.6.2 / Pydantic2.13.5 closed appearance enum by four design-owned values.
+extends the existing Zod4.6.2 / Pydantic 2.13.5 closed appearance enum by four design-owned values.
 The existing v1/v2 portable package carries them without another registry or format version.
 Old values, strict rejection, checksums and Owner import review remain intact. No new dependency,
 schema migration or source incorporation is added; geometry and UI selection remain separate.
@@ -860,33 +860,33 @@ the fork root LICENSE and the image MIT notice are retained.
 
 ## Retire singleton model settings (C28, 2026-10-05)
 
-Reuse C7 Owner preferences, PostgreSQL17.10, the existing connection AES-GCM cipher and
+Reuse C7 Owner preferences, PostgreSQL 17.10, the existing connection AES-GCM cipher and
 OpenAI3.17.0/8c72a700. One transactional import receipt retains original files/keys without restart
 resurrection; Owner selects an official OpenAI transcription connection. No new dependency or
 source copied. See [decision and evidence](research/retire-singleton-model.md).
 
 ## Workspace primary Bot (C26, 2026-10-05)
 
-Reuse PostgreSQL17.10 row/FK/CAS contracts, psycopg3.3.6 and Pydantic2.13.5, plus existing Owner
+Reuse PostgreSQL 17.10 row/FK/CAS contracts, psycopg 3.3.6 and Pydantic 2.13.5, plus existing Owner
 identity/import/tombstone transactions, channel routing and workspace SSE polling. One SQL row
 provides a preference revision without granting Bot authority; no dependency or external source
 is added. See [decision and concurrency evidence](research/workspace-primary-bot.md).
 
 ## TypeScript control-plane forwarding (P2, 2026-10-06)
 
-Keep the accepted Fastify5.12.5 framework and Server/Temporal authority split. Select released
+Keep the accepted Fastify 5.12.5 framework and Server/Temporal authority split. Select released
 `@fastify/reply-from`12.6.5/5422fd6 (MIT) for HTTP streams with explicit zero retry; compare
-`@fastify/http-proxy`11.6.4/1bf6131 and the retained renderer proxy. Node22.23.2 HTTP/duplex APIs
+`@fastify/http-proxy`11.6.4/1bf6131 and the retained renderer proxy. Node 22.23.2 HTTP/duplex APIs
 cover the narrow WS upgrade integration gap without another protocol implementation.
-Fastify5.12.5/reply-from12.6.5 are now installed exactly in the P2 workspace lock. Local raw-query/body,
+Fastify 5.12.5/reply-from12.6.5 are now installed exactly in the P2 workspace lock. Local raw-query/body,
 cookie/status/bytes, backpressure/abort, fixed-target/forged-header and mixed Python/SQL/Web/Desktop
 checks pass. The mixed→direct→mixed switch preserves the same session/data/public URL and one writer.
-Production closure excludes the WS test dependency/oracle. Direct HTTPS reuses Node24.21.0 TLS/X509
+Production closure excludes the WS test dependency/oracle. Direct HTTPS reuses Node 24.21.0 TLS/X509
 and the existing Fastify HTTPS option, with bounded operator files/handshakes and no new dependency.
 Verified local CA HTTPS/WSS, real Python/SQL secure-cookie contracts and entry restart pass; production
 PKI/public deployment and hosted platform qualification are separate outstanding evidence.
 No upstream source copied; the adapter exits at Python retirement.
-Native coexistence reuses the same Desktop launcher/parent pipes, Node24.21.0, Python3.12.13,
+Native coexistence reuses the same Desktop launcher/parent pipes, Node 24.21.0, Python 3.12.13,
 PostgreSQL supervisor/migrator and locked parser closure. The isolated TS Preview has passed cold
 staging, packaged API/paired-exit smoke and an actual Electron/safeStorage create/save/restart journey
 on macOS arm64. Signing and Work/Temporal are outside this API-only native evidence. No dependency
@@ -904,7 +904,7 @@ source, and requires scoped HTTP, trust-regression and audit evidence before qua
 
 ### P3 transcription settings read (2026-10-07)
 
-Reuse Unlicense Postgres.js3.4.9 / `e7dfa14519f363229ccc3ead7b1b2f2051937efb`, the existing Owner
+Reuse Unlicense Postgres.js 3.4.9 / `e7dfa14519f363229ccc3ead7b1b2f2051937efb`, the existing Owner
 session digest/READ COMMITTED/SHARE-lock decision and Zod4.6.2 strict shared DTO. TS performs only
 the explicitly selected GET; Python retains issuance/revocation, writes and model resolution.
 No new version, persistent format, cache or upstream copied source. Paired reverse selection keeps
@@ -914,8 +914,8 @@ UI12/12 and uninstalled native qualification remain gates. See the
 
 ### P3 primary Bot manual selection (2026-10-08)
 
-Reuse the same reviewed Postgres.js3.4.9/PostgreSQL17 Owner/session guard, strict shared command,
-Python workspace-first locks and existing audit payload. Fastify5.12.5's raw content-parser seam
+Reuse the same reviewed Postgres.js 3.4.9/PostgreSQL 17 Owner/session guard, strict shared command,
+Python workspace-first locks and existing audit payload. Fastify 5.12.5's raw content-parser seam
 adds only this1024-byte/5s JSON input after Origin/session preflight. No new dependency, schema,
 credential access or source copy. Retain Python identity lifecycle and explicit paired rollback;
 see [decision](research/typescript-control-plane-p0.md#p3-primary-bot-selection-decision-2026-10-08).
@@ -923,13 +923,13 @@ see [decision](research/typescript-control-plane-p0.md#p3-primary-bot-selection-
 ### P3 Owner authentication (2026-10-08)
 
 Reuse Node's native asynchronous scrypt and existing PostgreSQL/session contracts without a new
-crypto dependency, data migration or source copy. Reviewed Node22.22.2 and @noble/hashes2.4.0 as
+crypto dependency, data migration or source copy. Reviewed Node 22.22.2 and @noble/hashes2.4.0 as
 recorded in the [scoped decision](research/typescript-control-plane-p0.md#p3-owner-authentication-decision-2026-10-08).
 Six operations remain explicitly selected and require real concurrency, reverse-switch and UI gates.
 
 ### P3 channel reads (2026-10-08)
 
-Reuse Fastify5.12.5, Postgres.js3.4.9 and PostgreSQL17.11 for the four public Bot/channel/message/Run
+Reuse Fastify 5.12.5, Postgres.js 3.4.9 and PostgreSQL 17.11 for the four public Bot/channel/message/Run
 reads. Preserve Python's read-only READ COMMITTED session recheck, SQL bounds and ordering. Cursor
 parameters stay text until PostgreSQL conversion to retain microseconds. No new dependency, schema,
 upstream source copy or execution authority; see [decision](research/typescript-control-plane-p0.md#p3-channel-read-decision-2026-10-08).
@@ -938,7 +938,7 @@ upstream source copy or execution authority; see [decision](research/typescript-
 
 Reuse the current Python SQL contracts and ADR0050 pins; no new dependency or schema. A temporary
 empty PostgreSQL transactional NOTIFY bridges TS generic mutations to the sole Python SSE owner.
-Reviewed PostgreSQL17 semantics and locked Psycopg3.3.6 source; shutdown, failure, no-op and rollback
+Reviewed PostgreSQL 17 semantics and locked Psycopg 3.3.6 source; shutdown, failure, no-op and rollback
 are explicit. No upstream code copied; remove the listener when SSE moves. See the
 [decision](research/typescript-control-plane-p0.md#p3-conversation-and-identity-editing-decision-2026-10-08).
 
@@ -965,7 +965,7 @@ See the [lifecycle and greeting decision](research/typescript-control-plane-p0.m
 
 ### P3 complete product composition (2026-10-08)
 
-Reuse Node24.21.0 HTTP cancellation, Postgres.js3.4.9, PostgreSQL17.11 advisory locks and retained MIT
+Reuse Node 24.21.0 HTTP cancellation, Postgres.js 3.4.9, PostgreSQL 17.11 advisory locks and retained MIT
 Employee publisher format/signature functions. The finite private port keeps the sole live Worker
 registry in P4 while TS owns public P3 policy, sessions and audit. No new dependency or copied source.
 Pinned evidence, rejected duplicate-registry approach, single-use dispatch and listener behavior are
@@ -975,7 +975,7 @@ in the [boundary decision](research/typescript-control-plane-p0.md#p3-remaining-
 
 `packages/work` uses the ADR-0050 approved official Temporal TypeScript SDK 1.24.0 (MIT), commit
 `1fd1c81a0383f5f5c7923dd735472c7d1ffdc867`, without copied upstream implementation. It reuses
-Postgres.js3.4.9, the existing SQL Work ledger/claims and pinned PostgreSQL/Temporal mTLS fixtures.
+Postgres.js 3.4.9, the existing SQL Work ledger/claims and pinned PostgreSQL/Temporal mTLS fixtures.
 New TS admissions have immutable ownership; Python histories remain Python-owned. SDK source-map
 loading brings the existing `source-map-js` into the production closure: its BSD-3-Clause 1.2.2
 patch fixes CVE-2026-93749. Exact upstream, license, security and qualification evidence is in the
@@ -983,7 +983,7 @@ patch fixes CVE-2026-93749. Exact upstream, license, security and qualification 
 remain incomplete. The local native report/attachment/knowledge/plugin/web candidate now exercises real product
 HTTP and Temporal Activities with deterministic provider transports; this evidence is distinct from
 the historical synthetic control probe and from installed-app/full-P4 acceptance. Model SDK, private
-receipt, resource revalidation and closed-repair decisions are recorded in the same P4 record. Native collaboration reuses the Python0039/0040
+receipt, resource revalidation and closed-repair decisions are recorded in the same P4 record. Native collaboration reuses the Python 0039/0040
 contracts and P3 source lock order. The same record documents immutable child recovery, narrowed
 grants, aggregate root admission and the Workflow-owned deadline with SDK heartbeat/cancellation;
 no alternate scheduling framework or upstream source is added.
@@ -1020,22 +1020,22 @@ interop uses production APIs. See the [command integration record](research/type
 P4 审批命令复用已审核的 jose6.2.12/canonicalize5.0.0，增加 TS Server 生产依赖边；沿用原
 v2 契约、准备时钟、SQL 单次许可和产品适配，真实 Python/TS API 互验，不新增版本或自写密码算法。
 
-The P4 native package gate reuses the pinned Temporal1.32.0 macOS arm64 Server as an owned
+The P4 native package gate reuses the pinned Temporal 1.32.0 macOS arm64 Server as an owned
 SQLite/mTLS fixture only; production stays PostgreSQL/mTLS. It is not a bundled application or
 new product dependency. Reviewed release/archive/member hashes and alternatives are recorded in
 [the P4 native qualification decision](research/typescript-control-plane-p4.md#macos-native-qualification-engine-2026-10-09).
 
 The remaining P4 native CI journey reuses the protected Linux/runsc Host and the existing
-Squid7.7/Playwright1.62.1 composition with the same reviewed runtime members, image configs and
+Squid 7.7/Playwright 1.62.1 composition with the same reviewed runtime members, image configs and
 seccomp. Root-private fixture copies rebind fresh paths and measured offline export identities;
-Bun1.3.14, Node22.22.2 and the Ubuntu NSS3.98 builder remain existing reviewed tooling. The
+Bun 1.3.14, Node 22.22.2 and the Ubuntu NSS 3.98 builder remain existing reviewed tooling. The
 120-second command claim also covers pending approval that commits during its Activity, while
 approval, original expiry and native bounds remain independent. No product dependency, persistent
 Host service or upstream source copy is added. See [the current decision and proof](research/typescript-control-plane-p4.md#fresh-native-ci-qualification-and-approval-race-2026-10-09).
 
-P4 原生 CI 沿用保护 Linux/runsc Host 与既有 Squid7.7/Playwright1.62.1 composition，
+P4 原生 CI 沿用保护 Linux/runsc Host 与既有 Squid 7.7/Playwright 1.62.1 composition，
 运行时成员、镜像 config、seccomp 固定；只在 root 私有验收副本重绑定新路径和测得的离线导出身份。
-工具沿用既有 Bun1.3.14/Node22.22.2/NSS3.98。命令120秒 claim 同时覆盖 Activity 内提交待审批动作
+工具沿用既有 Bun 1.3.14/Node 22.22.2/NSS 3.98。命令120秒 claim 同时覆盖 Activity 内提交待审批动作
 的时序，审批、原始到期及 native 期限独立保留；不新增产品依赖、持久 Host 服务或复制上游源码。
 
 P4 disposable native CI additionally uses Ubuntu24.04 Skopeo1.13.3 security package
@@ -1049,3 +1049,128 @@ rejected legacy Docker archive/custom-client paths and exact qualification limit
 P4 一次性原生 CI 仅用固定 Ubuntu Skopeo 安全维护包复制 OCI 镜像；匿名 TLS 校验和原始
 manifest/config、平台、归档指纹不变，不复制上游源码或新增产品依赖。上述决定记录关闭回执竞态、
 真实 SDK 排序/重放正反例和仍待完成的实际原生验收。
+
+
+### P5 direct Server and native-runtime qualification (2026-10-10)
+
+The Server directly uses MIT `@fastify/static`10.1.6 at
+`b38a463df891157215b81fbecdb80ed828299f86`, replacing the temporary forwarding dependency.
+It retains Fastify 5.12.5 and the previously reviewed parser/OCR, SQL and Temporal pins.
+No upstream implementation is copied. [ADR-0050's P5 evidence](decisions/0050-typescript-control-plane.md#p5-dependency-and-runtime-qualification-2026-10-10)
+records the static-file security fix and the actual Electron 44.3.0 permission failure. Keeping
+standalone Node 24.21.0 is Owner-approved after the actual Electron permission probe failed.
+
+P5's Python archive-probe replacement promotes the already locked development-only `tar`7.5.22
+(BlueOak-1.0.0, [commit 2a22bfc](https://github.com/isaacs/node-tar/tree/2a22bfc5d3a432a606d9da0e2d87ba634aa3b1cb))
+to a direct development dependency. Its [streaming Parser](https://github.com/isaacs/node-tar/blob/v7.5.22/src/parse.ts)
+is reused only to read entries; extraction APIs, archive paths, ownership and permissions never
+select destinations. The existing system-tar stdout approach cannot preserve all prior duplicate,
+ignored-member and gzip-trailer assertions; a custom tar parser would add format maintenance.
+The reviewed [resource-bound advisory](https://github.com/isaacs/node-tar/security/advisories/GHSA-23hp-3jrh-7fpw)
+is addressed here with independently bounded gzip output, member counts, exact archive/member
+hashes and exclusive writes of two fixed names. Existing upstream pack/extract issues #461, #462,
+#464, #467 and #468 do not affect this read-only adapter. Real small tar fixtures retain all old
+positive/negative checks. Runtime/production closures do not include this direct development pin.
+Source copied or substantially adapted from upstream: no.
+
+The P5 protected Linux fixture port retains the original kernel boundary using the already
+reviewed Koffi3.3.2 ABI adapter (see P0 POSIX evidence), not wire-supplied identity/time.
+Linux [SO_PEERCRED](https://man7.org/linux/man-pages/man7/unix.7.html) and
+[clock_gettime](https://man7.org/linux/man-pages/man2/clock_gettime.2.html) retain the accepted
+peer UID, CLOCK_MONOTONIC/CLOCK_BOOTTIME and boot-ID checks. The
+[upstream pointer API](https://koffi.dev/pointers) carries only fixed-size output arrays.
+Only Linux x64/arm64 ABIs are admitted; missing Node accepted-socket descriptors fail closed.
+A separate C addon would add a build/distribution closure; process-reported UID and wall time
+cannot replace these kernel facts. This is fixture migration, not additional platform support;
+actual low-UID/runsc qualification remains required before retiring the old fixture.
+No upstream source is copied.
+
+P5's native helper keeps the reviewed systemd255/Docker 29.8.1/runsc packet and fixed binary/image
+hashes. It replaces Python `setns` with the existing host's
+[util-linux nsenter2.39.3](https://github.com/util-linux/util-linux/blob/v2.39.3/sys-utils/nsenter.c)
+(GPL-2.0-only executable, invoked separately; no source incorporation). Linux
+[setns](https://man7.org/linux/man-pages/man2/setns.2.html) forbids changing a mount namespace while
+sharing CLONE_FS; a direct call from multithreaded Node is therefore unsuitable. The single-threaded
+nsenter child enters only mount/network namespaces through two already-open descriptors. The helper
+rechecks namespace, original InvocationID/cgroup and expiry before create/start; no PID-only target,
+user/PID namespace or ambient environment adoption is enabled. Its exact host version is checked.
+A custom native launcher would add another build/security boundary without improving this scope.
+The existing Node 22.22.2 CI relay runtime and Owner-approved Node 24.21.0 remain the admitted versions;
+this does not qualify new product platforms. Missing or changed readbacks fail closed.
+
+The same Koffi3.3.2 adapter reads only the stable leading LP64 Linux `fstatvfs` fields from a
+fixed 128-byte output buffer; the upstream
+[glibc statvfs layout](https://github.com/bminor/glibc/blob/glibc-2.39/sysdeps/unix/sysv/linux/bits/statvfs.h)
+and the required x64/arm64 kernel gates check the capacity/readonly facts. No structure pointer or field
+is provided by a caller. Root-private fixture code, original create/start reservations, typed empty
+stop hooks, dedicated ext4 capacity and PID1 lifetime remain required. Local synthetic regression
+counts do not substitute for the selected actual systemd/runsc CI gate. Source copied or substantially
+adapted from upstream: no.
+
+P5's first hosted production audit found GHSA-q2hr-2g5m-vwhr, GHSA-qhr7-859c-m2p7 and
+GHSA-6j4f-fj2g-mc7p on `@fastify/static` → glob → minimatch → brace-expansion 5.0.9.
+Only that resolved production node advances to MIT brace-expansion 5.0.12
+([release source f341015](https://github.com/juliangruber/brace-expansion/tree/f3410159d768f56c9d9f4511d3e1b46425fc1099));
+all other lock nodes and direct pins remain unchanged. The
+[upstream advisory](https://github.com/advisories/GHSA-q2hr-2g5m-vwhr) identifies 5.0.12 as the
+first patch for the remaining quadratic rewrite; the earlier recursion fixes and their tests are
+included. [The reviewed diff](https://github.com/juliangruber/brace-expansion/compare/v5.0.9...f3410159d768f56c9d9f4511d3e1b46425fc1099)
+changes the existing implementation/tests, not the API. A patch in the current supported range
+avoids replacing static serving or carrying a local fork. Source copied or substantially adapted: no.
+
+The P5 Squid qualification adapter reuses the already reviewed ipaddr.js 2.5.0 /
+`dc55282780d8702bac31ef012ca52e4a77fbca1f` (MIT;
+[existing address-parser evidence](research/agent-research-artifacts.md)) as an exact development
+dependency. It replaces Python `ipaddress` in the existing pure policy compiler; released Squid
+7.7, kernel enforcement, fixed fixture image pins and all origin/denial assertions remain unchanged.
+Canonical CIDRs and IPv4-mapped overlap are checked explicitly. The old compiler's complete
+configuration is retained as inert test input; no upstream parser or Squid source was copied.
+
+The native CI packet now also uses that same tar7.5.22 read-only parser for Docker/gVisor
+archives and OCI index/manifest/config validation. Node zlib handles gzip; bzip2 requires the
+existing distribution executable, pinned to Ubuntu24.04 amd64
+[bzip2 1.0.8-5.1ubuntu0.1](https://packages.ubuntu.com/noble/bzip2). The upstream
+[1.0.8 manual](https://www.sourceware.org/bzip2/manual/manual.html) documents the stream/CRC
+exit contract and environment-injected options. The adapter checks the complete download hash
+before decoding, excludes BZIP/BZIP2 from the child environment, bounds expanded bytes and
+selected members, and requires successful complete-stream termination. This BSD-style licensed
+CLI adds no JavaScript codec or production dependency; tar alone lacks bzip2, while a new
+JavaScript codec or custom implementation would add maintenance without changing this fixed
+disposable Linux CI boundary. No upstream source is copied.
+
+The browser certificate fixture reuses the existing system OpenSSL test-certificate approach
+with EC P-256 named curves, a two-day disposable CA, exact example.com SAN/serverAuth leaves,
+and a separate self-signed unknown-CA leaf. A fixed POSIX pipeline carries the CA signing
+key; the packet never stores it. The real Linux OpenSSL3 loader refuses reopening Node
+socketpair descriptors via /dev/fd, so the adapter supplies a kernel pipe using literal argv
+and a clean environment, with bounded capture and process-group termination. The
+[OpenSSL3 loader](https://github.com/openssl/openssl/blob/openssl-3.0.22/apps/lib/apps.c)
+and actual Linux3.0.22/macOS handshake tests verify this fixture-only integration. Generated public CA trust is imported only into the packet's
+new NSS database. Real TLS handshakes cover the valid name, wrong name and unknown CA.
+This replaces Python cryptography in fixture setup without changing product TLS provisioning.
+
+The P5 native browser and kernel fixtures retain the reviewed systemd, util-linux, gVisor,
+Chromium and Squid pins and their original 600/150-second lifetimes. TypeScript replaces the
+Python fixture drivers without changing admitted routes, canary addresses, resources or cleanup.
+Namespace entry reuses the existing descriptor-bound nsenter adapter. The Sentry observer opens
+the original proc directory, compares cgroup/start-time and executable inode before reading bounded
+argv, and rechecks identity afterwards. This follows the kernel's
+[proc directory descriptor lifetime contract](https://docs.kernel.org/filesystems/proc.html);
+a retained descriptor cannot be redirected to a recycled PID. No upstream source was copied.
+
+The fixed native command qualification also uses the already reviewed Node 24.21.0 bookworm-slim
+image instead of a CPython sample payload. Its existing index
+`2fe369e969550cde8e867afc3fe370b260140cab4a23d467074295b42163d553` selects the Linux amd64
+manifest `713cfbf4a0ac19f40e1bb9919893e126b74a5c8cf5d0623c9f89515c8f74c6fa` and configuration
+`1cc81b664ff520c96dde07893e717ff070f9f7bd8bbcec50e10fa2f3cb5c4b1c`, read from the official registry.
+The adapter still creates one exclusive output and fsyncs it; the full product journey still
+copies the original admitted CSV. Exact image verification, approval/claim checks, isolation and lifetime
+are unchanged. This reuses the product's reviewed Node distribution rather than adding a dependency.
+
+P5 native packet sealing follows the existing root-owned single-link file contract. The reviewed
+[Node 22.22.2 libuv copy implementation](https://github.com/nodejs/node/blob/v22.22.2/deps/uv/src/unix/fs.c#L1251-L1258)
+restores the source UID/GID even when root creates a new copy. The packet adapter explicitly seals
+only its fresh destination files through no-follow file descriptors, verifies UID/GID 0 and the
+fixed mode, and retains all launcher hash/ownership checks. A disposable Linux root regression
+reproduces the old UID 1001 copy, verifies the correction and unchanged source, and rejects symlinks,
+hardlinks, directories and unapproved modes. No upstream code is copied or dependency changed.

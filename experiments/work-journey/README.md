@@ -1,5 +1,10 @@
 # Public work journey recovery reference
 
+P5 required qualification uses `npm run test:work:ts`, `npm run test:temporal:boundary`,
+`npm run test:temporal:upgrade`, `product-command-probe.ts`, and `product-browser-probe.ts`.
+The actual native entries are selected by the repository CI workflow on a disposable Linux runner.
+The Python commands and results below are dated P0–P4 provenance; they are retired entry points.
+
 This reference connects the real Python control API/store to the Runtime's opt-in Temporal
 composition. Runtime PortModel/PortToolset execute scripted model/read steps; deferred write
 proposals return to the existing control-owned approval, effect verification and Artifact
@@ -162,7 +167,7 @@ Install `requirements-model.txt` instead of `requirements.txt` for the optional 
 This uses the released model SDK with synthetic HTTP and no live credentials. The public Task
 survives Worker death after immutable reply persistence, reuses it after claim expiry without a
 second provider call, settles once and delivers its file. Missing/corrupt reply and cancelled-task
-counterexamples live in `apps/server-python/tests/test_work_model_receipts_postgres.py`; pass the
+counterexamples live in [historical model-receipt check](https://github.com/Peerframe/openbot/blob/e25d91520dbda664705a77c76c1af456a064a39d/apps/server-python/tests/test_work_model_receipts_postgres.py); pass the
 exact Worker interpreter described below as `OPENBOT_TEMPORAL_TEST_PYTHON` to the existing control database runner. Its product lock must not be mixed with the older DBOS experiment profile.
 See [the reviewed boundary](../../docs/research/work-model-ports.md). New engine Run chains,
 production service configuration and live provider quality remain separate gates.
@@ -437,7 +442,7 @@ as `task-read-unavailable` and counted in `readUnavailablePolls`. Writes, other 
 unknown browser effects are never retried by this handling.
 
 Use a POSIX host with Docker, the repository Node/npm versions, Bun1.3.14, OpenSSL and a Python3.12
-virtual environment containing `apps/server-python/requirements-worker.lock`. From a fresh checkout:
+virtual environment containing [historical Worker lock](https://github.com/Peerframe/openbot/blob/e25d91520dbda664705a77c76c1af456a064a39d/apps/server-python/requirements-worker.lock). From a fresh checkout:
 
 ```sh
 npm ci

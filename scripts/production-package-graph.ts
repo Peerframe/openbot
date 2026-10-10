@@ -9,7 +9,7 @@ export function collectProductionPackageGraph(
   entryPoint = "apps/node",
 ): ProductionPackageGraph {
   if (
-    !["apps/node", "apps/server", "apps/server-ts", "packages/python-node-runtime"].includes(
+    !["apps/node", "apps/server"].includes(
       entryPoint,
     )
   ) {

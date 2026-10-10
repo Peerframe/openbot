@@ -23,7 +23,7 @@ type TrackedChild = {
   settle: ((outcome: ProcessOutcome) => void) | undefined;
 };
 /**
- * Owns every child started for `dev-python` startup.
+ * Owns every child started for development startup.
  * One stop wave; spawn error settles like exit; no new starts after stop.
  */
 export class DevProcessOwner {

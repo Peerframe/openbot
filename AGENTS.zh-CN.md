@@ -11,18 +11,17 @@
 | --- | --- |
 | `apps/web` | React 网页界面（[规则](apps/web/AGENTS.md)、[设计入口](docs/design/README.md)） |
 | `apps/desktop` | 在本机运行产品的轻量 Electron 外壳（[规则](apps/desktop/AGENTS.md)） |
-| `apps/server-ts` | TypeScript 控制面，所有接口的迁移目标（[规则](apps/server-ts/AGENTS.md)、[ADR-0050](docs/decisions/0050-typescript-control-plane.md)） |
-| `apps/server-python` | Python 控制面，按 ADR-0050 逐组退役（[规则](apps/server-python/AGENTS.md)） |
+| `apps/server` | 单一 TypeScript 控制面（[规则](apps/server/AGENTS.md)、[ADR-0050](docs/decisions/0050-typescript-control-plane.md)） |
 | `apps/node`、`providers/*` | 工作节点和执行提供方 |
 | `packages/protocol` | 共享的接口契约（[规则](packages/protocol/AGENTS.md)） |
+| `packages/work` | TypeScript Temporal 工作流与 Activity |
 | `packages/db` | PostgreSQL 表结构和迁移 |
-| `packages/harness` | Python 智能体运行时（[规则](packages/harness/AGENTS.md)） |
 | `experiments/*` | CI 仍在运行的探针和测试夹具，不是产品代码 |
 | `tests/oracles/legacy-server` | 冻结的对照输入，绝不作为产品后备（[规则](tests/oracles/legacy-server/AGENTS.md)） |
 | `docs/decisions` | ADR：已采纳的架构决定 |
 | `docs/research` | 单个决定的依据；只打开你需要的那一篇 |
 
-`apps/server` 只剩一份退役说明。[REPOSITORY_MAP](docs/REPOSITORY_MAP.md) 列出常见任务的入口和代表性测试。
+[REPOSITORY_MAP](docs/REPOSITORY_MAP.md) 提供常见任务的入口与代表性测试。
 
 ## 工作流程
 

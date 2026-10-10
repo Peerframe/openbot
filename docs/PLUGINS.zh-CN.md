@@ -46,16 +46,10 @@ npx tsx packages/mcp-example/src/plugin-example.ts
 在 OpenBot **服务电脑** 明确配置开发地址并重启：
 
 ```dotenv
-OPENBOT_PLUGIN_LOCAL_ENDPOINTS=http://127.0.0.1:4318/mcp
+OPENBOT_TS_PLUGIN_LOCAL_ENDPOINTS=["http://127.0.0.1:4318/mcp"]
 ```
 
-显式 Python product 入口使用独立的 JSON 数组配置：
-
-```dotenv
-OPENBOT_CONTROL_PLUGIN_LOCAL_ENDPOINTS=["http://127.0.0.1:4318/mcp"]
-```
-
-两个变量不会自动互相映射；按实际选用的 Server 入口配置。
+TypeScript Server 要求显式 JSON 数组；旧入口的环境变量不会自动映射到此配置。
 
 如果由 Desktop 托管本地 Server，应在应用启动环境中设置后重新打开应用。localhost 指服务电脑，不是远程客户端。
 只允许完整名单内的字面 `127.0.0.1` / `::1` 本机地址；外部服务要求公开 HTTPS，所有 DNS 结果必须为公网 IP。

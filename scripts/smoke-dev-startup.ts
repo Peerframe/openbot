@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
-import { mkdtemp, realpath, rm } from "node:fs/promises";
+import { mkdtemp, realpath, rm, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
@@ -63,6 +63,10 @@ const controller = new AbortController();
 const abort = () => controller.abort(new Error("Startup smoke interrupted."));
 process.once("SIGINT", abort);
 process.once("SIGTERM", abort);
+const { startTemporalFixture } = await import("./temporal-fixture.ts");
+const temporal = await startTemporalFixture({ signal: controller.signal });
+const temporalPath = join(directory, "temporal.json");
+await writeFile(temporalPath, JSON.stringify({ temporal_address: temporal.settings.address, namespace: "default", queue: "openbot-dev-smoke", tls: temporal.settings.tls }), { mode: 0o600 });
 const child = spawn(process.execPath, [npmCli, "run", "dev"], {
   cwd: root,
   detached: true,
@@ -78,15 +82,11 @@ const child = spawn(process.execPath, [npmCli, "run", "dev"], {
     CI: "1",
     TURBO_TELEMETRY_DISABLED: "1",
     TURBO_CACHE: "local:rw",
-    OPENBOT_CONTROL_HOST: "127.0.0.1",
-    OPENBOT_CONTROL_PORT: "3001",
-    OPENBOT_CONTROL_DATABASE_URL: databaseUrl,
-    OPENBOT_CONTROL_OWNER_PASSWORD: password,
-    OPENBOT_CONTROL_ALLOWED_ORIGINS: origin,
-    OPENBOT_CONTROL_COOKIE_MODE: "loopback",
-    OPENBOT_CONTROL_OBJECT_ROOT: join(directory, "objects"),
-    OPENBOT_CONTROL_ARTIFACT_ROOT: join(directory, "artifacts"),
-    OPENBOT_CONTROL_MODEL_DIRECTORY: join(directory, "model"),
+    OPENBOT_TS_DATABASE_URL: databaseUrl,
+    OPENBOT_TS_OWNER_PASSWORD: password,
+    OPENBOT_TS_OBJECT_ROOT: join(directory, "objects"),
+    OPENBOT_TS_ARTIFACT_ROOT: join(directory, "artifacts"),
+    OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH: temporalPath,
   },
 });
 let output = "";
@@ -189,5 +189,6 @@ try {
   signalGroup("SIGKILL");
   process.removeListener("SIGINT", abort);
   process.removeListener("SIGTERM", abort);
+  await temporal.close();
   await rm(directory, { recursive: true, force: true });
 }

@@ -6,18 +6,61 @@ import {
   type WorkSnapshot,
   workCorrectionSchema,
   workHttpErrorSchema,
-  workSnapshotWireSchema,
   workReconciliationSchema,
+  workSnapshotWireSchema,
 } from "@openbot/protocol";
 import { z } from "zod";
 import { contractClient } from "./client.ts";
 import {
-  contractTargetSchema,
   type ContractTarget,
-  workScenarioSchema,
+  contractTargetSchema,
   type WorkScenario,
+  workScenarioSchema,
 } from "./target.ts";
-export { contractTargetSchema, type ContractTarget } from "./target.ts";
+
+export { type ContractTarget, contractTargetSchema } from "./target.ts";
+
+/** A late receipt records the original handoff without reopening cancelled authority. */
+export function assertCancelledSnapshotPersisted(cancelled: WorkSnapshot, persisted: WorkSnapshot) {
+  assert.equal(cancelled.cancelRequested, true);
+  assert.equal(cancelled.authorityActive, false);
+  assert.deepEqual(persisted.events.slice(0, cancelled.events.length), cancelled.events);
+  const later = persisted.events.slice(cancelled.events.length);
+  const acknowledged = new Set(
+    cancelled.events.filter((e) => e.kind === "handoff.acknowledged").map((e) => e.payload.runId),
+  );
+  for (const [index, event] of later.entries()) {
+    assert.equal(event.kind, "handoff.acknowledged");
+    assert.equal(event.revision, cancelled.revision + index + 1);
+    assert.deepEqual(Object.keys(event.payload).sort(), [
+      "engineFirstRunId",
+      "engineReference",
+      "runId",
+    ]);
+    assert(cancelled.runs.some((run) => run.id === event.payload.runId));
+    assert(!acknowledged.has(event.payload.runId));
+    assert(
+      cancelled.events.some(
+        (prior) =>
+          prior.kind === "handoff.submission_attempted" &&
+          prior.payload.runId === event.payload.runId &&
+          prior.payload.engineReference === event.payload.engineReference,
+      ),
+    );
+    assert(
+      typeof event.payload.engineFirstRunId === "string" &&
+        event.payload.engineFirstRunId.length > 0 &&
+        Buffer.byteLength(event.payload.engineFirstRunId) <= 128,
+    );
+    acknowledged.add(event.payload.runId);
+  }
+  assert.equal(persisted.revision, cancelled.revision + later.length);
+  // Every other public field, including runs, effects, usage and authority, must remain exact.
+  assert.deepEqual(
+    { ...persisted, revision: cancelled.revision, events: cancelled.events },
+    cancelled,
+  );
+}
 
 /** Uses only the supplied disposable target; no dotenv, DB or product implementation imports. */
 export async function runWorkContracts(input: ContractTarget, scenario?: WorkScenario) {
@@ -187,7 +230,7 @@ export async function runWorkContracts(input: ContractTarget, scenario?: WorkSce
     assert.equal(cancelled.authorityActive, false);
     const read = await request(`/api/v1/tasks/${taskId}`);
     assert.equal(read.response.status, 200);
-    assert.deepEqual(workSnapshotWireSchema.parse(read.body), cancelled);
+    assertCancelledSnapshotPersisted(cancelled, workSnapshotWireSchema.parse(read.body));
   });
   if (scenario !== undefined) {
     const work = workScenarioSchema.parse(scenario);

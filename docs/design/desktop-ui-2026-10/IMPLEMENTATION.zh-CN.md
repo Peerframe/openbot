@@ -19,7 +19,7 @@
 | 负责方 | 范围 |
 | --- | --- |
 | Claude | 界面与体验：`apps/web/src/**`（组件、样式、Web API 客户端 `api.ts`）、界面测试、设计预览工具、`docs/design/**`、画布 |
-| Codex | 后端与平台：`apps/server-python/**`、`packages/db/**`、`packages/protocol/**`、`packages/domain/**`、`apps/desktop/src/**`（主进程与预加载）、桌面打包与图标、CI 与脚本 |
+| Codex | 后端与平台：`apps/server/**`、`packages/db/**`、`packages/protocol/**`、`packages/domain/**`、`apps/desktop/src/**`（主进程与预加载）、桌面打包与图标、CI 与脚本 |
 
 后端事项要等它的接口或桥接方法、领域与协议类型、测试都已合并并写进 `docs/API.md`，界面才能接入。在那
 之前，需要它的设计元素先隐藏，绝不造假（DESIGN 规则 4）。

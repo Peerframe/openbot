@@ -12,7 +12,6 @@ import {
   DESKTOP_MACOS_WORKER_COMPANION_NAME,
   DESKTOP_PACKAGE_IDENTITY,
   DESKTOP_PREVIEW_IDENTITY,
-  DESKTOP_PYTHON_PREVIEW_IDENTITY,
   DESKTOP_TS_PREVIEW_IDENTITY,
   DESKTOP_RUNTIME_DEPENDENCIES,
   DESKTOP_WINDOWS_METADATA,
@@ -79,38 +78,12 @@ describe("Desktop package source policy", () => {
     ).toThrow(/production Worker/u);
   });
 
-  it("isolates Python qualification from canonical apps retaining the legacy Preview profile", () => {
-    const identity = desktopPackageIdentity(["--preview", "--python-product"]);
-    expect(identity).toBe(DESKTOP_PYTHON_PREVIEW_IDENTITY);
-    expect(desktopPackageIdentity(["--python-product", "--preview"])).toBe(identity);
-    const manifest = { name: "@openbot/desktop", productName: "OpenBot" };
-    const staged = desktopPackagedManifest(manifest, identity);
-    expect(staged.productName).toBe("OpenBot Python Preview");
-    for (const retained of [DESKTOP_PACKAGE_IDENTITY, DESKTOP_PREVIEW_IDENTITY]) {
-      expect(staged.productName).not.toBe(retained.name);
-      expect(identity.appBundleId).not.toBe(retained.appBundleId);
-      expect(identity.executableName).not.toBe(retained.executableName);
-    }
-    expect(manifest.productName).toBe("OpenBot");
-    expect(packagedAsarPath("/fixture", "darwin", identity)).toBe(
-      join("/fixture", `${identity.name}.app`, "Contents", "Resources", "app.asar"),
-    );
-    expect(() =>
-      desktopMacOSWorkerCompanionSource(
-        resolve("workspace", DESKTOP_MACOS_WORKER_COMPANION_NAME),
-        "darwin",
-        identity,
-      ),
-    ).toThrow(/production Worker/u);
-    for (const args of [
-      ["--python-product"],
-      ["--preview", "--python-product", "--python-product"],
-    ]) {
-      expect(() => desktopPackageIdentity(args)).toThrow(/only/u);
-    }
+  it("refuses the retired Python packaging selector", () => {
+    for (const args of [["--python-product"], ["--preview", "--python-product"]])
+      expect(() => desktopPackageIdentity(args)).toThrow("only");
   });
 
-  it("isolates the mixed TS Preview and refuses ambiguous or unsupported selection", () => {
+  it("isolates the TS Preview and refuses ambiguous or unsupported selection", () => {
     const args = ["--preview", "--ts-product"];
     const identity = desktopPackageIdentity(args);
     expect(identity).toBe(DESKTOP_TS_PREVIEW_IDENTITY);
@@ -125,13 +98,11 @@ describe("Desktop package source policy", () => {
     for (const retained of [
       DESKTOP_PACKAGE_IDENTITY,
       DESKTOP_PREVIEW_IDENTITY,
-      DESKTOP_PYTHON_PREVIEW_IDENTITY,
-    ]) {
+        ]) {
       expect(identity.appBundleId).not.toBe(retained.appBundleId);
       expect(identity.executableName).not.toBe(retained.executableName);
     }
     expect(parseDesktopPackageArguments(args, "darwin", "arm64")).toEqual({
-      pythonProduct: false,
       tsProduct: true,
       preview: true,
       identity,
@@ -158,7 +129,6 @@ describe("Desktop package source policy", () => {
     const identity = desktopPackageIdentity(args);
     expect(identity).toBe(DESKTOP_PACKAGE_IDENTITY);
     expect(parseDesktopPackageArguments(args, "darwin", "arm64")).toEqual({
-      pythonProduct: false,
       tsProduct: true,
       preview: false,
       identity,
@@ -447,37 +417,15 @@ describe("packaging execution boundaries", () => {
     }
   });
 
-  it("keeps Python Preview tied to its separate identity and supported native payload", () => {
-    expect(parseDesktopPackageArguments([], "win32", "x64")).toEqual({
-      pythonProduct: false,
-      tsProduct: false,
-      preview: false,
-      identity: DESKTOP_PACKAGE_IDENTITY,
+  it("defaults to the sole TS payload on macOS arm64 and remote clients elsewhere", () => {
+    expect(parseDesktopPackageArguments([], "darwin", "arm64")).toEqual({
+      tsProduct: true, preview: false, identity: DESKTOP_PACKAGE_IDENTITY,
     });
-    expect(parseDesktopPackageArguments(["--preview"], "linux", "x64").identity).toBe(
-      DESKTOP_PREVIEW_IDENTITY,
-    );
-    for (const args of [
-      ["--preview", "--python-product"],
-      ["--python-product", "--preview"],
-    ]) {
-      expect(parseDesktopPackageArguments(args, "darwin", "arm64")).toEqual({
-        pythonProduct: true,
-        tsProduct: false,
-        preview: true,
-        identity: DESKTOP_PYTHON_PREVIEW_IDENTITY,
-      });
-      for (const [platform, arch] of [
-        ["darwin", "x64"],
-        ["linux", "arm64"],
-        ["win32", "x64"],
-      ]) {
-        expect(() => parseDesktopPackageArguments(args, platform, arch)).toThrow(/macOS arm64/);
-      }
-    }
-    expect(() => parseDesktopPackageArguments(["--python-product"])).toThrow(/accepts only/);
-    expect(() =>
-      parseDesktopPackageArguments(["--preview", "--python-product", "--python-product"]),
-    ).toThrow(/selected once/);
+    expect(parseDesktopPackageArguments([], "win32", "x64")).toEqual({
+      tsProduct: false, preview: false, identity: DESKTOP_PACKAGE_IDENTITY,
+    });
+    expect(parseDesktopPackageArguments(["--preview"], "linux", "x64").identity).toBe(DESKTOP_PREVIEW_IDENTITY);
+    for (const args of [["--python-product"], ["--preview", "--python-product"]])
+      expect(() => parseDesktopPackageArguments(args)).toThrow("only");
   });
 });

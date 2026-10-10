@@ -11,25 +11,25 @@ export const JOBS = [
   "validate",
   "portable",
   "windows-worker-host",
-  "harness",
-  "python-runtime",
+  "contracts",
+  "control-runtime",
   "temporal-qualification",
   "browser-product",
   "browser-egress",
-  "python-product-container",
-  "python-desktop-preview",
+  "server-container",
+  "desktop-product",
   "synthetic-migration",
 ] as const;
 
 export type JobName = (typeof JOBS)[number];
 
-const PYTHON_CONSUMERS = [
-  "harness",
-  "python-runtime",
+const CONTROL_CONSUMERS = [
+  "contracts",
+  "control-runtime",
   "temporal-qualification",
   "browser-product",
-  "python-product-container",
-  "python-desktop-preview",
+  "server-container",
+  "desktop-product",
   "synthetic-migration",
 ] as const;
 
@@ -104,7 +104,7 @@ function dependents(names: Iterable<string>, graph: readonly WorkspaceNode[]): s
     for (const node of graph) {
       // Desktop staging loads these packages dynamically; all other edges come from npm.
       const dynamic =
-        node.name === "@openbot/desktop" ? ["@openbot/db", "@openbot/python-node-runtime"] : [];
+        node.name === "@openbot/desktop" ? ["@openbot/db", "@openbot/server"] : [];
       if (
         !affected.has(node.name) &&
         [...node.dependencies, ...dynamic].some((name) => affected.has(name))
@@ -132,8 +132,8 @@ export function selectChecks(
     full = true;
     reasons.push(reason);
   };
-  const python = (): void => {
-    for (const job of PYTHON_CONSUMERS) selected.add(job);
+  const control = (): void => {
+    for (const job of CONTROL_CONSUMERS) selected.add(job);
   };
   if (!files.length) broaden("No change paths: conservative full qualification.");
   for (const file of files) {
@@ -176,25 +176,25 @@ export function selectChecks(
       continue;
     }
     if (file.startsWith("packages/work/")) {
-      python();
+      control();
       workspaces.add("@openbot/work");
       continue;
     }
     if (file.startsWith("packages/harness/")) {
-      python();
+      control();
       continue;
     }
     if (file.startsWith("apps/server-python/")) {
-      python();
+      control();
       if (file === "apps/server-python/src/openbot_server/parser_worker.ts")
-        rootChecks.add("typecheck:parsers");
+        rootChecks.add("typecheck");
       if (/work_(models|values|routes)|runtime_wire|input_models/.test(file))
         broaden(`Cross-language authority: ${file}`);
       continue;
     }
-    if (file.startsWith("apps/server-ts/")) {
-      python();
-      selected.add("harness");
+    if (file.startsWith("apps/server/")) {
+      control();
+      selected.add("contracts");
     }
     if (file.startsWith("experiments/browser-execution/")) {
       rootChecks.add("test:browser:boundary");
@@ -206,9 +206,9 @@ export function selectChecks(
       file.startsWith("experiments/work-journey/") ||
       file.startsWith("experiments/linux-execution/")
     ) {
-      // browser_a1 imports these sibling helpers and its boundary suite verifies their hashes.
+      // Browser composition imports the protected native boundary helpers.
       if (file.startsWith("experiments/linux-execution/")) rootChecks.add("test:browser:boundary");
-      python();
+      control();
       continue;
     }
     if (file.startsWith("experiments/s7-migration/")) {
@@ -224,12 +224,12 @@ export function selectChecks(
       selected.add("portable");
       continue;
     }
-    // These Web files participate in the actual Python HTTP → TypeScript qualification.
+    // These Web files participate in the actual TS HTTP → TypeScript qualification.
     if (
       /^apps\/web\/src\/(?:work-api(?:\.test)?|native-task-api(?:\.test)?|api)\.ts$/.test(file) ||
       file.startsWith("apps/web/conformance/")
     )
-      selected.add("harness");
+      selected.add("contracts");
     const owner = graph.find((node) => file.startsWith(`${node.path}/`));
     if (!owner) {
       broaden(`Unmapped input: ${file}`);
@@ -245,18 +245,17 @@ export function selectChecks(
   // Qualify consumers reached through the npm graph as well as the directly edited owner.
   for (const name of affected) {
     if (["@openbot/protocol", "@openbot/db", "@openbot/domain"].includes(name)) {
-      python();
+      control();
       selected.add("portable");
     } else if (name === "@openbot/node" || /provider|windows-secret/.test(name)) {
       selected.add("portable");
       selected.add("browser-product");
       selected.add("temporal-qualification");
-    } else if (name === "@openbot/desktop" || name === "@openbot/python-node-runtime") {
+    } else if (name === "@openbot/desktop") {
       selected.add("portable");
-      selected.add("python-desktop-preview");
-      if (name === "@openbot/python-node-runtime") selected.add("python-product-container");
+      selected.add("desktop-product");
     } else if (name === "@openbot/employee-publisher") {
-      selected.add("python-runtime");
+      selected.add("control-runtime");
     }
   }
   if (affected.length) mode = "workspace";
