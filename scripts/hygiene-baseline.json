@@ -1,0 +1,12 @@
+{
+  "nestedRules": {
+    "packages/protocol/AGENTS.md": 92
+  },
+  "undocumentedFiles": {
+    "apps/web": 130,
+    "apps/server-ts": 111,
+    "apps/desktop": 35,
+    "packages": 87,
+    "scripts": 68
+  }
+}

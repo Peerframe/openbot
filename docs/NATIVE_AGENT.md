@@ -170,13 +170,10 @@ If an existing disposable PostgreSQL service is preferred, set
 reset. The command never uses `OPENBOT_DATABASE_URL`; it does not remove externally supplied
 databases. Integration suites sharing the same fixture database must run serially.
 
-| Change location | Responsibility and verification |
-| --- | --- |
-| `apps/server/src/agent-runtime.ts` | `executeAgentRuntime` composes the real SDK through explicit model, tool, authority, storage and audit ports. Use `agent-runtime.test.ts` without the Server app or database. |
-| `apps/server/src/native-agent.ts` | `executeAgentRun` binds Server-owned context, identities, tools and the `AgentRunStore` adapter to those ports; `NativeAgentRunner` owns scheduling, budgets, cancellation and continuation. Use `native-agent.test.ts` for adapter and authority regressions. |
-| `apps/server/src/postgres-agent-store.ts` | Durable claims, scope, cancellation, reply/report publication and audit. Use the headless and collaboration integration suites; an in-memory mock cannot establish transaction behavior. |
-| `apps/server/src/app.ts` | Owner-authenticated submission, stop, realtime observation and artifact download; UI clients do not own execution. |
-| `apps/server/src/native-agent-headless.integration.test.ts` | Runnable examples combining real Server routes, Owner authentication, PostgreSQL stores, file artifacts and the SDK's deterministic model. |
+The first TypeScript implementation of these responsibilities lived in the retired `apps/server`
+and can be read in Git history. The current owners are `packages/work` (workflows, activities and
+the engine) and `apps/server-ts/src/work-runtime.ts` (the agent runtime with its model, tool,
+authority, storage and audit ports), with the Python runtime in `packages/harness` until P5 removes it.
 
 The headless suite verifies authenticated task-to-download delivery, tool failure without partial
 publication, durable cancellation before a late result, SSE response disconnection without task
@@ -189,8 +186,8 @@ The fixture settings/model adapter is test-only and is never enabled by a produc
 For fast edits after dependencies are built:
 
 ```sh
-node node_modules/vitest/vitest.mjs run apps/server/src/native-agent.test.ts
-npm run typecheck --workspace=@openbot/server
+npm run test --workspace @openbot/work
+npm run test --workspace @openbot/server-ts
 ```
 
 Run `npm run check` before handoff and the headless command after changing task lifecycle or
@@ -198,13 +195,13 @@ publication behavior. See the [acceptance research](research/headless-runtime-ac
 
 ## Isolated execution ports
 
-For changes to iteration policy, use the production `executeAgentRuntime` unit directly. From a
-fresh checkout, this entry needs Node and npm but no Docker, Server process or model account:
+For changes to iteration policy, run the TS Server and Work tests. They need Node and npm but no
+Docker, Server process or model account:
 
 ```sh
 npm ci --ignore-scripts
-npx turbo run build --filter='@openbot/domain...'
-node node_modules/vitest/vitest.mjs run apps/server/src/agent-runtime.test.ts
+npm run test --workspace @openbot/work
+npm run test --workspace @openbot/server-ts
 ```
 
 The unit accepts a prepared instruction, bounded messages, an abort signal and the shared Run
@@ -280,7 +277,7 @@ and [transport research](research/python-runtime-transport.md).
 ### Paired runtime acceptance
 
 `npm run test:runtime:python` selects the real Python process for the Owner API/PostgreSQL journeys.
-It requires the package-local virtual environment and `scripts/run-worker.py`, runs the Python
+It requires the package-local virtual environment and its runtime worker entry, runs the Python
 package checks first, and fails if either prerequisite is absent; it never falls back to TypeScript.
 The collaboration Runner cases use the same selection, including child cancellation and joined
 results; the focused unit tests retain their explicitly selected adapters.

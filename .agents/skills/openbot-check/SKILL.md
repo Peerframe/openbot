@@ -13,7 +13,7 @@ For a PR use its verified base/head; do not infer the diff from a stale remote b
 ## Steps
 
 1. Read the changed area's local rules and [map](../../../docs/REPOSITORY_MAP.md), then inspect the
-   actual `package.json` or `scripts/check.sh`. Commands below the map run from the repository root.
+   actual `package.json` or its own check script. Commands below the map run from the repository root.
 2. Start with its focused positive/negative tests. Build shared TS packages before downstream tests
    when needed; `npm exec -- turbo run build --filter=@openbot/web^...` uses the existing graph.
    Core-only Python work uses `packages/harness/scripts/bootstrap.sh`, package `check.sh` and
