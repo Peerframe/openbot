@@ -26,7 +26,7 @@
     "dev:web": "turbo run dev --filter=@openbot/web",
     "dev:node": "turbo run dev --filter=@openbot/node",
     "dev:smoke": "node scripts/smoke-dev-startup.ts",
-    "docs:check": "node --test scripts/check-developer-entrypoints.test.ts scripts/check-docs.test.ts && node scripts/check-docs.ts",
+    "docs:check": "node --test scripts/check-developer-entrypoints.test.ts scripts/check-docs.test.ts scripts/check-hygiene.test.ts && node scripts/check-docs.ts && node scripts/check-hygiene.ts",
     "employee:publisher-key": "node --env-file-if-exists=.env scripts/employee-publisher-key.ts",
     "format": "biome format --write .",
     "format:check": "biome format .",

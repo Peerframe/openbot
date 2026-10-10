@@ -93,11 +93,11 @@ To reproduce the clean-start CI journey with a disposable database, see
 [the Server startup smoke instructions](apps/server-python/README.md).
 
 For a small UI change, locate its component through the [repository map](docs/REPOSITORY_MAP.md),
-edit it while this dev command runs, and inspect the real page. For example, the channel member menu
-is `apps/web/src/components/ChannelMembersMenu.tsx`; run its focused test from another terminal:
+edit it while this dev command runs, and inspect the real page. For example, the channel side panel
+is `apps/web/src/components/ContextRail.tsx`; run its focused test from another terminal:
 
 ```bash
-npm exec --workspace @openbot/web -- vitest run src/components/ChannelMembersMenu.test.tsx
+npm exec --workspace @openbot/web -- vitest run src/components/ContextRail.test.tsx
 ```
 
 ### Start an optional development Node

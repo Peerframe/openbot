@@ -72,11 +72,11 @@ npm run dev
 使用临时数据库复现 CI 的全新启动流程，见 [Server 启动冒烟说明](apps/server-python/README.md)。
 
 做一次小型 UI 修改时，先通过[仓库地图](docs/REPOSITORY_MAP.md)定位组件，在开发命令
-运行期间修改并检查真实页面。例如频道成员菜单位于
-`apps/web/src/components/ChannelMembersMenu.tsx`；另开终端运行定向测试：
+运行期间修改并检查真实页面。例如频道右栏位于
+`apps/web/src/components/ContextRail.tsx`；另开终端运行定向测试：
 
 ```bash
-npm exec --workspace @openbot/web -- vitest run src/components/ChannelMembersMenu.test.tsx
+npm exec --workspace @openbot/web -- vitest run src/components/ContextRail.test.tsx
 ```
 
 ### 按需启动开发 Node

@@ -71,6 +71,9 @@ the decision in an ADR, a research record or the PR. Say whether any source was 
   (`AGENTS`, `CONTRIBUTING`) and `docs/design`.
 - Comments explain authority, security, concurrency, lifecycle and upstream constraints, not syntax.
 - Temporary migration code carries its exit condition in a code comment, e.g. `// Remove in P5`.
+- Start every new source file with a comment saying what it is for. Plans, status reports and
+  handoffs go in PRs or issues; a research record must be linked from the decision, code or doc it
+  supports. `npm run docs:check` enforces these ([hygiene guards](scripts/check-hygiene.ts)).
 - One writer per file at a time. Never commit credentials, private transcripts, local paths or
   screenshots with user data.
 - Push, merge, release, paid model calls and production data changes need the owner's explicit

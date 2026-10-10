@@ -70,7 +70,7 @@ different volume. Inventory actual configured paths before stopping the service:
 | Asset | Location and required contents |
 | --- | --- |
 | PostgreSQL | Logical dump of the configured database; preserve the matching PostgreSQL major version and OpenBot build identity |
-| Objects and plugins | Entire `OPENBOT_OBJECT_STORE_PATH`, including reports, attachment bytes/metadata/derived text and `plugins/state.json` |
+| Objects and plugins | Entire `OPENBOT_OBJECT_STORE_PATH`, including reports, attachment bytes/metadata/derived text and `<object store>/plugins/state.json` |
 | Model directory mode | Entire `OPENBOT_MODEL_DIRECTORY`, including `encryption.key` and `settings.json`; losing the key makes retained ciphertext unreadable |
 | Legacy model mode | `OPENBOT_MODEL_SETTINGS_PATH` and its exact `OPENBOT_MODEL_ENCRYPTION_KEY` from the protected service configuration; do not put the key in a public manifest |
 | Optional Employee publisher | Entire `OPENBOT_EMPLOYEE_PUBLISHER_KEYRING_PATH` plus the separately configured `OPENBOT_EMPLOYEE_PUBLISHER_PASSPHRASE_FILE`, when enabled |
