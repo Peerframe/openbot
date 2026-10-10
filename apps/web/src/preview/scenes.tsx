@@ -1,3 +1,5 @@
+// Design preview renderers: the whole App for app scenes, single screens and dialogs for component
+// scenes, and the scene index. Actions stay pending; nothing is submitted.
 import type { Artifact, Bot, Channel, ExecutionNode, Run } from "@openbot/domain";
 import type { ReactElement } from "react";
 import { App } from "../App";
