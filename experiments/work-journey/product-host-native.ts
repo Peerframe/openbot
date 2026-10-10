@@ -139,6 +139,7 @@ async function prepare() {
       !present(PUBLIC) &&
       !present(NATIVE) &&
       !present("/run/obp5") &&
+      !present("/opt/oc25n") &&
       !present(output),
     "fresh_product_packet_required",
   );
@@ -148,6 +149,11 @@ async function prepare() {
   chmodSync("/run/obp5", 0o750);
   copy(realpathSync(process.argv[1]!), PROGRAM);
   copy(relay, ROOT + "/product-command-node.cjs");
+  // The unprivileged peer needs only this sealed executable, never access to root-private code.
+  trustedFile(NODE);
+  mkdirSync("/opt/oc25n", { mode: 0o755 });
+  chmodSync("/opt/oc25n", 0o755);
+  copy(NODE, RELAY, 0o755);
   const plan = JSON.parse(
     new TextDecoder("utf8", { fatal: true }).decode(
       readBytes(PACKET + "/PLAN.json", 2 * 1024 * 1024),
