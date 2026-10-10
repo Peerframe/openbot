@@ -1,2 +1,0 @@
-# Same isolated pins as the qualified SDK composition, not product dependencies.
--r ../sdk-durability/requirements.txt

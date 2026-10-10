@@ -20,7 +20,7 @@ import {
 } from "./probe-inputs.ts";
 
 const credential = `obn_${"a".repeat(43)}`;
-// Shape written by product_browser_probe.py for local modes (remote=None there).
+// Shape written by product-browser-probe.ts for local modes (no remote relay).
 const browserInput = {
   nodeId: "browser-product-0a1b2c3d4e",
   botId: "4f1c2a8e-6f3b-4c1d-9a2e-1b2c3d4e5f60",
@@ -34,7 +34,7 @@ const browserInput = {
   profileRestart: false,
   remote: null,
 };
-// Shape written by product_command_probe.py to the local CommonJS Node bundle.
+// Shape written by product-command-probe.ts to the local CommonJS Node bundle.
 const route = {
   nodeId: "command-product-0a1b2c3d4e5f",
   providerId: "linux-command",

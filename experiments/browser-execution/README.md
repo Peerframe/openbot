@@ -1,8 +1,9 @@
 # Chromium/runsc boundary experiment
 
-The CDP qualification entry is `probe.ts`, with typed transport and artifact modules pinned by
-`browser_a1.py`. The egress guest runs `egress_probe.ts`; both use existing guest Node type
-stripping. No host Node prerequisite or new compilation layer is added to the Python qualifiers.
+The CDP qualification entry is `probe.ts`, with typed transport and artifact modules. The egress
+guest runs `egress_probe.ts`; both use existing guest Node type stripping. The Python qualifiers
+that pinned and launched them (`browser_a1.py`, `qualify_egress.py`) were deleted after P5; read
+them at [the last revision that had them](https://github.com/Peerframe/openbot/tree/50837bea7bf63290aab250f84fe1b705f942efdb/experiments/browser-execution).
 The TS entry at `d426715` passed the authorized single fixed Linux/runsc case on 2026-09-30
 (`deadline-a1-ts0930a`): both browsers closed, the profile reopened, synthetic DOM and 1280×800 PNG
 were independently checked, and original 180-second Invocation expiry emptied the cgroup and

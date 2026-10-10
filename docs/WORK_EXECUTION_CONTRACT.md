@@ -2,7 +2,7 @@
 
 Status: design contract, 2026-09-23; not an implemented API or schema. This refines the
 approved delivery plan, rather than creating another roadmap.
-The [durability experiment](../experiments/durable-execution/README.md) supplies narrow evidence;
+The [retired durability experiment](https://github.com/Peerframe/openbot/blob/50837bea7bf63290aab250f84fe1b705f942efdb/experiments/durable-execution/README.md) supplies narrow evidence;
 [Temporal is selected as the target recovery owner](decisions/0046-temporal-as-recovery-owner.md),
 while product integration and production activation remain open.
 

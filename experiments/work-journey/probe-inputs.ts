@@ -1,8 +1,8 @@
 import { readFile, unlink, writeFile } from "node:fs/promises";
 
 /**
- * Typed JSON boundaries for the Work journey Node fixtures. Python writes these documents
- * (product_browser_probe.py, product_command_probe.py); each entry narrows only fields it uses.
+ * Typed JSON boundaries for the Work journey Node fixtures. The TS probes write these documents
+ * (product-browser-probe.ts, product-command-probe.ts); each entry narrows only fields it uses.
  * Authority checks (loopback relays, SSH target, fixed synthetic values) stay in each entry.
  */
 export type JsonRecord = Readonly<Record<string, unknown>>;

@@ -9,8 +9,7 @@ Action/epoch; it is not an authenticated admission service or a replacement reco
 
 Reuse Docker 29.8.1 / Moby `464cd50c3d9e92877d56940ea160de6fca7bea23`, gVisor
 release-20260914.0 / `95eb5d5930b0e7736826cc2cb949ba9d2c4d5d29` and OCI 1.3.0 /
-`92249139eea7161e13745abd4cb6d0ea02a3227a`. No upstream source is copied and no Python
-dependency is added. Host provisioning uses the released Docker/containerd/runsc/systemd
+`92249139eea7161e13745abd4cb6d0ea02a3227a`. No upstream source is copied. Host provisioning uses the released Docker/containerd/runsc/systemd
 binaries, not a new sandbox implementation. Exact primary-source decisions and host pins are
 in [boundary research](../../docs/research/linux-execution-boundary.md) and
 [VPS qualification](../../docs/research/linux-vps-qualification.md).
@@ -54,53 +53,15 @@ probe 25-second limit without accepted render evidence. Fifteen sampled Chrome p
 NoNewPrivs and seccomp; the original 180-second unit expired and its resources were cleaned. Existing
 services/firewalls were unchanged. These observations do not qualify browser use or takeover.
 
-| File | Purpose |
-| --- | --- |
-| `sandbox.py` | Explicit daemon binding, immutable command validation, single start, bounded observation/collection and exact-ID cleanup |
-| `output_capacity.py` | Read-only Linux mount/device/capacity prerequisite |
-| `qualify_running_host.py` | Real bounded cases inside an already isolated, explicitly selected test daemon |
-| `deadline_probe.py` | Fresh native per-Action unit, original cgroup identity and four lifetime failure cases |
-| `compare_production.py` | Compare supplied identity/state and precomputed semantic firewall hashes |
-| `test_*.py` | Scripted/kernel-observation regressions; no daemon/container |
-| `probe_output_capacity.py` | Earlier LinuxKit negative proving an ordinary directory/tmpfs is not a durable capacity bound |
-
-From the repository root:
+The Python qualifiers that produced this evidence (`sandbox.py`, `qualify_running_host.py`,
+`deadline_probe.py`, `output_capacity.py` and their tests) were deleted after P5 retired Python;
+read them at [the last revision that had them](https://github.com/Peerframe/openbot/tree/50837bea7bf63290aab250f84fe1b705f942efdb/experiments/linux-execution). The TS
+protected Host, command sandbox and native helpers in this directory replace them; run their
+contracts with:
 
 ```sh
-PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s experiments/linux-execution -p 'test_*.py'
+npm run test:linux:contracts
 ```
-
-The CLI requires an explicit private Unix socket, expected daemon ID/data root and already
-loaded digest. It never uses an implicit default Docker context. A preflight example:
-
-```sh
-python3 experiments/linux-execution/sandbox.py check \
-  --docker-host unix:///owned-test/docker.sock \
-  --docker-binary /reviewed/bin/docker \
-  --daemon-id '<observed-reviewed-id>' --daemon-root /owned-test/docker-data \
-  --work-root /owned-test/work \
-  --image 'repository@sha256:<reviewed-digest>' \
-  --admitted-image 'repository@sha256:<reviewed-digest>'
-```
-
-For real boundary qualification, the trusted operator first provisions the reviewed isolated
-service and offline image. Join that daemon's **actual** network/mount namespaces, then run
-`qualify_running_host.py --root /owned-test --unit openbot-qualification-<name>.service
---prefix <fresh-case-prefix>`. The helper requires an owned 0700 root, pinned binaries/image,
-private `daemon.json` identity evidence, private containerd and matching namespaces. It creates
-only new synthetic Action subtrees and bounded ext4 files. Never run against a production or
-shared daemon. Its provisioning interface is a qualification fixture, not a product API.
-
-For native lifetime qualification, invoke `deadline_probe.py --help` on the reviewed Linux
-host. This frozen host fixture uses `/opt/openbot-qualification-20260925-c8b2`; it must already
-contain the reviewed offline archive/binaries and a root-owned `units` directory. It is not a
-general host installer. Run `python3 deadline_probe.py run --name deadline-<fresh-id>
---case baseline` (or another listed case). Each invocation uses
-a fresh unit name and cannot reuse a consumed Action. Internal `--root` modes are not the public
-run interface. A new host/path requires explicit provisioning/review and fresh evidence. Preparation and offline load consume the
-same original native lifetime. The helper checks empty stop hooks through typed systemd D-Bus
-properties (the text CLI omits empty arrays), no restart, whole-cgroup SIGKILL and the original
-invocation/cgroup. Exact temporary resource reconciliation happens after recording the verdict.
 
 ## Authority, persistence and remaining gates
 
@@ -118,10 +79,10 @@ original durable association; a same-name replacement is refused. Missing/failed
 remains visible.
 
 The caller freezes one monotonic deadline before create/start. Waiting consumes only its
-remaining time, including delayed start acknowledgement. Python's later kill/observation is
+remaining time, including delayed start acknowledgement. The former Python helper's later kill/observation was
 best effort; it does not survive controller death or an unreachable Docker daemon. A separately
-qualified native per-Action unit contains every late-start producer. `deadline_probe.py`
-qualifies that separate wrapper; calling `sandbox.py` alone does not acquire its guarantee. Recovery only inspects;
+qualified native per-Action unit contains every late-start producer. The deleted `deadline_probe.py`
+qualified that separate wrapper; the deleted `sandbox.py` alone did not acquire its guarantee. Recovery only inspects;
 it cannot re-arm a deadline, replace a container or resend a command.
 
 Collection hashes no-follow, single-link regular files incrementally, limits tree entries and
