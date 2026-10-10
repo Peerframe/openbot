@@ -1,3 +1,0 @@
-# Development/test dependencies: runtime dependencies plus the test runner.
--r requirements.txt
-pytest==8.4.2

@@ -18,27 +18,27 @@ flowchart LR
   Node --> Provider[Execution Provider]
 ```
 
-## The Server is moving from Python to TypeScript
+## TypeScript Server migration
 
-[ADR-0050](decisions/0050-typescript-control-plane.md) moves the Server from `apps/server-python`
-to `apps/server-ts` one route group at a time. Both use the same PostgreSQL schema
-(`packages/db`) and the same wire contracts (`packages/protocol`), so data never moves between them.
+[ADR-0050](decisions/0050-typescript-control-plane.md) records the completed P5 source cutover from the [retired Python Server](https://github.com/Peerframe/openbot/blob/e25d91520dbda664705a77c76c1af456a064a39d/apps/server-python)
+to `apps/server`. The replacement retains the PostgreSQL schema (`packages/db`) and wire contracts
+(`packages/protocol`); it does not copy data into a second store.
 
 | Phase | State |
 | --- | --- |
 | P0–P2 | Done: shared contracts, the TS public entry, and forwarding to a private Python upstream |
 | P3 | Done: when selected, TS owns the Owner session and 109 of the 121 product operations, and is the only SSE publisher |
 | P4 | Done: when selected, TS also owns Work execution, its Temporal workers and the agent runtime; open Python histories drain on Python workers |
-| P5 | Next: TS becomes the default, Python, its harness and the forwarding code are removed, and `apps/server-ts` is renamed `apps/server` |
+| P5 | Source cutover complete: the default TS product is a single Server with direct Web/Worker entry and deployment-time legacy drain checks. The `apps/server` rename and Python control/harness retirement are implemented. Local package and UI acceptance passed; final hosted CI, review and installation qualification remain open. Standalone Node is retained after the Electron permission probe failed |
 
-Until P5, an installation runs Python unless the TS groups are selected explicitly. The selection
-switches, the forwarder and the Python drain are temporary and leave in P5.
+The P5 candidate removes group selection and forwarding. Default packaging uses TS with standalone
+Node; the existing installation changes only after review, backup and explicit installation approval.
 
 ## Runtime boundaries
 
 | Component | Responsibility | Authority it does not have |
 | --- | --- | --- |
-| Server (`apps/server-ts`, `apps/server-python`) | Owner sessions, Bot and channel identity, membership, routing, task state, approvals, audit, agent execution and plugin access | Models and external data cannot override Server policy |
+| Server (`apps/server`) | Owner sessions, Bot and channel identity, membership, routing, task state, approvals, audit, agent execution and plugin access | Models and external data cannot override Server policy |
 | `apps/web` | Conversations, drafts, task supervision, settings and extension presentation | No database access, provider credentials or authorization decisions |
 | `apps/desktop` | Bundles the client, a typed restricted bridge, connection policy and the local Server lifecycle | Renderer content cannot call arbitrary main-process operations |
 | `apps/node` | Outbound enrollment, advertised capabilities, assignment lifecycle and Provider dispatch | Declaring a capability does not authorize a task or side effect |

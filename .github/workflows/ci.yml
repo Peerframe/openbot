@@ -42,8 +42,8 @@ jobs:
           status=$?
           set -e
           node scripts/check-credential-findings.ts "${RUNNER_TEMP}/trufflehog-results.jsonl" "$status"
-      - name: Audit the complete Python product closure
-        run: sh scripts/audit-python.sh
+      - name: Verify the locked production package closure
+        run: node --test scripts/production-package-graph.test.ts
 
   validate:
     runs-on: ubuntu-24.04
@@ -65,7 +65,7 @@ jobs:
     needs: scope
 
   portable:
-    name: Retained clients and Python Desktop (${{ matrix.name }})
+    name: Retained clients and TS Desktop (${{ matrix.name }})
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 50
     strategy:
@@ -98,7 +98,7 @@ jobs:
         shell: pwsh
         run: ./scripts/check-windows-installer-progress.ps1
       - run: npm exec -- turbo run test --concurrency=2 --filter=@openbot/desktop --filter=@openbot/node --filter=@openbot/windows-secret-acl
-      - run: npm exec -- turbo run build --filter=@openbot/desktop --filter=@openbot/node --filter=@openbot/python-node-runtime
+      - run: npm exec -- turbo run build --filter=@openbot/desktop --filter=@openbot/node --filter=@openbot/server --filter=@openbot/web
       - name: Build the pinned macOS Worker companion
         if: runner.os == 'macOS'
         shell: bash
@@ -229,8 +229,8 @@ jobs:
     needs: scope
     if: contains(fromJSON(needs.scope.outputs.plan).required, 'windows-worker-host')
 
-  python-product-container:
-    name: Python product container (${{ matrix.name }})
+  server-container:
+    name: TS product container (${{ matrix.name }})
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 20
     strategy:
@@ -247,7 +247,15 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Validate the Python product Compose and Dockerfile contracts
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.2
+          cache: npm
+      - run: npm ci
+      - run: npm exec -- turbo run build --filter=@openbot/server
+      - name: Verify preflight and migration ordering failures
+        run: npm exec -- vitest run --config scripts/vitest.integration.config.ts scripts/product-entry.integration.test.ts
+      - name: Validate the TS product Compose and Dockerfile contracts
         timeout-minutes: 2
         run: |
           docker compose --file deploy/server/compose.yaml config --quiet
@@ -255,29 +263,41 @@ jobs:
         env:
           OPENBOT_POSTGRES_PASSWORD: openbot-product-compose-ci-only
           OPENBOT_OWNER_PASSWORD: openbot-product-compose-owner-ci-only
-      - name: Build the native Python product image without publication
+          OPENBOT_TS_PUBLIC_ORIGIN: https://entry.test:3001
+          OPENBOT_PRODUCT_CONFIG_DIRECTORY: /tmp/openbot-unused-config
+      - name: Build the native TS product image without publication
         timeout-minutes: 12
         run: docker build --platform "linux/${{ matrix.arch }}" --target runtime-product --tag openbot-server:product-smoke --file deploy/server/Dockerfile .
-      - name: Exercise Python product Owner HTTP, parsers, migrations and lifecycle
+      - name: Verify actual Linux kernel clocks, peer credentials and filesystem ABI
+        timeout-minutes: 2
+        run: |-
+          docker run --rm --network none --read-only \
+            --tmpfs /tmp:rw,nosuid,nodev,size=16m \
+            --cap-drop ALL --cap-add SETUID --cap-add SETGID --user 0 \
+            -e OPENBOT_READONLY_KERNEL_TEST=1 \
+            --mount "type=bind,src=${{ github.workspace }}/experiments/linux-execution,dst=/workspace/qualification,readonly" \
+            --entrypoint node openbot-server:product-smoke \
+            --test /workspace/qualification/kernel-facts.test.ts
+      - name: Exercise TS product Owner HTTP, parsers, migrations and lifecycle
         timeout-minutes: 6
         shell: bash
         run: |
           umask 077
-          python3 deploy/server/smoke-product.py --image openbot-server:product-smoke > "$RUNNER_TEMP/python-product-smoke.json"
-          cat "$RUNNER_TEMP/python-product-smoke.json"
-      - name: Retain the synthetic Python product smoke summary
+          node deploy/server/smoke-product.ts openbot-server:product-smoke > "$RUNNER_TEMP/server-product-smoke.json"
+          cat "$RUNNER_TEMP/server-product-smoke.json"
+      - name: Retain the synthetic TS product smoke summary
         timeout-minutes: 1
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: python-product-smoke-${{ matrix.arch }}-${{ github.sha }}
-          path: ${{ runner.temp }}/python-product-smoke.json
+          name: server-product-smoke-${{ matrix.arch }}-${{ github.sha }}
+          path: ${{ runner.temp }}/server-product-smoke.json
           if-no-files-found: error
           retention-days: 7
     needs: scope
-    if: contains(fromJSON(needs.scope.outputs.plan).required, 'python-product-container')
+    if: contains(fromJSON(needs.scope.outputs.plan).required, 'server-container')
 
-  python-desktop-preview:
-    name: Python and mixed TS Desktop Preview (macOS arm64)
+  desktop-product:
+    name: TS Desktop product (macOS arm64)
     runs-on: macos-15
     timeout-minutes: 30
     steps:
@@ -289,53 +309,11 @@ jobs:
           node-version: 22.22.2
           cache: npm
       - run: npm ci
-      - name: Build retained clients and parser/database packages without the legacy Server
-        run: npm exec -- turbo run build --filter=@openbot/desktop --filter=@openbot/python-node-runtime
-      - name: Stage the exact Python product runtime
-        run: node apps/desktop/scripts/prepare-native-server.ts --python-product
-      - name: Verify the staged Python API and PostgreSQL lifecycle
-        shell: bash
-        run: |
-          umask 077
-          node apps/desktop/scripts/smoke-python-product.ts apps/desktop/out/python-product-runtime \
-            > "$RUNNER_TEMP/python-preview-staged.json"
-          cat "$RUNNER_TEMP/python-preview-staged.json"
-      - name: Package the explicit unsigned Python Preview
-        run: node apps/desktop/scripts/package.ts --preview --python-product
-      - name: Verify the packaged Python API and PostgreSQL lifecycle
-        shell: bash
-        run: |
-          umask 077
-          node apps/desktop/scripts/smoke-python-product.ts \
-            "apps/desktop/out/python-product/OpenBot Python Preview-darwin-arm64/OpenBot Python Preview.app/Contents/Resources/native-runtime" \
-            > "$RUNNER_TEMP/python-preview-packaged.json"
-          cat "$RUNNER_TEMP/python-preview-packaged.json"
-      - name: Retain synthetic Python Preview lifecycle evidence
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: python-desktop-preview-evidence-${{ github.sha }}
-          path: |
-            ${{ runner.temp }}/python-preview-staged.json
-            ${{ runner.temp }}/python-preview-packaged.json
-          if-no-files-found: error
-          retention-days: 7
-      - name: Archive the Python Preview with executable modes and symlinks
-        shell: bash
-        run: |
-          tar -czf "$RUNNER_TEMP/python-desktop-preview-${{ github.sha }}.tar.gz" \
-            -C apps/desktop/out/python-product "OpenBot Python Preview-darwin-arm64"
-      - name: Retain the unsigned Python Preview for review
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          path: ${{ runner.temp }}/python-desktop-preview-${{ github.sha }}.tar.gz
-          archive: false
-          if-no-files-found: error
-          retention-days: 7
-      - name: Build the pinned TS entry with the same retained parser/database closure
-        run: npm exec -- turbo run build --filter=@openbot/server-ts
-      - name: Stage the exact mixed TS product runtime
-        run: node apps/desktop/scripts/prepare-native-server.ts --ts-product
-      - name: Fetch the pinned native P4 qualification engine
+      - name: Build the sole Server and retained clients
+        run: npm exec -- turbo run build --filter=@openbot/desktop --filter=@openbot/server --filter=@openbot/web
+      - name: Stage the default TS runtime
+        run: node apps/desktop/scripts/prepare-native-server.ts
+      - name: Fetch the pinned native qualification engine
         shell: bash
         run: |
           curl --proto '=https' --tlsv1.2 --fail --location --silent --show-error \
@@ -344,57 +322,45 @@ jobs:
             https://github.com/temporalio/temporal/releases/download/v1.32.0/temporal_1.32.0_darwin_arm64.tar.gz
           # The owned fixture verifies archive and regular-member sizes/hashes before execution.
           echo "OPENBOT_NATIVE_TEMPORAL_ARCHIVE=$RUNNER_TEMP/temporal_1.32.0_darwin_arm64.tar.gz" >> "$GITHUB_ENV"
-      - name: Verify the staged TS entry and paired Python/PostgreSQL lifecycle
-        shell: bash
-        run: |
-          umask 077
-          node apps/desktop/scripts/smoke-python-product.ts apps/desktop/out/ts-product-runtime \
-            > "$RUNNER_TEMP/ts-preview-staged.json"
-          cat "$RUNNER_TEMP/ts-preview-staged.json"
-      - name: Package the explicit unsigned TS Preview
-        run: node apps/desktop/scripts/package.ts --preview --ts-product
-      - name: Verify the packaged TS entry and paired Python/PostgreSQL lifecycle
-        shell: bash
-        run: |
-          umask 077
-          node apps/desktop/scripts/smoke-python-product.ts \
-            "apps/desktop/out/ts-product/OpenBot TS Preview-darwin-arm64/OpenBot TS Preview.app/Contents/Resources/native-runtime" \
-            > "$RUNNER_TEMP/ts-preview-packaged.json"
-          cat "$RUNNER_TEMP/ts-preview-packaged.json"
-      - name: Measure same-source native API forwarding overhead
-        shell: bash
+      - name: Verify staged HTTP, parser, fresh pollers and process lifecycle
+        run: node apps/desktop/scripts/smoke-product.ts apps/desktop/native-runtime > "$RUNNER_TEMP/product-staged.json"
+      - name: Package the default runtime under the isolated Preview identity
+        run: node apps/desktop/scripts/package.ts --preview
+      - name: Verify exact packaged source and native resource containment
+        run: node apps/desktop/scripts/verify-product.ts "apps/desktop/out/preview/OpenBot Preview-darwin-arm64/OpenBot Preview.app" > "$RUNNER_TEMP/product-static.json"
+      - name: Verify the actual packaged HTTP, parser, fresh pollers and lifecycle
+        run: node apps/desktop/scripts/smoke-product.ts "apps/desktop/out/preview/OpenBot Preview-darwin-arm64/OpenBot Preview.app/Contents/Resources/native-runtime" > "$RUNNER_TEMP/product-packaged.json"
+      - name: Measure native startup, API latency and descendant RSS
         run: |
           umask 077
           env -i PATH="$PATH" LANG=en_US.UTF-8 OPENBOT_NATIVE_TEMPORAL_ARCHIVE="$OPENBOT_NATIVE_TEMPORAL_ARCHIVE" \
-            apps/desktop/out/ts-product-runtime/node/bin/node apps/desktop/scripts/measure-ts-product.ts apps/desktop/out/ts-product-runtime \
-            > "$RUNNER_TEMP/ts-preview-overhead.json"
-      - name: Retain synthetic TS Preview lifecycle and performance evidence
+            apps/desktop/native-runtime/node/bin/node apps/desktop/scripts/measure-ts-product.ts apps/desktop/native-runtime \
+            > "$RUNNER_TEMP/product-measurement.json"
+      - name: Retain synthetic native acceptance evidence
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: ts-desktop-preview-evidence-${{ github.sha }}
+          name: desktop-product-evidence-${{ github.sha }}
           path: |
-            ${{ runner.temp }}/ts-preview-staged.json
-            ${{ runner.temp }}/ts-preview-packaged.json
-            ${{ runner.temp }}/ts-preview-overhead.json
+            ${{ runner.temp }}/product-staged.json
+            ${{ runner.temp }}/product-static.json
+            ${{ runner.temp }}/product-packaged.json
+            ${{ runner.temp }}/product-measurement.json
           if-no-files-found: error
           retention-days: 7
-      - name: Archive the TS Preview with executable modes and symlinks
-        shell: bash
-        run: |
-          tar -czf "$RUNNER_TEMP/ts-desktop-preview-${{ github.sha }}.tar.gz" \
-            -C apps/desktop/out/ts-product "OpenBot TS Preview-darwin-arm64"
-      - name: Retain the unsigned TS Preview for review
+      - name: Archive the unsigned Preview with executable modes and symlinks
+        run: tar -czf "$RUNNER_TEMP/desktop-product-${{ github.sha }}.tar.gz" -C apps/desktop/out/preview "OpenBot Preview-darwin-arm64"
+      - name: Retain the unsigned Preview for review
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          path: ${{ runner.temp }}/ts-desktop-preview-${{ github.sha }}.tar.gz
+          path: ${{ runner.temp }}/desktop-product-${{ github.sha }}.tar.gz
           archive: false
           if-no-files-found: error
           retention-days: 7
     needs: scope
-    if: contains(fromJSON(needs.scope.outputs.plan).required, 'python-desktop-preview')
+    if: contains(fromJSON(needs.scope.outputs.plan).required, 'desktop-product')
 
-  python-runtime:
-    name: Python control, Worker and Temporal (Linux amd64)
+  control-runtime:
+    name: TS control and persisted authority (Linux amd64)
     runs-on: ubuntu-24.04
     # Keep API/SQL parity independent of the long recovery and browser qualification jobs.
     timeout-minutes: 50
@@ -416,39 +382,18 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22.22.2
-      - name: Verify Python and Server journeys in the isolated Linux fixture
-        run: node scripts/test-runtime-linux.ts
       - name: Select the reviewed npm version for control-plane parity
         run: npm install --global --ignore-scripts npm@10.9.9
       - name: Install existing TypeScript reference dependencies
         run: npm ci --ignore-scripts --audit=false
-      - name: Bootstrap optional model and durable Worker qualification
-        shell: bash
-        run: |
-          OPENBOT_CONTROL_PYTHON=python3.12 apps/server-python/scripts/bootstrap-worker.sh
-          apps/server-python/.worker-venv/bin/python -m pip check
-          apps/server-python/.worker-venv/bin/python -I apps/server-python/scripts/verify_environment.py --worker
-          apps/server-python/.worker-venv/bin/python -B experiments/work-journey/probe.py --help > /dev/null
-      - name: Verify fresh Python and Web source startup
+      - name: Verify fresh TS and Web source startup
         run: npm run dev:smoke
         env:
           OPENBOT_DEV_SMOKE_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5545/openbot_python_dev_smoke
-      - name: Compile the frozen test-only Server oracle
-        run: npm run oracle:build
-      - name: Bootstrap the isolated Python control reference
-        run: apps/server-python/scripts/bootstrap.sh
-        env:
-          OPENBOT_CONTROL_PYTHON: python3.12
-      - name: Bootstrap the separate SDK for persisted control integration
-        run: packages/harness/scripts/bootstrap.sh
-      - name: Verify Python control models and HTTP boundaries
-        run: apps/server-python/scripts/check.sh -q
-      - name: Compare Python and TypeScript against owned PostgreSQL
-        run: npm run test:control:python
-        env:
-          OPENBOT_TEMPORAL_TEST_PYTHON: ${{ github.workspace }}/apps/server-python/.worker-venv/bin/python
+      - name: Verify TS control, persisted authority and frozen compatibility
+        run: npm run test:control:ts
     needs: scope
-    if: contains(fromJSON(needs.scope.outputs.plan).required, 'python-runtime')
+    if: contains(fromJSON(needs.scope.outputs.plan).required, 'control-runtime')
 
   temporal-qualification:
     name: Temporal durable recovery and upgrade (Linux amd64)
@@ -466,62 +411,24 @@ jobs:
           npm install --global --ignore-scripts npm@10.9.9
           npm ci --ignore-scripts --audit=false
           npm exec -- turbo run build --filter=@openbot/db
-      - name: Bootstrap the existing isolated Control and Runtime environments
-        run: |
-          apps/server-python/scripts/bootstrap.sh
-          packages/harness/scripts/bootstrap.sh
-        env:
-          OPENBOT_CONTROL_PYTHON: python3.12
-      - name: Prepare the exact durable Worker environment
-        shell: bash
-        run: |
-          python3.12 -m venv "$RUNNER_TEMP/openbot-work-reference"
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -m pip install \
-            -r apps/server-python/requirements-worker.lock
-          packages/harness/scripts/install-wheel.sh "$RUNNER_TEMP/openbot-work-reference/bin/python"
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -m pip check
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -I apps/server-python/scripts/verify_environment.py --worker
       - name: Qualify TS Work ownership, recovery and replay with mutual TLS
         run: npm run test:work:ts
-        env:
-          OPENBOT_TEMPORAL_TEST_PYTHON: ${{ runner.temp }}/openbot-work-reference/bin/python
+      - name: Qualify TS mTLS rotation, engine/database SIGKILL and incompatible schemas
+        run: npm run test:temporal:boundary
       - name: Qualify adjacent Temporal release recovery with PostgreSQL and mutual TLS
         shell: bash
-        env:
-          PYTHONPATH: apps/server-python/src:experiments/work-journey:experiments/linux-execution
         run: |
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B -m unittest discover -s experiments/linux-execution -p 'test_*.py' -q
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B -m pytest -q experiments/linux-execution/protected_host_test.py experiments/linux-execution/protected_native_test.py
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B -m pytest -q packages/harness/tests/test_temporal_agent.py experiments/work-journey/test_product_deferred_workflow.py
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B -m unittest discover -s experiments/work-journey -p 'test_*.py' -v
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
-            --engine postgres-mtls --only-case concurrent-runs
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
-            --engine postgres-mtls --only-case model-receipt-recovery
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
-            --engine postgres-mtls --only-case product-model-recovery
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
-            --engine postgres-mtls --only-case product-publication-recovery
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
-            --engine postgres-mtls --only-case product-concurrent-runs
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
-            --engine postgres-mtls --only-case product-deferred-approval
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
-            --engine postgres-mtls --only-case product-closed-repair
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
-            --engine postgres-mtls --only-case product-owner-corrections
           curl --proto '=https' --tlsv1.2 --fail --location --silent --show-error \
             --max-time 180 --max-filesize 93822307 \
             --output "$RUNNER_TEMP/temporal_1.31.3_linux_amd64.tar.gz" \
             https://github.com/temporalio/temporal/releases/download/v1.31.3/temporal_1.31.3_linux_amd64.tar.gz
           # The runner verifies pinned archive/member sizes and hashes before executing either binary.
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
-            --engine postgres-mtls --upgrade-archive "$RUNNER_TEMP/temporal_1.31.3_linux_amd64.tar.gz"
+          OPENBOT_TEMPORAL_PREVIOUS_ARCHIVE="$RUNNER_TEMP/temporal_1.31.3_linux_amd64.tar.gz" npm run test:temporal:upgrade
     needs: scope
     if: contains(fromJSON(needs.scope.outputs.plan).required, 'temporal-qualification')
 
   browser-product:
-    name: Python product browser recovery (Linux amd64)
+    name: TS product browser recovery (Linux amd64)
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
@@ -535,18 +442,7 @@ jobs:
         run: |
           npm install --global --ignore-scripts npm@10.9.9
           npm ci --ignore-scripts --audit=false
-          npm exec -- turbo run build --filter=@openbot/node^... --filter=@openbot/db --filter=@openbot/server-ts
-      - name: Prepare the exact product Worker environment
-        shell: bash
-        run: |
-          PYTHON=python3.12 packages/harness/scripts/bootstrap-build.sh
-          packages/harness/scripts/build.sh
-          python3.12 -m venv "$RUNNER_TEMP/openbot-work-reference"
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -m pip install \
-            -r apps/server-python/requirements-worker.lock
-          packages/harness/scripts/install-wheel.sh "$RUNNER_TEMP/openbot-work-reference/bin/python"
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -m pip check
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -I apps/server-python/scripts/verify_environment.py --worker
+          npm exec -- turbo run build --filter=@openbot/node... --filter=@openbot/db --filter=@openbot/server
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: 1.3.14
@@ -557,41 +453,69 @@ jobs:
           PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/openbot-browser-binaries
           PLAYWRIGHT_DOWNLOAD_CONNECTION_TIMEOUT: 120000
         run: |
-          python3.12 -B experiments/work-journey/product_browser_upstream.py "$RUNNER_TEMP/openbot-browser-upstream"
+          node experiments/work-journey/product-browser-upstream.ts "$RUNNER_TEMP/openbot-browser-upstream"
           npm ci --ignore-scripts --prefix "$RUNNER_TEMP/openbot-browser-upstream"
           node "$RUNNER_TEMP/openbot-browser-upstream/node_modules/playwright/cli.js" install --with-deps chromium
-      - name: Prepare a fresh root-private Linux/runsc P4 qualification packet
+      - name: Prepare the TS root-private Linux/runsc qualification packet
         timeout-minutes: 15
         shell: bash
         run: |
           sudo apt-get update
-          sudo apt-get install --yes --no-install-recommends nftables skopeo=1.13.3+ds1-2ubuntu0.24.04.3
+          sudo apt-get install --yes --no-install-recommends nftables skopeo=1.13.3+ds1-2ubuntu0.24.04.3 bzip2=1.0.8-5.1ubuntu0.1
           node_modules/.bin/esbuild experiments/work-journey/product_command_node.ts \
             --bundle --platform=node --format=cjs --target=node22 \
             --outfile="$RUNNER_TEMP/openbot-command-node.cjs"
-          sudo env GITHUB_ACTIONS=true "$RUNNER_TEMP/openbot-work-reference/bin/python" -B \
-            experiments/work-journey/p4_native_ci.py \
-            --worker "$RUNNER_TEMP/openbot-work-reference/bin/python" \
+          node_modules/.bin/esbuild experiments/work-journey/native-browser-launcher.ts \
+            --bundle --platform=node --format=cjs --target=node22 \
+            --outfile="$RUNNER_TEMP/openbot-browser-launcher.cjs"
+          node_modules/.bin/esbuild experiments/work-journey/native-browser.ts \
+            --bundle --platform=node --format=cjs --target=node22 --external:koffi \
+            --outfile="$RUNNER_TEMP/openbot-browser-native.cjs"
+          sudo env GITHUB_ACTIONS=true "$(command -v node)" --experimental-strip-types \
+            experiments/work-journey/native-packet-prepare.ts \
+            --repository "$GITHUB_WORKSPACE" \
+            --launcher "$RUNNER_TEMP/openbot-browser-launcher.cjs" \
+            --native "$RUNNER_TEMP/openbot-browser-native.cjs" --koffi "$GITHUB_WORKSPACE/node_modules/koffi" \
             --upstream "$RUNNER_TEMP/openbot-browser-upstream" \
-            --bun "$(command -v bun)" --node "$(command -v node)" \
-            --node-bundle "$RUNNER_TEMP/openbot-command-node.cjs" \
-            --output "$RUNNER_TEMP/openbot-native-command.json"
-          sudo chown "$(id -u):$(id -g)" "$RUNNER_TEMP/openbot-native-command.json"
+            --bun "$(command -v bun)" --node "$(command -v node)"
+      - name: Qualify the migrated TS native adapter on original systemd and runsc
+        timeout-minutes: 4
+        shell: bash
+        run: |
+          node_modules/.bin/esbuild experiments/linux-execution/native-helper.ts \
+            --bundle --platform=node --format=cjs --target=node22 --external:koffi \
+            --outfile="$RUNNER_TEMP/openbot-native-helper.cjs"
+          node_modules/.bin/esbuild experiments/linux-execution/qualify-native.ts \
+            --bundle --platform=node --format=cjs --target=node22 --external:koffi \
+            --outfile="$RUNNER_TEMP/openbot-native-qualify.cjs"
+          sudo env GITHUB_ACTIONS=true NODE_PATH="$GITHUB_WORKSPACE/node_modules" \
+            "$(command -v node)" "$RUNNER_TEMP/openbot-native-qualify.cjs" \
+            --helper "$RUNNER_TEMP/openbot-native-helper.cjs" \
+            --koffi "$GITHUB_WORKSPACE/node_modules/koffi" \
+            > "$RUNNER_TEMP/openbot-native-ts-adapter.json"
+      - name: Prepare the root-private TS product Host fixture
+        shell: bash
+        run: |
+          node_modules/.bin/esbuild experiments/work-journey/product-host-native.ts \
+            --bundle --platform=node --format=cjs --target=node22 --external:koffi \
+            --outfile="$RUNNER_TEMP/openbot-product-host.cjs"
+          sudo env GITHUB_ACTIONS=true NODE_PATH="$GITHUB_WORKSPACE/node_modules" \
+            "$(command -v node)" "$RUNNER_TEMP/openbot-product-host.cjs" prepare \
+            "$RUNNER_TEMP/openbot-command-node.cjs" "$RUNNER_TEMP/openbot-native-command-ts.json"
+          sudo chown "$(id -u):$(id -g)" "$RUNNER_TEMP/openbot-native-command-ts.json"
       - name: Qualify the TS approved command on the actual protected Linux/runsc Host
         timeout-minutes: 5
         shell: bash
         run: |
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B \
-            experiments/work-journey/product_command_probe.py --entry ts --claim-approval-race \
-            --native-ci-config "$RUNNER_TEMP/openbot-native-command.json" \
+          node --import tsx experiments/work-journey/product-command-probe.ts --claim-approval-race \
+            --native-ci-config "$RUNNER_TEMP/openbot-native-command-ts.json" \
             --output "$RUNNER_TEMP/openbot-command-ts-native" \
             --node-bundle "$RUNNER_TEMP/openbot-command-node.cjs"
       - name: Qualify the TS isolated Linux browser, profile replacement and original native expiry
         timeout-minutes: 15
         shell: bash
         run: |
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B \
-            experiments/work-journey/p4_native_browser.py \
+          node --import tsx experiments/work-journey/product-browser-native.ts \
             --output "$RUNNER_TEMP/openbot-browser-ts-native" \
             --upstream "$RUNNER_TEMP/openbot-browser-upstream" \
             --browsers "$RUNNER_TEMP/openbot-browser-binaries"
@@ -599,7 +523,7 @@ jobs:
         timeout-minutes: 8
         shell: bash
         run: |
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/product_browser_probe.py \
+          node --import tsx experiments/work-journey/product-browser-probe.ts \
             --output "$RUNNER_TEMP/openbot-browser-product" \
             --upstream "$RUNNER_TEMP/openbot-browser-upstream" \
             --browsers "$RUNNER_TEMP/openbot-browser-binaries"
@@ -615,7 +539,7 @@ jobs:
         shell: bash
         run: |
           for recovery in control node replacement response-loss browser-restart; do
-            "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/product_browser_probe.py \
+            node --import tsx experiments/work-journey/product-browser-probe.ts \
               --output "$RUNNER_TEMP/openbot-browser-recovery-$recovery" \
               --upstream "$RUNNER_TEMP/openbot-browser-upstream" \
               --browsers "$RUNNER_TEMP/openbot-browser-binaries" \
@@ -626,8 +550,8 @@ jobs:
         shell: bash
         run: |
           for recovery in pages response-loss; do
-            "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/product_browser_probe.py \
-              --entry ts --recovery "$recovery" \
+            node --import tsx experiments/work-journey/product-browser-probe.ts \
+              --recovery "$recovery" \
               --output "$RUNNER_TEMP/openbot-browser-ts-$recovery" \
               --upstream "$RUNNER_TEMP/openbot-browser-upstream" \
               --browsers "$RUNNER_TEMP/openbot-browser-binaries"
@@ -638,6 +562,7 @@ jobs:
         with:
           name: p4-native-product-results
           path: |
+            ${{ runner.temp }}/openbot-native-ts-adapter.json
             ${{ runner.temp }}/openbot-command-ts-native/result.json
             ${{ runner.temp }}/openbot-command-ts-native/remote-result.json
             ${{ runner.temp }}/openbot-command-ts-native/native-*.failure.json
@@ -668,6 +593,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.22.2
+          cache: npm
+      - run: npm ci --ignore-scripts --audit=false
       - name: Build released proxy and disposable fixture tools
         timeout-minutes: 6
         run: |
@@ -678,7 +608,7 @@ jobs:
         timeout-minutes: 3
         run: |
           image_id="$(docker image inspect openbot-egress-fixture:ci --format '{{.Id}}')"
-          python3 -B experiments/browser-execution/qualify_egress.py \
+          node experiments/browser-execution/qualify-egress.ts \
             --fixture-image "$image_id" --output "$RUNNER_TEMP/openbot-egress-result"
       - name: Retain content-free proxy result
         if: always()
@@ -695,10 +625,13 @@ jobs:
           root=/opt/openbot-qualification-20260925-c8b2/network-20260926-a2
           sudo mkdir -p /opt/openbot-qualification-20260925-c8b2
           sudo mkdir -m 700 "$root"
-          sudo install -m 600 experiments/browser-execution/native-network/network_probe.py "$root/"
-          sudo install -m 600 experiments/browser-execution/native-network/run_probe.py "$root/"
+          node_modules/.bin/esbuild experiments/browser-execution/native-network/network-qualification.ts \
+            --bundle --platform=node --format=cjs --target=node22 \
+            --outfile="$RUNNER_TEMP/network-qualification.cjs"
+          sudo install -m 755 "$(command -v node)" "$root/node"
+          sudo install -m 600 "$RUNNER_TEMP/network-qualification.cjs" "$root/"
           sudo install -m 600 experiments/browser-execution/native-network/fixture.nft "$root/"
-          sudo python3 -B "$root/run_probe.py" --docker /usr/bin/docker
+          sudo "$root/node" "$root/network-qualification.cjs" launch
       - name: Retain content-free native network result
         if: always()
         run: |
@@ -717,12 +650,12 @@ jobs:
     if: contains(fromJSON(needs.scope.outputs.plan).required, 'browser-egress')
 
   synthetic-migration:
-    name: Python migration and paired restore (synthetic)
+    name: SQL migration and paired restore (synthetic)
     uses: ./.github/workflows/s7-migration.yml
     needs: scope
     if: contains(fromJSON(needs.scope.outputs.plan).required, 'synthetic-migration')
 
-  # Python product qualification and retained compatibility must each succeed independently.
+  # TS product qualification and retained compatibility must each succeed independently.
   check:
     if: always()
     needs:
@@ -731,13 +664,13 @@ jobs:
       - validate
       - portable
       - windows-worker-host
-      - harness
-      - python-runtime
+      - contracts
+      - control-runtime
       - temporal-qualification
       - browser-product
       - browser-egress
-      - python-product-container
-      - python-desktop-preview
+      - server-container
+      - desktop-product
       - synthetic-migration
     runs-on: ubuntu-24.04
     timeout-minutes: 3
@@ -769,10 +702,10 @@ jobs:
       - id: scope
         name: Select from immutable PR base/head or full main qualification
         run: node scripts/ci-scope.ts --event "$GITHUB_EVENT_PATH" --github-output "$GITHUB_OUTPUT"
-  harness:
-    name: Installed harness, Python quality and Work contract
+  contracts:
+    name: TS Work and public consumer contracts
     needs: scope
-    if: contains(fromJSON(needs.scope.outputs.plan).required, 'harness')
+    if: contains(fromJSON(needs.scope.outputs.plan).required, 'contracts')
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -784,28 +717,15 @@ jobs:
           node-version: 22.22.2
           cache: npm
       - run: npm ci --ignore-scripts --audit=false
-      - name: Prepare separate locked Python environments
-        run: |-
-          packages/harness/scripts/bootstrap.sh
-          apps/server-python/scripts/bootstrap.sh
-          apps/server-python/scripts/bootstrap-worker.sh
-          packages/harness/scripts/bootstrap-quality.sh
-        env:
-          PYTHON: python3.12
-          OPENBOT_CONTROL_PYTHON: python3.12
-      - name: Verify the independent core, public consumers and clean wheel
-        run: |-
-          npm run harness:check
-          npm run harness:wheel
-          npm run harness:quality
-          apps/server-python/.worker-venv/bin/python -I apps/server-python/scripts/derive-product-lock.py --check
-      - name: Verify the real Python HTTP and TypeScript contract consumer
+      - name: Verify the real TS HTTP/HTTPS contract consumers
         run: |-
           npm run contracts:check
           npm run contracts:test
-          npm run contracts:http:python
-          npm run contracts:http:python -- --suite publisher
-          npm run contracts:http:python -- --suite models
+          npm run contracts:legacy
+          npm run test:linux:contracts
+          npm exec -- turbo run build --filter=@openbot/server --filter=@openbot/web
+          node scripts/work-http-probe.ts
+          node --test experiments/work-journey/desktop-temporal/observe-pollers.test.ts experiments/work-journey/desktop-temporal/probe-support.test.ts
           npm run contracts:http:ts
           npm run contracts:http:ts -- --suite publisher
           npm run contracts:http:ts -- --suite models

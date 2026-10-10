@@ -33,14 +33,16 @@ export type ProductProjection = {
     packages: Record<string, unknown>;
   };
 };
-const ENTRY = "packages/python-node-runtime";
-const RUNTIME_WORKSPACES = ["packages/db", ENTRY] as const;
+const ENTRY = "apps/server";
+const RUNTIME_WORKSPACES = [ENTRY, "packages/db", "packages/domain", "packages/employee-publisher", "packages/logging", "packages/protocol", "packages/work"] as const;
 const PROFILES: Readonly<Record<ProductProfile, ProfileSpec>> = {
   runtime: { workspaces: RUNTIME_WORKSPACES, tools: [] },
   build: {
-    workspaces: [...RUNTIME_WORKSPACES, "packages/domain", "packages/protocol", "apps/web"],
+    workspaces: [...RUNTIME_WORKSPACES, "apps/web"],
     tools: [
       ["", ["typescript", "@types/node"]],
+      ["apps/node", ["@types/ws"]],
+      ["packages/employee-publisher", ["@types/filename-reserved-regex", "@types/write-file-atomic"]],
       ["apps/web", ["@types/react", "@types/react-dom", "@vitejs/plugin-react", "vite"]],
     ],
   },
@@ -103,7 +105,7 @@ export function project(lock: unknown, profile: unknown): ProductProjection {
   if (spec.tools.length > 0) addBuildTools(packages, spec);
   const graph = collectProductionPackageGraph(selected, ENTRY);
   assertOwnedWorkspaces(graph, spec);
-  const name = `openbot-python-product-${profile}`;
+  const name = `openbot-product-${profile}`;
   const manifest: ProductManifest = {
     name,
     version: "0.0.0",

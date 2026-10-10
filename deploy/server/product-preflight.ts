@@ -1,8 +1,12 @@
+/** Verifies the fixed runtime closure without opening a database or starting execution. */
 import { access, readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 
 const PRODUCT_NODE_VERSION = "24.21.0";
 const RUNTIME_MODULES = [
+  "@temporalio/worker",
+  "@fastify/static",
+  "koffi",
   "officeparser",
   "pdfjs-dist",
   "tesseract.js",
@@ -30,3 +34,6 @@ if (
   throw new Error("Product migration snapshot changed; requalify it.");
 await access(new URL("../../apps/web/dist/index.html", import.meta.url));
 await import("../../packages/db/dist/index.js");
+
+await import("../../apps/server/dist/app.js");
+await access(new URL("../../apps/server/dist/parser-worker.js", import.meta.url));

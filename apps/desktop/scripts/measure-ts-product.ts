@@ -1,3 +1,4 @@
+/** Measures the single TS candidate in disposable profiles; never observes installed app processes. */
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -7,11 +8,11 @@ import { join, resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { configureNativeWorkFixture, runNativeWorkFixture } from "./native-work-fixture.ts";
-import { confirmProcessesStopped, loadDesktopModules } from "./python-product-probe.ts";
+import { confirmProcessesStopped, loadDesktopModules } from "./product-probe.ts";
 
 const desktopDist = fileURLToPath(new URL("../dist/", import.meta.url));
-const serverDist = fileURLToPath(new URL("../../server-ts/dist/", import.meta.url));
-type Mode = "python-direct" | "ts-forwarding";
+const serverDist = fileURLToPath(new URL("../../server/dist/", import.meta.url));
+type Mode = "typescript-product";
 type Start = "fresh-profile" | "restart";
 type Rss = ReturnType<typeof ownedRss>;
 
@@ -50,12 +51,7 @@ export function ownedRss(table: string, parentPid: number, productIds: readonly 
   );
   return {
     nativeChildrenRssKiB: children.reduce((total, row) => total + row.rss, 0),
-    pythonRssKiB: children
-      .filter((row) => row.pid === productIds[0])
-      .reduce((total, row) => total + row.rss, 0),
-    tsRssKiB: children
-      .filter((row) => row.pid === productIds[1])
-      .reduce((total, row) => total + row.rss, 0),
+    tsRssKiB: children.filter((row) => productIds.includes(row.pid)).reduce((total, row) => total + row.rss, 0),
     controllerRssKiB: controller.rss,
     childCount: children.length,
   };
@@ -124,42 +120,36 @@ export async function measureTsProduct(runtimeRoot: string) {
   const { selectsTsProduct } = (await import(
     pathToFileURL(join(desktopDist, "ts-server.js")).href
   )) as typeof import("../src/ts-server.ts");
-  assert(await selectsTsProduct(runtimeRoot), "Measurement requires a marked TS/Python candidate.");
+  assert(await selectsTsProduct(runtimeRoot), "Measurement requires a marked single TS candidate.");
   const sourceDigests: Record<string, string> = {};
   for (const name of [
     "app.js",
     "tls.js",
     "config.js",
-    "worker-tunnel.js",
+    "worker-runtime.js",
     "lifetime.js",
     "desktop-entry.js",
   ]) {
     const expected = await sha256(join(serverDist, name));
     assert.equal(
-      await sha256(join(runtimeRoot, "apps/server-ts/dist", name)),
+      await sha256(join(runtimeRoot, "apps/server/dist", name)),
       expected,
       "Candidate TS code differs from current compiled source.",
     );
-    sourceDigests[`server-ts/${name}`] = expected;
+    sourceDigests[`server/${name}`] = expected;
   }
   for (const name of [
     "main.js",
     "native-server.js",
-    "python-server.js",
+    "server-bootstrap.js",
     "ts-server.js",
     "ts-product-manifest.js",
   ])
     sourceDigests[`desktop/${name}`] = await sha256(join(desktopDist, name));
-  sourceDigests["python/serve.py"] = await sha256(
-    join(runtimeRoot, "apps/server-python/scripts/serve.py"),
-  );
-  sourceDigests["python/requirements-product.lock"] = await sha256(
-    join(runtimeRoot, "apps/server-python/requirements-product.lock"),
-  );
   sourceDigests["measurement"] = await sha256(fileURLToPath(import.meta.url));
-  const { NativeServerController, launchDesktopProductServer, launchPythonProductServer } =
+  const { NativeServerController, launchDesktopProductServer } =
     await loadDesktopModules(desktopDist);
-  const root = await realpath(await mkdtemp(join(tmpdir(), "openbot-p2-overhead-")));
+  const root = await realpath(await mkdtemp(join(tmpdir(), "openbot-p5-measure-")));
   const results: {
     trial: number;
     composition: Mode;
@@ -174,18 +164,13 @@ export async function measureTsProduct(runtimeRoot: string) {
   }[] = [];
   try {
     for (let trial = 1; trial <= 3; trial++) {
-      // Alternate order to reduce cache/order bias. Every composition gets its own new data root.
-      const modes: Mode[] =
-        trial % 2 ? ["python-direct", "ts-forwarding"] : ["ts-forwarding", "python-direct"];
+      const modes: Mode[] = ["typescript-product"];
       for (const composition of modes) {
         let serverMs = 0;
         let ids: readonly number[] = [];
         let base = "";
         let cookie = "";
-        const phase =
-          composition === "python-direct"
-            ? "python-product-candidate"
-            : "typescript-product-candidate";
+        const phase = "typescript-product-candidate";
         const login = async (url: string, password: string) => {
           const health = await fetch(`${url}/health`, { signal: AbortSignal.timeout(3000) });
           assert.equal(((await health.json()) as { phase: unknown }).phase, phase);
@@ -212,12 +197,10 @@ export async function measureTsProduct(runtimeRoot: string) {
           decrypt: (value) => Buffer.from(value, "base64").toString(),
           launchServer: async (environment) => {
             const started = performance.now();
-            const product = await (composition === "python-direct"
-              ? launchPythonProductServer
-              : launchDesktopProductServer)(runtimeRoot, environment);
+            const product = await launchDesktopProductServer(runtimeRoot, environment);
             serverMs = performance.now() - started;
             ids = product.processIds;
-            assert.equal(ids.length, composition === "python-direct" ? 1 : 2);
+            assert.equal(ids.length, 1);
             return product;
           },
           connect: login,
@@ -271,7 +254,7 @@ export async function measureTsProduct(runtimeRoot: string) {
         }
       }
     }
-    const summary = (["python-direct", "ts-forwarding"] as const).map((composition) => ({
+    const summary = (["typescript-product"] as const).map((composition) => ({
       composition,
       freshReadyMs: statistics(
         results
@@ -305,7 +288,7 @@ export async function measureTsProduct(runtimeRoot: string) {
       ),
     }));
     return {
-      kind: "same-source-native-idle-work-overhead",
+      kind: "p5-native-ready-idle-work",
       date: new Date().toISOString(),
       node: process.version,
       platform: process.platform,
@@ -323,7 +306,7 @@ export async function measureTsProduct(runtimeRoot: string) {
       method: {
         trialsPerComposition: 3,
         startsPerTrial: ["fresh-profile", "restart"],
-        order: "alternating",
+        order: "three independent fresh profiles, each followed by restart",
         sameRuntimePayload: true,
         settleMs: 2000,
         rssSamplesPerStart: 3,
@@ -337,6 +320,7 @@ export async function measureTsProduct(runtimeRoot: string) {
         liveModelCalls: 0,
         engine: "Temporal1.32.0/SQLite/mTLS",
         workerConnected: true,
+        comparisonToP0: "Same PostgreSQL/API/login timing and descendant RSS sample method. P0 was API-only; P5 includes the required idle Work worker. Temporal runs in the fixture parent and is outside both sampled trees. No percentage improvement is claimed.",
       },
       summary,
       results,

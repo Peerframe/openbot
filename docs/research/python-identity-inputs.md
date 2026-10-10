@@ -17,7 +17,7 @@
 
 The OpenBot schemas remain project-owned. The UUID pattern is adapted from Zod 4.6.2 (MIT),
 commit e359f7378fe56d695134701cda1e9055a08892dc, src/v4/core/regexes.ts. Its full copyright/permission
-notice is bundled in [the Python package](../../apps/server-python/THIRD_PARTY_NOTICES.md), so it
+notice is bundled in [the Python package](https://github.com/Peerframe/openbot/blob/e25d91520dbda664705a77c76c1af456a064a39d/apps/server-python/THIRD_PARTY_NOTICES.md), so it
 survives Python-only distribution. The whitespace set follows ECMAScript's documented productions.
 Installed dependencies are unmodified; the existing read/auth dependency reviews still apply.
 
@@ -90,7 +90,7 @@ DTOs remain the creation-input enum owner; retained current Zod and domain types
 closed set. Existing head/body/mobility/accessory values and template v1/v2 formats are unchanged.
 
 Rechecked the reviewed Zod4.6.2 commit `e359f7378fe56d695134701cda1e9055a08892dc` (MIT) and
-Pydantic2.13.5 (MIT), their existing repository tests and original source review. Targeted primary
+Pydantic 2.13.5 (MIT), their existing repository tests and original source review. Targeted primary
 queries `Zod enum fixed allowable values` and `Pydantic standard library Literal validation`
 confirm the selected mechanisms: [Zod enum](https://zod.dev/api#enums),
 [Pydantic literals](https://docs.pydantic.dev/latest/api/standard_library_types/#literals).

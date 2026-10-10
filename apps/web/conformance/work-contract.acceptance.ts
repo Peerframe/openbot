@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
-import { execFileSync } from "node:child_process";
-import { resolve } from "node:path";
+
 import { workHttpOpenApi, workHttpOperations, workHttpSchemas } from "@openbot/protocol";
 import { afterEach, expect, it, vi } from "vitest";
+import { frozenWebContracts } from "../../../scripts/frozen-web-contracts.ts";
 import {
   type CreateWorkInput,
   cancelWorkTask,
@@ -12,14 +12,7 @@ import {
   workSnapshotSchema,
 } from "../src/work-api";
 
-const root = `${resolve(process.cwd(), "../..")}/`;
-const fixtures = JSON.parse(
-  execFileSync(
-    `${root}apps/server-python/.venv/bin/python`,
-    ["-I", `${root}apps/server-python/scripts/work-contract-fixtures.py`],
-    { encoding: "utf8" },
-  ),
-) as {
+const fixtures = frozenWebContracts<{
   cases: { name: string; input: unknown; valid: boolean; serialized?: unknown }[];
   responses: { id: string; status: number; body: unknown }[];
   requests: { name: string; input: unknown; valid: boolean; serialized?: unknown }[];
@@ -37,23 +30,19 @@ const fixtures = JSON.parse(
     valid: boolean;
     serialized?: unknown;
   }[];
-};
+}>("work");
 afterEach(() => vi.unstubAllGlobals());
 
-it.each(fixtures.wireCases)("TS wire/Python DTO parity: $schema/$name", (sample) => {
+it.each(fixtures.wireCases)("TS wire/frozen Python DTO parity: $schema/$name", (sample) => {
   const result = workHttpSchemas[sample.schema].safeParse(sample.input);
   expect(result.success).toBe(sample.valid);
   if (result.success) expect(result.data).toEqual(sample.serialized);
 });
 
-it("covers all actual Work route methods, operation IDs and successful statuses", () => {
-  const python = JSON.parse(
-    execFileSync(
-      `${root}apps/server-python/.venv/bin/python`,
-      ["-I", `${root}apps/server-python/scripts/export-work-contract.py`],
-      { encoding: "utf8" },
-    ),
-  );
+it("retains all frozen Work route methods, operation IDs and successful statuses", () => {
+  const python = frozenWebContracts<{
+    paths: Record<string, Record<string, { operationId: string; responses: object }>>;
+  }>("workOpenApi");
   const actual = Object.entries(python.paths).flatMap(([path, methods]) =>
     Object.entries(methods as Record<string, { operationId: string; responses: object }>).map(
       ([method, operation]) => ({
@@ -76,7 +65,7 @@ it("covers all actual Work route methods, operation IDs and successful statuses"
   expect(Object.keys(workHttpOpenApi().paths)).toHaveLength(actual.length);
 });
 
-it.each(fixtures.cases)("Python and runtime Web validation agree: $name", (sample) => {
+it.each(fixtures.cases)("frozen Python and runtime Web validation agree: $name", (sample) => {
   const result = workSnapshotSchema.safeParse(sample.input);
   expect(result.success).toBe(sample.valid);
   if (sample.valid) expect(workSnapshotSchema.safeParse(sample.serialized).success).toBe(true);
@@ -88,7 +77,7 @@ it.each(fixtures.requests)("request DTO and runtime Web validation agree: $name"
 });
 
 it.each(fixtures.commands)(
-  "consumes actual $operation HTTP status $status: $id",
+  "consumes frozen actual $operation HTTP status $status: $id",
   async (sample) => {
     const fetcher = vi.fn(async () => Response.json(sample.body, { status: sample.status }));
     vi.stubGlobal("fetch", fetcher);
@@ -115,7 +104,7 @@ it.each(fixtures.commands)(
 );
 
 it.each(fixtures.responses)(
-  "consumes the real HTTP route serialization/status: $id",
+  "consumes frozen HTTP route serialization/status: $id",
   async (sample) => {
     vi.stubGlobal(
       "fetch",

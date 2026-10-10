@@ -20,16 +20,19 @@ test("TS entry production closure includes reviewed adapters, model SDKs and nat
   const source = JSON.parse(
     await readFile(new URL("../package-lock.json", import.meta.url), "utf8"),
   );
-  const graph = collectProductionPackageGraph(source, "apps/server-ts");
+  const graph = collectProductionPackageGraph(source, "apps/server");
   assert.deepEqual(graph.workspaceKeys, [
-    "apps/server-ts",
+    "apps/server",
+    "packages/db",
     "packages/domain",
     "packages/employee-publisher",
+    "packages/logging",
     "packages/protocol",
     "packages/work",
   ]);
   assert(graph.packageKeys.includes("node_modules/fastify"));
-  assert(graph.packageKeys.includes("node_modules/@fastify/reply-from"));
+  assert(graph.packageKeys.includes("node_modules/@fastify/static"));
+  assert(!graph.packageKeys.includes("node_modules/@fastify/reply-from"));
   for (const name of [
     "openai",
     "@anthropic-ai/sdk",
@@ -44,9 +47,9 @@ test("TS entry production closure includes reviewed adapters, model SDKs and nat
   ]) {
     assert(graph.packageKeys.includes(`node_modules/${name}`), `${name} must be staged`);
   }
-  assert.equal(source.packages["apps/server-ts"].dependencies.ws, "8.21.3");
+  assert.equal(source.packages["apps/server"].dependencies.ws, "8.21.3");
   assert(!graph.workspaceKeys.includes("tests/oracles/legacy-server"));
-  assert.throws(() => collectProductionPackageGraph(source, "apps/server-ts/other"), /Unsupported/);
+  assert.throws(() => collectProductionPackageGraph(source, "apps/server/other"), /Unsupported/);
 });
 
 test("selects the nearest nested dependency without substituting a workspace link", () => {

@@ -15,46 +15,15 @@ export interface NativeRuntimeLock {
   >;
 }
 
-/** Coexistence keeps the reviewed Python helpers and adds the reviewed TS production closure. */
-export function mixedCandidateGraph(lock: NativeRuntimeLock) {
-  const python = pythonCandidateGraph(lock);
-  for (const [name, version] of [
-    ["fastify", TS_CANDIDATE.fastifyVersion],
-    ["@fastify/reply-from", TS_CANDIDATE.replyFromVersion],
-  ] as const) {
-    if (
-      lock.packages?.["apps/server-ts"]?.dependencies?.[name] !== version ||
-      lock.packages?.[`node_modules/${name}`]?.version !== version
-    )
-      throw new Error("TS forwarding dependency does not match its reviewed pin.");
-  }
-  const ts = collectProductionPackageGraph(lock, "apps/server-ts");
-  return {
-    workspaceKeys: [...new Set([...python.workspaceKeys, ...ts.workspaceKeys])].sort(),
-    packageKeys: [...new Set([...python.packageKeys, ...ts.packageKeys])].sort(),
-  };
-}
-
-export function pythonCandidateGraph(lock: NativeRuntimeLock) {
-  const entryPoint = "packages/python-node-runtime";
-  const runtime = lock.packages?.[entryPoint];
-  for (const name of [
-    "@openbot/db",
-    "pdfjs-dist",
-    "officeparser",
-    "tesseract.js",
-    "@tesseract.js-data/eng",
-    "@tesseract.js-data/chi_sim",
-  ]) {
-    if (typeof runtime?.dependencies?.[name] !== "string")
-      throw new Error("Retained Python parser dependency is missing.");
-  }
-  // The metadata-only workspace owns these pins independently of the retired business Server.
-  const graph = collectProductionPackageGraph(lock, entryPoint);
-  return {
-    ...graph,
-    workspaceKeys: graph.workspaceKeys.filter((key) => key !== entryPoint),
-  };
+/** A single product closure owns all runtime imports, retained parsers and guarded migrations. */
+export function productCandidateGraph(lock: NativeRuntimeLock) {
+  const dependencies = lock.packages?.["apps/server"]?.dependencies;
+  for (const [name, version] of [["fastify", TS_CANDIDATE.fastifyVersion], ["@fastify/static", TS_CANDIDATE.staticVersion]] as const)
+    if (dependencies?.[name] !== version || lock.packages?.[`node_modules/${name}`]?.version !== version)
+      throw new Error("Server dependency does not match its reviewed pin.");
+  for (const name of ["@openbot/db", "pdfjs-dist", "officeparser", "tesseract.js", "@tesseract.js-data/eng", "@tesseract.js-data/chi_sim"])
+    if (typeof dependencies?.[name] !== "string") throw new Error("Retained parser or migration dependency is missing.");
+  return collectProductionPackageGraph(lock, "apps/server");
 }
 
 /** Follow the pinned npm package's declared OS/CPU filter, not the build host's directory inventory. */

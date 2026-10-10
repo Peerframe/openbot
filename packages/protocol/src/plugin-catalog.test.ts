@@ -3,10 +3,7 @@ import { describe, expect, it } from "vitest";
 import { reviewedPluginCatalogSchema } from "./plugin-catalog.js";
 
 const catalog = JSON.parse(
-  readFileSync(
-    new URL("../../../apps/server-python/src/openbot_server/plugin_catalog.json", import.meta.url),
-    "utf8",
-  ),
+  readFileSync(new URL("../../../apps/server/src/plugin_catalog.json", import.meta.url), "utf8"),
 );
 describe("reviewed plugin catalog", () => {
   it("accepts the actual pinned developer template and rejects unreviewed or unbound entries", () => {
@@ -40,7 +37,7 @@ describe("reviewed plugin catalog", () => {
   });
 });
 
-it("matches Python scalar bounds for operator catalog names", () => {
+it("retains Unicode scalar bounds for operator catalog names", () => {
   const entry = { ...catalog.entries[0], name: "😀".repeat(80) };
   expect(reviewedPluginCatalogSchema.safeParse({ ...catalog, entries: [entry] }).success).toBe(
     true,

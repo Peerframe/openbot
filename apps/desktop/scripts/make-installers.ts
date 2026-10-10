@@ -1,3 +1,4 @@
+/** Builds installers and verifies the mounted application against its packaged runtime. */
 import { execFile } from "node:child_process";
 import { constants } from "node:fs";
 import { access, appendFile, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
@@ -26,6 +27,7 @@ import {
 } from "./package-policy.ts";
 
 import { preparePackageIcons } from "./generate-icons.ts";
+import { verifyProductCandidate } from "./verify-product.ts";
 
 const run = promisify(execFile);
 const appRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -129,7 +131,8 @@ async function verifyMountedDmg(installer: InstallerRun, asarSha256: string): Pr
         join(resources, "native-runtime", "postgres", "bin", "postgres"),
         constants.X_OK,
       );
-      await access(join(resources, "native-runtime", "python-control.json"));
+      await access(join(resources, "native-runtime", "node", "bin", "node"), constants.X_OK);
+      await verifyProductCandidate(application);
     } else {
       try {
         await access(join(resources, "native-runtime"));

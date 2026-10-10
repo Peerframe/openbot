@@ -23,7 +23,7 @@ One implementer per file scope (root `AGENTS.md`). Cross-scope needs go through 
 | Owner | Scope |
 | --- | --- |
 | Claude | UI and UX: `apps/web/src/**` (components, styles, the Web API client `api.ts`), UI tests, the design preview harness, `docs/design/**`, the canvas |
-| Codex | Backend and platform: `apps/server-python/**`, `packages/db/**`, `packages/protocol/**`, `packages/domain/**`, `apps/desktop/src/**` (main process and preload), desktop packaging and icons, CI and scripts |
+| Codex | Backend and platform: `apps/server/**`, `packages/db/**`, `packages/protocol/**`, `packages/domain/**`, `apps/desktop/src/**` (main process and preload), desktop packaging and icons, CI and scripts |
 
 A backlog item is ready for UI when its route or bridge method, domain/protocol types and tests are
 merged and documented in `docs/API.md`. Until then the UI hides the design element that needs it

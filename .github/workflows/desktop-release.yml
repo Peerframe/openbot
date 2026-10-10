@@ -88,10 +88,10 @@ jobs:
             platforms='Windows x64 only. This release contains no macOS or Linux installer.'
             install='Windows: open the EXE for a per-user installation.'
           elif [[ "$RELEASE_TARGETS" == darwin-arm64,win32-x64 ]]; then
-            platforms='macOS arm64 and Windows x64 installers. macOS includes the local Python Server; Windows connects to a separately deployed Server. This release contains no Linux installer.'
+            platforms='macOS arm64 and Windows x64 installers. macOS includes the local TS Server; Windows connects to a separately deployed Server. This release contains no Linux installer.'
             install='macOS: open the DMG and drag OpenBot into Applications. Windows: open the EXE for a per-user installation.'
           else
-            platforms='macOS arm64, Windows x64 and Linux x64 installers. macOS includes the local Python Server; Windows and Linux connect to a separately deployed Server.'
+            platforms='macOS arm64, Windows x64 and Linux x64 installers. macOS includes the local TS Server; Windows and Linux connect to a separately deployed Server.'
             install='macOS: open the DMG and drag OpenBot into Applications. Windows: open the EXE for a per-user installation. Linux: install the DEB or run the AppImage.'
           fi
           cat > "$RUNNER_TEMP/release-notes.md" <<EOF

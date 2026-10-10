@@ -1,0 +1,522 @@
+{
+  "source": {
+    "baseline": "a175b5a262c131887498e9198e174bc5f95244c7",
+    "runtime": "3.12.13",
+    "scope": "Frozen synthetic compatibility evidence. All keys and tokens below are generated test data; no installed profile was read.",
+    "files": {
+      "model_connections_cipher.py": "eed85497621c4a1d8869c7e807670cd2dbc096858ff9b0bac90c394b15072afe",
+      "owner_files.py": "960e965d4f73368da288349f302840cacd2c9dd9b1b84b4b8a4e3c9a5a2ad708",
+      "attachment_purge_files.py": "3e29fb30caa8a1aeefff706524e5a23d29afbda6f8980f84d3ce7974dbca31d8",
+      "plugin_store.py": "78be1e746572039ede711eec549a23e82cef815ea7327428a86e4453c86d369e"
+    }
+  },
+  "cipher": {
+    "key": "BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc=",
+    "context": {
+      "id": "synthetic-connection",
+      "presetId": "custom",
+      "baseUrl": "https://model.example.test/v1"
+    },
+    "clear": "\u5bc6\u94a5 fixture \ufeff",
+    "encrypted": "v1.Yh-3IGX6m1LoSXeU.yHgrRznCqWrqVxtZ_j_YcA.nx6ilZZPQ1Bp2uFYGG_e4xpb"
+  },
+  "audit": [
+    {
+      "input": "2026-10-08T05:42:10.123456Z",
+      "expected": "2026-10-08T05:42:10.123456Z"
+    },
+    {
+      "input": "2026-10-08 054210,1234567+0800",
+      "expected": "2026-10-07T21:42:10.123456Z"
+    },
+    {
+      "input": "2026-10-08\ud83d\udcbc05Z",
+      "expected": "2026-10-08T05:00:00.000000Z"
+    },
+    {
+      "input": "2026-10-08T05:42Z",
+      "expected": "2026-10-08T05:42:00.000000Z"
+    },
+    {
+      "input": "2026-10-08T05.3Z",
+      "expected": "2026-10-08T05:00:00.300000Z"
+    },
+    {
+      "input": "2026-10-08T05:42:10+01:99",
+      "expected": "2026-10-08T03:03:10.000000Z"
+    },
+    {
+      "input": "2026-10-08T05:42:10+00:00:00.5",
+      "expected": "2026-10-08T05:42:10.000000Z"
+    },
+    {
+      "input": "2026-10-08T05:42:10+08:12:13.111",
+      "expected": "2026-10-07T21:29:56.889000Z"
+    },
+    {
+      "input": "2026-10-08T24:00Z",
+      "expected": null
+    },
+    {
+      "input": "2026-10-08T05:42",
+      "expected": null
+    },
+    {
+      "input": "2026-10-08T05:99Z",
+      "expected": null
+    },
+    {
+      "input": "2026-10-08T05:42z",
+      "expected": null
+    },
+    {
+      "input": "20261008T05:42:10.123456Z",
+      "expected": "2026-10-08T05:42:10.123456Z"
+    },
+    {
+      "input": "20261008 054210,1234567+0800",
+      "expected": "2026-10-07T21:42:10.123456Z"
+    },
+    {
+      "input": "20261008\ud83d\udcbc05Z",
+      "expected": "2026-10-08T05:00:00.000000Z"
+    },
+    {
+      "input": "20261008T05:42Z",
+      "expected": "2026-10-08T05:42:00.000000Z"
+    },
+    {
+      "input": "20261008T05.3Z",
+      "expected": "2026-10-08T05:00:00.300000Z"
+    },
+    {
+      "input": "20261008T05:42:10+01:99",
+      "expected": "2026-10-08T03:03:10.000000Z"
+    },
+    {
+      "input": "20261008T05:42:10+00:00:00.5",
+      "expected": "2026-10-08T05:42:10.000000Z"
+    },
+    {
+      "input": "20261008T05:42:10+08:12:13.111",
+      "expected": "2026-10-07T21:29:56.889000Z"
+    },
+    {
+      "input": "20261008T24:00Z",
+      "expected": null
+    },
+    {
+      "input": "20261008T05:42",
+      "expected": null
+    },
+    {
+      "input": "20261008T05:99Z",
+      "expected": null
+    },
+    {
+      "input": "20261008T05:42z",
+      "expected": null
+    },
+    {
+      "input": "2026-W41-4T05:42:10.123456Z",
+      "expected": "2026-10-08T05:42:10.123456Z"
+    },
+    {
+      "input": "2026-W41-4 054210,1234567+0800",
+      "expected": "2026-10-07T21:42:10.123456Z"
+    },
+    {
+      "input": "2026-W41-4\ud83d\udcbc05Z",
+      "expected": "2026-10-08T05:00:00.000000Z"
+    },
+    {
+      "input": "2026-W41-4T05:42Z",
+      "expected": "2026-10-08T05:42:00.000000Z"
+    },
+    {
+      "input": "2026-W41-4T05.3Z",
+      "expected": "2026-10-08T05:00:00.300000Z"
+    },
+    {
+      "input": "2026-W41-4T05:42:10+01:99",
+      "expected": "2026-10-08T03:03:10.000000Z"
+    },
+    {
+      "input": "2026-W41-4T05:42:10+00:00:00.5",
+      "expected": "2026-10-08T05:42:10.000000Z"
+    },
+    {
+      "input": "2026-W41-4T05:42:10+08:12:13.111",
+      "expected": "2026-10-07T21:29:56.889000Z"
+    },
+    {
+      "input": "2026-W41-4T24:00Z",
+      "expected": null
+    },
+    {
+      "input": "2026-W41-4T05:42",
+      "expected": null
+    },
+    {
+      "input": "2026-W41-4T05:99Z",
+      "expected": null
+    },
+    {
+      "input": "2026-W41-4T05:42z",
+      "expected": null
+    },
+    {
+      "input": "2026W414T05:42:10.123456Z",
+      "expected": "2026-10-08T05:42:10.123456Z"
+    },
+    {
+      "input": "2026W414 054210,1234567+0800",
+      "expected": "2026-10-07T21:42:10.123456Z"
+    },
+    {
+      "input": "2026W414\ud83d\udcbc05Z",
+      "expected": "2026-10-08T05:00:00.000000Z"
+    },
+    {
+      "input": "2026W414T05:42Z",
+      "expected": "2026-10-08T05:42:00.000000Z"
+    },
+    {
+      "input": "2026W414T05.3Z",
+      "expected": "2026-10-08T05:00:00.300000Z"
+    },
+    {
+      "input": "2026W414T05:42:10+01:99",
+      "expected": "2026-10-08T03:03:10.000000Z"
+    },
+    {
+      "input": "2026W414T05:42:10+00:00:00.5",
+      "expected": "2026-10-08T05:42:10.000000Z"
+    },
+    {
+      "input": "2026W414T05:42:10+08:12:13.111",
+      "expected": "2026-10-07T21:29:56.889000Z"
+    },
+    {
+      "input": "2026W414T24:00Z",
+      "expected": null
+    },
+    {
+      "input": "2026W414T05:42",
+      "expected": null
+    },
+    {
+      "input": "2026W414T05:99Z",
+      "expected": null
+    },
+    {
+      "input": "2026W414T05:42z",
+      "expected": null
+    },
+    {
+      "input": "2026-W41T05:42:10.123456Z",
+      "expected": "2026-10-05T05:42:10.123456Z"
+    },
+    {
+      "input": "2026-W41 054210,1234567+0800",
+      "expected": "2026-10-04T21:42:10.123456Z"
+    },
+    {
+      "input": "2026-W41\ud83d\udcbc05Z",
+      "expected": "2026-10-05T05:00:00.000000Z"
+    },
+    {
+      "input": "2026-W41T05:42Z",
+      "expected": "2026-10-05T05:42:00.000000Z"
+    },
+    {
+      "input": "2026-W41T05.3Z",
+      "expected": "2026-10-05T05:00:00.300000Z"
+    },
+    {
+      "input": "2026-W41T05:42:10+01:99",
+      "expected": "2026-10-05T03:03:10.000000Z"
+    },
+    {
+      "input": "2026-W41T05:42:10+00:00:00.5",
+      "expected": "2026-10-05T05:42:10.000000Z"
+    },
+    {
+      "input": "2026-W41T05:42:10+08:12:13.111",
+      "expected": "2026-10-04T21:29:56.889000Z"
+    },
+    {
+      "input": "2026-W41T24:00Z",
+      "expected": null
+    },
+    {
+      "input": "2026-W41T05:42",
+      "expected": null
+    },
+    {
+      "input": "2026-W41T05:99Z",
+      "expected": null
+    },
+    {
+      "input": "2026-W41T05:42z",
+      "expected": null
+    },
+    {
+      "input": "2026-W53-1T05:42:10.123456Z",
+      "expected": "2026-12-28T05:42:10.123456Z"
+    },
+    {
+      "input": "2026-W53-1 054210,1234567+0800",
+      "expected": "2026-12-27T21:42:10.123456Z"
+    },
+    {
+      "input": "2026-W53-1\ud83d\udcbc05Z",
+      "expected": "2026-12-28T05:00:00.000000Z"
+    },
+    {
+      "input": "2026-W53-1T05:42Z",
+      "expected": "2026-12-28T05:42:00.000000Z"
+    },
+    {
+      "input": "2026-W53-1T05.3Z",
+      "expected": "2026-12-28T05:00:00.300000Z"
+    },
+    {
+      "input": "2026-W53-1T05:42:10+01:99",
+      "expected": "2026-12-28T03:03:10.000000Z"
+    },
+    {
+      "input": "2026-W53-1T05:42:10+00:00:00.5",
+      "expected": "2026-12-28T05:42:10.000000Z"
+    },
+    {
+      "input": "2026-W53-1T05:42:10+08:12:13.111",
+      "expected": "2026-12-27T21:29:56.889000Z"
+    },
+    {
+      "input": "2026-W53-1T24:00Z",
+      "expected": null
+    },
+    {
+      "input": "2026-W53-1T05:42",
+      "expected": null
+    },
+    {
+      "input": "2026-W53-1T05:99Z",
+      "expected": null
+    },
+    {
+      "input": "2026-W53-1T05:42z",
+      "expected": null
+    },
+    {
+      "input": "2024-02-29T05:42:10.123456Z",
+      "expected": "2024-02-29T05:42:10.123456Z"
+    },
+    {
+      "input": "2024-02-29 054210,1234567+0800",
+      "expected": "2024-02-28T21:42:10.123456Z"
+    },
+    {
+      "input": "2024-02-29\ud83d\udcbc05Z",
+      "expected": "2024-02-29T05:00:00.000000Z"
+    },
+    {
+      "input": "2024-02-29T05:42Z",
+      "expected": "2024-02-29T05:42:00.000000Z"
+    },
+    {
+      "input": "2024-02-29T05.3Z",
+      "expected": "2024-02-29T05:00:00.300000Z"
+    },
+    {
+      "input": "2024-02-29T05:42:10+01:99",
+      "expected": "2024-02-29T03:03:10.000000Z"
+    },
+    {
+      "input": "2024-02-29T05:42:10+00:00:00.5",
+      "expected": "2024-02-29T05:42:10.000000Z"
+    },
+    {
+      "input": "2024-02-29T05:42:10+08:12:13.111",
+      "expected": "2024-02-28T21:29:56.889000Z"
+    },
+    {
+      "input": "2024-02-29T24:00Z",
+      "expected": null
+    },
+    {
+      "input": "2024-02-29T05:42",
+      "expected": null
+    },
+    {
+      "input": "2024-02-29T05:99Z",
+      "expected": null
+    },
+    {
+      "input": "2024-02-29T05:42z",
+      "expected": null
+    },
+    {
+      "input": "2025-02-29T05:42:10.123456Z",
+      "expected": null
+    },
+    {
+      "input": "2025-02-29 054210,1234567+0800",
+      "expected": null
+    },
+    {
+      "input": "2025-02-29\ud83d\udcbc05Z",
+      "expected": null
+    },
+    {
+      "input": "2025-02-29T05:42Z",
+      "expected": null
+    },
+    {
+      "input": "2025-02-29T05.3Z",
+      "expected": null
+    },
+    {
+      "input": "2025-02-29T05:42:10+01:99",
+      "expected": null
+    },
+    {
+      "input": "2025-02-29T05:42:10+00:00:00.5",
+      "expected": null
+    },
+    {
+      "input": "2025-02-29T05:42:10+08:12:13.111",
+      "expected": null
+    },
+    {
+      "input": "2025-02-29T24:00Z",
+      "expected": null
+    },
+    {
+      "input": "2025-02-29T05:42",
+      "expected": null
+    },
+    {
+      "input": "2025-02-29T05:99Z",
+      "expected": null
+    },
+    {
+      "input": "2025-02-29T05:42z",
+      "expected": null
+    },
+    {
+      "input": "0001-01-01T05:42:10.123456Z",
+      "expected": "0001-01-01T05:42:10.123456Z"
+    },
+    {
+      "input": "0001-01-01 054210,1234567+0800",
+      "expected": null
+    },
+    {
+      "input": "0001-01-01\ud83d\udcbc05Z",
+      "expected": "0001-01-01T05:00:00.000000Z"
+    },
+    {
+      "input": "0001-01-01T05:42Z",
+      "expected": "0001-01-01T05:42:00.000000Z"
+    },
+    {
+      "input": "0001-01-01T05.3Z",
+      "expected": "0001-01-01T05:00:00.300000Z"
+    },
+    {
+      "input": "0001-01-01T05:42:10+01:99",
+      "expected": "0001-01-01T03:03:10.000000Z"
+    },
+    {
+      "input": "0001-01-01T05:42:10+00:00:00.5",
+      "expected": "0001-01-01T05:42:10.000000Z"
+    },
+    {
+      "input": "0001-01-01T05:42:10+08:12:13.111",
+      "expected": null
+    },
+    {
+      "input": "0001-01-01T24:00Z",
+      "expected": null
+    },
+    {
+      "input": "0001-01-01T05:42",
+      "expected": null
+    },
+    {
+      "input": "0001-01-01T05:99Z",
+      "expected": null
+    },
+    {
+      "input": "0001-01-01T05:42z",
+      "expected": null
+    }
+  ],
+  "owner": {
+    "item": {
+      "id": "c51dd656-e4a9-473a-afbf-d90bdb971f4f",
+      "scopeKind": "owner",
+      "ownerId": "owner",
+      "name": "Legacy.txt",
+      "mediaType": "text/plain",
+      "sizeBytes": 27,
+      "sha256": "0fc055c58701289e660d122539ca1a5cab2fb1277e19fa7e8542c47a4ea7add4",
+      "createdAt": "2026-10-10T02:26:24.331Z"
+    },
+    "files": {
+      "c51dd656-e4a9-473a-afbf-d90bdb971f4f.bin": "U3ludGhldGljIGxlZ2FjeSBhdHRhY2htZW50",
+      "c51dd656-e4a9-473a-afbf-d90bdb971f4f.json": "eyJpZCI6ICJjNTFkZDY1Ni1lNGE5LTQ3M2EtYWZiZi1kOTBiZGI5NzFmNGYiLCAic2NvcGVLaW5kIjogIm93bmVyIiwgIm93bmVySWQiOiAib3duZXIiLCAibmFtZSI6ICJMZWdhY3kudHh0IiwgIm1lZGlhVHlwZSI6ICJ0ZXh0L3BsYWluIiwgInNpemVCeXRlcyI6IDI3LCAic2hhMjU2IjogIjBmYzA1NWM1ODcwMTI4OWU2NjBkMTIyNTM5Y2ExYTVjYWIyZmIxMjc3ZTE5ZmE3ZTg1NDJjNDdhNGVhN2FkZDQiLCAiY3JlYXRlZEF0IjogIjIwMjYtMTAtMTBUMDI6MjY6MjQuMzMxWiJ9"
+    }
+  },
+  "purge": {
+    "item": {
+      "id": "c92a670b-91f6-43eb-8b28-8949fcf9983f",
+      "channelId": "2ad33499-9f1a-4000-a000-000000000001",
+      "name": "Legacy staged.txt",
+      "mediaType": "text/plain",
+      "sizeBytes": 29,
+      "sha256": "c3b9205cde4a7b83d41692945dbc81e7c1899a496b56921e33828e4c91ba81b0",
+      "createdAt": "2026-10-10T02:26:24.333Z"
+    },
+    "channel": "2ad33499-9f1a-4000-a000-000000000001",
+    "files": {
+      ".purge-93dea24d-cf15-4f2f-b833-f2bc76f34ebd/c92a670b-91f6-43eb-8b28-8949fcf9983f.bin": "U3ludGhldGljIGxlZ2FjeSBzdGFnZWQgYnl0ZXM=",
+      ".purge-93dea24d-cf15-4f2f-b833-f2bc76f34ebd/c92a670b-91f6-43eb-8b28-8949fcf9983f.json": "eyJpZCI6ICJjOTJhNjcwYi05MWY2LTQzZWItOGIyOC04OTQ5ZmNmOTk4M2YiLCAiY2hhbm5lbElkIjogIjJhZDMzNDk5LTlmMWEtNDAwMC1hMDAwLTAwMDAwMDAwMDAwMSIsICJuYW1lIjogIkxlZ2FjeSBzdGFnZWQudHh0IiwgIm1lZGlhVHlwZSI6ICJ0ZXh0L3BsYWluIiwgInNpemVCeXRlcyI6IDI5LCAic2hhMjU2IjogImMzYjkyMDVjZGU0YTdiODNkNDE2OTI5NDVkYmM4MWU3YzE4OTlhNDk2YjU2OTIxZTMzODI4ZTRjOTFiYTgxYjAiLCAiY3JlYXRlZEF0IjogIjIwMjYtMTAtMTBUMDI6MjY6MjQuMzMzWiJ9",
+      ".purge-93dea24d-cf15-4f2f-b833-f2bc76f34ebd/manifest.json": "eyJvcGVyYXRpb24iOiI5M2RlYTI0ZC1jZjE1LTRmMmYtYjgzMy1mMmJjNzZmMzRlYmQiLCJlbnRyaWVzIjpbeyJpZCI6ImM5MmE2NzBiLTkxZjYtNDNlYi04YjI4LTg5NDlmY2Y5OTgzZiIsImNoYW5uZWxJZCI6IjJhZDMzNDk5LTlmMWEtNDAwMC1hMDAwLTAwMDAwMDAwMDAwMSIsInN1ZmZpeGVzIjpbIi5qc29uIiwiLmJpbiJdfV19"
+    }
+  },
+  "plugins": {
+    "state": {
+      "plugins": [
+        {
+          "id": "2ad33499-9f1a-4000-a000-000000000002",
+          "name": "Synthetic",
+          "endpoint": "https://example.com/mcp",
+          "digest": "b3777e471d2f82ba1fe91a9e6b9a0ec6911f053b6e7ed0c05689de57e89bd9b2",
+          "revision": "2ad33499-9f1a-4000-a000-000000000003",
+          "enabled": false,
+          "createdAt": "2026-10-08T00:00:00.000Z",
+          "token": "synthetic-private-token",
+          "tools": [
+            {
+              "name": "read",
+              "description": "Read",
+              "inputSchema": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          ],
+          "grants": []
+        }
+      ],
+      "audit": []
+    },
+    "files": {
+      "state.json": "eyJ2ZXJzaW9uIjoxLCJub25jZSI6InI4NnJOWlVEY3NvWC8vN0YiLCJ0YWciOiJodkNiRmdrTytYcUJtTHlTVnZRUTF3PT0iLCJjaXBoZXJ0ZXh0IjoiZjNQeSt1ZVg1QkZFd040OW4yejZuSjJPR25oOElLUFVCRG45VW95RkVTWjBYMDZXR0tXYmtVclZ1L2g0c1YvajNJdkdtR25yei9FbUx3US9pVkt4dXRrcS9zOURXMnpGbC8rekcrV0srRVZhUEtwZFc4R1FSTTU3MHFlWWNPTFNiOWhFL2d2ZllTWllld1A3dldIanJnTExFRmx3ZUtpQWFaRTlKZ1FLVXN4Q3pKZSs1bzF0UXhKM1BaR2NJa0hqY0NTSmdxRXFBeVhmblVGcjNtKzMxU0RvQ0hzRkEzdkMwOXdyWFE3dHRnNVNTV2pwREVxR2NCeGorWlk0YlVzVURURFpra0xYRW1kQXVzTWdEeDFNYXdrNldrenlSaVBtejd6NmU3cnhESnZmUUF3Q3hsYTlsSUNMUGNHdkZhVHcwRW5Ua25RK2s5a2REem9rc0VDYjZBc1NMRGx3eml1Mm1UYnVhZGxteWVmVmtLVUpvdTRlT3lxbVA4OXNGU2lMaHRSUW8wcFd5SWN3TXJQbEtkUjh1OER4ZGtsdFVaOXI3VDVSUVlZTnF5RUNJdU1iZUE1cEQySW9QRHhDckkrYkRudEtReEV5TDBVY0xvWWJubisyeUhCdFpmc25uMVdoY2dLK3NLamFjd3pmK1JKTEpvVFU5NmpVVmVRempzdkUyRkt2ODkweTBiZ3VzNm81cXMzNEVwODIwUkxXSWxESWVkS1d6WmdDbnU2UVZpT08veGlueloxUFJLSmp4ZkdTNHNYcU9PN3N2eENtVURaTkdvOE00QT09In0=",
+      "state.json.key": "BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc="
+    }
+  }
+}

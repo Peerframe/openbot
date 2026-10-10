@@ -4,8 +4,15 @@
     "rootDir": "../..",
     "noEmit": true,
     "allowImportingTsExtensions": true,
-    "types": ["node"]
+    "types": [
+      "node"
+    ]
   },
-  "include": ["./*.ts", "../../apps/server-python/tests/fixtures/*.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "./*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

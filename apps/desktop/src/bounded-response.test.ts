@@ -122,7 +122,7 @@ function stalledCancellation(bytes = new Uint8Array(), init: ResponseInit = {}) 
   return { response, cancel };
 }
 
-import { verifyPythonProductHealth } from "./python-server.js";
+import { verifyProductHealth } from "./server-bootstrap.js";
 import { proxyDesktopServerRequest } from "./server-proxy.js";
 
 afterEach(() => vi.restoreAllMocks());
@@ -201,21 +201,21 @@ describe("Desktop body ownership across real consumers", () => {
   it.each([
     [
       "application/jsonx",
-      '{"ok":true,"service":"openbot-server","phase":"python-product-candidate"}',
+      '{"ok":true,"service":"openbot-server","phase":"typescript-product-candidate"}',
       false,
     ],
     [
       "Application/JSON; charset=utf-8",
-      '{"ok":true,"service":"openbot-server","phase":"python-product-candidate"}',
+      '{"ok":true,"service":"openbot-server","phase":"typescript-product-candidate"}',
       true,
     ],
     ["application/json", '{"ok":true,"service":"openbot-server","phase":"wrong"}', false],
   ] as const)(
-    "keeps Python startup health's phase and exact JSON media type: %s",
+    "keeps Server startup health's phase and exact JSON media type: %s",
     async (type, body, accepted) => {
       const response = new Response(body, { headers: { "content-type": type } });
       const fetcher = vi.spyOn(globalThis, "fetch").mockResolvedValue(response);
-      await expect(verifyPythonProductHealth("http://127.0.0.1:39100")).resolves.toBe(accepted);
+      await expect(verifyProductHealth("http://127.0.0.1:39100")).resolves.toBe(accepted);
       expect(fetcher).toHaveBeenCalledWith(
         "http://127.0.0.1:39100/health",
         expect.objectContaining({ redirect: "error", signal: expect.any(AbortSignal) }),
@@ -229,7 +229,7 @@ describe("Desktop body ownership across real consumers", () => {
       headers: { "content-type": "application/json" },
     });
     vi.spyOn(globalThis, "fetch").mockResolvedValue(response);
-    await expect(promptly(verifyPythonProductHealth("http://127.0.0.1:39100"))).resolves.toBe(
+    await expect(promptly(verifyProductHealth("http://127.0.0.1:39100"))).resolves.toBe(
       false,
     );
     expect(cancel).toHaveBeenCalledOnce();

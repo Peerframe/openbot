@@ -1,0 +1,41 @@
+{
+  "name": "@openbot/server",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json",
+    "test": "npm run build && vitest run src --maxWorkers=2",
+    "start": "node dist/serve.js",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.131.0",
+    "@fastify/static": "10.1.6",
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "@openbot/db": "0.0.0",
+    "@openbot/domain": "0.0.0",
+    "@openbot/employee-publisher": "0.0.0",
+    "@openbot/logging": "0.0.0",
+    "@openbot/protocol": "0.0.0",
+    "@openbot/work": "0.0.0",
+    "@tesseract.js-data/chi_sim": "1.0.0",
+    "@tesseract.js-data/eng": "1.0.0",
+    "ajv": "8.20.0",
+    "canonicalize": "5.0.0",
+    "entities": "8.0.0",
+    "fastify": "5.12.5",
+    "htmlparser2": "10.1.0",
+    "jose": "6.2.12",
+    "koffi": "3.3.2",
+    "officeparser": "7.8.0",
+    "openai": "7.28.0",
+    "pdfjs-dist": "6.3.289",
+    "postgres": "3.4.9",
+    "tesseract.js": "7.0.0",
+    "ws": "8.21.3",
+    "zod": "4.6.2"
+  }
+}

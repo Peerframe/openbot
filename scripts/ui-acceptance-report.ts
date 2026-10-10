@@ -1,7 +1,7 @@
 // Pure parts of the whole-interface acceptance (docs/research/ui-acceptance-automation.md):
 // argument parsing and the classification of every API response the journey observed.
 
-export type Entry = "python" | "ts";
+export type Entry = "ts";
 
 export interface AcceptanceOptions {
   readonly entry: Entry;
@@ -11,7 +11,7 @@ export interface AcceptanceOptions {
 }
 
 export function parseAcceptanceArgs(argv: readonly string[]): AcceptanceOptions {
-  let entry: Entry = "python";
+  let entry: Entry = "ts";
   let browser: string | undefined;
   let out: string | undefined;
   let headed = false;
@@ -25,7 +25,7 @@ export function parseAcceptanceArgs(argv: readonly string[]): AcceptanceOptions 
     };
     if (arg === "--entry") {
       const next = value();
-      if (next !== "python" && next !== "ts") throw new Error("--entry must be python or ts.");
+      if (next !== "ts") throw new Error("--entry must be ts; the Python entry is retired.");
       entry = next;
     } else if (arg === "--browser") browser = value();
     else if (arg === "--out") out = value();
@@ -60,7 +60,7 @@ export const KNOWN_GAPS: readonly KnownGap[] = [
     path: /^\/api\/v1\/runs\/[0-9a-f-]{36}\/output$/,
     status: 404,
     reason:
-      "The Web still calls the retired run-output route; the Python control plane has none " +
+      "The Web still calls the retired run-output route; the Server has none " +
       "(P2 acceptance finding 1, PR #200).",
   },
 ];

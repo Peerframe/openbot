@@ -156,7 +156,7 @@ are five negative URL fixtures (one is reported twice at distinct line offsets):
 an external database before process creation; model connections reject userinfo; public-source
 validation rejects userinfo before network access; model receipt configuration refuses credentials;
 and the protocol schema rejects userinfo. These contain deliberate fake values on reserved domains
-or localhost. The scanner reports the public-source fixture at both lines76 and81; the literal is
+or localhost. The scanner reports the public-source fixture at both lines76 and 81; the literal is
 at81. Preserve each reported tuple exactly, without accepting a line range.
 
 The other three values are content digests: two fixed gVisor binary hashes (also recorded in the
@@ -164,7 +164,7 @@ reviewed binary inventory), and the historical WorkTasksEntry source SHA-256. Th
 [Sentry v1 detector](https://github.com/trufflesecurity/trufflehog/blob/20652fbbdefffcdaa493a5bf57ab2ac6b1db715b/pkg/detectors/sentrytoken/v1/sentrytoken.go)
 accepts64 lowercase hex characters near a case-insensitive `sentry` prefix; gVisor binary names
 and WorkTasksEntry accidentally match that context. They are not service tokens. RawV2 is empty
-for these three results. This reuses the existing reviewed TruffleHog3.97.1 adapter and AGPL-3.0
+for these three results. This reuses the existing reviewed TruffleHog 3.97.1 adapter and AGPL-3.0
 external-tool boundary; no upstream implementation is copied or linked.
 
 Decision: add only these nine commit/path/line/detector/verification/raw-hash tuples. Preserve all
@@ -184,7 +184,7 @@ publishing. No source or binary acceptance pin is changed to hide a detector mat
 | `778236bdb01014f62aa590e22389263a4c5ec4ee` | `packages/protocol/src/model-services.test.ts:46` | `17` / URI | `d88f84291a4085c5aa7a5c1aab71a7baf64065e805c8c2c60c51aabf7ec55af9` | `d88f84291a4085c5aa7a5c1aab71a7baf64065e805c8c2c60c51aabf7ec55af9` |
 | `ef1e2545101766284a2104647015a4c5a5638dfc` | `docs/research/s2-work-supervision.md:73` | `87` (content digest) | `5fb64d41242d2546f1713381ae57f7ea5b8e8e1e2f17023d63c7d3cc3c2e5de6` | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
 
-Validation: all15 focused credential/workflow cases passed, including mutations of every
+Validation: all 15 focused credential/workflow cases passed, including mutations of every
 new tuple field. The original twelve-finding offline result passed the exact adapter.
 
 A second scan reported the other reviewed gVisor binary on the adjacent inventory line.
@@ -208,7 +208,7 @@ new random-name PostgreSQL container on its private internal network. That fixtu
 PG port, selects no existing service, and removes its owned container before completion. The
 scanner's constructed candidate has no real host. It is not an account secret.
 
-Retain the prior reviewed detector and exact-tuple mechanism. Add only detector968/Postgres, this
+Retain the prior reviewed detector and exact-tuple mechanism. Add only detector 968/Postgres, this
 commit/path/line, unverified state and both exact Raw/RawV2 SHA256 values
 `e58bc479a694bb81fb43e7765c5d9171bfdb60acd80d816b1a3f69a8fee5f4e8`.
 No network verification, scanner exclusion, history rewrite or result upload is introduced. Extend
@@ -216,7 +216,7 @@ all-field mutation tests to this eighteenth tuple and replay the actual private 
 
 ## C1–C8 full-history qualification (2026-10-01)
 
-The unchanged digest-pinned TruffleHog3.97.1 image replayed all fetched Git history in a
+The unchanged digest-pinned TruffleHog 3.97.1 image replayed all fetched Git history in a
 read-only, disposable local clone, offline with verification and updates disabled. It returned
 183 and nineteen unverified findings. Sixteen match the prior exact review; the remaining three
 are recorded below. No raw candidate or diagnostic is uploaded or logged. Reuse the reviewed
@@ -238,7 +238,7 @@ rewrite, verification, dependency change or copied upstream source.
 | `b19a017e35e53855649e1c87ab31cf0f63d85974` | `scripts/smoke-dev-fixture.test.mjs:31` | `968` / Postgres | `a0010550bccff9bf7c0aa79e783a4e21558de033364bf51b00eea5d850faa23f` | `a0010550bccff9bf7c0aa79e783a4e21558de033364bf51b00eea5d850faa23f` |
 
 Add only these three immutable tuples. Verified findings and any changed candidate, commit,
-path, line or detector remain rejected. Regression tests mutate every field of all21 reviewed
+path, line or detector remain rejected. Regression tests mutate every field of all 21 reviewed
 tuples, mix unknown findings, and refuse scanner errors/malformed/inconsistent output. Replay
 the completed private scan through the strict adapter. Hosted CI on each final PR head remains
 the Linux/full-history gate; this local macOS Docker replay is not a production credential claim.
@@ -246,12 +246,12 @@ the Linux/full-history gate; this local macOS Docker replay is not a production 
 The first C6 follow-up itself exposed one new content-digest false positive: its table placed the
 text detector label next to the already reviewed source-digest hash. The unchanged pinned offline
 scanner reproduces that exact unverified result at commit
-`2512a615dde281c6157ecb21c9d72e85ef4674d7`, this document line237, detector87. Source inspection
+`2512a615dde281c6157ecb21c9d72e85ef4674d7`, this document line237, detector 87. Source inspection
 and hashing bind it to the table's public source-hash field, with Raw SHA-256
 `3beed73bbc0415306f2d1a0cab1efdeea0d18a4c42fff3677d9389798b06e9d9` and empty RawV2 SHA-256
 `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`. Retain this single exact
 historical tuple; use only the numeric detector/content-digest label in the current table to avoid
-creating another such context. The current code regression set has22 exact tuples and continues
+creating another such context. The current code regression set has 22 exact tuples and continues
 mutating all fields and refusing every unknown/verified finding or scanner error. A disposable
 clone must have matching HEAD/index to avoid synthetic staged-index findings; CI checks committed
 Git history without staging a different tree. No staged-finding exemption is accepted.
@@ -262,8 +262,8 @@ Git history without staging a different tree. No staged-finding exemption is acc
 `49dac0186fa6a127dffc0b079458fca30ac54352`, passed the hosted production dependency audit with
 zero findings in [CI run37470541095](https://github.com/Peerframe/openbot/actions/runs/37470541095),
 then the strict adapter refused five unreviewed historical URI test fixtures. The existing pinned
-TruffleHog3.97.1 image, read-only full-history clone, disabled verification/updates and offline
-network reproduced exit183 with23 findings:18 existing exact fixtures and the five below. Raw
+TruffleHog 3.97.1 image, read-only full-history clone, disabled verification/updates and offline
+network reproduced exit 183 with 23 findings: 18 existing exact fixtures and the five below. Raw
 candidates and diagnostics stayed in private temporary files.
 
 Rechecked the already reviewed pinned
@@ -276,7 +276,7 @@ released scanner and AGPL-3.0 external-tool boundary. Editing current tests cann
 published history; path/detector exclusions remain too broad. No dependency or scanner source is
 copied, updated or substantially adapted.
 
-All rows use immutable commit `a240b810ea08bde29004e947b0ffc0298ad8dd1a`, detector17 / URI and
+All rows use immutable commit `a240b810ea08bde29004e947b0ffc0298ad8dd1a`, detector 17 / URI and
 `Verified === false`. Only each exact commit/path/line/detector/verification/two-hash combination is
 accepted; every changed or unknown finding and scanner error still blocks CI.
 
@@ -288,9 +288,9 @@ accepted; every changed or unknown finding and scanner error still blocks CI.
 | `packages/contract-tests/src/work.test.ts:268` | `ab69545a3c8d3c3eb335c82907ba60d8c04c8ad0194ea4c4f80b44cb3e7edd3a` | `6577b10211d0dc4c38ed630107672deee5e14b00457eca7f2d3633d23ac6b817` | Private MCP fixture target |
 | `packages/contract-tests/src/work.test.ts:75` | `3ba4b9eb95fbafcb38a3dd4bc9886809ca70168cc4a8e552ed23d894cbb07df3` | `3ba4b9eb95fbafcb38a3dd4bc9886809ca70168cc4a8e552ed23d894cbb07df3` | Public contract target origin |
 
-The regression set now covers27 reviewed tuples and mutates every bound field. Current negative
+The regression set now covers 27 reviewed tuples and mutates every bound field. Current negative
 fixtures construct the same rejected input with URL setters or split URL components, avoiding new
-literal matches. All26 focused credential/workflow cases pass, including unknown/verified/mixed
+literal matches. All 26 focused credential/workflow cases pass, including unknown/verified/mixed
 finding, malformed output and scanner-error refusals. The actual23-finding result passes the
 strict adapter. Candidate rescan and final hosted results are recorded in the existing
 [migration Draft PR #200](https://github.com/Peerframe/openbot/pull/200),
@@ -300,7 +300,7 @@ with local replay kept distinct from the Linux hosted gate.
 
 The five immutable fixtures above were published on a separate branch, so every full-history PR
 scan encounters them even when that PR changes no migration file. The migration branch's adapter
-already accepts these exact tuples, but main's prior22-entry adapter still refuses them. Extract
+already accepts these exact tuples, but main's prior 22-entry adapter still refuses them. Extract
 only the five entries, their all-field rejection tests and this bilingual review into a separate
 repair based on main `bc2b2e7e5960912d8a1033c74233e43f5c75a1e7`. No migration application, public
 contract or Claude page implementation is included.
@@ -315,18 +315,30 @@ without changing workflow, scanner, verification, error refusal, production audi
 
 The unchanged scanner/adapter source pair has actual hosted evidence at migration head `5ee5b3d7`:
 [run37475123514](https://github.com/Peerframe/openbot/actions/runs/37475123514) completed successfully,
-including23 exact historical fixtures. That run does not qualify this independent main-based head;
+including 23 exact historical fixtures. That run does not qualify this independent main-based head;
 its focused/full repository checks and hosted results retain their own source scope.
 
-Independent validation: `security:config-check` passes26 cases with27 exact tuple fixtures and
-all-field mutations. `npm run check` exits0: lint10/0 cached, typecheck31/10 cached, test25/12
-cached, build18/12 cached; protocol446, Web666 and Desktop541/3 platform skips actually rerun.
-Documentation validates587 Markdown files. The first focused workflow attempt before npm install
+Independent validation: `security:config-check` passes 26 cases with 27 exact tuple fixtures and
+all-field mutations. `npm run check` exits 0: lint 10/0 cached, typecheck 31/10 cached, test 25/12
+cached, build 18/12 cached; protocol 446, Web 666 and Desktop 541/3 platform skips actually rerun.
+Documentation validates 587 Markdown files. The first focused workflow attempt before npm install
 failed on missing `yaml`; after locked `npm ci` the focused/full gates pass. No product source changes.
 
 A clean full-history clone based on exact main above, with local-only candidate commit
-`e166fe17a45a3a3d86cadae7e5feee4639c0a432`, completes the unchanged offline scanner with exit183,
+`e166fe17a45a3a3d86cadae7e5feee4639c0a432`, completes the unchanged offline scanner with exit 183,
 23 historical findings and no finding at the candidate commit. The published main adapter rejects
-that same actual result; the repaired adapter accepts all23 exact reviewed findings. Raw candidates
+that same actual result; the repaired adapter accepts all 23 exact reviewed findings. Raw candidates
 are private, never printed/uploaded. Subsequent edits add only this evidence paragraph. Final hosted
 security and protected `check` for the independent PR remain required before main merge.
+
+## P5 relocation and logging-fixture triage (2026-10-10)
+
+The unchanged pinned offline scanner reports four exact additions at `eea54455`: the synthetic
+PostgreSQL URL in the new logging redaction test; the two already reviewed public gVisor binary digests
+relocated to the TS native configuration; and the already reviewed reserved-domain URI now stored
+in the inert Web contract corpus. None is an account credential. Their immutable commit, file,
+line, detector and both candidate hashes are added to the existing adapter; all-field mutation
+tests cover each entry. The logging test now constructs the same synthetic error in components.
+The older `a240b810` app test retains its historical server-ts path in the exception, even though
+the active product directory was renamed. No scan range, detector, verification policy or error
+refusal changes; actual raw output remains private and is never uploaded.

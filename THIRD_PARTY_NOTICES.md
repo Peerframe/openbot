@@ -48,6 +48,9 @@ and notices.
   and the existing ADR0050 SDK review. No app or system service is installed.
 
 - Fastify5.12.5 — Copyright (c) 2016-present The Fastify team; MIT License.
+- `@fastify/static`10.1.6 — Copyright (c) 2017-present The Fastify team; MIT License.
+  The direct Server uses released APIs without copied source. Its complete LICENSE remains in the
+  production closure; see [P5 dependency review](docs/decisions/0050-typescript-control-plane.md#p5-dependency-and-runtime-qualification-2026-10-10).
 - `@fastify/reply-from`12.6.5 — Copyright (c) 2017-present Matteo Collina and The Fastify team;
   MIT License. The P2 TS entry uses released public APIs without copied upstream code.
   Dependency LICENSE files remain in the production closure and the MIT terms below apply.

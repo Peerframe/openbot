@@ -23,16 +23,15 @@ openbot/
 ├── apps/
 │   ├── web/                 # Web/PWA work, supervision and artifact interfaces
 │   ├── desktop/             # Thin Electron client and packaged runtime lifecycle
-│   ├── server-python/       # Active Python product authority, API and trusted services
+│   ├── server/              # TypeScript product authority, API and trusted services
 │   └── node/                # Replaceable execution-node daemon
 ├── packages/
-│   ├── harness/           # Typed Python execution core wheel
+│   ├── work/                # Temporal workflows and activities
 │   ├── config/              # Node environment and native macOS configuration
 │   ├── db/                  # PostgreSQL schema and migrations
 │   ├── domain/              # Product entities
 │   ├── protocol/            # Versioned Server–Node and event contracts
 │   ├── provider-sdk/        # Execution provider interface
-│   ├── python-node-runtime/ # Retained Node parser dependency closure
 │   ├── employee-publisher/  # Retained publisher key and signed-package helpers
 │   └── mcp-example/         # Retained MCP scaffold implementation
 ├── providers/
@@ -49,9 +48,9 @@ openbot/
 └── .github/
 ```
 
-`apps/server` is retired. `npm run dev` uses `scripts/dev-python.ts`; containers and the supported
-macOS arm64 local Desktop payload select Python product mode. Direct `serve.py` remains read-only
-unless configured. The runtime is the typed `packages/harness` wheel, installed by development and product hosts. The retained Node parser closure is required.
+`apps/server` is the single TypeScript control plane. `npm run dev` starts `scripts/dev-server.ts`;
+containers and the macOS arm64 Desktop payload use the same TS product entry and standalone Node.
+The Server closure retains document/OCR dependencies.
 Use the [development entry](../.agents/README.md) and [repository map](REPOSITORY_MAP.md) for current
 code/consumer/check routes.
 

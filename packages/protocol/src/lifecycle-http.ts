@@ -75,6 +75,7 @@ export const healthResponseSchema = z.strictObject({
   service: z.literal("openbot-server"),
   phase: z.string(),
   time: z.iso.datetime(),
+  execution: z.strictObject({ owner: z.literal("typescript-v1"), state: z.literal("running") }).optional(),
 });
 export const unhealthyResponseSchema = z.strictObject({
   ok: z.literal(false),
