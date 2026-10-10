@@ -12,6 +12,36 @@ export type NativeCommand = (
   timeoutMs?: number,
   limit?: number,
 ) => Promise<string>;
+const diagnosticCodes = new Set([
+  "native_guard_expired",
+  "native_helper_failed",
+  "native_command_unknown",
+  "invalid_native_helper_arguments",
+  "qualified_linux_root_required",
+  "native_root_changed",
+  "containerd_not_ready",
+  "daemon_not_ready",
+  "wrong_producer_cgroup",
+  "occupied_delegation",
+  "missing_controller",
+  "private_daemon_changed",
+  "image_load_unknown",
+  "image_tag_unknown",
+  "invalid_loop",
+  "native_identity_missing",
+  "private_namespace_missing",
+  "original_native_not_active",
+  "cgroup_replaced",
+  "logging_readback_changed",
+  "entered_namespace_changed",
+  "namespace_replaced",
+  "native_expired",
+  "unit_identity_changed",
+  "native_file_changed",
+  "unsafe_native_file",
+  "start_already_reserved",
+  "create_already_reserved",
+]);
 /** Exposes fixed failure facts only; stdout and unstructured stderr stay private. */
 export class NativeCommandFailure extends Error {
   readonly diagnostic: {
@@ -31,7 +61,7 @@ export class NativeCommandFailure extends Error {
       timedOut: result.timedOut,
       uncertain: result.uncertain,
       outputTruncated: result.outputTruncated,
-      helperCode: /^[a-z_]{1,80}$/.test(code) ? code : null,
+      helperCode: diagnosticCodes.has(code) ? code : null,
     };
   }
 }

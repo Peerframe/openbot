@@ -68,7 +68,7 @@
     "contracts:test": "npm exec -- turbo run build --filter=@openbot/web^... && npm exec --workspace @openbot/web -- vitest run --config vitest.contract.config.ts && npm run test --workspace @openbot/contract-tests",
     "ci:scope": "node scripts/ci-scope.ts",
     "ui:acceptance": "node scripts/ui-acceptance.ts",
-    "ci:check": "node --test scripts/ci-scope.test.ts scripts/ui-acceptance-report.test.ts scripts/check-python-audit.test.ts scripts/check-ci-cache.test.ts scripts/python-acceptance-fixture.test.ts scripts/output-redaction.test.ts scripts/smoke-dev-startup.test.ts apps/server-python/scripts/python-comparator.test.ts scripts/dev-startup-inputs.test.ts scripts/dev-processes.test.ts experiments/work-journey/product-browser-upstream.test.ts experiments/work-journey/product-host-boundary.test.ts experiments/work-journey/native-host-baseline.test.ts experiments/work-journey/probe-inputs.test.ts experiments/work-journey/browser_response_loss.test.ts scripts/temporal-release.test.ts scripts/temporal-upgrade.test.ts",
+    "ci:check": "node --test scripts/ci-scope.test.ts scripts/ui-acceptance-report.test.ts scripts/check-python-audit.test.ts scripts/check-ci-cache.test.ts scripts/python-acceptance-fixture.test.ts scripts/output-redaction.test.ts scripts/smoke-dev-startup.test.ts apps/server-python/scripts/python-comparator.test.ts scripts/dev-startup-inputs.test.ts scripts/dev-processes.test.ts experiments/work-journey/product-browser-upstream.test.ts experiments/work-journey/native-host-baseline.test.ts experiments/work-journey/probe-inputs.test.ts experiments/work-journey/browser_response_loss.test.ts scripts/temporal-release.test.ts scripts/temporal-upgrade.test.ts",
     "check:affected": "node scripts/check-affected.ts",
     "test:work:ts": "npm exec -- turbo run build --filter=@openbot/server --filter=@openbot/db --filter=@openbot/node && npm exec -- vitest run --config scripts/vitest.integration.config.ts scripts/work-control.integration.test.ts scripts/work-product.integration.test.ts scripts/legacy-work-preflight.integration.test.ts",
     "test:control:ts": "npm exec -- turbo run build --filter=@openbot/server --filter=@openbot/db --filter=@openbot/node && npm exec -- vitest run --config scripts/vitest.integration.config.ts scripts/control-cohorts.integration.test.ts scripts/command-compatibility.integration.test.ts",
@@ -76,7 +76,7 @@
     "contracts:http:python": "npm exec -- turbo run build --filter=@openbot/db --filter=@openbot/protocol && node scripts/test-contracts-python.ts",
     "contracts:legacy": "npm run oracle:build && node --test scripts/legacy-adapter.test.mjs",
     "test:temporal:upgrade": "npm exec -- turbo run build --filter=@openbot/server --filter=@openbot/node && npm exec -- vitest run --config scripts/vitest.integration.config.ts scripts/temporal-upgrade.integration.test.ts",
-    "test:linux:contracts": "npm exec -- turbo run build --filter=@openbot/server && node --test experiments/linux-execution/*.test.ts"
+    "test:linux:contracts": "npm exec -- turbo run build --filter=@openbot/server && node --test experiments/linux-execution/*.test.ts experiments/work-journey/product-host-boundary.test.ts experiments/work-journey/product-native-protocol.test.ts experiments/work-journey/product-native-controller.test.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.13",

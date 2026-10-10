@@ -173,6 +173,7 @@ test("native command diagnostics retain fixed codes while excluding arbitrary ou
   assert.equal(failure.diagnostic.helperCode, "native_guard_expired");
   for (const stderr of [
     "private cookie=synthetic",
+    "arbitrary_lowercase_input",
     "-----BEGIN PRIVATE KEY-----",
     "first\nsecond",
     "x".repeat(81),

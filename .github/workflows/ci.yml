@@ -573,8 +573,7 @@ jobs:
         timeout-minutes: 5
         shell: bash
         run: |
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B \
-            experiments/work-journey/product_command_probe.py --entry ts --claim-approval-race \
+          node --import tsx experiments/work-journey/product-command-probe.ts --claim-approval-race \
             --native-ci-config "$RUNNER_TEMP/openbot-native-command-ts.json" \
             --output "$RUNNER_TEMP/openbot-command-ts-native" \
             --node-bundle "$RUNNER_TEMP/openbot-command-node.cjs"
