@@ -1,4 +1,8 @@
-# Bundled standalone Python notices
+# Standalone Python notices (earlier builds)
+
+Current Desktop packaging does not bundle Python: P5 retired the Python service, and the packaging
+scripts no longer copy this directory. These files remain the notice record for earlier builds that
+bundled the interpreter.
 
 `NOTICES.txt` preserves the license texts from the exact python-build-standalone commit in `SOURCE.json`, including upstream component copyright notices. The raw source texts were checked against that commit's Git blob identities. The collection is deliberately complete; presence of a component notice does not assert that it is linked into this macOS target. No runtime source is copied or changed.
 

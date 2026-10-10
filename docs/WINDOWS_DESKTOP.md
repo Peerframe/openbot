@@ -1,7 +1,8 @@
 # Windows Desktop
 
 Windows x64 Desktop is a remote client in current builds. Connect it to an existing OpenBot
-Server; only macOS arm64 currently bundles the local Python service. Installing Desktop does not
+Server; only macOS arm64 currently bundles the local TypeScript Server, which also needs a running
+Temporal engine ([Desktop installation](DESKTOP_INSTALLATION.md)). Installing Desktop does not
 enroll a Worker Host or grant computer-control authority.
 
 ## Install and run
@@ -54,7 +55,7 @@ $env:RUNNER_TEMP = $env:TEMP
 The gate must complete both remote safeStorage lifetimes and uninstall/cleanup. Its allowlisted
 `summary.json` records process identities and ciphertext digests, excluding raw ciphertext,
 passwords and fixture profiles. The CI artifact retains the historical name
-`windows-desktop-cold-start-<source SHA>`; inspect its schemaVersion2 and remote receipts rather
+`windows-desktop-cold-start-<source SHA>`; inspect its schemaVersion 2 and remote receipts rather
 than inferring ten PostgreSQL cold starts from that name. Read the actual result for the source
 commit: a workflow definition alone is not execution evidence. This cleanup has not run native
 Windows installation, DPAPI or installed-app GUI on the current source.

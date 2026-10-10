@@ -1,10 +1,13 @@
 # Agent runtime process profile v1
 
-Status: implemented internal ordinary-process profile, not a public API. Current Python control
-adapters are `runtime_host.py` / `runtime_process.py`; TS comparison inputs are frozen under
-`tests/oracles/legacy-server`. This invocation lifecycle is distinct from the optional Temporal
-Activity composition. See [current entrypoints](REPOSITORY_MAP.md#cross-language-contract); this
-protocol does not itself qualify a product deployment or platform.
+Status: historical, not a public API. The retired Python control adapters
+([`runtime_host.py` / `runtime_process.py`](https://github.com/Peerframe/openbot/tree/e25d91520dbda664705a77c76c1af456a064a39d/apps/server-python/src/openbot_server))
+implemented this internal ordinary-process profile. P5 removed that subprocess path: the
+TypeScript Server runs agent steps through `apps/server/src/work-runtime.ts` and `packages/work`
+(see [native Agent](NATIVE_AGENT.md)). Frozen comparison inputs remain in
+`tests/oracles/legacy-server/src/agent-runtime-wire.ts` and run with `npm run contracts:legacy`.
+The rest of this page records the retired profile; it does not describe current product behaviour
+or qualify a deployment or platform.
 Research and scope: [transport review](research/python-runtime-transport.md).
 
 ## Authority and transport

@@ -1,6 +1,6 @@
 # Desktop 下载与安装
 
-本轮源码范围：仅 macOS arm64 打包本地 Python 服务；Windows、Intel Mac 和 Linux 为远程客户端。以下旧版本本地 Server 验收与安装记录保留为历史证据，不表示新版本在这些平台仍提供本地服务。已有安装、加密配置和数据库保留。
+本轮源码范围：仅 macOS arm64（Apple Silicon）随包提供本地 TypeScript Server，并自带 Node 运行时和 PostgreSQL；Windows、Intel Mac 和 Linux 版本为远程客户端，连接已有 Server。本地服务还需要正在运行的 mTLS Temporal 引擎：Desktop 不会启动它；在 Desktop 本地服务数据目录中的私有 `temporal.json` 指向该引擎之前，本地 Server 拒绝启动。仓库的 [Temporal 参考配置](../deploy/temporal/README.md)通过 Docker Compose 运行，因此需保持 Docker 运行，与[从源码运行](../README.zh-CN.md)时相同。以下旧版本本地 Server 验收与安装记录保留为历史证据，不表示新版本在这些平台仍提供本地服务。已有安装、加密配置和数据库保留。
 
 [English](DESKTOP_INSTALLATION.md) · [简体中文](DESKTOP_INSTALLATION.zh-CN.md)
 

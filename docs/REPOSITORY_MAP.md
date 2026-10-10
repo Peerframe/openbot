@@ -57,7 +57,7 @@ is comparison input only. Required setup and checks use TypeScript; frozen legac
   [Node HTTP](../packages/protocol/src/node-http.ts) reuses retained enrollment wire inputs and public
   metadata; the resource registry also owns PNG/Markdown Run artifact downloads.
   [Plugin HTTP](../packages/protocol/src/plugin-http.ts) reuses retained declarations/catalog and
-  preserves Python trim, case-sensitive UUID revisions and direct-field/collection Unicode bounds;
+  preserves the retired Python trim, case-sensitive UUID revisions and direct-field/collection Unicode bounds;
   [Web plugin types](../apps/web/src/plugin-api.ts) derive from these HTTP schemas.
   [Browser HTTP](../packages/protocol/src/browser-http.ts) preserves strict actions/session projections;
   [portability HTTP](../packages/protocol/src/portability-http.ts) owns export/import preview, package,
