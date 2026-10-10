@@ -5,7 +5,7 @@ import type { IncomingHttpHeaders, IncomingMessage } from "node:http";
 import { createServer, request as httpsRequest, type RequestOptions } from "node:https";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { PublicWorkWeb } from "../apps/server-ts/dist/public-work-web.js";
+import { PublicWorkWeb } from "../apps/server/dist/public-work-web.js";
 import { issueTlsFixture } from "./tls-fixture.ts";
 export async function workWebFixture() {
   const directory = await mkdtemp(join(tmpdir(), "openbot-web-peer-"));

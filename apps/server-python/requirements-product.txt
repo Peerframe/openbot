@@ -1,4 +1,0 @@
-# Runtime roots only. Local harness wheel is required separately via distribution.lock.
--r requirements.txt
--r requirements-temporal.txt
--r ../../packages/harness/requirements.txt

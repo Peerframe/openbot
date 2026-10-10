@@ -1,0 +1,950 @@
+{
+  "provenance": {
+    "baseline": "a175b5a262c131887498e9198e174bc5f95244c7",
+    "source": "apps/server-python/tests/command_control_vectors.py",
+    "sourceSha256": "9ea5f4cee22a497c10d316806064786299e65fd573d9bb20bf4fe207e4816100",
+    "python": "3.12.13",
+    "syntheticKeysOnly": true,
+    "legacyVerifiedTsRecords": 11
+  },
+  "keys": [
+    {
+      "privatePem": "-----BEGIN PRIVATE KEY-----\nMC4CAQAwBQYDK2VwBCIEIKVYWE1kP42kXQlgn3C2shgr6b/gHvV8olejy1NNrjKi\n-----END PRIVATE KEY-----\n",
+      "publicPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAHLKBmGtXdwvgWwIvirr/BPc25DrDI1CRa4nujbyhvog=\n-----END PUBLIC KEY-----\n",
+      "issuer": "control",
+      "kid": "control-1",
+      "role": "control"
+    },
+    {
+      "privatePem": "-----BEGIN PRIVATE KEY-----\nMC4CAQAwBQYDK2VwBCIEIGczE6GCZHAN9WwT6fYzzeIdtEtp7ye9DRVQm1BiDp+r\n-----END PRIVATE KEY-----\n",
+      "publicPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAqcVzUCAlTNSjXnOXgp6F4vtqGu8FaloMzmtyU9waMFY=\n-----END PUBLIC KEY-----\n",
+      "issuer": "enforcement",
+      "kid": "enforcer-1",
+      "role": "enforcement"
+    }
+  ],
+  "vectors": [
+    {
+      "value": {
+        "actionId": "action",
+        "aud": "control",
+        "authorityGeneration": 1,
+        "bootId": "3d72de9f-4c69-4ce3-a896-916d1cc8e11d",
+        "connectionId": "cd708dc9-26ba-45c0-ac8d-f71be7ca0ff9",
+        "createdBoottimeUs": 100000000,
+        "enforcementKeyId": "enforcer-1",
+        "enforcerInstanceId": "2eeb3cb2-fa5e-40fa-825f-0a82e5712d32",
+        "expiresBoottimeUs": 105000000,
+        "intentDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "iss": "enforcement",
+        "jti": "65bf63e6-cdce-4908-9f59-76629aa7c5ec",
+        "ledgerId": "b2e67337-575b-45d2-ad12-94e8356b4c65",
+        "nodeId": "node",
+        "nonce": "o_StXm_mOgjBDd2CMeSqR-iYPQjFyN4U2rZlBP0mnqQ",
+        "operationFingerprint": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "originalEpoch": 1,
+        "preparationId": "dc3ba4df-7771-49f8-8334-fa8959cad29a",
+        "profileDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "providerId": "linux-command",
+        "purpose": "work_command_prepare_challenge",
+        "requestId": "dc3ba4df-7771-49f8-8334-fa8959cad29a",
+        "runId": "run",
+        "taskId": "task",
+        "version": 2
+      },
+      "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoid29yay1jb21tYW5kLXByZXBhcmUtY2hhbGxlbmdlLXYyK2p3cyIsImtpZCI6ImVuZm9yY2VyLTEifQ.eyJhY3Rpb25JZCI6ImFjdGlvbiIsImF1ZCI6ImNvbnRyb2wiLCJhdXRob3JpdHlHZW5lcmF0aW9uIjoxLCJib290SWQiOiIzZDcyZGU5Zi00YzY5LTRjZTMtYTg5Ni05MTZkMWNjOGUxMWQiLCJjb25uZWN0aW9uSWQiOiJjZDcwOGRjOS0yNmJhLTQ1YzAtYWM4ZC1mNzFiZTdjYTBmZjkiLCJjcmVhdGVkQm9vdHRpbWVVcyI6MTAwMDAwMDAwLCJlbmZvcmNlbWVudEtleUlkIjoiZW5mb3JjZXItMSIsImVuZm9yY2VySW5zdGFuY2VJZCI6IjJlZWIzY2IyLWZhNWUtNDBmYS04MjVmLTBhODJlNTcxMmQzMiIsImV4cGlyZXNCb290dGltZVVzIjoxMDUwMDAwMDAsImludGVudERpZ2VzdCI6ImJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmIiLCJpc3MiOiJlbmZvcmNlbWVudCIsImp0aSI6IjY1YmY2M2U2LWNkY2UtNDkwOC05ZjU5LTc2NjI5YWE3YzVlYyIsImxlZGdlcklkIjoiYjJlNjczMzctNTc1Yi00NWQyLWFkMTItOTRlODM1NmI0YzY1Iiwibm9kZUlkIjoibm9kZSIsIm5vbmNlIjoib19TdFhtX21PZ2pCRGQyQ01lU3FSLWlZUFFqRnlONFUyclpsQlAwbW5xUSIsIm9wZXJhdGlvbkZpbmdlcnByaW50IjoiY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjYyIsIm9yaWdpbmFsRXBvY2giOjEsInByZXBhcmF0aW9uSWQiOiJkYzNiYTRkZi03NzcxLTQ5ZjgtODMzNC1mYTg5NTljYWQyOWEiLCJwcm9maWxlRGlnZXN0IjoiYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYSIsInByb3ZpZGVySWQiOiJsaW51eC1jb21tYW5kIiwicHVycG9zZSI6IndvcmtfY29tbWFuZF9wcmVwYXJlX2NoYWxsZW5nZSIsInJlcXVlc3RJZCI6ImRjM2JhNGRmLTc3NzEtNDlmOC04MzM0LWZhODk1OWNhZDI5YSIsInJ1bklkIjoicnVuIiwidGFza0lkIjoidGFzayIsInZlcnNpb24iOjJ9.ZkzeIADzajLaZA7oNve-cHwX0vdqynKu_FjFL4TmeNr8_QkUkK3slerBAoXOo_7oIZKReaT8AfhoWH7DT0IKDw",
+      "options": {
+        "purpose": "work_command_prepare_challenge",
+        "issuer": "enforcement",
+        "audience": "control",
+        "binding": {
+          "taskId": "task",
+          "runId": "run",
+          "actionId": "action",
+          "preparationId": "dc3ba4df-7771-49f8-8334-fa8959cad29a",
+          "connectionId": "cd708dc9-26ba-45c0-ac8d-f71be7ca0ff9",
+          "originalEpoch": 1,
+          "authorityGeneration": 1,
+          "profileDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "intentDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "operationFingerprint": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "nodeId": "node",
+          "providerId": "linux-command",
+          "enforcementKeyId": "enforcer-1",
+          "ledgerId": "b2e67337-575b-45d2-ad12-94e8356b4c65"
+        },
+        "nowMs": 1800000000200,
+        "request": {
+          "requestId": "dc3ba4df-7771-49f8-8334-fa8959cad29a",
+          "nonce": "o_StXm_mOgjBDd2CMeSqR-iYPQjFyN4U2rZlBP0mnqQ"
+        }
+      },
+      "tsToken": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoid29yay1jb21tYW5kLXByZXBhcmUtY2hhbGxlbmdlLXYyK2p3cyIsImtpZCI6ImVuZm9yY2VyLTEifQ.eyJhY3Rpb25JZCI6ImFjdGlvbiIsImF1ZCI6ImNvbnRyb2wiLCJhdXRob3JpdHlHZW5lcmF0aW9uIjoxLCJib290SWQiOiIzZDcyZGU5Zi00YzY5LTRjZTMtYTg5Ni05MTZkMWNjOGUxMWQiLCJjb25uZWN0aW9uSWQiOiJjZDcwOGRjOS0yNmJhLTQ1YzAtYWM4ZC1mNzFiZTdjYTBmZjkiLCJjcmVhdGVkQm9vdHRpbWVVcyI6MTAwMDAwMDAwLCJlbmZvcmNlbWVudEtleUlkIjoiZW5mb3JjZXItMSIsImVuZm9yY2VySW5zdGFuY2VJZCI6IjJlZWIzY2IyLWZhNWUtNDBmYS04MjVmLTBhODJlNTcxMmQzMiIsImV4cGlyZXNCb290dGltZVVzIjoxMDUwMDAwMDAsImludGVudERpZ2VzdCI6ImJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmIiLCJpc3MiOiJlbmZvcmNlbWVudCIsImp0aSI6IjY1YmY2M2U2LWNkY2UtNDkwOC05ZjU5LTc2NjI5YWE3YzVlYyIsImxlZGdlcklkIjoiYjJlNjczMzctNTc1Yi00NWQyLWFkMTItOTRlODM1NmI0YzY1Iiwibm9kZUlkIjoibm9kZSIsIm5vbmNlIjoib19TdFhtX21PZ2pCRGQyQ01lU3FSLWlZUFFqRnlONFUyclpsQlAwbW5xUSIsIm9wZXJhdGlvbkZpbmdlcnByaW50IjoiY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjYyIsIm9yaWdpbmFsRXBvY2giOjEsInByZXBhcmF0aW9uSWQiOiJkYzNiYTRkZi03NzcxLTQ5ZjgtODMzNC1mYTg5NTljYWQyOWEiLCJwcm9maWxlRGlnZXN0IjoiYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYSIsInByb3ZpZGVySWQiOiJsaW51eC1jb21tYW5kIiwicHVycG9zZSI6IndvcmtfY29tbWFuZF9wcmVwYXJlX2NoYWxsZW5nZSIsInJlcXVlc3RJZCI6ImRjM2JhNGRmLTc3NzEtNDlmOC04MzM0LWZhODk1OWNhZDI5YSIsInJ1bklkIjoicnVuIiwidGFza0lkIjoidGFzayIsInZlcnNpb24iOjJ9.ZkzeIADzajLaZA7oNve-cHwX0vdqynKu_FjFL4TmeNr8_QkUkK3slerBAoXOo_7oIZKReaT8AfhoWH7DT0IKDw"
+    },
+    {
+      "value": {
+        "taskId": "task",
+        "runId": "run",
+        "actionId": "action",
+        "preparationId": "dc3ba4df-7771-49f8-8334-fa8959cad29a",
+        "connectionId": "cd708dc9-26ba-45c0-ac8d-f71be7ca0ff9",
+        "originalEpoch": 1,
+        "authorityGeneration": 1,
+        "profileDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "intentDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "operationFingerprint": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "nodeId": "node",
+        "providerId": "linux-command",
+        "enforcementKeyId": "enforcer-1",
+        "ledgerId": "b2e67337-575b-45d2-ad12-94e8356b4c65",
+        "version": 2,
+        "iss": "control",
+        "aud": "enforcement",
+        "jti": "955c0cc5-0a59-48b0-8791-a4764cc0f505",
+        "purpose": "work_command_prepare_authorize",
+        "requestId": "dc3ba4df-7771-49f8-8334-fa8959cad29a",
+        "nonce": "o_StXm_mOgjBDd2CMeSqR-iYPQjFyN4U2rZlBP0mnqQ",
+        "challengeDigest": "8f269df33698d027bac42779623bc2bbb6d38aa2582d7da72a3d26907c72a3e4",
+        "issuedAtMs": 1800000000000,
+        "rootDeadlineMs": 1800000300000,
+        "timing": {
+          "prepareBudgetMs": 30000,
+          "challengeBudgetMs": 5000,
+          "runtimeMaxMs": 50000,
+          "stopAllowanceMs": 5000,
+          "clockRateErrorPpm": 1000,
+          "clockQuantizationMs": 1,
+          "policyDigest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+        },
+        "staging": {
+          "image": "python@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "inputManifest": [
+            {
+              "path": "input.csv",
+              "size": 4,
+              "sha256": "5be08c9684a1d25efcee09318204824278b08bbfb4aef973ffefd0b9d7478313"
+            }
+          ],
+          "inputDigest": "sha256:ed05e4c3128a7d243aacf94acf1c4f97f2d45672c1cf647b2351dab1bb302688",
+          "output": {
+            "name": "result.csv",
+            "mediaType": "text/csv",
+            "maxBytes": 1024
+          },
+          "limits": {
+            "nanoCPUs": 500000000,
+            "memoryMiB": 128,
+            "pids": 64,
+            "nofile": 128,
+            "tmpMiB": 16,
+            "wallSeconds": 60,
+            "outputMiB": 16,
+            "capturedOutputKiB": 64
+          },
+          "network": "none",
+          "rootfs": "readonly",
+          "user": "10001:10001",
+          "environment": []
+        }
+      },
+      "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoid29yay1jb21tYW5kLXByZXBhcmUtYXV0aG9yaXplLXYyK2p3cyIsImtpZCI6ImNvbnRyb2wtMSJ9.eyJhY3Rpb25JZCI6ImFjdGlvbiIsImF1ZCI6ImVuZm9yY2VtZW50IiwiYXV0aG9yaXR5R2VuZXJhdGlvbiI6MSwiY2hhbGxlbmdlRGlnZXN0IjoiOGYyNjlkZjMzNjk4ZDAyN2JhYzQyNzc5NjIzYmMyYmJiNmQzOGFhMjU4MmQ3ZGE3MmEzZDI2OTA3YzcyYTNlNCIsImNvbm5lY3Rpb25JZCI6ImNkNzA4ZGM5LTI2YmEtNDVjMC1hYzhkLWY3MWJlN2NhMGZmOSIsImVuZm9yY2VtZW50S2V5SWQiOiJlbmZvcmNlci0xIiwiaW50ZW50RGlnZXN0IjoiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYiIsImlzcyI6ImNvbnRyb2wiLCJpc3N1ZWRBdE1zIjoxODAwMDAwMDAwMDAwLCJqdGkiOiI5NTVjMGNjNS0wYTU5LTQ4YjAtODc5MS1hNDc2NGNjMGY1MDUiLCJsZWRnZXJJZCI6ImIyZTY3MzM3LTU3NWItNDVkMi1hZDEyLTk0ZTgzNTZiNGM2NSIsIm5vZGVJZCI6Im5vZGUiLCJub25jZSI6Im9fU3RYbV9tT2dqQkRkMkNNZVNxUi1pWVBRakZ5TjRVMnJabEJQMG1ucVEiLCJvcGVyYXRpb25GaW5nZXJwcmludCI6ImNjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2MiLCJvcmlnaW5hbEVwb2NoIjoxLCJwcmVwYXJhdGlvbklkIjoiZGMzYmE0ZGYtNzc3MS00OWY4LTgzMzQtZmE4OTU5Y2FkMjlhIiwicHJvZmlsZURpZ2VzdCI6ImFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEiLCJwcm92aWRlcklkIjoibGludXgtY29tbWFuZCIsInB1cnBvc2UiOiJ3b3JrX2NvbW1hbmRfcHJlcGFyZV9hdXRob3JpemUiLCJyZXF1ZXN0SWQiOiJkYzNiYTRkZi03NzcxLTQ5ZjgtODMzNC1mYTg5NTljYWQyOWEiLCJyb290RGVhZGxpbmVNcyI6MTgwMDAwMDMwMDAwMCwicnVuSWQiOiJydW4iLCJzdGFnaW5nIjp7ImVudmlyb25tZW50IjpbXSwiaW1hZ2UiOiJweXRob25Ac2hhMjU2OmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmIiLCJpbnB1dERpZ2VzdCI6InNoYTI1NjplZDA1ZTRjMzEyOGE3ZDI0M2FhY2Y5NGFjZjFjNGY5N2YyZDQ1NjcyYzFjZjY0N2IyMzUxZGFiMWJiMzAyNjg4IiwiaW5wdXRNYW5pZmVzdCI6W3sicGF0aCI6ImlucHV0LmNzdiIsInNoYTI1NiI6IjViZTA4Yzk2ODRhMWQyNWVmY2VlMDkzMTgyMDQ4MjQyNzhiMDhiYmZiNGFlZjk3M2ZmZWZkMGI5ZDc0NzgzMTMiLCJzaXplIjo0fV0sImxpbWl0cyI6eyJjYXB0dXJlZE91dHB1dEtpQiI6NjQsIm1lbW9yeU1pQiI6MTI4LCJuYW5vQ1BVcyI6NTAwMDAwMDAwLCJub2ZpbGUiOjEyOCwib3V0cHV0TWlCIjoxNiwicGlkcyI6NjQsInRtcE1pQiI6MTYsIndhbGxTZWNvbmRzIjo2MH0sIm5ldHdvcmsiOiJub25lIiwib3V0cHV0Ijp7Im1heEJ5dGVzIjoxMDI0LCJtZWRpYVR5cGUiOiJ0ZXh0L2NzdiIsIm5hbWUiOiJyZXN1bHQuY3N2In0sInJvb3RmcyI6InJlYWRvbmx5IiwidXNlciI6IjEwMDAxOjEwMDAxIn0sInRhc2tJZCI6InRhc2siLCJ0aW1pbmciOnsiY2hhbGxlbmdlQnVkZ2V0TXMiOjUwMDAsImNsb2NrUXVhbnRpemF0aW9uTXMiOjEsImNsb2NrUmF0ZUVycm9yUHBtIjoxMDAwLCJwb2xpY3lEaWdlc3QiOiJlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlIiwicHJlcGFyZUJ1ZGdldE1zIjozMDAwMCwicnVudGltZU1heE1zIjo1MDAwMCwic3RvcEFsbG93YW5jZU1zIjo1MDAwfSwidmVyc2lvbiI6Mn0.2h0ZbLahlHAK-_DULLt4es2Adct--KWk1F0XkcmLOC_ilL2AlwzuX-nLL5diW_PuJDjxisC5jA04XkA2O17CBg",
+      "options": {
+        "purpose": "work_command_prepare_authorize",
+        "issuer": "control",
+        "audience": "enforcement",
+        "binding": {
+          "taskId": "task",
+          "runId": "run",
+          "actionId": "action",
+          "preparationId": "dc3ba4df-7771-49f8-8334-fa8959cad29a",
+          "connectionId": "cd708dc9-26ba-45c0-ac8d-f71be7ca0ff9",
+          "originalEpoch": 1,
+          "authorityGeneration": 1,
+          "profileDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "intentDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "operationFingerprint": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "nodeId": "node",
+          "providerId": "linux-command",
+          "enforcementKeyId": "enforcer-1",
+          "ledgerId": "b2e67337-575b-45d2-ad12-94e8356b4c65"
+        },
+        "nowMs": 1800000000200,
+        "request": {
+          "requestId": "dc3ba4df-7771-49f8-8334-fa8959cad29a",
+          "nonce": "o_StXm_mOgjBDd2CMeSqR-iYPQjFyN4U2rZlBP0mnqQ"
+        }
+      },
+      "tsToken": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoid29yay1jb21tYW5kLXByZXBhcmUtYXV0aG9yaXplLXYyK2p3cyIsImtpZCI6ImNvbnRyb2wtMSJ9.eyJhY3Rpb25JZCI6ImFjdGlvbiIsImF1ZCI6ImVuZm9yY2VtZW50IiwiYXV0aG9yaXR5R2VuZXJhdGlvbiI6MSwiY2hhbGxlbmdlRGlnZXN0IjoiOGYyNjlkZjMzNjk4ZDAyN2JhYzQyNzc5NjIzYmMyYmJiNmQzOGFhMjU4MmQ3ZGE3MmEzZDI2OTA3YzcyYTNlNCIsImNvbm5lY3Rpb25JZCI6ImNkNzA4ZGM5LTI2YmEtNDVjMC1hYzhkLWY3MWJlN2NhMGZmOSIsImVuZm9yY2VtZW50S2V5SWQiOiJlbmZvcmNlci0xIiwiaW50ZW50RGlnZXN0IjoiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYiIsImlzcyI6ImNvbnRyb2wiLCJpc3N1ZWRBdE1zIjoxODAwMDAwMDAwMDAwLCJqdGkiOiI5NTVjMGNjNS0wYTU5LTQ4YjAtODc5MS1hNDc2NGNjMGY1MDUiLCJsZWRnZXJJZCI6ImIyZTY3MzM3LTU3NWItNDVkMi1hZDEyLTk0ZTgzNTZiNGM2NSIsIm5vZGVJZCI6Im5vZGUiLCJub25jZSI6Im9fU3RYbV9tT2dqQkRkMkNNZVNxUi1pWVBRakZ5TjRVMnJabEJQMG1ucVEiLCJvcGVyYXRpb25GaW5nZXJwcmludCI6ImNjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2MiLCJvcmlnaW5hbEVwb2NoIjoxLCJwcmVwYXJhdGlvbklkIjoiZGMzYmE0ZGYtNzc3MS00OWY4LTgzMzQtZmE4OTU5Y2FkMjlhIiwicHJvZmlsZURpZ2VzdCI6ImFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEiLCJwcm92aWRlcklkIjoibGludXgtY29tbWFuZCIsInB1cnBvc2UiOiJ3b3JrX2NvbW1hbmRfcHJlcGFyZV9hdXRob3JpemUiLCJyZXF1ZXN0SWQiOiJkYzNiYTRkZi03NzcxLTQ5ZjgtODMzNC1mYTg5NTljYWQyOWEiLCJyb290RGVhZGxpbmVNcyI6MTgwMDAwMDMwMDAwMCwicnVuSWQiOiJydW4iLCJzdGFnaW5nIjp7ImVudmlyb25tZW50IjpbXSwiaW1hZ2UiOiJweXRob25Ac2hhMjU2OmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmIiLCJpbnB1dERpZ2VzdCI6InNoYTI1NjplZDA1ZTRjMzEyOGE3ZDI0M2FhY2Y5NGFjZjFjNGY5N2YyZDQ1NjcyYzFjZjY0N2IyMzUxZGFiMWJiMzAyNjg4IiwiaW5wdXRNYW5pZmVzdCI6W3sicGF0aCI6ImlucHV0LmNzdiIsInNoYTI1NiI6IjViZTA4Yzk2ODRhMWQyNWVmY2VlMDkzMTgyMDQ4MjQyNzhiMDhiYmZiNGFlZjk3M2ZmZWZkMGI5ZDc0NzgzMTMiLCJzaXplIjo0fV0sImxpbWl0cyI6eyJjYXB0dXJlZE91dHB1dEtpQiI6NjQsIm1lbW9yeU1pQiI6MTI4LCJuYW5vQ1BVcyI6NTAwMDAwMDAwLCJub2ZpbGUiOjEyOCwib3V0cHV0TWlCIjoxNiwicGlkcyI6NjQsInRtcE1pQiI6MTYsIndhbGxTZWNvbmRzIjo2MH0sIm5ldHdvcmsiOiJub25lIiwib3V0cHV0Ijp7Im1heEJ5dGVzIjoxMDI0LCJtZWRpYVR5cGUiOiJ0ZXh0L2NzdiIsIm5hbWUiOiJyZXN1bHQuY3N2In0sInJvb3RmcyI6InJlYWRvbmx5IiwidXNlciI6IjEwMDAxOjEwMDAxIn0sInRhc2tJZCI6InRhc2siLCJ0aW1pbmciOnsiY2hhbGxlbmdlQnVkZ2V0TXMiOjUwMDAsImNsb2NrUXVhbnRpemF0aW9uTXMiOjEsImNsb2NrUmF0ZUVycm9yUHBtIjoxMDAwLCJwb2xpY3lEaWdlc3QiOiJlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlIiwicHJlcGFyZUJ1ZGdldE1zIjozMDAwMCwicnVudGltZU1heE1zIjo1MDAwMCwic3RvcEFsbG93YW5jZU1zIjo1MDAwfSwidmVyc2lvbiI6Mn0.2h0ZbLahlHAK-_DULLt4es2Adct--KWk1F0XkcmLOC_ilL2AlwzuX-nLL5diW_PuJDjxisC5jA04XkA2O17CBg"
+    },
+    {
+      "value": {
+        "actionId": "action",
+        "aud": "control",
+        "authorityGeneration": 1,
+        "authorizationDigest": "6eceb380f9fce35b041fc70c48da4c41e3274458ab0fefccc2aa523a53b60ae5",
+        "connectionId": "cd708dc9-26ba-45c0-ac8d-f71be7ca0ff9",
+        "enforcementKeyId": "enforcer-1",
+        "inputDigest": "sha256:ed05e4c3128a7d243aacf94acf1c4f97f2d45672c1cf647b2351dab1bb302688",
+        "intentDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "iss": "enforcement",
+        "jti": "d5910aff-48e1-4881-8c14-7ef24b73b97b",
+        "ledgerId": "b2e67337-575b-45d2-ad12-94e8356b4c65",
+        "nodeId": "node",
+        "nonce": "o_StXm_mOgjBDd2CMeSqR-iYPQjFyN4U2rZlBP0mnqQ",
+        "operationFingerprint": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "originalEpoch": 1,
+        "preparationId": "dc3ba4df-7771-49f8-8334-fa8959cad29a",
+        "profileDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "proof": {
+          "activeMonotonicUs": 100001000,
+          "bootId": "3d72de9f-4c69-4ce3-a896-916d1cc8e11d",
+          "cgroupInode": 55,
+          "cgroupPath": "/system.slice/openbot-command-dc3ba4df777149f88334fa8959cad29a.service",
+          "enforcerInstanceId": "2eeb3cb2-fa5e-40fa-825f-0a82e5712d32",
+          "invocationId": "dddddddddddddddddddddddddddddddd",
+          "observedBoottimeUs": 100100000,
+          "observedMonotonicUs": 100100000,
+          "runtimeIdentityDigest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "runtimeMaxUs": 50000000,
+          "runtimeShapeDigest": "1111111111111111111111111111111111111111111111111111111111111111",
+          "startAttempts": 0,
+          "timingPolicyDigest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "unitName": "openbot-command-dc3ba4df777149f88334fa8959cad29a.service"
+        },
+        "providerId": "linux-command",
+        "purpose": "work_command_ready",
+        "requestId": "dc3ba4df-7771-49f8-8334-fa8959cad29a",
+        "runId": "run",
+        "taskId": "task",
+        "version": 2
+      },
+      "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoid29yay1jb21tYW5kLXJlYWR5LXYyK2p3cyIsImtpZCI6ImVuZm9yY2VyLTEifQ.eyJhY3Rpb25JZCI6ImFjdGlvbiIsImF1ZCI6ImNvbnRyb2wiLCJhdXRob3JpdHlHZW5lcmF0aW9uIjoxLCJhdXRob3JpemF0aW9uRGlnZXN0IjoiNmVjZWIzODBmOWZjZTM1YjA0MWZjNzBjNDhkYTRjNDFlMzI3NDQ1OGFiMGZlZmNjYzJhYTUyM2E1M2I2MGFlNSIsImNvbm5lY3Rpb25JZCI6ImNkNzA4ZGM5LTI2YmEtNDVjMC1hYzhkLWY3MWJlN2NhMGZmOSIsImVuZm9yY2VtZW50S2V5SWQiOiJlbmZvcmNlci0xIiwiaW5wdXREaWdlc3QiOiJzaGEyNTY6ZWQwNWU0YzMxMjhhN2QyNDNhYWNmOTRhY2YxYzRmOTdmMmQ0NTY3MmMxY2Y2NDdiMjM1MWRhYjFiYjMwMjY4OCIsImludGVudERpZ2VzdCI6ImJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmIiLCJpc3MiOiJlbmZvcmNlbWVudCIsImp0aSI6ImQ1OTEwYWZmLTQ4ZTEtNDg4MS04YzE0LTdlZjI0YjczYjk3YiIsImxlZGdlcklkIjoiYjJlNjczMzctNTc1Yi00NWQyLWFkMTItOTRlODM1NmI0YzY1Iiwibm9kZUlkIjoibm9kZSIsIm5vbmNlIjoib19TdFhtX21PZ2pCRGQyQ01lU3FSLWlZUFFqRnlONFUyclpsQlAwbW5xUSIsIm9wZXJhdGlvbkZpbmdlcnByaW50IjoiY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjYyIsIm9yaWdpbmFsRXBvY2giOjEsInByZXBhcmF0aW9uSWQiOiJkYzNiYTRkZi03NzcxLTQ5ZjgtODMzNC1mYTg5NTljYWQyOWEiLCJwcm9maWxlRGlnZXN0IjoiYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYSIsInByb29mIjp7ImFjdGl2ZU1vbm90b25pY1VzIjoxMDAwMDEwMDAsImJvb3RJZCI6IjNkNzJkZTlmLTRjNjktNGNlMy1hODk2LTkxNmQxY2M4ZTExZCIsImNncm91cElub2RlIjo1NSwiY2dyb3VwUGF0aCI6Ii9zeXN0ZW0uc2xpY2Uvb3BlbmJvdC1jb21tYW5kLWRjM2JhNGRmNzc3MTQ5Zjg4MzM0ZmE4OTU5Y2FkMjlhLnNlcnZpY2UiLCJlbmZvcmNlckluc3RhbmNlSWQiOiIyZWViM2NiMi1mYTVlLTQwZmEtODI1Zi0wYTgyZTU3MTJkMzIiLCJpbnZvY2F0aW9uSWQiOiJkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZCIsIm9ic2VydmVkQm9vdHRpbWVVcyI6MTAwMTAwMDAwLCJvYnNlcnZlZE1vbm90b25pY1VzIjoxMDAxMDAwMDAsInJ1bnRpbWVJZGVudGl0eURpZ2VzdCI6ImZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmYiLCJydW50aW1lTWF4VXMiOjUwMDAwMDAwLCJydW50aW1lU2hhcGVEaWdlc3QiOiIxMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExIiwic3RhcnRBdHRlbXB0cyI6MCwidGltaW5nUG9saWN5RGlnZXN0IjoiZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZSIsInVuaXROYW1lIjoib3BlbmJvdC1jb21tYW5kLWRjM2JhNGRmNzc3MTQ5Zjg4MzM0ZmE4OTU5Y2FkMjlhLnNlcnZpY2UifSwicHJvdmlkZXJJZCI6ImxpbnV4LWNvbW1hbmQiLCJwdXJwb3NlIjoid29ya19jb21tYW5kX3JlYWR5IiwicmVxdWVzdElkIjoiZGMzYmE0ZGYtNzc3MS00OWY4LTgzMzQtZmE4OTU5Y2FkMjlhIiwicnVuSWQiOiJydW4iLCJ0YXNrSWQiOiJ0YXNrIiwidmVyc2lvbiI6Mn0.rd8UKQkkhIg4xhyQjbhmdBvXeMDvXkBncc6XJgv0qx9tA4Cv9rmgso2r_dZxn-guC49XF9JdSPd3IMTix_IsBA",
+      "options": {
+        "purpose": "work_command_ready",
+        "issuer": "enforcement",
+        "audience": "control",
+        "binding": {
+          "taskId": "task",
+          "runId": "run",
+          "actionId": "action",
+          "preparationId": "dc3ba4df-7771-49f8-8334-fa8959cad29a",
+          "connectionId": "cd708dc9-26ba-45c0-ac8d-f71be7ca0ff9",
+          "originalEpoch": 1,
+          "authorityGeneration": 1,
+          "profileDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "intentDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "operationFingerprint": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "nodeId": "node",
+          "providerId": "linux-command",
+          "enforcementKeyId": "enforcer-1",
+          "ledgerId": "b2e67337-575b-45d2-ad12-94e8356b4c65"
+        },
+        "nowMs": 1800000000200,
+        "request": {
+          "requestId": "dc3ba4df-7771-49f8-8334-fa8959cad29a",
+          "nonce": "o_StXm_mOgjBDd2CMeSqR-iYPQjFyN4U2rZlBP0mnqQ"
+        }
+      },
+      "tsToken": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoid29yay1jb21tYW5kLXJlYWR5LXYyK2p3cyIsImtpZCI6ImVuZm9yY2VyLTEifQ.eyJhY3Rpb25JZCI6ImFjdGlvbiIsImF1ZCI6ImNvbnRyb2wiLCJhdXRob3JpdHlHZW5lcmF0aW9uIjoxLCJhdXRob3JpemF0aW9uRGlnZXN0IjoiNmVjZWIzODBmOWZjZTM1YjA0MWZjNzBjNDhkYTRjNDFlMzI3NDQ1OGFiMGZlZmNjYzJhYTUyM2E1M2I2MGFlNSIsImNvbm5lY3Rpb25JZCI6ImNkNzA4ZGM5LTI2YmEtNDVjMC1hYzhkLWY3MWJlN2NhMGZmOSIsImVuZm9yY2VtZW50S2V5SWQiOiJlbmZvcmNlci0xIiwiaW5wdXREaWdlc3QiOiJzaGEyNTY6ZWQwNWU0YzMxMjhhN2QyNDNhYWNmOTRhY2YxYzRmOTdmMmQ0NTY3MmMxY2Y2NDdiMjM1MWRhYjFiYjMwMjY4OCIsImludGVudERpZ2VzdCI6ImJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmIiLCJpc3MiOiJlbmZvcmNlbWVudCIsImp0aSI6ImQ1OTEwYWZmLTQ4ZTEtNDg4MS04YzE0LTdlZjI0YjczYjk3YiIsImxlZGdlcklkIjoiYjJlNjczMzctNTc1Yi00NWQyLWFkMTItOTRlODM1NmI0YzY1Iiwibm9kZUlkIjoibm9kZSIsIm5vbmNlIjoib19TdFhtX21PZ2pCRGQyQ01lU3FSLWlZUFFqRnlONFUyclpsQlAwbW5xUSIsIm9wZXJhdGlvbkZpbmdlcnByaW50IjoiY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjYyIsIm9yaWdpbmFsRXBvY2giOjEsInByZXBhcmF0aW9uSWQiOiJkYzNiYTRkZi03NzcxLTQ5ZjgtODMzNC1mYTg5NTljYWQyOWEiLCJwcm9maWxlRGlnZXN0IjoiYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYSIsInByb29mIjp7ImFjdGl2ZU1vbm90b25pY1VzIjoxMDAwMDEwMDAsImJvb3RJZCI6IjNkNzJkZTlmLTRjNjktNGNlMy1hODk2LTkxNmQxY2M4ZTExZCIsImNncm91cElub2RlIjo1NSwiY2dyb3VwUGF0aCI6Ii9zeXN0ZW0uc2xpY2Uvb3BlbmJvdC1jb21tYW5kLWRjM2JhNGRmNzc3MTQ5Zjg4MzM0ZmE4OTU5Y2FkMjlhLnNlcnZpY2UiLCJlbmZvcmNlckluc3RhbmNlSWQiOiIyZWViM2NiMi1mYTVlLTQwZmEtODI1Zi0wYTgyZTU3MTJkMzIiLCJpbnZvY2F0aW9uSWQiOiJkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZCIsIm9ic2VydmVkQm9vdHRpbWVVcyI6MTAwMTAwMDAwLCJvYnNlcnZlZE1vbm90b25pY1VzIjoxMDAxMDAwMDAsInJ1bnRpbWVJZGVudGl0eURpZ2VzdCI6ImZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmYiLCJydW50aW1lTWF4VXMiOjUwMDAwMDAwLCJydW50aW1lU2hhcGVEaWdlc3QiOiIxMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExIiwic3RhcnRBdHRlbXB0cyI6MCwidGltaW5nUG9saWN5RGlnZXN0IjoiZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZSIsInVuaXROYW1lIjoib3BlbmJvdC1jb21tYW5kLWRjM2JhNGRmNzc3MTQ5Zjg4MzM0ZmE4OTU5Y2FkMjlhLnNlcnZpY2UifSwicHJvdmlkZXJJZCI6ImxpbnV4LWNvbW1hbmQiLCJwdXJwb3NlIjoid29ya19jb21tYW5kX3JlYWR5IiwicmVxdWVzdElkIjoiZGMzYmE0ZGYtNzc3MS00OWY4LTgzMzQtZmE4OTU5Y2FkMjlhIiwicnVuSWQiOiJydW4iLCJ0YXNrSWQiOiJ0YXNrIiwidmVyc2lvbiI6Mn0.rd8UKQkkhIg4xhyQjbhmdBvXeMDvXkBncc6XJgv0qx9tA4Cv9rmgso2r_dZxn-guC49XF9JdSPd3IMTix_IsBA"
+    },
+    {
+      "value": {
+        "actionId": "action",
+        "anchors": {
+          "admittedAtMs": 1800000000100,
+          "deadlineProfileVersion": 2,
+          "hardDeadlineMs": 1800000055000,
+          "nativeDeadlineMs": 1800000055000,
+          "rootDeadlineMs": 1800000300000,
+          "wallSeconds": 60
+        },
+        "aud": "enforcement",
+        "authorityGeneration": 1,
+        "connectionId": "29ad2418-daf3-4394-b945-554807539500",
+        "dispatchId": "c624224e-2b9c-4ff4-8db1-6fd19257bf68",
+        "enforcementKeyId": "enforcer-1",
+        "exp": 1800000025,
+        "hardDeadlineMs": 1800000055000,
+        "iat": 1800000000,
+        "intentDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "iss": "control",
+        "jti": "af5bc34d-6a82-4fe8-8c9e-c65bf4525afa",
+        "ledgerId": "bbf14b49-58ff-4453-b386-3489b46b212f",
+        "nbf": 1800000000,
+        "nodeId": "node",
+        "operationFingerprint": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "originalEpoch": 1,
+        "preparationId": "f373cc62-886f-4068-ae58-832d9673c4ef",
+        "profileDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "providerId": "linux-command",
+        "purpose": "work_command_dispatch",
+        "readinessDigest": "07b1bc14deabe7ca730e4257cfb221bedefbf67b49dfb1e91bd5a703d9f28330",
+        "runId": "run",
+        "taskId": "task",
+        "version": 2
+      },
+      "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoid29yay1jb21tYW5kLWRpc3BhdGNoLXYyK2p3dCIsImtpZCI6ImNvbnRyb2wtMSJ9.eyJhY3Rpb25JZCI6ImFjdGlvbiIsImFuY2hvcnMiOnsiYWRtaXR0ZWRBdE1zIjoxODAwMDAwMDAwMTAwLCJkZWFkbGluZVByb2ZpbGVWZXJzaW9uIjoyLCJoYXJkRGVhZGxpbmVNcyI6MTgwMDAwMDA1NTAwMCwibmF0aXZlRGVhZGxpbmVNcyI6MTgwMDAwMDA1NTAwMCwicm9vdERlYWRsaW5lTXMiOjE4MDAwMDAzMDAwMDAsIndhbGxTZWNvbmRzIjo2MH0sImF1ZCI6ImVuZm9yY2VtZW50IiwiYXV0aG9yaXR5R2VuZXJhdGlvbiI6MSwiY29ubmVjdGlvbklkIjoiMjlhZDI0MTgtZGFmMy00Mzk0LWI5NDUtNTU0ODA3NTM5NTAwIiwiZGlzcGF0Y2hJZCI6ImM2MjQyMjRlLTJiOWMtNGZmNC04ZGIxLTZmZDE5MjU3YmY2OCIsImVuZm9yY2VtZW50S2V5SWQiOiJlbmZvcmNlci0xIiwiZXhwIjoxODAwMDAwMDI1LCJoYXJkRGVhZGxpbmVNcyI6MTgwMDAwMDA1NTAwMCwiaWF0IjoxODAwMDAwMDAwLCJpbnRlbnREaWdlc3QiOiJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiIiwiaXNzIjoiY29udHJvbCIsImp0aSI6ImFmNWJjMzRkLTZhODItNGZlOC04YzllLWM2NWJmNDUyNWFmYSIsImxlZGdlcklkIjoiYmJmMTRiNDktNThmZi00NDUzLWIzODYtMzQ4OWI0NmIyMTJmIiwibmJmIjoxODAwMDAwMDAwLCJub2RlSWQiOiJub2RlIiwib3BlcmF0aW9uRmluZ2VycHJpbnQiOiJjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjIiwib3JpZ2luYWxFcG9jaCI6MSwicHJlcGFyYXRpb25JZCI6ImYzNzNjYzYyLTg4NmYtNDA2OC1hZTU4LTgzMmQ5NjczYzRlZiIsInByb2ZpbGVEaWdlc3QiOiJhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhIiwicHJvdmlkZXJJZCI6ImxpbnV4LWNvbW1hbmQiLCJwdXJwb3NlIjoid29ya19jb21tYW5kX2Rpc3BhdGNoIiwicmVhZGluZXNzRGlnZXN0IjoiMDdiMWJjMTRkZWFiZTdjYTczMGU0MjU3Y2ZiMjIxYmVkZWZiZjY3YjQ5ZGZiMWU5MWJkNWE3MDNkOWYyODMzMCIsInJ1bklkIjoicnVuIiwidGFza0lkIjoidGFzayIsInZlcnNpb24iOjJ9.iT6MUS_mnTJwD-4cEdiVMmoTSGfsSis1Ub3tq-NSVAuOfi_D6qk00jueSuVD_WHgbuFnrc1FyTzW2WikYvOhDg",
+      "options": {
+        "purpose": "work_command_dispatch",
+        "issuer": "control",
+        "audience": "enforcement",
+        "binding": {
+          "taskId": "task",
+          "runId": "run",
+          "actionId": "action",
+          "dispatchId": "c624224e-2b9c-4ff4-8db1-6fd19257bf68",
+          "connectionId": "29ad2418-daf3-4394-b945-554807539500",
+          "originalEpoch": 1,
+          "authorityGeneration": 1,
+          "profileDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "intentDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "operationFingerprint": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "nodeId": "node",
+          "providerId": "linux-command",
+          "enforcementKeyId": "enforcer-1",
+          "ledgerId": "bbf14b49-58ff-4453-b386-3489b46b212f",
+          "hardDeadlineMs": 1800000055000,
+          "version": 2,
+          "preparationId": "f373cc62-886f-4068-ae58-832d9673c4ef",
+          "readinessDigest": "07b1bc14deabe7ca730e4257cfb221bedefbf67b49dfb1e91bd5a703d9f28330"
+        },
+        "nowMs": 1800000000200
+      },
+      "tsToken": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoid29yay1jb21tYW5kLWRpc3BhdGNoLXYyK2p3dCIsImtpZCI6ImNvbnRyb2wtMSJ9.eyJhY3Rpb25JZCI6ImFjdGlvbiIsImFuY2hvcnMiOnsiYWRtaXR0ZWRBdE1zIjoxODAwMDAwMDAwMTAwLCJkZWFkbGluZVByb2ZpbGVWZXJzaW9uIjoyLCJoYXJkRGVhZGxpbmVNcyI6MTgwMDAwMDA1NTAwMCwibmF0aXZlRGVhZGxpbmVNcyI6MTgwMDAwMDA1NTAwMCwicm9vdERlYWRsaW5lTXMiOjE4MDAwMDAzMDAwMDAsIndhbGxTZWNvbmRzIjo2MH0sImF1ZCI6ImVuZm9yY2VtZW50IiwiYXV0aG9yaXR5R2VuZXJhdGlvbiI6MSwiY29ubmVjdGlvbklkIjoiMjlhZDI0MTgtZGFmMy00Mzk0LWI5NDUtNTU0ODA3NTM5NTAwIiwiZGlzcGF0Y2hJZCI6ImM2MjQyMjRlLTJiOWMtNGZmNC04ZGIxLTZmZDE5MjU3YmY2OCIsImVuZm9yY2VtZW50S2V5SWQiOiJlbmZvcmNlci0xIiwiZXhwIjoxODAwMDAwMDI1LCJoYXJkRGVhZGxpbmVNcyI6MTgwMDAwMDA1NTAwMCwiaWF0IjoxODAwMDAwMDAwLCJpbnRlbnREaWdlc3QiOiJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiIiwiaXNzIjoiY29udHJvbCIsImp0aSI6ImFmNWJjMzRkLTZhODItNGZlOC04YzllLWM2NWJmNDUyNWFmYSIsImxlZGdlcklkIjoiYmJmMTRiNDktNThmZi00NDUzLWIzODYtMzQ4OWI0NmIyMTJmIiwibmJmIjoxODAwMDAwMDAwLCJub2RlSWQiOiJub2RlIiwib3BlcmF0aW9uRmluZ2VycHJpbnQiOiJjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjIiwib3JpZ2luYWxFcG9jaCI6MSwicHJlcGFyYXRpb25JZCI6ImYzNzNjYzYyLTg4NmYtNDA2OC1hZTU4LTgzMmQ5NjczYzRlZiIsInByb2ZpbGVEaWdlc3QiOiJhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhIiwicHJvdmlkZXJJZCI6ImxpbnV4LWNvbW1hbmQiLCJwdXJwb3NlIjoid29ya19jb21tYW5kX2Rpc3BhdGNoIiwicmVhZGluZXNzRGlnZXN0IjoiMDdiMWJjMTRkZWFiZTdjYTczMGU0MjU3Y2ZiMjIxYmVkZWZiZjY3YjQ5ZGZiMWU5MWJkNWE3MDNkOWYyODMzMCIsInJ1bklkIjoicnVuIiwidGFza0lkIjoidGFzayIsInZlcnNpb24iOjJ9.iT6MUS_mnTJwD-4cEdiVMmoTSGfsSis1Ub3tq-NSVAuOfi_D6qk00jueSuVD_WHgbuFnrc1FyTzW2WikYvOhDg"
+    },
+    {
+      "value": {
+        "actionId": "action",
+        "aud": "control",
+        "authorityGeneration": 1,
+        "connectionId": "29ad2418-daf3-4394-b945-554807539500",
+        "dispatchId": "c624224e-2b9c-4ff4-8db1-6fd19257bf68",
+        "enforcementKeyId": "enforcer-1",
+        "exp": 1800000030,
+        "hardDeadlineMs": 1800000055000,
+        "iat": 1800000000,
+        "intentDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "iss": "enforcement",
+        "jti": "5bfc37fc-5ffa-4b16-ac92-ed8c5427f3ff",
+        "ledgerId": "bbf14b49-58ff-4453-b386-3489b46b212f",
+        "nbf": 1800000000,
+        "nodeId": "node",
+        "nonce": "hN7-XeCTYUsyUDVPMnqChEhLPfYAHnwTkboUVf2IOR0",
+        "operationFingerprint": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "originalEpoch": 1,
+        "preparationId": "f373cc62-886f-4068-ae58-832d9673c4ef",
+        "profileDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "providerId": "linux-command",
+        "purpose": "work_command_consume",
+        "readinessDigest": "07b1bc14deabe7ca730e4257cfb221bedefbf67b49dfb1e91bd5a703d9f28330",
+        "requestId": "6f834d23-2af8-4317-8c1e-f9141839eb0d",
+        "runId": "run",
+        "taskId": "task",
+        "ticketDigest": "709039e443f8eebd42ba1c595eaaa8a1c68f4a66dc6127a8916019a370abd5e7",
+        "version": 2
+      },
+      "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoid29yay1jb21tYW5kLWNvbnN1bWUtdjIrand0Iiwia2lkIjoiZW5mb3JjZXItMSJ9.eyJhY3Rpb25JZCI6ImFjdGlvbiIsImF1ZCI6ImNvbnRyb2wiLCJhdXRob3JpdHlHZW5lcmF0aW9uIjoxLCJjb25uZWN0aW9uSWQiOiIyOWFkMjQxOC1kYWYzLTQzOTQtYjk0NS01NTQ4MDc1Mzk1MDAiLCJkaXNwYXRjaElkIjoiYzYyNDIyNGUtMmI5Yy00ZmY0LThkYjEtNmZkMTkyNTdiZjY4IiwiZW5mb3JjZW1lbnRLZXlJZCI6ImVuZm9yY2VyLTEiLCJleHAiOjE4MDAwMDAwMzAsImhhcmREZWFkbGluZU1zIjoxODAwMDAwMDU1MDAwLCJpYXQiOjE4MDAwMDAwMDAsImludGVudERpZ2VzdCI6ImJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmIiLCJpc3MiOiJlbmZvcmNlbWVudCIsImp0aSI6IjViZmMzN2ZjLTVmZmEtNGIxNi1hYzkyLWVkOGM1NDI3ZjNmZiIsImxlZGdlcklkIjoiYmJmMTRiNDktNThmZi00NDUzLWIzODYtMzQ4OWI0NmIyMTJmIiwibmJmIjoxODAwMDAwMDAwLCJub2RlSWQiOiJub2RlIiwibm9uY2UiOiJoTjctWGVDVFlVc3lVRFZQTW5xQ2hFaExQZllBSG53VGtib1VWZjJJT1IwIiwib3BlcmF0aW9uRmluZ2VycHJpbnQiOiJjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjIiwib3JpZ2luYWxFcG9jaCI6MSwicHJlcGFyYXRpb25JZCI6ImYzNzNjYzYyLTg4NmYtNDA2OC1hZTU4LTgzMmQ5NjczYzRlZiIsInByb2ZpbGVEaWdlc3QiOiJhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhIiwicHJvdmlkZXJJZCI6ImxpbnV4LWNvbW1hbmQiLCJwdXJwb3NlIjoid29ya19jb21tYW5kX2NvbnN1bWUiLCJyZWFkaW5lc3NEaWdlc3QiOiIwN2IxYmMxNGRlYWJlN2NhNzMwZTQyNTdjZmIyMjFiZWRlZmJmNjdiNDlkZmIxZTkxYmQ1YTcwM2Q5ZjI4MzMwIiwicmVxdWVzdElkIjoiNmY4MzRkMjMtMmFmOC00MzE3LThjMWUtZjkxNDE4MzllYjBkIiwicnVuSWQiOiJydW4iLCJ0YXNrSWQiOiJ0YXNrIiwidGlja2V0RGlnZXN0IjoiNzA5MDM5ZTQ0M2Y4ZWViZDQyYmExYzU5NWVhYWE4YTFjNjhmNGE2NmRjNjEyN2E4OTE2MDE5YTM3MGFiZDVlNyIsInZlcnNpb24iOjJ9.IJ3yBONrvMPWXcFN2UsmwlIqGYqORfn1PUiXSOQWto41Mn4vSfb6jEcAJsX9Cdvg7H026at7M7v9561eS3-rAQ",
+      "options": {
+        "purpose": "work_command_consume",
+        "issuer": "enforcement",
+        "audience": "control",
+        "binding": {
+          "taskId": "task",
+          "runId": "run",
+          "actionId": "action",
+          "dispatchId": "c624224e-2b9c-4ff4-8db1-6fd19257bf68",
+          "connectionId": "29ad2418-daf3-4394-b945-554807539500",
+          "originalEpoch": 1,
+          "authorityGeneration": 1,
+          "profileDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "intentDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "operationFingerprint": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "nodeId": "node",
+          "providerId": "linux-command",
+          "enforcementKeyId": "enforcer-1",
+          "ledgerId": "bbf14b49-58ff-4453-b386-3489b46b212f",
+          "hardDeadlineMs": 1800000055000,
+          "version": 2,
+          "preparationId": "f373cc62-886f-4068-ae58-832d9673c4ef",
+          "readinessDigest": "07b1bc14deabe7ca730e4257cfb221bedefbf67b49dfb1e91bd5a703d9f28330"
+        },
+        "nowMs": 1800000000200,
+        "request": {
+          "requestId": "6f834d23-2af8-4317-8c1e-f9141839eb0d",
+          "nonce": "hN7-XeCTYUsyUDVPMnqChEhLPfYAHnwTkboUVf2IOR0"
+        }
+      },
+      "tsToken": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoid29yay1jb21tYW5kLWNvbnN1bWUtdjIrand0Iiwia2lkIjoiZW5mb3JjZXItMSJ9.eyJhY3Rpb25JZCI6ImFjdGlvbiIsImF1ZCI6ImNvbnRyb2wiLCJhdXRob3JpdHlHZW5lcmF0aW9uIjoxLCJjb25uZWN0aW9uSWQiOiIyOWFkMjQxOC1kYWYzLTQzOTQtYjk0NS01NTQ4MDc1Mzk1MDAiLCJkaXNwYXRjaElkIjoiYzYyNDIyNGUtMmI5Yy00ZmY0LThkYjEtNmZkMTkyNTdiZjY4IiwiZW5mb3JjZW1lbnRLZXlJZCI6ImVuZm9yY2VyLTEiLCJleHAiOjE4MDAwMDAwMzAsImhhcmREZWFkbGluZU1zIjoxODAwMDAwMDU1MDAwLCJpYXQiOjE4MDAwMDAwMDAsImludGVudERpZ2VzdCI6ImJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmIiLCJpc3MiOiJlbmZvcmNlbWVudCIsImp0aSI6IjViZmMzN2ZjLTVmZmEtNGIxNi1hYzkyLWVkOGM1NDI3ZjNmZiIsImxlZGdlcklkIjoiYmJmMTRiNDktNThmZi00NDUzLWIzODYtMzQ4OWI0NmIyMTJmIiwibmJmIjoxODAwMDAwMDAwLCJub2RlSWQiOiJub2RlIiwibm9uY2UiOiJoTjctWGVDVFlVc3lVRFZQTW5xQ2hFaExQZllBSG53VGtib1VWZjJJT1IwIiwib3BlcmF0aW9uRmluZ2VycHJpbnQiOiJjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjIiwib3JpZ2luYWxFcG9jaCI6MSwicHJlcGFyYXRpb25JZCI6ImYzNzNjYzYyLTg4NmYtNDA2OC1hZTU4LTgzMmQ5NjczYzRlZiIsInByb2ZpbGVEaWdlc3QiOiJhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhIiwicHJvdmlkZXJJZCI6ImxpbnV4LWNvbW1hbmQiLCJwdXJwb3NlIjoid29ya19jb21tYW5kX2NvbnN1bWUiLCJyZWFkaW5lc3NEaWdlc3QiOiIwN2IxYmMxNGRlYWJlN2NhNzMwZTQyNTdjZmIyMjFiZWRlZmJmNjdiNDlkZmIxZTkxYmQ1YTcwM2Q5ZjI4MzMwIiwicmVxdWVzdElkIjoiNmY4MzRkMjMtMmFmOC00MzE3LThjMWUtZjkxNDE4MzllYjBkIiwicnVuSWQiOiJydW4iLCJ0YXNrSWQiOiJ0YXNrIiwidGlja2V0RGlnZXN0IjoiNzA5MDM5ZTQ0M2Y4ZWViZDQyYmExYzU5NWVhYWE4YTFjNjhmNGE2NmRjNjEyN2E4OTE2MDE5YTM3MGFiZDVlNyIsInZlcnNpb24iOjJ9.IJ3yBONrvMPWXcFN2UsmwlIqGYqORfn1PUiXSOQWto41Mn4vSfb6jEcAJsX9Cdvg7H026at7M7v9561eS3-rAQ"
+    },
+    {
+      "value": {
+        "taskId": "task",
+        "runId": "run",
+        "actionId": "action",
+        "preparationId": "f373cc62-886f-4068-ae58-832d9673c4ef",
+        "connectionId": "29ad2418-daf3-4394-b945-554807539500",
+        "originalEpoch": 1,
+        "authorityGeneration": 1,
+        "profileDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "intentDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "operationFingerprint": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "nodeId": "node",
+        "providerId": "linux-command",
+        "enforcementKeyId": "enforcer-1",
+        "ledgerId": "bbf14b49-58ff-4453-b386-3489b46b212f",
+        "version": 2,
+        "dispatchId": "c624224e-2b9c-4ff4-8db1-6fd19257bf68",
+        "readinessDigest": "07b1bc14deabe7ca730e4257cfb221bedefbf67b49dfb1e91bd5a703d9f28330",
+        "hardDeadlineMs": 1800000055000,
+        "purpose": "work_command_permit",
+        "iss": "control",
+        "aud": "enforcement",
+        "jti": "03d1bb49-2276-4d8c-bbfe-251d6f9611d0",
+        "iat": 1800000000,
+        "nbf": 1800000000,
+        "exp": 1800000005,
+        "requestId": "6f834d23-2af8-4317-8c1e-f9141839eb0d",
+        "nonce": "hN7-XeCTYUsyUDVPMnqChEhLPfYAHnwTkboUVf2IOR0",
+        "requestDigest": "00f7d5203ea3a80bd12bac832231d10d8ad3bb64308c49d691fd7aa7a3707cfb",
+        "consumedAtMs": 1800000000200,
+        "launchDeadlineMs": 1800000005200
+      },
+      "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoid29yay1jb21tYW5kLXBlcm1pdC12Mitqd3QiLCJraWQiOiJjb250cm9sLTEifQ.eyJhY3Rpb25JZCI6ImFjdGlvbiIsImF1ZCI6ImVuZm9yY2VtZW50IiwiYXV0aG9yaXR5R2VuZXJhdGlvbiI6MSwiY29ubmVjdGlvbklkIjoiMjlhZDI0MTgtZGFmMy00Mzk0LWI5NDUtNTU0ODA3NTM5NTAwIiwiY29uc3VtZWRBdE1zIjoxODAwMDAwMDAwMjAwLCJkaXNwYXRjaElkIjoiYzYyNDIyNGUtMmI5Yy00ZmY0LThkYjEtNmZkMTkyNTdiZjY4IiwiZW5mb3JjZW1lbnRLZXlJZCI6ImVuZm9yY2VyLTEiLCJleHAiOjE4MDAwMDAwMDUsImhhcmREZWFkbGluZU1zIjoxODAwMDAwMDU1MDAwLCJpYXQiOjE4MDAwMDAwMDAsImludGVudERpZ2VzdCI6ImJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmIiLCJpc3MiOiJjb250cm9sIiwianRpIjoiMDNkMWJiNDktMjI3Ni00ZDhjLWJiZmUtMjUxZDZmOTYxMWQwIiwibGF1bmNoRGVhZGxpbmVNcyI6MTgwMDAwMDAwNTIwMCwibGVkZ2VySWQiOiJiYmYxNGI0OS01OGZmLTQ0NTMtYjM4Ni0zNDg5YjQ2YjIxMmYiLCJuYmYiOjE4MDAwMDAwMDAsIm5vZGVJZCI6Im5vZGUiLCJub25jZSI6ImhONy1YZUNUWVVzeVVEVlBNbnFDaEVoTFBmWUFIbndUa2JvVVZmMklPUjAiLCJvcGVyYXRpb25GaW5nZXJwcmludCI6ImNjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2MiLCJvcmlnaW5hbEVwb2NoIjoxLCJwcmVwYXJhdGlvbklkIjoiZjM3M2NjNjItODg2Zi00MDY4LWFlNTgtODMyZDk2NzNjNGVmIiwicHJvZmlsZURpZ2VzdCI6ImFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEiLCJwcm92aWRlcklkIjoibGludXgtY29tbWFuZCIsInB1cnBvc2UiOiJ3b3JrX2NvbW1hbmRfcGVybWl0IiwicmVhZGluZXNzRGlnZXN0IjoiMDdiMWJjMTRkZWFiZTdjYTczMGU0MjU3Y2ZiMjIxYmVkZWZiZjY3YjQ5ZGZiMWU5MWJkNWE3MDNkOWYyODMzMCIsInJlcXVlc3REaWdlc3QiOiIwMGY3ZDUyMDNlYTNhODBiZDEyYmFjODMyMjMxZDEwZDhhZDNiYjY0MzA4YzQ5ZDY5MWZkN2FhN2EzNzA3Y2ZiIiwicmVxdWVzdElkIjoiNmY4MzRkMjMtMmFmOC00MzE3LThjMWUtZjkxNDE4MzllYjBkIiwicnVuSWQiOiJydW4iLCJ0YXNrSWQiOiJ0YXNrIiwidmVyc2lvbiI6Mn0.mQbsnJa-2FBpecq3B-jPp_oNxT3Du0GmKixMI0065hlyKWwbE5hAp-9EC4fBu2YLfVrADTxrjLfzsFy0-2TTAw",
+      "options": {
+        "purpose": "work_command_permit",
+        "issuer": "control",
+        "audience": "enforcement",
+        "binding": {
+          "taskId": "task",
+          "runId": "run",
+          "actionId": "action",
+          "dispatchId": "c624224e-2b9c-4ff4-8db1-6fd19257bf68",
+          "connectionId": "29ad2418-daf3-4394-b945-554807539500",
+          "originalEpoch": 1,
+          "authorityGeneration": 1,
+          "profileDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "intentDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "operationFingerprint": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "nodeId": "node",
+          "providerId": "linux-command",
+          "enforcementKeyId": "enforcer-1",
+          "ledgerId": "bbf14b49-58ff-4453-b386-3489b46b212f",
+          "hardDeadlineMs": 1800000055000,
+          "version": 2,
+          "preparationId": "f373cc62-886f-4068-ae58-832d9673c4ef",
+          "readinessDigest": "07b1bc14deabe7ca730e4257cfb221bedefbf67b49dfb1e91bd5a703d9f28330"
+        },
+        "nowMs": 1800000000200,
+        "request": {
+          "requestId": "6f834d23-2af8-4317-8c1e-f9141839eb0d",
+          "nonce": "hN7-XeCTYUsyUDVPMnqChEhLPfYAHnwTkboUVf2IOR0"
+        }
+      },
+      "tsToken": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoid29yay1jb21tYW5kLXBlcm1pdC12Mitqd3QiLCJraWQiOiJjb250cm9sLTEifQ.eyJhY3Rpb25JZCI6ImFjdGlvbiIsImF1ZCI6ImVuZm9yY2VtZW50IiwiYXV0aG9yaXR5R2VuZXJhdGlvbiI6MSwiY29ubmVjdGlvbklkIjoiMjlhZDI0MTgtZGFmMy00Mzk0LWI5NDUtNTU0ODA3NTM5NTAwIiwiY29uc3VtZWRBdE1zIjoxODAwMDAwMDAwMjAwLCJkaXNwYXRjaElkIjoiYzYyNDIyNGUtMmI5Yy00ZmY0LThkYjEtNmZkMTkyNTdiZjY4IiwiZW5mb3JjZW1lbnRLZXlJZCI6ImVuZm9yY2VyLTEiLCJleHAiOjE4MDAwMDAwMDUsImhhcmREZWFkbGluZU1zIjoxODAwMDAwMDU1MDAwLCJpYXQiOjE4MDAwMDAwMDAsImludGVudERpZ2VzdCI6ImJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmIiLCJpc3MiOiJjb250cm9sIiwianRpIjoiMDNkMWJiNDktMjI3Ni00ZDhjLWJiZmUtMjUxZDZmOTYxMWQwIiwibGF1bmNoRGVhZGxpbmVNcyI6MTgwMDAwMDAwNTIwMCwibGVkZ2VySWQiOiJiYmYxNGI0OS01OGZmLTQ0NTMtYjM4Ni0zNDg5YjQ2YjIxMmYiLCJuYmYiOjE4MDAwMDAwMDAsIm5vZGVJZCI6Im5vZGUiLCJub25jZSI6ImhONy1YZUNUWVVzeVVEVlBNbnFDaEVoTFBmWUFIbndUa2JvVVZmMklPUjAiLCJvcGVyYXRpb25GaW5nZXJwcmludCI6ImNjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2MiLCJvcmlnaW5hbEVwb2NoIjoxLCJwcmVwYXJhdGlvbklkIjoiZjM3M2NjNjItODg2Zi00MDY4LWFlNTgtODMyZDk2NzNjNGVmIiwicHJvZmlsZURpZ2VzdCI6ImFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEiLCJwcm92aWRlcklkIjoibGludXgtY29tbWFuZCIsInB1cnBvc2UiOiJ3b3JrX2NvbW1hbmRfcGVybWl0IiwicmVhZGluZXNzRGlnZXN0IjoiMDdiMWJjMTRkZWFiZTdjYTczMGU0MjU3Y2ZiMjIxYmVkZWZiZjY3YjQ5ZGZiMWU5MWJkNWE3MDNkOWYyODMzMCIsInJlcXVlc3REaWdlc3QiOiIwMGY3ZDUyMDNlYTNhODBiZDEyYmFjODMyMjMxZDEwZDhhZDNiYjY0MzA4YzQ5ZDY5MWZkN2FhN2EzNzA3Y2ZiIiwicmVxdWVzdElkIjoiNmY4MzRkMjMtMmFmOC00MzE3LThjMWUtZjkxNDE4MzllYjBkIiwicnVuSWQiOiJydW4iLCJ0YXNrSWQiOiJ0YXNrIiwidmVyc2lvbiI6Mn0.mQbsnJa-2FBpecq3B-jPp_oNxT3Du0GmKixMI0065hlyKWwbE5hAp-9EC4fBu2YLfVrADTxrjLfzsFy0-2TTAw"
+    },
+    {
+      "value": {
+        "actionId": "action",
+        "aud": "control",
+        "authorityGeneration": 1,
+        "bootId": "7d0bf305-6438-416a-9640-7f9056788e11",
+        "connectionId": "29ad2418-daf3-4394-b945-554807539500",
+        "createdBoottimeUs": 100100000,
+        "enforcementKeyId": "enforcer-1",
+        "enforcerInstanceId": "5b2f91be-28f6-47c8-aef3-e6e3c333f1f3",
+        "expiresBoottimeUs": 105100000,
+        "intentDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "iss": "enforcement",
+        "jti": "35859ccb-8711-4054-bb71-b565c7c07f2a",
+        "ledgerId": "bbf14b49-58ff-4453-b386-3489b46b212f",
+        "nodeId": "node",
+        "nonce": "d5vEy5iyn4rXPLh_T7rZW2sW5VOYGpLfcfNUwFiA1gg",
+        "operation": "lookup",
+        "operationFingerprint": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "originalEpoch": 1,
+        "preparationId": "f373cc62-886f-4068-ae58-832d9673c4ef",
+        "profileDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "providerId": "linux-command",
+        "purpose": "work_command_control_challenge",
+        "requestId": "b0d2a017-d6fd-4445-8f1f-8ab2f55aa969",
+        "runId": "run",
+        "taskId": "task",
+        "version": 2
+      },
+      "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoid29yay1jb21tYW5kLWNvbnRyb2wtY2hhbGxlbmdlLXYyK2p3cyIsImtpZCI6ImVuZm9yY2VyLTEifQ.eyJhY3Rpb25JZCI6ImFjdGlvbiIsImF1ZCI6ImNvbnRyb2wiLCJhdXRob3JpdHlHZW5lcmF0aW9uIjoxLCJib290SWQiOiI3ZDBiZjMwNS02NDM4LTQxNmEtOTY0MC03ZjkwNTY3ODhlMTEiLCJjb25uZWN0aW9uSWQiOiIyOWFkMjQxOC1kYWYzLTQzOTQtYjk0NS01NTQ4MDc1Mzk1MDAiLCJjcmVhdGVkQm9vdHRpbWVVcyI6MTAwMTAwMDAwLCJlbmZvcmNlbWVudEtleUlkIjoiZW5mb3JjZXItMSIsImVuZm9yY2VySW5zdGFuY2VJZCI6IjViMmY5MWJlLTI4ZjYtNDdjOC1hZWYzLWU2ZTNjMzMzZjFmMyIsImV4cGlyZXNCb290dGltZVVzIjoxMDUxMDAwMDAsImludGVudERpZ2VzdCI6ImJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmIiLCJpc3MiOiJlbmZvcmNlbWVudCIsImp0aSI6IjM1ODU5Y2NiLTg3MTEtNDA1NC1iYjcxLWI1NjVjN2MwN2YyYSIsImxlZGdlcklkIjoiYmJmMTRiNDktNThmZi00NDUzLWIzODYtMzQ4OWI0NmIyMTJmIiwibm9kZUlkIjoibm9kZSIsIm5vbmNlIjoiZDV2RXk1aXluNHJYUExoX1Q3clpXMnNXNVZPWUdwTGZjZk5Vd0ZpQTFnZyIsIm9wZXJhdGlvbiI6Imxvb2t1cCIsIm9wZXJhdGlvbkZpbmdlcnByaW50IjoiY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjYyIsIm9yaWdpbmFsRXBvY2giOjEsInByZXBhcmF0aW9uSWQiOiJmMzczY2M2Mi04ODZmLTQwNjgtYWU1OC04MzJkOTY3M2M0ZWYiLCJwcm9maWxlRGlnZXN0IjoiYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYSIsInByb3ZpZGVySWQiOiJsaW51eC1jb21tYW5kIiwicHVycG9zZSI6IndvcmtfY29tbWFuZF9jb250cm9sX2NoYWxsZW5nZSIsInJlcXVlc3RJZCI6ImIwZDJhMDE3LWQ2ZmQtNDQ0NS04ZjFmLThhYjJmNTVhYTk2OSIsInJ1bklkIjoicnVuIiwidGFza0lkIjoidGFzayIsInZlcnNpb24iOjJ9.kY4ktMkho4qg0ICikQ9uQMXzp1K7PS8_e4FIr6DC1Qryn9rOVjeb5sv0u1te6iwIogkrln9mXDJrdQ1Bx485BQ",
+      "options": {
+        "purpose": "work_command_control_challenge",
+        "issuer": "enforcement",
+        "audience": "control",
+        "binding": {
+          "taskId": "task",
+          "runId": "run",
+          "actionId": "action",
+          "preparationId": "f373cc62-886f-4068-ae58-832d9673c4ef",
+          "connectionId": "29ad2418-daf3-4394-b945-554807539500",
+          "originalEpoch": 1,
+          "authorityGeneration": 1,
+          "profileDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "intentDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "operationFingerprint": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "nodeId": "node",
+          "providerId": "linux-command",
+          "enforcementKeyId": "enforcer-1",
+          "ledgerId": "bbf14b49-58ff-4453-b386-3489b46b212f"
+        },
+        "nowMs": 1800000000200,
+        "request": {
+          "requestId": "b0d2a017-d6fd-4445-8f1f-8ab2f55aa969",
+          "nonce": "d5vEy5iyn4rXPLh_T7rZW2sW5VOYGpLfcfNUwFiA1gg"
+        }
+      },
+      "tsToken": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoid29yay1jb21tYW5kLWNvbnRyb2wtY2hhbGxlbmdlLXYyK2p3cyIsImtpZCI6ImVuZm9yY2VyLTEifQ.eyJhY3Rpb25JZCI6ImFjdGlvbiIsImF1ZCI6ImNvbnRyb2wiLCJhdXRob3JpdHlHZW5lcmF0aW9uIjoxLCJib290SWQiOiI3ZDBiZjMwNS02NDM4LTQxNmEtOTY0MC03ZjkwNTY3ODhlMTEiLCJjb25uZWN0aW9uSWQiOiIyOWFkMjQxOC1kYWYzLTQzOTQtYjk0NS01NTQ4MDc1Mzk1MDAiLCJjcmVhdGVkQm9vdHRpbWVVcyI6MTAwMTAwMDAwLCJlbmZvcmNlbWVudEtleUlkIjoiZW5mb3JjZXItMSIsImVuZm9yY2VySW5zdGFuY2VJZCI6IjViMmY5MWJlLTI4ZjYtNDdjOC1hZWYzLWU2ZTNjMzMzZjFmMyIsImV4cGlyZXNCb290dGltZVVzIjoxMDUxMDAwMDAsImludGVudERpZ2VzdCI6ImJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmIiLCJpc3MiOiJlbmZvcmNlbWVudCIsImp0aSI6IjM1ODU5Y2NiLTg3MTEtNDA1NC1iYjcxLWI1NjVjN2MwN2YyYSIsImxlZGdlcklkIjoiYmJmMTRiNDktNThmZi00NDUzLWIzODYtMzQ4OWI0NmIyMTJmIiwibm9kZUlkIjoibm9kZSIsIm5vbmNlIjoiZDV2RXk1aXluNHJYUExoX1Q3clpXMnNXNVZPWUdwTGZjZk5Vd0ZpQTFnZyIsIm9wZXJhdGlvbiI6Imxvb2t1cCIsIm9wZXJhdGlvbkZpbmdlcnByaW50IjoiY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjYyIsIm9yaWdpbmFsRXBvY2giOjEsInByZXBhcmF0aW9uSWQiOiJmMzczY2M2Mi04ODZmLTQwNjgtYWU1OC04MzJkOTY3M2M0ZWYiLCJwcm9maWxlRGlnZXN0IjoiYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYSIsInByb3ZpZGVySWQiOiJsaW51eC1jb21tYW5kIiwicHVycG9zZSI6IndvcmtfY29tbWFuZF9jb250cm9sX2NoYWxsZW5nZSIsInJlcXVlc3RJZCI6ImIwZDJhMDE3LWQ2ZmQtNDQ0NS04ZjFmLThhYjJmNTVhYTk2OSIsInJ1bklkIjoicnVuIiwidGFza0lkIjoidGFzayIsInZlcnNpb24iOjJ9.kY4ktMkho4qg0ICikQ9uQMXzp1K7PS8_e4FIr6DC1Qryn9rOVjeb5sv0u1te6iwIogkrln9mXDJrdQ1Bx485BQ"
+    },
+    {
+      "value": {
+        "taskId": "task",
+        "runId": "run",
+        "actionId": "action",
+        "preparationId": "f373cc62-886f-4068-ae58-832d9673c4ef",
+        "connectionId": "29ad2418-daf3-4394-b945-554807539500",
+        "originalEpoch": 1,
+        "authorityGeneration": 1,
+        "profileDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "intentDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "operationFingerprint": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "nodeId": "node",
+        "providerId": "linux-command",
+        "enforcementKeyId": "enforcer-1",
+        "ledgerId": "bbf14b49-58ff-4453-b386-3489b46b212f",
+        "version": 2,
+        "iss": "control",
+        "aud": "enforcement",
+        "jti": "603ff8f9-5500-43a7-a27b-6f2c03654988",
+        "purpose": "work_command_control_request",
+        "challengeDigest": "f0d0b242114e6d5b24912b850e881e5feecf941a8b0f11e1ded3b2460b68a6f3",
+        "requestId": "b0d2a017-d6fd-4445-8f1f-8ab2f55aa969",
+        "nonce": "d5vEy5iyn4rXPLh_T7rZW2sW5VOYGpLfcfNUwFiA1gg",
+        "issuedAtMs": 1800000000200,
+        "expiresAtMs": 1800000010200,
+        "dispatch": {
+          "taskId": "task",
+          "runId": "run",
+          "actionId": "action",
+          "preparationId": "f373cc62-886f-4068-ae58-832d9673c4ef",
+          "connectionId": "29ad2418-daf3-4394-b945-554807539500",
+          "originalEpoch": 1,
+          "authorityGeneration": 1,
+          "profileDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "intentDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "operationFingerprint": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "nodeId": "node",
+          "providerId": "linux-command",
+          "enforcementKeyId": "enforcer-1",
+          "ledgerId": "bbf14b49-58ff-4453-b386-3489b46b212f",
+          "version": 2,
+          "dispatchId": "c624224e-2b9c-4ff4-8db1-6fd19257bf68",
+          "readinessDigest": "07b1bc14deabe7ca730e4257cfb221bedefbf67b49dfb1e91bd5a703d9f28330",
+          "hardDeadlineMs": 1800000055000
+        },
+        "operation": "lookup",
+        "includeOutput": true
+      },
+      "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoid29yay1jb21tYW5kLWNvbnRyb2wtcmVxdWVzdC12Mitqd3MiLCJraWQiOiJjb250cm9sLTEifQ.eyJhY3Rpb25JZCI6ImFjdGlvbiIsImF1ZCI6ImVuZm9yY2VtZW50IiwiYXV0aG9yaXR5R2VuZXJhdGlvbiI6MSwiY2hhbGxlbmdlRGlnZXN0IjoiZjBkMGIyNDIxMTRlNmQ1YjI0OTEyYjg1MGU4ODFlNWZlZWNmOTQxYThiMGYxMWUxZGVkM2IyNDYwYjY4YTZmMyIsImNvbm5lY3Rpb25JZCI6IjI5YWQyNDE4LWRhZjMtNDM5NC1iOTQ1LTU1NDgwNzUzOTUwMCIsImRpc3BhdGNoIjp7ImFjdGlvbklkIjoiYWN0aW9uIiwiYXV0aG9yaXR5R2VuZXJhdGlvbiI6MSwiY29ubmVjdGlvbklkIjoiMjlhZDI0MTgtZGFmMy00Mzk0LWI5NDUtNTU0ODA3NTM5NTAwIiwiZGlzcGF0Y2hJZCI6ImM2MjQyMjRlLTJiOWMtNGZmNC04ZGIxLTZmZDE5MjU3YmY2OCIsImVuZm9yY2VtZW50S2V5SWQiOiJlbmZvcmNlci0xIiwiaGFyZERlYWRsaW5lTXMiOjE4MDAwMDAwNTUwMDAsImludGVudERpZ2VzdCI6ImJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmIiLCJsZWRnZXJJZCI6ImJiZjE0YjQ5LTU4ZmYtNDQ1My1iMzg2LTM0ODliNDZiMjEyZiIsIm5vZGVJZCI6Im5vZGUiLCJvcGVyYXRpb25GaW5nZXJwcmludCI6ImNjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2MiLCJvcmlnaW5hbEVwb2NoIjoxLCJwcmVwYXJhdGlvbklkIjoiZjM3M2NjNjItODg2Zi00MDY4LWFlNTgtODMyZDk2NzNjNGVmIiwicHJvZmlsZURpZ2VzdCI6ImFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEiLCJwcm92aWRlcklkIjoibGludXgtY29tbWFuZCIsInJlYWRpbmVzc0RpZ2VzdCI6IjA3YjFiYzE0ZGVhYmU3Y2E3MzBlNDI1N2NmYjIyMWJlZGVmYmY2N2I0OWRmYjFlOTFiZDVhNzAzZDlmMjgzMzAiLCJydW5JZCI6InJ1biIsInRhc2tJZCI6InRhc2siLCJ2ZXJzaW9uIjoyfSwiZW5mb3JjZW1lbnRLZXlJZCI6ImVuZm9yY2VyLTEiLCJleHBpcmVzQXRNcyI6MTgwMDAwMDAxMDIwMCwiaW5jbHVkZU91dHB1dCI6dHJ1ZSwiaW50ZW50RGlnZXN0IjoiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYiIsImlzcyI6ImNvbnRyb2wiLCJpc3N1ZWRBdE1zIjoxODAwMDAwMDAwMjAwLCJqdGkiOiI2MDNmZjhmOS01NTAwLTQzYTctYTI3Yi02ZjJjMDM2NTQ5ODgiLCJsZWRnZXJJZCI6ImJiZjE0YjQ5LTU4ZmYtNDQ1My1iMzg2LTM0ODliNDZiMjEyZiIsIm5vZGVJZCI6Im5vZGUiLCJub25jZSI6ImQ1dkV5NWl5bjRyWFBMaF9UN3JaVzJzVzVWT1lHcExmY2ZOVXdGaUExZ2ciLCJvcGVyYXRpb24iOiJsb29rdXAiLCJvcGVyYXRpb25GaW5nZXJwcmludCI6ImNjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2MiLCJvcmlnaW5hbEVwb2NoIjoxLCJwcmVwYXJhdGlvbklkIjoiZjM3M2NjNjItODg2Zi00MDY4LWFlNTgtODMyZDk2NzNjNGVmIiwicHJvZmlsZURpZ2VzdCI6ImFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEiLCJwcm92aWRlcklkIjoibGludXgtY29tbWFuZCIsInB1cnBvc2UiOiJ3b3JrX2NvbW1hbmRfY29udHJvbF9yZXF1ZXN0IiwicmVxdWVzdElkIjoiYjBkMmEwMTctZDZmZC00NDQ1LThmMWYtOGFiMmY1NWFhOTY5IiwicnVuSWQiOiJydW4iLCJ0YXNrSWQiOiJ0YXNrIiwidmVyc2lvbiI6Mn0.-6cdat77fIa-57-A2yhfIkROqH1H5JaSnzJUlnoIO1oB7SJ_statXJruDT1Q89MQIkFysfjHSZpqn2Xs8WITBQ",
+      "options": {
+        "purpose": "work_command_control_request",
+        "issuer": "control",
+        "audience": "enforcement",
+        "binding": {
+          "taskId": "task",
+          "runId": "run",
+          "actionId": "action",
+          "preparationId": "f373cc62-886f-4068-ae58-832d9673c4ef",
+          "connectionId": "29ad2418-daf3-4394-b945-554807539500",
+          "originalEpoch": 1,
+          "authorityGeneration": 1,
+          "profileDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "intentDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "operationFingerprint": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "nodeId": "node",
+          "providerId": "linux-command",
+          "enforcementKeyId": "enforcer-1",
+          "ledgerId": "bbf14b49-58ff-4453-b386-3489b46b212f"
+        },
+        "nowMs": 1800000000200,
+        "request": {
+          "requestId": "b0d2a017-d6fd-4445-8f1f-8ab2f55aa969",
+          "nonce": "d5vEy5iyn4rXPLh_T7rZW2sW5VOYGpLfcfNUwFiA1gg"
+        }
+      },
+      "tsToken": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoid29yay1jb21tYW5kLWNvbnRyb2wtcmVxdWVzdC12Mitqd3MiLCJraWQiOiJjb250cm9sLTEifQ.eyJhY3Rpb25JZCI6ImFjdGlvbiIsImF1ZCI6ImVuZm9yY2VtZW50IiwiYXV0aG9yaXR5R2VuZXJhdGlvbiI6MSwiY2hhbGxlbmdlRGlnZXN0IjoiZjBkMGIyNDIxMTRlNmQ1YjI0OTEyYjg1MGU4ODFlNWZlZWNmOTQxYThiMGYxMWUxZGVkM2IyNDYwYjY4YTZmMyIsImNvbm5lY3Rpb25JZCI6IjI5YWQyNDE4LWRhZjMtNDM5NC1iOTQ1LTU1NDgwNzUzOTUwMCIsImRpc3BhdGNoIjp7ImFjdGlvbklkIjoiYWN0aW9uIiwiYXV0aG9yaXR5R2VuZXJhdGlvbiI6MSwiY29ubmVjdGlvbklkIjoiMjlhZDI0MTgtZGFmMy00Mzk0LWI5NDUtNTU0ODA3NTM5NTAwIiwiZGlzcGF0Y2hJZCI6ImM2MjQyMjRlLTJiOWMtNGZmNC04ZGIxLTZmZDE5MjU3YmY2OCIsImVuZm9yY2VtZW50S2V5SWQiOiJlbmZvcmNlci0xIiwiaGFyZERlYWRsaW5lTXMiOjE4MDAwMDAwNTUwMDAsImludGVudERpZ2VzdCI6ImJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmIiLCJsZWRnZXJJZCI6ImJiZjE0YjQ5LTU4ZmYtNDQ1My1iMzg2LTM0ODliNDZiMjEyZiIsIm5vZGVJZCI6Im5vZGUiLCJvcGVyYXRpb25GaW5nZXJwcmludCI6ImNjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2MiLCJvcmlnaW5hbEVwb2NoIjoxLCJwcmVwYXJhdGlvbklkIjoiZjM3M2NjNjItODg2Zi00MDY4LWFlNTgtODMyZDk2NzNjNGVmIiwicHJvZmlsZURpZ2VzdCI6ImFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEiLCJwcm92aWRlcklkIjoibGludXgtY29tbWFuZCIsInJlYWRpbmVzc0RpZ2VzdCI6IjA3YjFiYzE0ZGVhYmU3Y2E3MzBlNDI1N2NmYjIyMWJlZGVmYmY2N2I0OWRmYjFlOTFiZDVhNzAzZDlmMjgzMzAiLCJydW5JZCI6InJ1biIsInRhc2tJZCI6InRhc2siLCJ2ZXJzaW9uIjoyfSwiZW5mb3JjZW1lbnRLZXlJZCI6ImVuZm9yY2VyLTEiLCJleHBpcmVzQXRNcyI6MTgwMDAwMDAxMDIwMCwiaW5jbHVkZU91dHB1dCI6dHJ1ZSwiaW50ZW50RGlnZXN0IjoiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYiIsImlzcyI6ImNvbnRyb2wiLCJpc3N1ZWRBdE1zIjoxODAwMDAwMDAwMjAwLCJqdGkiOiI2MDNmZjhmOS01NTAwLTQzYTctYTI3Yi02ZjJjMDM2NTQ5ODgiLCJsZWRnZXJJZCI6ImJiZjE0YjQ5LTU4ZmYtNDQ1My1iMzg2LTM0ODliNDZiMjEyZiIsIm5vZGVJZCI6Im5vZGUiLCJub25jZSI6ImQ1dkV5NWl5bjRyWFBMaF9UN3JaVzJzVzVWT1lHcExmY2ZOVXdGaUExZ2ciLCJvcGVyYXRpb24iOiJsb29rdXAiLCJvcGVyYXRpb25GaW5nZXJwcmludCI6ImNjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2MiLCJvcmlnaW5hbEVwb2NoIjoxLCJwcmVwYXJhdGlvbklkIjoiZjM3M2NjNjItODg2Zi00MDY4LWFlNTgtODMyZDk2NzNjNGVmIiwicHJvZmlsZURpZ2VzdCI6ImFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEiLCJwcm92aWRlcklkIjoibGludXgtY29tbWFuZCIsInB1cnBvc2UiOiJ3b3JrX2NvbW1hbmRfY29udHJvbF9yZXF1ZXN0IiwicmVxdWVzdElkIjoiYjBkMmEwMTctZDZmZC00NDQ1LThmMWYtOGFiMmY1NWFhOTY5IiwicnVuSWQiOiJydW4iLCJ0YXNrSWQiOiJ0YXNrIiwidmVyc2lvbiI6Mn0.-6cdat77fIa-57-A2yhfIkROqH1H5JaSnzJUlnoIO1oB7SJ_statXJruDT1Q89MQIkFysfjHSZpqn2Xs8WITBQ"
+    },
+    {
+      "value": {
+        "actionId": "action",
+        "aud": "control",
+        "authorityGeneration": 1,
+        "connectionId": "29ad2418-daf3-4394-b945-554807539500",
+        "dispatchId": "c624224e-2b9c-4ff4-8db1-6fd19257bf68",
+        "enforcementKeyId": "enforcer-1",
+        "exp": 1800000010,
+        "hardDeadlineMs": 1800000055000,
+        "iat": 1800000000,
+        "intentDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "iss": "enforcement",
+        "jti": "d44c1990-3c19-45b2-8961-1f9e95049d19",
+        "ledgerId": "bbf14b49-58ff-4453-b386-3489b46b212f",
+        "nbf": 1800000000,
+        "nodeId": "node",
+        "nonce": "d5vEy5iyn4rXPLh_T7rZW2sW5VOYGpLfcfNUwFiA1gg",
+        "observation": {
+          "containerId": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "exitCode": 0,
+          "outputs": [],
+          "phase": "exited",
+          "runtimeShapeDigest": "1111111111111111111111111111111111111111111111111111111111111111",
+          "sequence": 2,
+          "startAttempts": 1,
+          "truncated": false
+        },
+        "operationFingerprint": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "originalEpoch": 1,
+        "permitDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "preparationId": "f373cc62-886f-4068-ae58-832d9673c4ef",
+        "profileDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "providerId": "linux-command",
+        "purpose": "work_command_receipt",
+        "readinessDigest": "07b1bc14deabe7ca730e4257cfb221bedefbf67b49dfb1e91bd5a703d9f28330",
+        "requestId": "b0d2a017-d6fd-4445-8f1f-8ab2f55aa969",
+        "runId": "run",
+        "taskId": "task",
+        "version": 2
+      },
+      "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoid29yay1jb21tYW5kLXJlY2VpcHQtdjIrand0Iiwia2lkIjoiZW5mb3JjZXItMSJ9.eyJhY3Rpb25JZCI6ImFjdGlvbiIsImF1ZCI6ImNvbnRyb2wiLCJhdXRob3JpdHlHZW5lcmF0aW9uIjoxLCJjb25uZWN0aW9uSWQiOiIyOWFkMjQxOC1kYWYzLTQzOTQtYjk0NS01NTQ4MDc1Mzk1MDAiLCJkaXNwYXRjaElkIjoiYzYyNDIyNGUtMmI5Yy00ZmY0LThkYjEtNmZkMTkyNTdiZjY4IiwiZW5mb3JjZW1lbnRLZXlJZCI6ImVuZm9yY2VyLTEiLCJleHAiOjE4MDAwMDAwMTAsImhhcmREZWFkbGluZU1zIjoxODAwMDAwMDU1MDAwLCJpYXQiOjE4MDAwMDAwMDAsImludGVudERpZ2VzdCI6ImJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmIiLCJpc3MiOiJlbmZvcmNlbWVudCIsImp0aSI6ImQ0NGMxOTkwLTNjMTktNDViMi04OTYxLTFmOWU5NTA0OWQxOSIsImxlZGdlcklkIjoiYmJmMTRiNDktNThmZi00NDUzLWIzODYtMzQ4OWI0NmIyMTJmIiwibmJmIjoxODAwMDAwMDAwLCJub2RlSWQiOiJub2RlIiwibm9uY2UiOiJkNXZFeTVpeW40clhQTGhfVDdyWlcyc1c1Vk9ZR3BMZmNmTlV3RmlBMWdnIiwib2JzZXJ2YXRpb24iOnsiY29udGFpbmVySWQiOiJmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmIiwiZXhpdENvZGUiOjAsIm91dHB1dHMiOltdLCJwaGFzZSI6ImV4aXRlZCIsInJ1bnRpbWVTaGFwZURpZ2VzdCI6IjExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTEiLCJzZXF1ZW5jZSI6Miwic3RhcnRBdHRlbXB0cyI6MSwidHJ1bmNhdGVkIjpmYWxzZX0sIm9wZXJhdGlvbkZpbmdlcnByaW50IjoiY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjYyIsIm9yaWdpbmFsRXBvY2giOjEsInBlcm1pdERpZ2VzdCI6ImRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGQiLCJwcmVwYXJhdGlvbklkIjoiZjM3M2NjNjItODg2Zi00MDY4LWFlNTgtODMyZDk2NzNjNGVmIiwicHJvZmlsZURpZ2VzdCI6ImFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEiLCJwcm92aWRlcklkIjoibGludXgtY29tbWFuZCIsInB1cnBvc2UiOiJ3b3JrX2NvbW1hbmRfcmVjZWlwdCIsInJlYWRpbmVzc0RpZ2VzdCI6IjA3YjFiYzE0ZGVhYmU3Y2E3MzBlNDI1N2NmYjIyMWJlZGVmYmY2N2I0OWRmYjFlOTFiZDVhNzAzZDlmMjgzMzAiLCJyZXF1ZXN0SWQiOiJiMGQyYTAxNy1kNmZkLTQ0NDUtOGYxZi04YWIyZjU1YWE5NjkiLCJydW5JZCI6InJ1biIsInRhc2tJZCI6InRhc2siLCJ2ZXJzaW9uIjoyfQ.uGPZ5Qfg6zg8pMKmAVvqiBlj2SewvCMed2YLQqvdKb1WK5n-toWQSrcWdShnmzcfxcxDJVeJ3SHOi-_gRBmdDA",
+      "options": {
+        "purpose": "work_command_receipt",
+        "issuer": "enforcement",
+        "audience": "control",
+        "binding": {
+          "taskId": "task",
+          "runId": "run",
+          "actionId": "action",
+          "dispatchId": "c624224e-2b9c-4ff4-8db1-6fd19257bf68",
+          "connectionId": "29ad2418-daf3-4394-b945-554807539500",
+          "originalEpoch": 1,
+          "authorityGeneration": 1,
+          "profileDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "intentDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "operationFingerprint": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "nodeId": "node",
+          "providerId": "linux-command",
+          "enforcementKeyId": "enforcer-1",
+          "ledgerId": "bbf14b49-58ff-4453-b386-3489b46b212f",
+          "hardDeadlineMs": 1800000055000,
+          "version": 2,
+          "preparationId": "f373cc62-886f-4068-ae58-832d9673c4ef",
+          "readinessDigest": "07b1bc14deabe7ca730e4257cfb221bedefbf67b49dfb1e91bd5a703d9f28330"
+        },
+        "nowMs": 1800000000200,
+        "request": {
+          "requestId": "b0d2a017-d6fd-4445-8f1f-8ab2f55aa969",
+          "nonce": "d5vEy5iyn4rXPLh_T7rZW2sW5VOYGpLfcfNUwFiA1gg"
+        }
+      },
+      "tsToken": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoid29yay1jb21tYW5kLXJlY2VpcHQtdjIrand0Iiwia2lkIjoiZW5mb3JjZXItMSJ9.eyJhY3Rpb25JZCI6ImFjdGlvbiIsImF1ZCI6ImNvbnRyb2wiLCJhdXRob3JpdHlHZW5lcmF0aW9uIjoxLCJjb25uZWN0aW9uSWQiOiIyOWFkMjQxOC1kYWYzLTQzOTQtYjk0NS01NTQ4MDc1Mzk1MDAiLCJkaXNwYXRjaElkIjoiYzYyNDIyNGUtMmI5Yy00ZmY0LThkYjEtNmZkMTkyNTdiZjY4IiwiZW5mb3JjZW1lbnRLZXlJZCI6ImVuZm9yY2VyLTEiLCJleHAiOjE4MDAwMDAwMTAsImhhcmREZWFkbGluZU1zIjoxODAwMDAwMDU1MDAwLCJpYXQiOjE4MDAwMDAwMDAsImludGVudERpZ2VzdCI6ImJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmIiLCJpc3MiOiJlbmZvcmNlbWVudCIsImp0aSI6ImQ0NGMxOTkwLTNjMTktNDViMi04OTYxLTFmOWU5NTA0OWQxOSIsImxlZGdlcklkIjoiYmJmMTRiNDktNThmZi00NDUzLWIzODYtMzQ4OWI0NmIyMTJmIiwibmJmIjoxODAwMDAwMDAwLCJub2RlSWQiOiJub2RlIiwibm9uY2UiOiJkNXZFeTVpeW40clhQTGhfVDdyWlcyc1c1Vk9ZR3BMZmNmTlV3RmlBMWdnIiwib2JzZXJ2YXRpb24iOnsiY29udGFpbmVySWQiOiJmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmIiwiZXhpdENvZGUiOjAsIm91dHB1dHMiOltdLCJwaGFzZSI6ImV4aXRlZCIsInJ1bnRpbWVTaGFwZURpZ2VzdCI6IjExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTEiLCJzZXF1ZW5jZSI6Miwic3RhcnRBdHRlbXB0cyI6MSwidHJ1bmNhdGVkIjpmYWxzZX0sIm9wZXJhdGlvbkZpbmdlcnByaW50IjoiY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjYyIsIm9yaWdpbmFsRXBvY2giOjEsInBlcm1pdERpZ2VzdCI6ImRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGQiLCJwcmVwYXJhdGlvbklkIjoiZjM3M2NjNjItODg2Zi00MDY4LWFlNTgtODMyZDk2NzNjNGVmIiwicHJvZmlsZURpZ2VzdCI6ImFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEiLCJwcm92aWRlcklkIjoibGludXgtY29tbWFuZCIsInB1cnBvc2UiOiJ3b3JrX2NvbW1hbmRfcmVjZWlwdCIsInJlYWRpbmVzc0RpZ2VzdCI6IjA3YjFiYzE0ZGVhYmU3Y2E3MzBlNDI1N2NmYjIyMWJlZGVmYmY2N2I0OWRmYjFlOTFiZDVhNzAzZDlmMjgzMzAiLCJyZXF1ZXN0SWQiOiJiMGQyYTAxNy1kNmZkLTQ0NDUtOGYxZi04YWIyZjU1YWE5NjkiLCJydW5JZCI6InJ1biIsInRhc2tJZCI6InRhc2siLCJ2ZXJzaW9uIjoyfQ.uGPZ5Qfg6zg8pMKmAVvqiBlj2SewvCMed2YLQqvdKb1WK5n-toWQSrcWdShnmzcfxcxDJVeJ3SHOi-_gRBmdDA"
+    },
+    {
+      "value": {
+        "actionId": "action",
+        "aud": "control",
+        "authorityGeneration": 1,
+        "bootId": "7d0bf305-6438-416a-9640-7f9056788e11",
+        "connectionId": "29ad2418-daf3-4394-b945-554807539500",
+        "createdBoottimeUs": 100100000,
+        "enforcementKeyId": "enforcer-1",
+        "enforcerInstanceId": "5b2f91be-28f6-47c8-aef3-e6e3c333f1f3",
+        "expiresBoottimeUs": 105100000,
+        "intentDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "iss": "enforcement",
+        "jti": "0f2d21f5-17db-4d32-8754-a372beefd379",
+        "ledgerId": "bbf14b49-58ff-4453-b386-3489b46b212f",
+        "nodeId": "node",
+        "nonce": "Qonw_o2WhtTe2leS0mOEMSmE921iCEnzS8xUTnYgowQ",
+        "operation": "stop",
+        "operationFingerprint": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "originalEpoch": 1,
+        "preparationId": "f373cc62-886f-4068-ae58-832d9673c4ef",
+        "profileDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "providerId": "linux-command",
+        "purpose": "work_command_control_challenge",
+        "requestId": "ad66a6d3-132c-4012-8ace-2091608ae1cd",
+        "runId": "run",
+        "taskId": "task",
+        "version": 2
+      },
+      "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoid29yay1jb21tYW5kLWNvbnRyb2wtY2hhbGxlbmdlLXYyK2p3cyIsImtpZCI6ImVuZm9yY2VyLTEifQ.eyJhY3Rpb25JZCI6ImFjdGlvbiIsImF1ZCI6ImNvbnRyb2wiLCJhdXRob3JpdHlHZW5lcmF0aW9uIjoxLCJib290SWQiOiI3ZDBiZjMwNS02NDM4LTQxNmEtOTY0MC03ZjkwNTY3ODhlMTEiLCJjb25uZWN0aW9uSWQiOiIyOWFkMjQxOC1kYWYzLTQzOTQtYjk0NS01NTQ4MDc1Mzk1MDAiLCJjcmVhdGVkQm9vdHRpbWVVcyI6MTAwMTAwMDAwLCJlbmZvcmNlbWVudEtleUlkIjoiZW5mb3JjZXItMSIsImVuZm9yY2VySW5zdGFuY2VJZCI6IjViMmY5MWJlLTI4ZjYtNDdjOC1hZWYzLWU2ZTNjMzMzZjFmMyIsImV4cGlyZXNCb290dGltZVVzIjoxMDUxMDAwMDAsImludGVudERpZ2VzdCI6ImJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmIiLCJpc3MiOiJlbmZvcmNlbWVudCIsImp0aSI6IjBmMmQyMWY1LTE3ZGItNGQzMi04NzU0LWEzNzJiZWVmZDM3OSIsImxlZGdlcklkIjoiYmJmMTRiNDktNThmZi00NDUzLWIzODYtMzQ4OWI0NmIyMTJmIiwibm9kZUlkIjoibm9kZSIsIm5vbmNlIjoiUW9ud19vMldodFRlMmxlUzBtT0VNU21FOTIxaUNFbnpTOHhVVG5ZZ293USIsIm9wZXJhdGlvbiI6InN0b3AiLCJvcGVyYXRpb25GaW5nZXJwcmludCI6ImNjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2MiLCJvcmlnaW5hbEVwb2NoIjoxLCJwcmVwYXJhdGlvbklkIjoiZjM3M2NjNjItODg2Zi00MDY4LWFlNTgtODMyZDk2NzNjNGVmIiwicHJvZmlsZURpZ2VzdCI6ImFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEiLCJwcm92aWRlcklkIjoibGludXgtY29tbWFuZCIsInB1cnBvc2UiOiJ3b3JrX2NvbW1hbmRfY29udHJvbF9jaGFsbGVuZ2UiLCJyZXF1ZXN0SWQiOiJhZDY2YTZkMy0xMzJjLTQwMTItOGFjZS0yMDkxNjA4YWUxY2QiLCJydW5JZCI6InJ1biIsInRhc2tJZCI6InRhc2siLCJ2ZXJzaW9uIjoyfQ.uYe3mlMLbJdAiMhp-64Fx_TaNKFYClsh1oPbAqc4N7Ahh9W3Alc2xIW3dBvame9XLv3nLkC5c3JpYd3b6ggIDQ",
+      "options": {
+        "purpose": "work_command_control_challenge",
+        "issuer": "enforcement",
+        "audience": "control",
+        "binding": {
+          "taskId": "task",
+          "runId": "run",
+          "actionId": "action",
+          "preparationId": "f373cc62-886f-4068-ae58-832d9673c4ef",
+          "connectionId": "29ad2418-daf3-4394-b945-554807539500",
+          "originalEpoch": 1,
+          "authorityGeneration": 1,
+          "profileDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "intentDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "operationFingerprint": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "nodeId": "node",
+          "providerId": "linux-command",
+          "enforcementKeyId": "enforcer-1",
+          "ledgerId": "bbf14b49-58ff-4453-b386-3489b46b212f"
+        },
+        "nowMs": 1800000000200,
+        "request": {
+          "requestId": "ad66a6d3-132c-4012-8ace-2091608ae1cd",
+          "nonce": "Qonw_o2WhtTe2leS0mOEMSmE921iCEnzS8xUTnYgowQ"
+        }
+      },
+      "tsToken": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoid29yay1jb21tYW5kLWNvbnRyb2wtY2hhbGxlbmdlLXYyK2p3cyIsImtpZCI6ImVuZm9yY2VyLTEifQ.eyJhY3Rpb25JZCI6ImFjdGlvbiIsImF1ZCI6ImNvbnRyb2wiLCJhdXRob3JpdHlHZW5lcmF0aW9uIjoxLCJib290SWQiOiI3ZDBiZjMwNS02NDM4LTQxNmEtOTY0MC03ZjkwNTY3ODhlMTEiLCJjb25uZWN0aW9uSWQiOiIyOWFkMjQxOC1kYWYzLTQzOTQtYjk0NS01NTQ4MDc1Mzk1MDAiLCJjcmVhdGVkQm9vdHRpbWVVcyI6MTAwMTAwMDAwLCJlbmZvcmNlbWVudEtleUlkIjoiZW5mb3JjZXItMSIsImVuZm9yY2VySW5zdGFuY2VJZCI6IjViMmY5MWJlLTI4ZjYtNDdjOC1hZWYzLWU2ZTNjMzMzZjFmMyIsImV4cGlyZXNCb290dGltZVVzIjoxMDUxMDAwMDAsImludGVudERpZ2VzdCI6ImJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmIiLCJpc3MiOiJlbmZvcmNlbWVudCIsImp0aSI6IjBmMmQyMWY1LTE3ZGItNGQzMi04NzU0LWEzNzJiZWVmZDM3OSIsImxlZGdlcklkIjoiYmJmMTRiNDktNThmZi00NDUzLWIzODYtMzQ4OWI0NmIyMTJmIiwibm9kZUlkIjoibm9kZSIsIm5vbmNlIjoiUW9ud19vMldodFRlMmxlUzBtT0VNU21FOTIxaUNFbnpTOHhVVG5ZZ293USIsIm9wZXJhdGlvbiI6InN0b3AiLCJvcGVyYXRpb25GaW5nZXJwcmludCI6ImNjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2MiLCJvcmlnaW5hbEVwb2NoIjoxLCJwcmVwYXJhdGlvbklkIjoiZjM3M2NjNjItODg2Zi00MDY4LWFlNTgtODMyZDk2NzNjNGVmIiwicHJvZmlsZURpZ2VzdCI6ImFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEiLCJwcm92aWRlcklkIjoibGludXgtY29tbWFuZCIsInB1cnBvc2UiOiJ3b3JrX2NvbW1hbmRfY29udHJvbF9jaGFsbGVuZ2UiLCJyZXF1ZXN0SWQiOiJhZDY2YTZkMy0xMzJjLTQwMTItOGFjZS0yMDkxNjA4YWUxY2QiLCJydW5JZCI6InJ1biIsInRhc2tJZCI6InRhc2siLCJ2ZXJzaW9uIjoyfQ.uYe3mlMLbJdAiMhp-64Fx_TaNKFYClsh1oPbAqc4N7Ahh9W3Alc2xIW3dBvame9XLv3nLkC5c3JpYd3b6ggIDQ"
+    },
+    {
+      "value": {
+        "taskId": "task",
+        "runId": "run",
+        "actionId": "action",
+        "preparationId": "f373cc62-886f-4068-ae58-832d9673c4ef",
+        "connectionId": "29ad2418-daf3-4394-b945-554807539500",
+        "originalEpoch": 1,
+        "authorityGeneration": 1,
+        "profileDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "intentDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "operationFingerprint": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "nodeId": "node",
+        "providerId": "linux-command",
+        "enforcementKeyId": "enforcer-1",
+        "ledgerId": "bbf14b49-58ff-4453-b386-3489b46b212f",
+        "version": 2,
+        "iss": "control",
+        "aud": "enforcement",
+        "jti": "b4567a8f-8290-4ea0-854e-bad130f66fbf",
+        "purpose": "work_command_control_request",
+        "challengeDigest": "0f30b63dffba2f2474f9dc1e5e3bea1a35563aaf102a63a6e4ce56670ec8fe3a",
+        "requestId": "ad66a6d3-132c-4012-8ace-2091608ae1cd",
+        "nonce": "Qonw_o2WhtTe2leS0mOEMSmE921iCEnzS8xUTnYgowQ",
+        "issuedAtMs": 1800000000200,
+        "expiresAtMs": 1800000010200,
+        "dispatch": {
+          "taskId": "task",
+          "runId": "run",
+          "actionId": "action",
+          "preparationId": "f373cc62-886f-4068-ae58-832d9673c4ef",
+          "connectionId": "29ad2418-daf3-4394-b945-554807539500",
+          "originalEpoch": 1,
+          "authorityGeneration": 1,
+          "profileDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "intentDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "operationFingerprint": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "nodeId": "node",
+          "providerId": "linux-command",
+          "enforcementKeyId": "enforcer-1",
+          "ledgerId": "bbf14b49-58ff-4453-b386-3489b46b212f",
+          "version": 2,
+          "dispatchId": "c624224e-2b9c-4ff4-8db1-6fd19257bf68",
+          "readinessDigest": "07b1bc14deabe7ca730e4257cfb221bedefbf67b49dfb1e91bd5a703d9f28330",
+          "hardDeadlineMs": 1800000055000
+        },
+        "operation": "stop",
+        "reason": "cancel"
+      },
+      "token": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoid29yay1jb21tYW5kLWNvbnRyb2wtcmVxdWVzdC12Mitqd3MiLCJraWQiOiJjb250cm9sLTEifQ.eyJhY3Rpb25JZCI6ImFjdGlvbiIsImF1ZCI6ImVuZm9yY2VtZW50IiwiYXV0aG9yaXR5R2VuZXJhdGlvbiI6MSwiY2hhbGxlbmdlRGlnZXN0IjoiMGYzMGI2M2RmZmJhMmYyNDc0ZjlkYzFlNWUzYmVhMWEzNTU2M2FhZjEwMmE2M2E2ZTRjZTU2NjcwZWM4ZmUzYSIsImNvbm5lY3Rpb25JZCI6IjI5YWQyNDE4LWRhZjMtNDM5NC1iOTQ1LTU1NDgwNzUzOTUwMCIsImRpc3BhdGNoIjp7ImFjdGlvbklkIjoiYWN0aW9uIiwiYXV0aG9yaXR5R2VuZXJhdGlvbiI6MSwiY29ubmVjdGlvbklkIjoiMjlhZDI0MTgtZGFmMy00Mzk0LWI5NDUtNTU0ODA3NTM5NTAwIiwiZGlzcGF0Y2hJZCI6ImM2MjQyMjRlLTJiOWMtNGZmNC04ZGIxLTZmZDE5MjU3YmY2OCIsImVuZm9yY2VtZW50S2V5SWQiOiJlbmZvcmNlci0xIiwiaGFyZERlYWRsaW5lTXMiOjE4MDAwMDAwNTUwMDAsImludGVudERpZ2VzdCI6ImJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmIiLCJsZWRnZXJJZCI6ImJiZjE0YjQ5LTU4ZmYtNDQ1My1iMzg2LTM0ODliNDZiMjEyZiIsIm5vZGVJZCI6Im5vZGUiLCJvcGVyYXRpb25GaW5nZXJwcmludCI6ImNjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2MiLCJvcmlnaW5hbEVwb2NoIjoxLCJwcmVwYXJhdGlvbklkIjoiZjM3M2NjNjItODg2Zi00MDY4LWFlNTgtODMyZDk2NzNjNGVmIiwicHJvZmlsZURpZ2VzdCI6ImFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEiLCJwcm92aWRlcklkIjoibGludXgtY29tbWFuZCIsInJlYWRpbmVzc0RpZ2VzdCI6IjA3YjFiYzE0ZGVhYmU3Y2E3MzBlNDI1N2NmYjIyMWJlZGVmYmY2N2I0OWRmYjFlOTFiZDVhNzAzZDlmMjgzMzAiLCJydW5JZCI6InJ1biIsInRhc2tJZCI6InRhc2siLCJ2ZXJzaW9uIjoyfSwiZW5mb3JjZW1lbnRLZXlJZCI6ImVuZm9yY2VyLTEiLCJleHBpcmVzQXRNcyI6MTgwMDAwMDAxMDIwMCwiaW50ZW50RGlnZXN0IjoiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYiIsImlzcyI6ImNvbnRyb2wiLCJpc3N1ZWRBdE1zIjoxODAwMDAwMDAwMjAwLCJqdGkiOiJiNDU2N2E4Zi04MjkwLTRlYTAtODU0ZS1iYWQxMzBmNjZmYmYiLCJsZWRnZXJJZCI6ImJiZjE0YjQ5LTU4ZmYtNDQ1My1iMzg2LTM0ODliNDZiMjEyZiIsIm5vZGVJZCI6Im5vZGUiLCJub25jZSI6IlFvbndfbzJXaHRUZTJsZVMwbU9FTVNtRTkyMWlDRW56Uzh4VVRuWWdvd1EiLCJvcGVyYXRpb24iOiJzdG9wIiwib3BlcmF0aW9uRmluZ2VycHJpbnQiOiJjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjIiwib3JpZ2luYWxFcG9jaCI6MSwicHJlcGFyYXRpb25JZCI6ImYzNzNjYzYyLTg4NmYtNDA2OC1hZTU4LTgzMmQ5NjczYzRlZiIsInByb2ZpbGVEaWdlc3QiOiJhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhIiwicHJvdmlkZXJJZCI6ImxpbnV4LWNvbW1hbmQiLCJwdXJwb3NlIjoid29ya19jb21tYW5kX2NvbnRyb2xfcmVxdWVzdCIsInJlYXNvbiI6ImNhbmNlbCIsInJlcXVlc3RJZCI6ImFkNjZhNmQzLTEzMmMtNDAxMi04YWNlLTIwOTE2MDhhZTFjZCIsInJ1bklkIjoicnVuIiwidGFza0lkIjoidGFzayIsInZlcnNpb24iOjJ9.WrXyO0nUqaND7HdLbDCQ992OZTIQcJE3xKTMkiGWUtbKCwf3EDKy91_8As76M4dcPh7ZPQh3CppnqWJuol9hDg",
+      "options": {
+        "purpose": "work_command_control_request",
+        "issuer": "control",
+        "audience": "enforcement",
+        "binding": {
+          "taskId": "task",
+          "runId": "run",
+          "actionId": "action",
+          "preparationId": "f373cc62-886f-4068-ae58-832d9673c4ef",
+          "connectionId": "29ad2418-daf3-4394-b945-554807539500",
+          "originalEpoch": 1,
+          "authorityGeneration": 1,
+          "profileDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "intentDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "operationFingerprint": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "nodeId": "node",
+          "providerId": "linux-command",
+          "enforcementKeyId": "enforcer-1",
+          "ledgerId": "bbf14b49-58ff-4453-b386-3489b46b212f"
+        },
+        "nowMs": 1800000000200,
+        "request": {
+          "requestId": "ad66a6d3-132c-4012-8ace-2091608ae1cd",
+          "nonce": "Qonw_o2WhtTe2leS0mOEMSmE921iCEnzS8xUTnYgowQ"
+        }
+      },
+      "tsToken": "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoid29yay1jb21tYW5kLWNvbnRyb2wtcmVxdWVzdC12Mitqd3MiLCJraWQiOiJjb250cm9sLTEifQ.eyJhY3Rpb25JZCI6ImFjdGlvbiIsImF1ZCI6ImVuZm9yY2VtZW50IiwiYXV0aG9yaXR5R2VuZXJhdGlvbiI6MSwiY2hhbGxlbmdlRGlnZXN0IjoiMGYzMGI2M2RmZmJhMmYyNDc0ZjlkYzFlNWUzYmVhMWEzNTU2M2FhZjEwMmE2M2E2ZTRjZTU2NjcwZWM4ZmUzYSIsImNvbm5lY3Rpb25JZCI6IjI5YWQyNDE4LWRhZjMtNDM5NC1iOTQ1LTU1NDgwNzUzOTUwMCIsImRpc3BhdGNoIjp7ImFjdGlvbklkIjoiYWN0aW9uIiwiYXV0aG9yaXR5R2VuZXJhdGlvbiI6MSwiY29ubmVjdGlvbklkIjoiMjlhZDI0MTgtZGFmMy00Mzk0LWI5NDUtNTU0ODA3NTM5NTAwIiwiZGlzcGF0Y2hJZCI6ImM2MjQyMjRlLTJiOWMtNGZmNC04ZGIxLTZmZDE5MjU3YmY2OCIsImVuZm9yY2VtZW50S2V5SWQiOiJlbmZvcmNlci0xIiwiaGFyZERlYWRsaW5lTXMiOjE4MDAwMDAwNTUwMDAsImludGVudERpZ2VzdCI6ImJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmIiLCJsZWRnZXJJZCI6ImJiZjE0YjQ5LTU4ZmYtNDQ1My1iMzg2LTM0ODliNDZiMjEyZiIsIm5vZGVJZCI6Im5vZGUiLCJvcGVyYXRpb25GaW5nZXJwcmludCI6ImNjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2MiLCJvcmlnaW5hbEVwb2NoIjoxLCJwcmVwYXJhdGlvbklkIjoiZjM3M2NjNjItODg2Zi00MDY4LWFlNTgtODMyZDk2NzNjNGVmIiwicHJvZmlsZURpZ2VzdCI6ImFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEiLCJwcm92aWRlcklkIjoibGludXgtY29tbWFuZCIsInJlYWRpbmVzc0RpZ2VzdCI6IjA3YjFiYzE0ZGVhYmU3Y2E3MzBlNDI1N2NmYjIyMWJlZGVmYmY2N2I0OWRmYjFlOTFiZDVhNzAzZDlmMjgzMzAiLCJydW5JZCI6InJ1biIsInRhc2tJZCI6InRhc2siLCJ2ZXJzaW9uIjoyfSwiZW5mb3JjZW1lbnRLZXlJZCI6ImVuZm9yY2VyLTEiLCJleHBpcmVzQXRNcyI6MTgwMDAwMDAxMDIwMCwiaW50ZW50RGlnZXN0IjoiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYiIsImlzcyI6ImNvbnRyb2wiLCJpc3N1ZWRBdE1zIjoxODAwMDAwMDAwMjAwLCJqdGkiOiJiNDU2N2E4Zi04MjkwLTRlYTAtODU0ZS1iYWQxMzBmNjZmYmYiLCJsZWRnZXJJZCI6ImJiZjE0YjQ5LTU4ZmYtNDQ1My1iMzg2LTM0ODliNDZiMjEyZiIsIm5vZGVJZCI6Im5vZGUiLCJub25jZSI6IlFvbndfbzJXaHRUZTJsZVMwbU9FTVNtRTkyMWlDRW56Uzh4VVRuWWdvd1EiLCJvcGVyYXRpb24iOiJzdG9wIiwib3BlcmF0aW9uRmluZ2VycHJpbnQiOiJjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjIiwib3JpZ2luYWxFcG9jaCI6MSwicHJlcGFyYXRpb25JZCI6ImYzNzNjYzYyLTg4NmYtNDA2OC1hZTU4LTgzMmQ5NjczYzRlZiIsInByb2ZpbGVEaWdlc3QiOiJhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhIiwicHJvdmlkZXJJZCI6ImxpbnV4LWNvbW1hbmQiLCJwdXJwb3NlIjoid29ya19jb21tYW5kX2NvbnRyb2xfcmVxdWVzdCIsInJlYXNvbiI6ImNhbmNlbCIsInJlcXVlc3RJZCI6ImFkNjZhNmQzLTEzMmMtNDAxMi04YWNlLTIwOTE2MDhhZTFjZCIsInJ1bklkIjoicnVuIiwidGFza0lkIjoidGFzayIsInZlcnNpb24iOjJ9.WrXyO0nUqaND7HdLbDCQ992OZTIQcJE3xKTMkiGWUtbKCwf3EDKy91_8As76M4dcPh7ZPQh3CppnqWJuol9hDg"
+    }
+  ],
+  "fingerprints": {
+    "profile": "openbot.work-command.operation/v1",
+    "prefixUtf8Hex": "6f70656e626f743a776f726b2d636f6d6d616e643a6f7065726174696f6e3a763100",
+    "intent": {
+      "kind": "work_command",
+      "version": 1,
+      "profileDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "command": {
+        "image": "python@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "argv": [
+          "/usr/bin/python3",
+          "-c",
+          "print('测试😀')"
+        ],
+        "inputManifest": [
+          {
+            "path": "input.csv",
+            "size": 4,
+            "sha256": "5be08c9684a1d25efcee09318204824278b08bbfb4aef973ffefd0b9d7478313"
+          }
+        ],
+        "inputDigest": "sha256:ed05e4c3128a7d243aacf94acf1c4f97f2d45672c1cf647b2351dab1bb302688",
+        "output": {
+          "name": "result.csv",
+          "mediaType": "text/csv",
+          "maxBytes": 1024
+        },
+        "limits": {
+          "nanoCPUs": 500000000,
+          "memoryMiB": 128,
+          "pids": 64,
+          "nofile": 128,
+          "tmpMiB": 16,
+          "wallSeconds": 60,
+          "outputMiB": 16,
+          "capturedOutputKiB": 64
+        },
+        "network": "none",
+        "rootfs": "readonly",
+        "user": "10001:10001",
+        "environment": []
+      }
+    },
+    "positive": [
+      {
+        "name": "baseline-unicode-argv",
+        "operation": {
+          "format": "openbot.work-command.operation/v1",
+          "taskId": "task-1",
+          "runId": "run-1",
+          "actionId": "action-1",
+          "authorityGeneration": 1,
+          "originalEpoch": 2,
+          "profileDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "route": {
+            "nodeId": "node-1",
+            "providerId": "command-provider",
+            "enforcementKeyId": "enforcement-key",
+            "ledgerId": "00000000-0000-0000-0000-000000000001"
+          },
+          "intentDigest": "591a37175edbb304f17436f9ac901debc4ad10f02b41ee65dbd87816b6083515",
+          "command": {
+            "image": "python@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "argv": [
+              "/usr/bin/python3",
+              "-c",
+              "print('测试😀')"
+            ],
+            "inputManifest": [
+              {
+                "path": "input.csv",
+                "size": 4,
+                "sha256": "5be08c9684a1d25efcee09318204824278b08bbfb4aef973ffefd0b9d7478313"
+              }
+            ],
+            "inputDigest": "sha256:ed05e4c3128a7d243aacf94acf1c4f97f2d45672c1cf647b2351dab1bb302688",
+            "output": {
+              "name": "result.csv",
+              "mediaType": "text/csv",
+              "maxBytes": 1024
+            },
+            "limits": {
+              "nanoCPUs": 500000000,
+              "memoryMiB": 128,
+              "pids": 64,
+              "nofile": 128,
+              "tmpMiB": 16,
+              "wallSeconds": 60,
+              "outputMiB": 16,
+              "capturedOutputKiB": 64
+            },
+            "network": "none",
+            "rootfs": "readonly",
+            "user": "10001:10001",
+            "environment": []
+          }
+        },
+        "canonical": "{\"actionId\":\"action-1\",\"authorityGeneration\":1,\"command\":{\"argv\":[\"/usr/bin/python3\",\"-c\",\"print('测试😀')\"],\"environment\":[],\"image\":\"python@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"inputDigest\":\"sha256:ed05e4c3128a7d243aacf94acf1c4f97f2d45672c1cf647b2351dab1bb302688\",\"inputManifest\":[{\"path\":\"input.csv\",\"sha256\":\"5be08c9684a1d25efcee09318204824278b08bbfb4aef973ffefd0b9d7478313\",\"size\":4}],\"limits\":{\"capturedOutputKiB\":64,\"memoryMiB\":128,\"nanoCPUs\":500000000,\"nofile\":128,\"outputMiB\":16,\"pids\":64,\"tmpMiB\":16,\"wallSeconds\":60},\"network\":\"none\",\"output\":{\"maxBytes\":1024,\"mediaType\":\"text/csv\",\"name\":\"result.csv\"},\"rootfs\":\"readonly\",\"user\":\"10001:10001\"},\"format\":\"openbot.work-command.operation/v1\",\"intentDigest\":\"591a37175edbb304f17436f9ac901debc4ad10f02b41ee65dbd87816b6083515\",\"originalEpoch\":2,\"profileDigest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"route\":{\"enforcementKeyId\":\"enforcement-key\",\"ledgerId\":\"00000000-0000-0000-0000-000000000001\",\"nodeId\":\"node-1\",\"providerId\":\"command-provider\"},\"runId\":\"run-1\",\"taskId\":\"task-1\"}",
+        "fingerprint": "6ab76222ff549505ba0728cfaf37e4cac5764c6ad99954f796f5d21b21e0e0c3"
+      },
+      {
+        "name": "changed-original-epoch",
+        "operation": {
+          "format": "openbot.work-command.operation/v1",
+          "taskId": "task-1",
+          "runId": "run-1",
+          "actionId": "action-1",
+          "authorityGeneration": 1,
+          "originalEpoch": 3,
+          "profileDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "route": {
+            "nodeId": "node-1",
+            "providerId": "command-provider",
+            "enforcementKeyId": "enforcement-key",
+            "ledgerId": "00000000-0000-0000-0000-000000000001"
+          },
+          "intentDigest": "591a37175edbb304f17436f9ac901debc4ad10f02b41ee65dbd87816b6083515",
+          "command": {
+            "image": "python@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "argv": [
+              "/usr/bin/python3",
+              "-c",
+              "print('测试😀')"
+            ],
+            "inputManifest": [
+              {
+                "path": "input.csv",
+                "size": 4,
+                "sha256": "5be08c9684a1d25efcee09318204824278b08bbfb4aef973ffefd0b9d7478313"
+              }
+            ],
+            "inputDigest": "sha256:ed05e4c3128a7d243aacf94acf1c4f97f2d45672c1cf647b2351dab1bb302688",
+            "output": {
+              "name": "result.csv",
+              "mediaType": "text/csv",
+              "maxBytes": 1024
+            },
+            "limits": {
+              "nanoCPUs": 500000000,
+              "memoryMiB": 128,
+              "pids": 64,
+              "nofile": 128,
+              "tmpMiB": 16,
+              "wallSeconds": 60,
+              "outputMiB": 16,
+              "capturedOutputKiB": 64
+            },
+            "network": "none",
+            "rootfs": "readonly",
+            "user": "10001:10001",
+            "environment": []
+          }
+        },
+        "canonical": "{\"actionId\":\"action-1\",\"authorityGeneration\":1,\"command\":{\"argv\":[\"/usr/bin/python3\",\"-c\",\"print('测试😀')\"],\"environment\":[],\"image\":\"python@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"inputDigest\":\"sha256:ed05e4c3128a7d243aacf94acf1c4f97f2d45672c1cf647b2351dab1bb302688\",\"inputManifest\":[{\"path\":\"input.csv\",\"sha256\":\"5be08c9684a1d25efcee09318204824278b08bbfb4aef973ffefd0b9d7478313\",\"size\":4}],\"limits\":{\"capturedOutputKiB\":64,\"memoryMiB\":128,\"nanoCPUs\":500000000,\"nofile\":128,\"outputMiB\":16,\"pids\":64,\"tmpMiB\":16,\"wallSeconds\":60},\"network\":\"none\",\"output\":{\"maxBytes\":1024,\"mediaType\":\"text/csv\",\"name\":\"result.csv\"},\"rootfs\":\"readonly\",\"user\":\"10001:10001\"},\"format\":\"openbot.work-command.operation/v1\",\"intentDigest\":\"591a37175edbb304f17436f9ac901debc4ad10f02b41ee65dbd87816b6083515\",\"originalEpoch\":3,\"profileDigest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"route\":{\"enforcementKeyId\":\"enforcement-key\",\"ledgerId\":\"00000000-0000-0000-0000-000000000001\",\"nodeId\":\"node-1\",\"providerId\":\"command-provider\"},\"runId\":\"run-1\",\"taskId\":\"task-1\"}",
+        "fingerprint": "60c41279186dd262184a7d22716602c351f829fbd7b459b54b78f4a468b516f0"
+      }
+    ]
+  }
+}

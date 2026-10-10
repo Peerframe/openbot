@@ -46,11 +46,11 @@ Start with the [repository map](docs/REPOSITORY_MAP.md) for module ownership, co
 | Interest | Main paths |
 | --- | --- |
 | Product and mobile UX | `apps/web`, `docs/INTERFACE.md` |
-| Control plane and realtime | `apps/server-python`, `packages/db` |
-| Python execution core | `packages/harness` (current harness source) |
+| Control plane and realtime | `apps/server`, `packages/db` |
+| Agent execution and durable Work | `apps/server/src/work-runtime.ts`, `packages/work` |
 | Node protocol and reliability | `apps/node`, `packages/protocol` |
 | Computer integrations | `providers/*`, `packages/provider-sdk` |
-| Policy and security | `apps/server-python/src/openbot_server`, `docs/SECURITY.md` |
+| Policy and security | `apps/server/src`, `docs/SECURITY.md` |
 | Documentation and translations | `README*.md`, `docs/`, ADRs |
 | Optional experiences | `packages/office-plugin` and future plugins |
 
@@ -67,7 +67,7 @@ expected behavior, milestone, and permission boundary are recorded before implem
 
 ## Local development
 
-Requirements: Node.js 22.22.2 (the CI baseline), npm 10.9.9, Python 3.12+, and Docker with Docker Compose. Other Node.js releases must satisfy the exact engine range in `package.json`. Use `npm ci` to reproduce the committed lockfile.
+TS development requires Node.js 22.22.2 (the CI baseline), npm 10.9.9, Docker with Docker Compose, and an explicit mTLS Temporal configuration. Other Node.js releases must satisfy the exact engine range in `package.json`. Use `npm ci` to reproduce the committed lockfile.
 
 ```bash
 git clone https://github.com/Peerframe/openbot.git
@@ -75,22 +75,22 @@ cd openbot
 cp .env.example .env
 ```
 
-Replace `OPENBOT_CONTROL_OWNER_PASSWORD` in `.env`, then run:
+Replace `OPENBOT_TS_OWNER_PASSWORD` and set `OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH` in `.env`
+to an owned configuration for the [existing Temporal service](deploy/temporal/README.md), then run:
 
 ```bash
 npm ci
-apps/server-python/scripts/bootstrap-worker.sh
 npm run db:up
 npm run dev
 ```
 
-Keep this terminal open. `scripts/dev-python.ts` verifies the locked Worker environment, builds
-the required shared packages through Turbo, then starts Python Server/Web.
-Open `http://localhost:5173` and sign in with the Owner password from `.env`; Server uses port
-`3001`. This is sufficient for frontend/control-plane development. Executing Work additionally needs explicit model settings and mTLS Temporal configuration;
-API startup does not create an engine. Keep an existing checkout's `.env` and data directories.
-To reproduce the clean-start CI journey with a disposable database, see
-[the Server startup smoke instructions](apps/server-python/README.md).
+Keep this terminal open. `scripts/dev-server.ts` builds the required shared packages through Turbo,
+then starts the single Server and Web. Open `http://localhost:5173` and sign in with the Owner
+password; the Server uses port 3001. API startup requires Temporal and never creates an engine.
+Model settings are needed only to execute model work. Preserve an existing checkout's `.env` and data.
+The cold-start check is `npm run dev:smoke` from an unbuilt checkout, with
+`OPENBOT_DEV_SMOKE_DATABASE_URL` pointing to an empty loopback database ending in `_dev_smoke`;
+it supplies its own disposable Temporal fixture and checks the actual Web/proxy/Owner journey.
 
 For a small UI change, locate its component through the [repository map](docs/REPOSITORY_MAP.md),
 edit it while this dev command runs, and inspect the real page. For example, the channel side panel
@@ -184,7 +184,7 @@ retains full repository validation before implementation/script handoff. Prose u
 repository gates; AGENTS, skills and prompts also need behavioral discovery/reading acceptance.
 Contract, lock, generator, build, CI and unmapped inputs conservatively select the full set.
 
-Selection follows the npm lockfile's transitive consumer graph plus explicit Python, dynamic
+Selection follows the npm lockfile's transitive consumer graph plus explicit control, dynamic
 Desktop and packaging edges. `npm run ci:check` exercises scope/result counterexamples and real
 cache/zero-test behavior. No-test packages expose no fake passing test task; their actual consumer
 coverage and missing local tests remain explicit.
@@ -193,15 +193,14 @@ Use npm entrypoints (`npm run` / `npm exec -- turbo`) so the Turbo cache hashes 
 Node, OS and architecture identity in `npm_config_user_agent`. Source, lockfile graph, generators,
 config and declared runtime environment also enter task hashes. Direct standalone Turbo invocations
 without that identity are not qualification evidence. CI restores npm downloads only, not earlier
-successful Turbo test results. Local cached successes must be labeled; root gates and real Python,
+successful Turbo test results. Local cached successes must be labeled; root gates and real control,
 Temporal and installed-artifact probes run outside this cache. Parallel jobs own separate checkouts;
 builds within a job precede packaging, which consumes their outputs without rebuilding them.
 Obsolete PR jobs cancel; main and tag-only release qualification retain their own lifecycles.
 
-Security audits include `npm audit --omit=dev --audit-level=high` and `sh scripts/audit-python.sh`.
-The latter uses an isolated pinned audit tool against the exact production Python closure and
-rejects skipped/incomplete reports or known advisories. Network failure is a failed gate, not a
-clean audit. Normal PR checks do not establish an unsigned artifact, signing/notarization or a
+Security audits use `npm audit --omit=dev --audit-level=high` after locked installation.
+Production package-graph and artifact checks reject missing, development-only or stale dependencies.
+Network failure is a failed gate, not a clean audit. Normal PR checks do not establish an unsigned artifact, signing/notarization or a
 release: changed payloads still need actual packaged startup/refusal/cleanup on supported targets.
 
 ### Dependency update intake
@@ -258,17 +257,13 @@ Start from the current request and checkout; preserve local completion records. 
 tokens/components and affected rendered states. A discovery/reading exercise locates owners and
 checks; it does not establish a completed implementation, rendered acceptance or hosted CI.
 
-Whole-interface acceptance is one command: `npm run ui:acceptance` (add `-- --entry ts` once the TS
-entry is built). It starts a disposable PostgreSQL, the Python product serving the built Web and,
-with `--entry ts`, the TS entry in front of it. It then drives the real interface in your installed
-Chrome (`-- --browser <path>` for another one) and prints a pass or fail receipt with screenshots.
-Prepare Python (`apps/server-python/scripts/bootstrap-worker.sh`) and build the Web first; Docker
-must be running. Known gaps are allowlisted by exact route in `scripts/ui-acceptance-report.ts`;
-see the [research record](docs/research/ui-acceptance-automation.md). Before every TypeScript
-migration HTTP group switch, run `npm run ui:acceptance -- --entry ts` on the current candidate
-and require `PASS 12/12`. Retain the receipt and screenshots from its output directory. An
-unexpected workspace 503 fails the gate; use its recorded step and paired service logs to
-investigate the forwarding path.
+Whole-interface acceptance is `npm run ui:acceptance`; TS is the default and `--entry python` is
+refused. Build `@openbot/server` and `@openbot/web` first and start Docker. The command owns disposable
+PostgreSQL and mTLS Temporal services, serves the built Web through the actual Server, and drives
+installed Chrome (`--browser` selects another executable). It writes a receipt and screenshots.
+After substantial retirement changes, require `PASS 12/12` on the current candidate. Unexpected 503s
+fail; inspect the recorded step and owned service logs. No Python environment is needed for this
+journey. See the [acceptance record](docs/research/ui-acceptance-automation.md).
 
 ## Code and comments
 

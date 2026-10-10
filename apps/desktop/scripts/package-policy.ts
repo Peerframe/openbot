@@ -42,12 +42,6 @@ export const DESKTOP_PREVIEW_IDENTITY: DesktopIdentity = Object.freeze({
   appBundleId: "dev.openbot.desktop.preview",
   executableName: "OpenBot Preview",
 });
-// Canonical app may still own legacy Preview profile after upgrade.
-export const DESKTOP_PYTHON_PREVIEW_IDENTITY: DesktopIdentity = Object.freeze({
-  name: "OpenBot Python Preview",
-  appBundleId: "dev.openbot.desktop.python-preview",
-  executableName: "OpenBot Python Preview",
-});
 export const DESKTOP_TS_PREVIEW_IDENTITY: DesktopIdentity = Object.freeze({
   name: "OpenBot TS Preview",
   appBundleId: "dev.openbot.desktop.ts-preview",
@@ -57,12 +51,10 @@ export function desktopPackageIdentity(args: readonly unknown[]): DesktopIdentit
   if (args.length === 0 || (args.length === 1 && args[0] === "--ts-product"))
     return DESKTOP_PACKAGE_IDENTITY;
   if (args.length === 1 && args[0] === "--preview") return DESKTOP_PREVIEW_IDENTITY;
-  if (args.length === 2 && args.includes("--preview") && args.includes("--python-product"))
-    return DESKTOP_PYTHON_PREVIEW_IDENTITY;
   if (args.length === 2 && args.includes("--preview") && args.includes("--ts-product"))
     return DESKTOP_TS_PREVIEW_IDENTITY;
   throw new Error(
-    "Desktop packaging accepts only --ts-product or --preview with optional --python-product or --ts-product.",
+    "Desktop packaging accepts only --preview and optional --ts-product.",
   );
 }
 /** Accepts only the exact identity constants by reference; copies are refused. */
@@ -74,12 +66,6 @@ export function desktopPackagedManifest<T extends object>(
   // Electron resolves name before main, isolating profile and instance lock.
   if (identity === DESKTOP_PREVIEW_IDENTITY)
     return { ...manifest, name: "openbot-preview", productName: DESKTOP_PREVIEW_IDENTITY.name };
-  if (identity === DESKTOP_PYTHON_PREVIEW_IDENTITY)
-    return {
-      ...manifest,
-      name: "openbot-python-preview",
-      productName: DESKTOP_PYTHON_PREVIEW_IDENTITY.name,
-    };
   if (identity === DESKTOP_TS_PREVIEW_IDENTITY)
     return {
       ...manifest,
@@ -108,7 +94,6 @@ export function desktopMacOSWorkerCompanionSource(
   if (input === undefined || input === "") return undefined;
   if (
     identity === DESKTOP_PREVIEW_IDENTITY ||
-    identity === DESKTOP_PYTHON_PREVIEW_IDENTITY ||
     identity === DESKTOP_TS_PREVIEW_IDENTITY
   )
     throw new Error("Desktop Preview cannot include the production Worker companion.");

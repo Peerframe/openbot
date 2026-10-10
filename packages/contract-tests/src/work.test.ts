@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { workSnapshotWireSchema } from "@openbot/protocol";
 import {
   artifactContractFixtureSchema,
   browserContractFixtureSchema,
@@ -12,7 +13,7 @@ import {
   publisherContractFixtureSchema,
   workContractFixtureSchema,
 } from "./target.ts";
-import { contractTargetSchema } from "./work.ts";
+import { assertCancelledSnapshotPersisted, contractTargetSchema } from "./work.ts";
 
 function syntheticUserinfoUrl(base: string, password: string): string {
   const url = new URL(base);
@@ -298,4 +299,54 @@ test("browser fixture admits only bounded authored bytes and no endpoint/executo
         .success,
       false,
     );
+});
+
+// Reproduce the real CI ordering: cancellation commits before Temporal's bound handoff receipt.
+test("cancel persistence admits only the original late receipt, with no public state mutation", () => {
+  const cancelled = workSnapshotWireSchema.parse({
+    id: "task",
+    botId: "bot",
+    objective: "synthetic",
+    status: "cancelled",
+    revision: 2,
+    resultSummary: null,
+    authorityActive: false,
+    cancelRequested: true,
+    attention: null,
+    usage: { tokenLimit: 10, reservedTokens: 0, spentTokens: 0 },
+    runs: [{ id: "run", ordinal: 1, status: "cancelled" }],
+    actions: [],
+    artifacts: [],
+    events: [
+      {
+        revision: 1,
+        kind: "handoff.submission_attempted",
+        payload: { runId: "run", engineReference: "temporal:original" },
+      },
+      { revision: 2, kind: "task.cancelled", payload: {} },
+    ],
+    eventsTruncated: false,
+  });
+  const receipt = {
+    revision: 3,
+    kind: "handoff.acknowledged",
+    payload: { runId: "run", engineReference: "temporal:original", engineFirstRunId: "first" },
+  };
+  const persisted = { ...cancelled, revision: 3, events: [...cancelled.events, receipt] };
+  assertCancelledSnapshotPersisted(cancelled, cancelled);
+  assertCancelledSnapshotPersisted(cancelled, persisted);
+  for (const patch of [
+    { authorityActive: true },
+    { cancelRequested: false },
+    { status: "open" as const },
+    { revision: 4 },
+    { usage: { ...cancelled.usage, spentTokens: 1 } },
+    { events: [cancelled.events[0]!, { ...cancelled.events[1]!, kind: "changed" }, receipt] },
+    { events: [...cancelled.events, { ...receipt, kind: "action.started" }] },
+    ...["runId", "engineReference", "engineFirstRunId"].map((key) => ({
+      events: [...cancelled.events, { ...receipt, payload: { ...receipt.payload, [key]: "" } }],
+    })),
+    { revision: 4, events: [...persisted.events, { ...receipt, revision: 4 }] },
+  ])
+    assert.throws(() => assertCancelledSnapshotPersisted(cancelled, { ...persisted, ...patch }));
 });

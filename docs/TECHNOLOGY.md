@@ -8,8 +8,8 @@ platform status here.
 
 ## One-sentence decision
 
-OpenBot uses Python for the product Server control plane and the bounded Agent harness, TypeScript
-for Web, the Electron Desktop shell, retained Node helpers, React and
+OpenBot uses TypeScript for the product Server control plane, bounded Agent execution, Web,
+the Electron Desktop shell and Node helpers; React and
 Vite for the shared interface, PostgreSQL for authoritative state, and narrow Swift or C# adapters
 only where the operating system requires them.
 
@@ -17,19 +17,19 @@ only where the operating system requires them.
 
 | Concern | Current product default | Notes |
 | --- | --- | --- |
-| Business Server | Python in `apps/server-python` (FastAPI/Starlette/Uvicorn) | `apps/server` is retired; see its README. |
-| Agent execution harness | Python package `packages/harness` (`openbot-agent-runtime`) | Proposes work; control retains authority and durable facts. |
+| Business Server | TypeScript in `apps/server` (Fastify) | Single trusted product authority. |
+| Agent execution | TypeScript Server runtime and `packages/work` | Control retains authority and durable facts. |
 | Shared UI | TypeScript, React, Vite in `apps/web` | Also the Desktop renderer. |
-| Desktop shell | Electron main/preload around the shared Web UI | Supervises the Python product payload where that Desktop path is supported. |
+| Desktop shell | Electron main/preload around the shared Web UI | Supervises the TypeScript product payload where that Desktop path is supported. |
 | Retained Node surfaces | Node Worker Host, Providers, protocol helpers, tooling | Not a second business Server. |
 | Frozen TypeScript Server | `tests/oracles/legacy-server` | Comparison input only; never a product fallback. |
 | Persistence | PostgreSQL with migrations under `packages/db` | Unchanged authority for durable state. |
 | Optional durable Work engine | Explicit Temporal composition when configured | Not created by ordinary API startup. |
 
 Historical Desktop foundation ADRs and research remain the record of those decisions; they are not
-a claim that the Node/Hono Server is still the live control plane. Longer-term TypeScript consolidation remains a
-direction, starting with useful peripheral replacements. A core replacement needs its own verified
-cutover; this cleanup does not migrate the Python Server or harness core.
+a claim that the Node/Hono Server is still the live control plane. P5 completes the source cutover to the single TypeScript Server and execution path.
+Hosted native qualification, review and installation remain separate acceptance gates; source
+retirement does not update an installed application or move user data.
 
 ## Product surfaces
 
@@ -54,8 +54,8 @@ Versions below match this checkout unless a surface README states a narrower att
 
 | Boundary | Selection | Why |
 | --- | --- | --- |
-| Product Server / control plane | Python `>=3.12` with FastAPI `0.141.1`, Starlette `1.6.0`, Uvicorn `0.53.0` (`apps/server-python`) | Active trusted business control layer; Owner identity, routing, policy, approvals, audit, and product HTTP. |
-| Bounded Agent harness | Python `>=3.12` package `openbot-agent-runtime` `0.1.0` (`packages/harness`) | Existing bounded execution loop and optional Temporal composition; control keeps authority. |
+| Product Server / control plane | TypeScript / Fastify (`apps/server`) | Owner identity, routing, policy, approvals, audit and product HTTP. |
+| Bounded Agent execution | `apps/server/src/work-runtime.ts`, `packages/work` | Bounded execution and Temporal continuation; control retains authority. |
 | Shared domain, protocol, Web, Desktop, Node helpers, and tooling | TypeScript `7.0.2` | Typed contribution path for UI, Electron, retained Node wire, and repository tooling. |
 | Standalone JavaScript development runtime | Node.js `24.20.0` (pinned in `.nvmrc`; root `engines` also allow the attested `^22.22.2` line) | Current repository development baseline. Attested Worker Host release runtimes upgrade only through a separate release migration with hashes, SBOMs, and rollback evidence. |
 | Desktop shell | Electron `44.3.0` | Reuses the Web stack and ships one tested Chromium/Node baseline across desktop systems. |
@@ -67,8 +67,8 @@ Versions below match this checkout unless a surface README states a narrower att
 | Windows-only service integration | C# on .NET | SCM, Credential Manager, Job Objects, installer integration, and other Windows-only contracts. |
 | External agent internals | Upstream language | Hermes may remain Python and another agent may use Rust, Go, or TypeScript; OpenBot integrates through a typed process or network adapter. |
 
-Rust and Go are not OpenBot product core languages. Python is core for Server and harness. TypeScript
-remains core for Web, Desktop, and retained Node helpers. A future dependency in another language
+TypeScript is the OpenBot core language for Server, bounded execution, Web, Desktop and Node helpers.
+Python, Rust and Go are not OpenBot product core languages. A future dependency in another language
 needs research that proves a maintained upstream closes a concrete gap better than the selected
 stack.
 
@@ -112,14 +112,12 @@ prerelease or changing every dependency on publication day.
 - Re-run packaging, IPC-negative, update, rollback, and real-device checks after a runtime change.
 - Reconsider the shell only if measured package size, memory, accessibility, security maintenance,
   or platform behavior fails an accepted requirement.
-- Treat Python Server and harness pin bumps the same way: focused PRs, lockfile evidence, and the
-  existing control/harness checks—not silent float.
+- Runtime pin changes require focused PRs, lockfile evidence and the affected product checks.
 
 ## Contributor impact
 
-Most contributors need the Node.js version pinned in `.nvmrc`, npm, and Python 3.12+ for Server or
-harness work. Follow [CONTRIBUTING](../CONTRIBUTING.md), [apps/server-python/README.md](../apps/server-python/README.md),
-and [packages/harness/README.md](../packages/harness/README.md). Desktop contributors also need the
+Contributors need the repository Node.js/npm versions and the services described in
+[CONTRIBUTING](../CONTRIBUTING.md) and [Server setup](../apps/server/README.md). Desktop work also needs the
 platform packaging toolchain; see [Desktop contributor rules](../apps/desktop/AGENTS.md). Swift is
 required only for macOS adapter work, and .NET only for Windows adapter work. External Agent
 adapters do not require contributors to rewrite those agents in TypeScript.

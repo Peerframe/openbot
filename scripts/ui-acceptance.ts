@@ -1,32 +1,24 @@
 // Whole-interface acceptance (docs/research/ui-acceptance-automation.md). Starts a disposable
-// stack — owned PostgreSQL, the Python product serving the built Web, and the TS entry with
-// `--entry ts` — then drives the real interface in an installed Chrome. It writes a receipt and
+// stack — owned PostgreSQL, mTLS Temporal, and the TS Server serving the built Web — then drives the real interface in an installed Chrome. It writes a receipt and
 // screenshots, and removes every process, container and file it created.
+
 import assert from "node:assert/strict";
 import { type ChildProcess, spawn } from "node:child_process";
 import { randomBytes, randomUUID } from "node:crypto";
-import {
-  existsSync,
-  mkdirSync,
-  openSync,
-  readFileSync,
-  realpathSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdirSync, openSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { type Browser, chromium, type Page } from "playwright-core";
-import { DevProcessOwner } from "./dev-processes.ts";
 import {
   allowlistedEnvironment,
-  cleanupOnTerminationSignals,
   OwnedDockerFixture,
   runFixtureCommand,
   startControlPostgres,
-} from "./python-acceptance-fixture.ts";
+} from "./acceptance-fixture.ts";
+import { DevProcessOwner } from "./dev-processes.ts";
+import { startTemporalFixture } from "./temporal-fixture.ts";
 import {
   type AcceptanceOptions,
   classifyResponses,
@@ -36,23 +28,26 @@ import {
 } from "./ui-acceptance-report.ts";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
-const options = parseAcceptanceArgs(process.argv.slice(2));
-const python = join(root, "apps/server-python/.worker-venv/bin/python");
+let options: AcceptanceOptions;
+try {
+  options = parseAcceptanceArgs(process.argv.slice(2));
+} catch (error) {
+  console.error(error instanceof Error ? error.message : "Invalid acceptance arguments.");
+  process.exit(2);
+}
 const webRoot = join(root, "apps/web/dist");
-const tsEntry = join(root, "apps/server-ts/dist/serve.js");
+const tsEntry = join(root, "apps/server/dist/serve.js");
 const STEP_TIMEOUT = 20_000;
+const interrupted = new AbortController();
+let signalExit: number | undefined;
 
 function preflight(value: AcceptanceOptions): void {
-  assert(
-    existsSync(python),
-    "Prepare Python first: apps/server-python/scripts/bootstrap-worker.sh",
-  );
   assert(
     existsSync(join(webRoot, "index.html")),
     "Build the Web first: npm run build -w @openbot/web",
   );
   if (value.entry === "ts")
-    assert(existsSync(tsEntry), "Build the TS entry first: npm run build -w @openbot/server-ts");
+    assert(existsSync(tsEntry), "Build the TS entry first: npm run build -w @openbot/server");
   if (value.browser) assert(existsSync(value.browser), `No browser at ${value.browser}.`);
 }
 
@@ -69,9 +64,12 @@ async function freePort(): Promise<number> {
   });
 }
 
-async function waitForHttp(url: string, timeoutMs = 60_000): Promise<void> {
+async function waitForHttp(url: string, child: ChildProcess, timeoutMs = 60_000): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
+    interrupted.signal.throwIfAborted();
+    if (child.exitCode !== null || child.signalCode !== null)
+      throw new Error("Server exited before readiness; inspect its private lifecycle log.");
     try {
       const response = await fetch(url);
       if (response.status < 500) return;
@@ -97,41 +95,6 @@ try {
   console.error(error instanceof Error ? error.message : String(error));
   process.exit(2);
 }
-// The TS UI gate owns the same real engine fixture as Work acceptance. Credentials stay in
-// its private receipt; this wrapper cannot select the installed application's configuration.
-if (options.entry === "ts" && !process.env.OPENBOT_UI_TEMPORAL_FIXTURE) {
-  const child = spawn(
-    python,
-    [
-      "-I",
-      "experiments/work-journey/ts_control_probe.py",
-      "--node",
-      process.execPath,
-      "--ui",
-      ...process.argv.slice(2),
-    ],
-    {
-      cwd: root,
-      env: allowlistedEnvironment([
-        "PATH",
-        "HOME",
-        "TMPDIR",
-        "DOCKER_HOST",
-        "DOCKER_CONTEXT",
-        "DOCKER_CONFIG",
-      ]),
-      stdio: "inherit",
-    },
-  );
-  for (const signal of ["SIGINT", "SIGTERM"] as const)
-    process.once(signal, () => child.kill(signal));
-  const code = await new Promise<number>((resolve, reject) => {
-    child.once("error", reject);
-    child.once("exit", (value) => resolve(value ?? 1));
-  });
-  process.exit(code);
-}
-
 const requestedWork = join(options.out ?? tmpdir(), `openbot-ui-acceptance-${Date.now()}`);
 mkdirSync(requestedWork, { recursive: true, mode: 0o700 });
 // macOS TMPDIR can traverse /var; protected storage requires the actual owned path.
@@ -166,13 +129,23 @@ const owner = new DevProcessOwner({
   },
 });
 let browser: Browser | undefined;
+let temporal: Awaited<ReturnType<typeof startTemporalFixture>> | undefined;
 let databaseUrl = "";
 const secrets = () => [ownerPassword, databasePassword, databaseUrl];
 function cleanup(): void {
   docker.cleanup();
   rmSync(data, { recursive: true, force: true });
 }
-cleanupOnTerminationSignals(cleanup);
+const onInterrupt = () => interrupt(130);
+const onTerminate = () => interrupt(143);
+function interrupt(status: number) {
+  signalExit ??= status;
+  interrupted.abort();
+  void browser?.close().catch(() => undefined);
+  void owner.stop().catch(() => undefined);
+}
+process.once("SIGINT", onInterrupt);
+process.once("SIGTERM", onTerminate);
 
 const steps: Step[] = [];
 const responses: ObservedResponse[] = [];
@@ -182,6 +155,7 @@ let restarting = false;
 let currentStep = "启动";
 
 async function step(name: string, body: () => Promise<void>): Promise<void> {
+  interrupted.signal.throwIfAborted();
   const started = Date.now();
   currentStep = name;
   try {
@@ -214,87 +188,41 @@ try {
     env: { ...environment, OPENBOT_DATABASE_URL: databaseUrl },
   });
 
+  temporal = await startTemporalFixture({ signal: interrupted.signal });
   const temporalPath = join(data, "temporal.json");
-  if (options.entry === "ts") {
-    const fixture = JSON.parse(readFileSync(process.env.OPENBOT_UI_TEMPORAL_FIXTURE!, "utf8"));
-    assert.match(fixture.address, /^127\.0\.0\.1:\d+$/);
-    writeFileSync(
-      temporalPath,
-      JSON.stringify({
-        temporal_address: fixture.address,
-        namespace: "default",
-        queue: "openbot-ui-python-" + randomUUID(),
-        tls: fixture.tls,
-      }),
-      { mode: 0o600 },
-    );
-  }
+  writeFileSync(
+    temporalPath,
+    JSON.stringify({
+      temporal_address: temporal.settings.address,
+      namespace: "default",
+      queue: "openbot-ui-" + randomUUID(),
+      tls: temporal.settings.tls,
+    }),
+    { mode: 0o600 },
+  );
   const publicPort = await freePort();
-  const pythonPort = options.entry === "ts" ? await freePort() : publicPort;
   const origin = `http://127.0.0.1:${publicPort}`;
-  const pythonEnv: NodeJS.ProcessEnv = {
-    PATH: process.env.PATH,
-    HOME: process.env.HOME,
-    OPENBOT_CONTROL_DATABASE_URL: databaseUrl,
-    OPENBOT_CONTROL_OWNER_PASSWORD: ownerPassword,
-    OPENBOT_CONTROL_AUTHORITY: "product",
-    OPENBOT_CONTROL_HOST: "127.0.0.1",
-    OPENBOT_CONTROL_PORT: String(pythonPort),
-    OPENBOT_CONTROL_ALLOWED_ORIGINS: origin,
-    OPENBOT_CONTROL_COOKIE_MODE: "loopback",
-    OPENBOT_CONTROL_NODE_EXECUTABLE: process.execPath,
-    OPENBOT_CONTROL_NODE_MODULE_ROOT: join(root, "node_modules"),
-    OPENBOT_CONTROL_OBJECT_ROOT: join(data, "objects"),
-    OPENBOT_CONTROL_ARTIFACT_ROOT: join(data, "artifacts"),
-    OPENBOT_CONTROL_MODEL_DIRECTORY: join(data, "model"),
-    OPENBOT_CONTROL_WEB_ROOT: webRoot,
-    PYTHONDONTWRITEBYTECODE: "1",
-    ...(options.entry === "ts"
-      ? {
-          OPENBOT_CONTROL_PROXY_ADDRESS: "127.0.0.1",
-          OPENBOT_CONTROL_PUBLIC_ORIGIN: origin,
-          OPENBOT_CONTROL_TS_READ_GROUP: "transcription",
-          OPENBOT_CONTROL_TS_WRITE_GROUP: "primary-bot",
-          OPENBOT_CONTROL_TS_AUTH_GROUP: "owner",
-          OPENBOT_CONTROL_TS_PRODUCT_GROUP: "p3",
-          OPENBOT_CONTROL_TS_WORK_GROUP: "p4",
-          OPENBOT_CONTROL_TS_CHANNEL_READ_GROUP: "channels",
-        }
-      : {}),
-  };
   const tsEnv: NodeJS.ProcessEnv = {
     PATH: process.env.PATH,
     HOME: process.env.HOME,
     OPENBOT_TS_HOST: "127.0.0.1",
     OPENBOT_TS_PORT: String(publicPort),
-    OPENBOT_TS_PYTHON_ORIGIN: `http://127.0.0.1:${pythonPort}`,
+    OPENBOT_CONTROL_WEB_ROOT: webRoot,
     OPENBOT_TS_PUBLIC_ORIGIN: origin,
-    OPENBOT_TS_READ_GROUP: "transcription",
-    OPENBOT_TS_WRITE_GROUP: "primary-bot",
-    OPENBOT_TS_AUTH_GROUP: "owner",
-    OPENBOT_TS_PRODUCT_GROUP: "p3",
-    OPENBOT_TS_WORK_GROUP: "p4",
     OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH: temporalPath,
     OPENBOT_TS_WORK_FILE_ROOT: join(data, "artifacts"),
     OPENBOT_TS_OBJECT_ROOT: join(data, "objects"),
     OPENBOT_TS_ARTIFACT_ROOT: join(data, "artifacts"),
     OPENBOT_TS_MODEL_CONNECTION_KEY_PATH: join(data, "objects", "model-connections.key"),
-    OPENBOT_TS_CHANNEL_READ_GROUP: "channels",
     OPENBOT_TS_OWNER_PASSWORD: ownerPassword,
     OPENBOT_TS_AUTH_ALLOWED_ORIGINS: origin,
     OPENBOT_TS_WRITE_ALLOWED_ORIGINS: origin,
     OPENBOT_TS_READ_ALLOWED_ORIGINS: origin,
     OPENBOT_TS_DATABASE_URL: databaseUrl,
   };
-  const startPython = () =>
-    owner.start(python, ["-I", "-B", "apps/server-python/scripts/serve.py"], pythonEnv);
   const startEntry = () => owner.start(process.execPath, [tsEntry], tsEnv);
-  let publicProcess: ChildProcess = startPython();
-  if (options.entry === "ts") {
-    await waitForHttp(`http://127.0.0.1:${pythonPort}/`);
-    publicProcess = startEntry();
-  }
-  await waitForHttp(`${origin}/`);
+  let publicProcess: ChildProcess = startEntry();
+  await waitForHttp(`${origin}/`, publicProcess);
   if (options.entry === "ts") {
     const health = await fetch(`${origin}/health`);
     assert.equal(health.status, 200);
@@ -463,8 +391,8 @@ try {
     publicProcess.kill("SIGTERM");
     await stopped;
     await page.locator(".realtime-state.retrying").waitFor();
-    publicProcess = options.entry === "ts" ? startEntry() : startPython();
-    await waitForHttp(`${origin}/`);
+    publicProcess = startEntry();
+    await waitForHttp(`${origin}/`, publicProcess);
     await page.locator(".realtime-state.live").waitFor({ timeout: 45_000 });
     restarting = false;
     const session = await page.evaluate(
@@ -489,7 +417,7 @@ try {
     failedSteps.length === 0 && tally.unexpected.length === 0 && pageErrors.length === 0;
   const receipt = {
     entry: options.entry,
-    workGroup: options.entry === "ts" ? "p4" : "none",
+    executionOwner: "typescript-v1",
     passed,
     steps,
     responses: {
@@ -518,6 +446,12 @@ try {
 } finally {
   await browser?.close().catch(() => undefined);
   await owner.stop().catch(() => undefined);
-  cleanup();
+  try {
+    cleanup();
+  } finally {
+    await temporal?.close();
+    process.removeListener("SIGINT", onInterrupt);
+    process.removeListener("SIGTERM", onTerminate);
+  }
 }
-process.exit(exitCode);
+process.exit(signalExit ?? exitCode);

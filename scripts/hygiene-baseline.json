@@ -3,10 +3,10 @@
     "packages/protocol/AGENTS.md": 92
   },
   "undocumentedFiles": {
-    "apps/web": 130,
-    "apps/server-ts": 111,
-    "apps/desktop": 35,
+    "apps/web": 129,
+    "apps/server": 0,
+    "apps/desktop": 33,
     "packages": 87,
-    "scripts": 68
+    "scripts": 44
   }
 }

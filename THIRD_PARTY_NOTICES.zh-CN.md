@@ -25,6 +25,7 @@
 | `openai` | 7.28.0 | 2026 OpenAI；Apache-2.0 |
 | `@anthropic-ai/sdk` | 0.131.0 | 2023 Anthropic, PBC；MIT；P3 使用明确凭据、受限传输、零重试 |
 | Fastify | 5.12.5 | 2016-present Fastify 团队；MIT |
+| `@fastify/static` | 10.1.6 | 2017-present Fastify 团队；MIT；直接静态服务使用发布 API，没有复制源码 |
 | `@fastify/reply-from` | 12.6.5 | 2017-present Matteo Collina 与 Fastify 团队；MIT；使用发布 API，没有复制源码 |
 | Vercel AI SDK `ai` | 7.0.93 | 2023 Vercel, Inc.；Apache-2.0 |
 | `@ai-sdk/openai`、`@ai-sdk/anthropic`、`@ai-sdk/moonshotai` | 4.0.66、4.0.53、3.0.49 | Vercel, Inc.；Apache-2.0 |

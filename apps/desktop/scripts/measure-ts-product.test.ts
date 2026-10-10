@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ownedRss } from "./measure-ts-product.ts";
 
-describe("native forwarding measurement ownership", () => {
+describe("native product measurement ownership", () => {
   const table = `40 1 999 /Applications/OpenBot.app/python
 103 102 20 /runtime/postgres
 100 1 50 /runtime/node
@@ -13,8 +13,7 @@ describe("native forwarding measurement ownership", () => {
   it("counts only this controller's descendants, including an out-of-order database child", () => {
     expect(ownedRss(table, 100, [104, 105])).toEqual({
       nativeChildrenRssKiB: 100,
-      pythonRssKiB: 30,
-      tsRssKiB: 40,
+      tsRssKiB: 70,
       controllerRssKiB: 50,
       childCount: 4,
     });

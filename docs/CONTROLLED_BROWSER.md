@@ -57,9 +57,9 @@ action; it cannot grant Server authority. Per-Bot serialization applies within o
 See [research](research/controlled-browser-click.md) and [Provider conformance](PROVIDER_CONFORMANCE.md)
 for pinned dependencies, actual validation and the remaining platform gates.
 
-## Python migration candidate: browser session identity
+## TypeScript product: browser session identity
 
-The separate Python candidate binds each browser view to its original enrolled Worker identity
+The TypeScript Server binds each browser view to its original enrolled Worker identity
 and current connection. It retains that host identity across Server restart. Reconnecting the same
 Worker permits a fresh view; re-enrolling a device with the same Node id does not transfer the old
 browser or its login state. Legacy browser history without a verified identity binding is refused.
@@ -70,13 +70,13 @@ Unconfirmed input is never retried, and a failed return of control leaves the du
 The client removes the old frame and unsent input after losing session authority. These checks use
 real PostgreSQL and HTTP/WebSocket tests with synthetic frames; they do not establish physical
 profile migration or browser egress isolation. Human takeover is an explicit per-route opt-in in
-Python composition; it is disabled by default. See the
+TypeScript composition; it is disabled by default. See the
 [identity binding review](research/browser-host-binding.md).
 
 
-## Python candidate: approved Work screenshot
+## TypeScript product: approved Work screenshot
 
-The Python product candidate can create a channel Task that captures the current screen of its
+The TypeScript Server can create a channel Task that captures the current screen of its
 original browser. The Owner approves each capture in the existing Task Action view. The Task
 publishes the exact PNG only after result review and completion. Models receive file metadata,
 not screenshot contents; this profile cannot interpret a page or perform browser input.
@@ -126,7 +126,7 @@ not trigger a replacement screenshot. Already received PNGs retain their origina
 
 The PNG header/dimensions, size and digest are verified; models and result review see metadata only.
 Do not treat capture success as proof of page meaning or an external action. Owner input has been
-tested through the actual Python/Node/Chromium path against owned synthetic pages, including the
+tested through the actual TypeScript Server/Node/Chromium path against owned synthetic pages, including the
 retained Web at desktop and phone sizes. Local storage persisted after closing/reopening the view.
 This does not qualify public egress, autonomous page interpretation, host profile relocation or
 general isolated browser deployment. Use trusted test pages with known behavior as described above.
@@ -134,7 +134,7 @@ See the [implementation and validation record](research/work-browser-capture.md)
 See the [handover qualification](research/work-browser-handover.md) for the input/control boundary.
 
 
-## Python candidate: approved page reading and input
+## TypeScript product: approved page reading and input
 
 A separate page scope extends newly created Tasks on explicitly trusted test origins. Apply
 canonical migrations through `0044_work_browser_page_scopes`. Keep the capture configuration above

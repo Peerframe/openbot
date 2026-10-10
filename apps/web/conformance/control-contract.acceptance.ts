@@ -1,17 +1,23 @@
-import { execFileSync } from "node:child_process";
-import { resolve } from "node:path";
 import {
-  controlHttpSchemas,
-  lifecycleHttpSchemas,
-  resourceHttpSchemas,
-  employeeHttpSchemas,
   automationHttpSchemas,
+  browserHttpSchemas,
+  controlHttpSchemas,
+  createBotInputSchema,
+  createChannelInputSchema,
+  createMessageInputSchema,
+  employeeHttpSchemas,
+  lifecycleHttpSchemas,
   nodeHttpSchemas,
   pluginHttpSchemas,
-  browserHttpSchemas,
   portabilityHttpSchemas,
+  quickCreateBotInputSchema,
+  renameBotInputSchema,
+  renameChannelInputSchema,
+  resourceHttpSchemas,
+  updateEmployeeProfileDetailsInputSchema,
 } from "@openbot/protocol";
 import { expect, it } from "vitest";
+import { frozenWebContracts } from "../../../scripts/frozen-web-contracts.ts";
 
 const schemas = {
   ...controlHttpSchemas,
@@ -31,27 +37,15 @@ type Sample = {
   valid: boolean;
   serialized?: unknown;
 };
-const root = resolve(process.cwd(), "../..");
-const fixtures = JSON.parse(
-  execFileSync(
-    `${root}/apps/server-python/.venv/bin/python`,
-    ["-I", "-B", `${root}/apps/server-python/scripts/control-contract-fixtures.py`],
-    {
-      encoding: "utf8",
-      timeout: 30000,
-      maxBuffer: 2 * 1024 * 1024,
-      env: { PATH: "/usr/bin:/bin" },
-    },
-  ),
-) as { projections: Sample[]; requests: Sample[] };
+const fixtures = frozenWebContracts<{ projections: Sample[]; requests: Sample[] }>("control");
 
-it.each(fixtures.requests)("TS/Python input normalization: $schema/$name", (sample) => {
+it.each(fixtures.requests)("TS/frozen Python input normalization: $schema/$name", (sample) => {
   const result = schemas[sample.schema].safeParse(sample.input);
   expect(result.success).toBe(sample.valid);
   if (result.success) expect(result.data).toEqual(sample.serialized);
 });
 it.each(fixtures.projections)(
-  "TS consumes actual Python serialization: $schema/$name",
+  "TS consumes frozen actual Python serialization: $schema/$name",
   (sample) => {
     const result = schemas[sample.schema].safeParse(
       sample.valid ? sample.serialized : sample.input,
@@ -61,16 +55,29 @@ it.each(fixtures.projections)(
   },
 );
 
-it("retains the existing identity/profile/task/rename differential fixture gate", () => {
-  const output = execFileSync(
-    process.execPath,
-    [`${root}/apps/server-python/scripts/compare-identity-inputs.ts`],
+const identitySchemas = {
+  quickBot: quickCreateBotInputSchema,
+  bot: createBotInputSchema,
+  channel: createChannelInputSchema,
+  profile: updateEmployeeProfileDetailsInputSchema,
+  task: createMessageInputSchema,
+  botRename: renameBotInputSchema,
+  channelRename: renameChannelInputSchema,
+};
+const identities =
+  frozenWebContracts<
     {
-      encoding: "utf8",
-      timeout: 30000,
-      maxBuffer: 2 * 1024 * 1024,
-      env: { PATH: "/usr/bin:/bin" },
-    },
-  );
-  expect(output).toMatch(/171/);
+      id: string;
+      schema: keyof typeof identitySchemas;
+      input: unknown;
+      expected: { ok: boolean; value?: unknown };
+    }[]
+  >("identity");
+it("retains all 171 identity/profile/task/rename differential cases", () => {
+  expect(identities).toHaveLength(171);
+});
+it.each(identities)("frozen Python identity normalization: $schema/$id", (sample) => {
+  const result = identitySchemas[sample.schema].safeParse(sample.input);
+  expect(result.success).toBe(sample.expected.ok);
+  if (result.success) expect(result.data).toEqual(sample.expected.value);
 });

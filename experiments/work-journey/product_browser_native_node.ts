@@ -14,7 +14,7 @@ import { startProbeClient } from "./product_browser_client.ts";
 
 const FIXED_TARGET_URL = "https://example.com:18443";
 const FIXED_TOKEN = "synthetic-linux-composition-fixture-only";
-const NATIVE_RESTART = "/opt/obp4/composition-20260926-a1/run.py";
+const NATIVE_RESTART = "/opt/obp4/browser-native.cjs";
 const NATIVE_TIMEOUT_MS = 60000;
 const NATIVE_OUTPUT_BYTES = 16384;
 const CONTROL_MAXIMUM_ID = 2;
@@ -92,7 +92,7 @@ async function applyNativeControl(request: ControlRequest): Promise<void> {
   if (request.operation === "browser-restart" && request.id === 1) {
     const { stdout } = await execute(
       "/usr/bin/sudo",
-      ["-n", "/usr/bin/python3", "-B", NATIVE_RESTART, "restart"],
+      ["-n", "/opt/obp4/node", NATIVE_RESTART, "restart"],
       {
         timeout: NATIVE_TIMEOUT_MS,
         maxBuffer: NATIVE_OUTPUT_BYTES,

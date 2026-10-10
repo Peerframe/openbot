@@ -1,20 +1,20 @@
 # Packaged Desktop Temporal connection probe
 
 This disposable probe reuses the existing compiled `NativeServerController` and
-`launchPythonProductServer`. It does not build, patch or copy product resources, start a
+`launchDesktopProductServer`. It does not build, patch or copy product resources, start a
 Temporal server, submit a Task, call a model, touch Keychain or use a real Desktop dataRoot.
 The existing API smoke's synthetic safeStorage callbacks and actual PG/parent-pipe lifecycle
 are retained.
 
 ## Run after the root's final build
 
-Use a reviewed macOS arm64 Python candidate. `--runtime` must be the finished app's
+Use a reviewed macOS arm64 TS candidate. `--runtime` must be the finished app's
 `Contents/Resources/native-runtime` (or the staged native-runtime for a separate staged run).
 `--desktop-dist` is the matching compiled `apps/desktop/dist` directory; the integrator must
 check that its controller/launcher bytes match the packaged ASAR files, as in the original
 packaging acceptance. Normal Node cannot import JavaScript directly from ASAR.
 
-The entry uses the repository Node requirement (reviewed Node22.22.2 supports native erasable TypeScript) and the same typed disposable-parent owner as the API-only smoke. Its compiled product consumers and Python SDK observer remain unchanged.
+The entry uses the repository Node requirement (reviewed Node22.22.2 supports native erasable TypeScript) and the same typed disposable-parent owner as the API-only smoke. Its compiled product consumers and bundle-owned TS SDK observer use the selected artifact.
 
 ```sh
 node experiments/work-journey/desktop-temporal/smoke-packaged-temporal.ts \
@@ -24,7 +24,7 @@ node experiments/work-journey/desktop-temporal/smoke-packaged-temporal.ts \
 ```
 
 The last argument must be an existing current-UID private regular JSON file, 1–16,384 bytes,
-with the already-supported `ProductWorkService.configuration` schema:
+with the already-supported `loadWorkInstallation` schema:
 
 ```json
 {
@@ -44,7 +44,7 @@ These are placeholders. Supply the already-running authorized mTLS test server a
 namespace. The probe neither registers a namespace nor creates a server. Existing optional
 bounded config fields remain unchanged. It changes only `queue` to a random UUID queue,
 writes that JSON into private temporary `D/temporal.json`, and reads the original TLS paths
-through the existing Python mTLS adapter. The input file and all TLS files remain unchanged.
+through the existing TS mTLS adapter. The input file and all TLS files remain unchanged.
 No secret bytes or config contents are logged or put in process arguments. The smoke clears
 the unrelated inherited Tavily/plugin endpoint projections before passing the synthetic
 controller environment to the original launcher.
@@ -52,7 +52,7 @@ controller environment to the original launcher.
 ## Acceptance and result
 
 On both first start and restart, the actual `/health` must succeed and synthetic Owner login
-must work. Then **the bundle's own Python and Temporal SDK** connect independently using the
+must work. Then **the bundle's own standalone Node and Temporal SDK** connect independently using the
 same private config. The helper issues only bounded, non-retrying DescribeTaskQueue reads;
 it does not poll for work or start a Worker. Both Workflow and Activity poller records must
 contain exactly one fresh identity, the same for both types, with last_access_time at or
@@ -63,7 +63,7 @@ Cached pollers from earlier starts are ignored, and disappearance after stop is 
 The synthetic channel, bootstrap and raw model-connection key must survive restart. Both
 normal stop and killing the disposable launcher parent must close the actual API; the PG
 PID and lockfile must disappear. A private nonempty JSON file with an invalid product
-configuration then must fail the original Python startup, never authenticate or fall back
+configuration then must fail the original TS startup, never authenticate or fall back
 to API-only, and release PG. The original poisoned-artifact-directory check is also retained.
 An invalid engine configuration generally prevents the HTTP socket from opening; the probe
 does not require a 503 response from an app that never completed startup.
@@ -90,11 +90,10 @@ qualification belongs to its original artifact and is not implied by this connec
 
 ```sh
 node --test experiments/work-journey/desktop-temporal/probe-support.test.ts
-apps/server-python/.worker-venv/bin/python -B -m pytest -q \
-  experiments/work-journey/desktop-temporal/test_observe_pollers.py
+node --test experiments/work-journey/desktop-temporal/observe-pollers.test.ts
 ```
 
-Those checks use synthetic files and real SDK protobuf types with synthetic service responses.
+Those checks use synthetic files and timestamp-preserving synthetic service responses.
 They do not count as an actual packaged connection. The root runs and retains the final
 successful CLI JSON after rebuilding the candidate. No repository patch is needed.
 
@@ -102,7 +101,7 @@ successful CLI JSON after rebuilding the candidate. No repository patch is neede
 The current probe additionally starts with a valid fixed `D/browser.json` route/page-scope file.
 There is no connected Node and it submits no browser action. On both starts the real Worker must
 still connect. With the engine configuration left valid, private `{}` browser and command files
-must each fail the actual Python installation parser, produce no Owner login and close PG. The
+must each fail the actual TS installation parser, produce no Owner login and close PG. The
 result records `privateBrowserConfigurationAccepted` and
 `invalidExecutionConfigurationsRefusedAndPostgresStopped`. API-only smoke separately checks that
 present execution configuration without Temporal cannot silently fall back to API-only startup.

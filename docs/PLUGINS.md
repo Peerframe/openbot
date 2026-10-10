@@ -55,16 +55,10 @@ npx tsx packages/mcp-example/src/plugin-example.ts
 Explicitly configure the development endpoint on the **OpenBot Server computer**, then restart:
 
 ```dotenv
-OPENBOT_PLUGIN_LOCAL_ENDPOINTS=http://127.0.0.1:4318/mcp
+OPENBOT_TS_PLUGIN_LOCAL_ENDPOINTS=["http://127.0.0.1:4318/mcp"]
 ```
 
-For the explicit Python product entry point, use its own JSON-array setting instead:
-
-```dotenv
-OPENBOT_CONTROL_PLUGIN_LOCAL_ENDPOINTS=["http://127.0.0.1:4318/mcp"]
-```
-
-These variables are not implicit aliases; configure the selected Server entry point.
+The TypeScript Server requires this explicit JSON array; retired entry-point variables are not aliases.
 
 For an application-hosted Server, set the variable in the application's launch environment before
 opening it. Localhost means the Server computer, not a remote client. Only exact operator-listed

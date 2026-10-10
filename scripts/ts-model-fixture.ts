@@ -2,9 +2,9 @@
 import assert from "node:assert/strict";
 import { lstatSync, writeFileSync } from "node:fs";
 import { isAbsolute } from "node:path";
-import { entryOptions } from "../apps/server-ts/dist/config.js";
-import { runEntry } from "../apps/server-ts/dist/lifetime.js";
-import type { ModelTransport } from "../apps/server-ts/dist/model-network.js";
+import { entryOptions } from "../apps/server/dist/config.js";
+import { runEntry } from "../apps/server/dist/lifetime.js";
+import type { ModelTransport } from "../apps/server/dist/model-network.js";
 
 const path = process.argv[2];
 assert(process.argv.length === 3 && path && isAbsolute(path));

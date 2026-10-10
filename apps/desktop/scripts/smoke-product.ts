@@ -1,0 +1,319 @@
+/** Qualifies the staged single-Server payload with disposable native state and real restart/exit checks. */
+import assert from "node:assert/strict";
+import { randomBytes } from "node:crypto";
+import { channel } from "node:diagnostics_channel";
+import { lstat, mkdtemp, readFile, realpath, rm, symlink, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import {
+  modelConnectionResponseSchema,
+  modelServicesSnapshotSchema,
+  transcriptionSettingsSchema,
+  workspacePrimaryBotSchema,
+  workspaceSnapshotSchema,
+} from "@openbot/protocol";
+import { runPortabilityContracts } from "../../../packages/contract-tests/src/portability.ts";
+import { runResourceContracts } from "../../../packages/contract-tests/src/resources.ts";
+import { observeBundledPollers, type PollerObservation } from "../../../experiments/work-journey/desktop-temporal/probe-support.ts";
+import { configureNativeWorkFixture, runNativeWorkFixture } from "./native-work-fixture.ts";
+import {
+  confirmProcessesStopped,
+  launchThroughDisposableParent,
+  loadDesktopModules,
+} from "./product-probe.ts";
+
+const desktopDist = fileURLToPath(new URL("../dist/", import.meta.url));
+
+export async function smokeProduct(runtimeRoot: string) {
+  const { NativeServerController, launchDesktopProductServer } =
+    await loadDesktopModules(desktopDist);
+  const root = await realpath(await mkdtemp(join(tmpdir(), "openbot-product-smoke-")));
+  const dataRoot = join(root, "local-server");
+  let cookie: string | undefined;
+  let base: string | undefined;
+  let testParentExit = false;
+  let bootstrapPassword: string | undefined;
+  let changedPassword: string | undefined;
+  let productIds: readonly number[] = [];
+  let resourceChecks = 0,
+    portabilityChecks = 0;
+  let startedAt = 0;
+  const pollerObservations: PollerObservation[] = [];
+  await configureNativeWorkFixture(dataRoot);
+  const problems: string[] = [];
+  const diagnostics = channel("openbot.desktop.native-startup");
+  // Do not collect child stderr, bootstrap data or any submitted credential.
+  const observer = (value: unknown) => {
+    const error = value && typeof value === "object" && "error" in value ? value.error : undefined;
+    problems.push(error instanceof Error ? error.message : "Native startup failed.");
+  };
+  diagnostics.subscribe(observer);
+  const authenticate = async (url: string, password: string) => {
+    bootstrapPassword ??= password;
+    const health = await fetch(`${url}/health`, { signal: AbortSignal.timeout(3000) });
+    assert.equal(
+      ((await health.json()) as { phase: unknown }).phase,
+      "typescript-product-candidate",
+    );
+    const result = await fetch(`${url}/api/v1/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Origin: url },
+      body: JSON.stringify({ password: changedPassword ?? password }),
+      signal: AbortSignal.timeout(5000),
+    });
+    assert.equal(result.status, 200);
+    cookie = result.headers.get("set-cookie")?.split(";")[0];
+    assert.ok(cookie?.startsWith("openbot_session="));
+    base = url;
+    pollerObservations.push(await observeBundledPollers(runtimeRoot, join(dataRoot, "temporal.json"), startedAt));
+  };
+  const controller = new NativeServerController({
+    runtimeRoot,
+    dataRoot,
+    platform: process.platform,
+    // Synthetic fixture only. Real Desktop keeps its existing safeStorage callbacks.
+    encrypt: (value) => Buffer.from(value).toString("base64"),
+    decrypt: (value) => Buffer.from(value, "base64").toString(),
+    launchServer: async (env) => {
+      startedAt = Date.now();
+      const managed = await (testParentExit
+        ? launchThroughDisposableParent(runtimeRoot, desktopDist, env)
+        : launchDesktopProductServer(runtimeRoot, env));
+      productIds = managed.processIds;
+      assert.equal(productIds.length, 1);
+      return managed;
+    },
+    connect: authenticate,
+    authenticate,
+  });
+  try {
+    assert.equal((await controller.start()).status, "ready", problems.join("; "));
+    assert.ok(base && cookie);
+    const readSettings = async () => {
+      const response = await fetch(`${base}/api/v1/settings/transcription`, {
+        headers: { Cookie: cookie! },
+        signal: AbortSignal.timeout(8000),
+      });
+      assert.equal(response.status, 200);
+      return transcriptionSettingsSchema.parse(await response.json());
+    };
+    const firstSettings = await readSettings();
+    const firstPort = new URL(base).port;
+    const headers = { Cookie: cookie, Origin: base, "Content-Type": "application/json" };
+    const readPrimary = async () => {
+      const response = await fetch(`${base}/api/v1/workspace`, {
+        headers: { Cookie: cookie! },
+        signal: AbortSignal.timeout(8000),
+      });
+      assert.equal(response.status, 200);
+      const snapshot = workspaceSnapshotSchema.parse(await response.json());
+      return { primaryBotId: snapshot.primaryBotId, revision: snapshot.revision };
+    };
+    const botResponse = await fetch(`${base}/api/v1/bots`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ name: "Native primary fixture", role: "assistant" }),
+      signal: AbortSignal.timeout(8000),
+    });
+    assert.equal(botResponse.status, 201);
+    const smokeBot = ((await botResponse.json()) as { bot: { id: string } }).bot.id;
+    const primaryBefore = await readPrimary();
+    assert(primaryBefore.primaryBotId);
+    const primarySave = await fetch(`${base}/api/v1/workspace/primary-bot`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({ botId: null, expectedRevision: primaryBefore.revision }),
+      signal: AbortSignal.timeout(8000),
+    });
+    assert.equal(primarySave.status, 200);
+    const primarySaved = workspacePrimaryBotSchema.parse(await primarySave.json());
+    assert.deepEqual(primarySaved, { primaryBotId: null, revision: primaryBefore.revision + 1 });
+
+    const created = await fetch(`${base}/api/v1/channels`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ name: "Desktop synthetic", botIds: [] }),
+    });
+    assert.equal(created.status, 201);
+    const channelId = ((await created.json()) as { channel: { id: unknown } }).channel.id;
+    const identityRename = await fetch(`${base}/api/v1/channels/${channelId}`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ name: "TS identity restart fixture" }),
+      signal: AbortSignal.timeout(8000),
+    });
+    assert.equal(identityRename.status, 200);
+    await identityRename.arrayBuffer();
+    const readChannelGroup = async () => {
+      const values = [];
+      for (const path of [
+        "/api/v1/bots",
+        "/api/v1/channels",
+        `/api/v1/channels/${channelId}/messages`,
+        `/api/v1/channels/${channelId}/runs`,
+      ]) {
+        const response = await fetch(base + path, {
+          headers: { Cookie: cookie! },
+          signal: AbortSignal.timeout(8000),
+        });
+        assert.equal(response.status, 200);
+        values.push(await response.json());
+      }
+      return values;
+    };
+    const firstChannelReads = await readChannelGroup();
+    const readModels = async () => {
+      const response = await fetch(`${base}/api/v1/model-services`, {
+        headers: { Cookie: cookie! },
+        signal: AbortSignal.timeout(8000),
+      });
+      assert.equal(response.status, 200);
+      return modelServicesSnapshotSchema.parse(await response.json());
+    };
+    {
+      const response = await fetch(`${base}/api/v1/model-connections`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          presetId: "openai",
+          name: "Native encryption fixture",
+          baseUrl: "https://api.openai.com/v1",
+          apiKey: "Synthetic-native-offline-credential",
+        }),
+        signal: AbortSignal.timeout(8000),
+      });
+      assert.equal(response.status, 201);
+      modelConnectionResponseSchema.parse(await response.json());
+    }
+    const firstModels = await readModels();
+    const bootstrap = await readFile(join(dataRoot, "bootstrap.json"));
+    const key = await readFile(join(dataRoot, "model-connections.key"));
+    assert.equal(key.length, 32);
+    assert.equal((await lstat(join(dataRoot, "model-connections.key"))).mode & 0o077, 0);
+    const processId = Number(
+      (await readFile(join(dataRoot, "postgres/postmaster.pid"), "utf8")).split("\n")[0],
+    );
+    {
+      changedPassword = `Synthetic-native-${randomBytes(24).toString("hex")}`;
+      const changed = await fetch(`${base}/api/v1/auth/password`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ currentPassword: bootstrapPassword, newPassword: changedPassword }),
+        signal: AbortSignal.timeout(8000),
+      });
+      assert.equal(changed.status, 200);
+      assert.deepEqual(await changed.json(), { changed: true, reauthenticationRequired: true });
+      const expired = await fetch(`${base}/api/v1/auth/session`, { headers: { Cookie: cookie } });
+      assert.deepEqual(await expired.json(), { authenticated: false });
+    }
+    await controller.stop();
+    assert.equal(controller.getState().status, "idle");
+    await confirmProcessesStopped(productIds);
+    assert.throws(() => process.kill(processId, 0));
+    await assert.rejects(
+      fetch(`http://127.0.0.1:${firstPort}/health`, { signal: AbortSignal.timeout(1000) }),
+    );
+    testParentExit = true;
+    assert.equal((await controller.start()).status, "ready", problems.join("; "));
+    assert.deepEqual(await readFile(join(dataRoot, "bootstrap.json")), bootstrap);
+    assert.deepEqual(await readFile(join(dataRoot, "model-connections.key")), key);
+    const channels = await fetch(`${base}/api/v1/channels`, { headers: { Cookie: cookie } });
+    assert.ok(
+      ((await channels.json()) as { channels: { id: unknown }[] }).channels.some(
+        (value: { id: unknown }) => value.id === channelId,
+      ),
+    );
+    assert.deepEqual(await readSettings(), firstSettings);
+    assert.deepEqual(await readChannelGroup(), firstChannelReads);
+    assert.deepEqual(await readPrimary(), primarySaved);
+    assert.deepEqual(await readModels(), firstModels);
+    const nodes = await fetch(`${base}/api/v1/nodes`, { headers: { Cookie: cookie } });
+    assert.equal(nodes.status, 200);
+    assert.deepEqual(((await nodes.json()) as { nodes: unknown }).nodes, []);
+    const plugins = await fetch(`${base}/api/v1/plugins`, { headers: { Cookie: cookie } });
+    assert.equal(plugins.status, 200);
+    {
+      const target = { baseUrl: base!, origin: base!, cookie: cookie!, botId: smokeBot };
+      resourceChecks = (await runResourceContracts(target)).count;
+      portabilityChecks = (await runPortabilityContracts(target)).count;
+    }
+    const restartedPostgres = Number(
+      (await readFile(join(dataRoot, "postgres/postmaster.pid"), "utf8")).split("\n")[0],
+    );
+    await controller.stop();
+    assert.throws(() => process.kill(restartedPostgres, 0));
+    testParentExit = false;
+    {
+      // These are PIDs returned by this launch, never discovered from another profile.
+      for (const victim of [0]) {
+        assert.equal((await controller.start()).status, "ready", problems.join("; "));
+        process.kill(productIds[victim]!, "SIGKILL");
+        await confirmProcessesStopped(productIds);
+        assert.equal(controller.getState().status, "failed");
+        await controller.stop();
+        await assert.rejects(readFile(join(dataRoot, "postgres/postmaster.pid")), {
+          code: "ENOENT",
+        });
+      }
+    }
+    for (const name of ["browser.json", "command.json"]) {
+      // Malformed execution configuration must refuse an API-only fallback.
+      await writeFile(join(dataRoot, name), "{}", { mode: 0o600 });
+      assert.equal((await controller.start()).status, "failed");
+      await assert.rejects(readFile(join(dataRoot, "postgres/postmaster.pid")), { code: "ENOENT" });
+      await controller.stop();
+      await rm(join(dataRoot, name));
+    }
+    // A poisoned new artifact directory must fail before the API, then release PostgreSQL.
+    await rm(join(dataRoot, "objects/work-artifacts"), { recursive: true });
+    await symlink(root, join(dataRoot, "objects/work-artifacts"));
+    assert.equal((await controller.start()).status, "failed");
+    await assert.rejects(readFile(join(dataRoot, "postgres/postmaster.pid")), { code: "ENOENT" });
+    return {
+      pollerObservations,
+      parentEofStoppedActualApi: true,
+      parentEofStoppedOwnedProcessCount: 1,
+      directTsEntry: true,
+      transcriptionReadRestartVerified: true,
+      primaryBotWriteRestartVerified: true,
+      channelReadRestartVerified: true,
+      nativeEngine: "Temporal1.32.0/SQLite/mTLS",
+      modelConnectionRestartVerified: true,
+      modelNetworkCalls: 0,
+      p3NativeResourceChecks: resourceChecks,
+      p3NativePortabilityChecks: portabilityChecks,
+      productIdentityRestartVerified: true,
+      passwordRotationRestartVerified: true,
+      restartLoginUsedChangedPassword: true,
+      serverExitStoppedPostgres: true,
+      unsafeDirectoryRefusedAndPostgresStopped: true,
+      invalidExecutionConfigurationRefusedAndPostgresStopped: true,
+      serverProductHealth: true,
+      ownerLogin: true,
+      postgresInitialized: true,
+      restartPreservedData: true,
+      serverAndPostgresStopped: true,
+      syntheticOnly: true,
+      nativeKeychainVerified: false,
+    };
+  } finally {
+    await controller.stop();
+    diagnostics.unsubscribe(observer);
+    await rm(root, { recursive: true, force: true });
+  }
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  if (process.argv.length !== 3 || !process.argv[2])
+    throw new Error("Usage: smoke-product <candidate-native-runtime>");
+  const runtime = resolve(process.argv[2]);
+  const selected = await lstat(join(runtime, "ts-control.json"))
+    .then(() => true)
+    .catch((error: NodeJS.ErrnoException) => {
+      if (error.code === "ENOENT") return false;
+      throw error;
+    });
+  if (!selected || !(await runNativeWorkFixture("smoke", runtime)))
+    console.log(JSON.stringify(await smokeProduct(runtime)));
+}

@@ -1,13 +1,14 @@
-/** The production P4 entry with only model HTTP replaced; Node and Chromium stay real. */
+/** Production TS entry with synthetic model HTTP and controlled actual SDK Worker restart. */
 import assert from "node:assert/strict";
 import { readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Worker } from "@temporalio/worker";
 import proto from "@temporalio/proto";
-import { entryOptions } from "../../apps/server-ts/src/config.js";
-import { runEntry } from "../../apps/server-ts/src/lifetime.js";
-import type { ModelTransport } from "../../apps/server-ts/src/model-network.js";
+import { fileRestartControl, restartableBrowserWorker } from "./browser-worker-restart.ts";
+import { entryOptions } from "../../apps/server/dist/config.js";
+import { runEntry } from "../../apps/server/dist/lifetime.js";
+import type { ModelTransport } from "../../apps/server/dist/model-network.js";
 
 if (process.argv[2] === "--replay") {
   assert.equal(process.argv.length, 4);
@@ -25,7 +26,21 @@ if (process.argv[2] === "--replay") {
   assert.ok(process.env.OPENBOT_BROWSER_PROBE_CONFIG);
   const config = JSON.parse(await readFile(process.env.OPENBOT_BROWSER_PROBE_CONFIG, "utf8"));
   const directory = dirname(config.directory);
-  const counts: Record<string, number> = {};
+  const stats = join(config.directory, "provider-counts.json");
+  let counts: Record<string, number>;
+  try {
+    counts = JSON.parse(await readFile(stats, "utf8"));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    counts = {};
+  }
+  const createWorker = Worker.create.bind(Worker);
+  Worker.create = async (settings) =>
+    restartableBrowserWorker(
+      await createWorker(settings),
+      () => createWorker(settings),
+      fileRestartControl(config.directory),
+    );
   const text = "浏览器任务 你好 🌏";
   const summary = `The page displayed Saved: ${text}. The observed page result and report are attached.`;
   const report = `# Browser page result\n\nThe observed page displayed **Saved: ${text}**.\n`;
@@ -132,17 +147,10 @@ if (process.argv[2] === "--replay") {
   };
   const options = entryOptions({
     ...process.env,
-    OPENBOT_TS_PRODUCT_GROUP: "p3",
-    OPENBOT_TS_WORK_GROUP: "p4",
-    OPENBOT_TS_AUTH_GROUP: "owner",
-    OPENBOT_TS_CHANNEL_READ_GROUP: "channels",
-    OPENBOT_TS_READ_GROUP: "transcription",
-    OPENBOT_TS_WRITE_GROUP: "primary-bot",
     OPENBOT_TS_DATABASE_URL: process.env.OPENBOT_CONTROL_DATABASE_URL,
     OPENBOT_TS_OWNER_PASSWORD: process.env.OPENBOT_CONTROL_OWNER_PASSWORD,
     OPENBOT_TS_PORT: process.env.OPENBOT_CONTROL_PORT,
     OPENBOT_TS_PUBLIC_ORIGIN: `http://127.0.0.1:${process.env.OPENBOT_CONTROL_PORT}`,
-    OPENBOT_TS_PYTHON_ORIGIN: "http://127.0.0.1:1",
     OPENBOT_TS_OBJECT_ROOT: process.env.OPENBOT_CONTROL_OBJECT_ROOT,
     OPENBOT_TS_ARTIFACT_ROOT: process.env.OPENBOT_CONTROL_ARTIFACT_ROOT,
     OPENBOT_TS_MODEL_CONNECTION_KEY_PATH: join(directory, "model.key"),

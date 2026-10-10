@@ -312,8 +312,8 @@ export async function runEmployeeContracts(input: ContractTarget, scenario: Empl
         method: "POST",
         body: { ...memoryInput, content: "x".repeat(32769) },
       });
-      // The retained store maps a Unicode encoding failure to storage-unavailable, not validation.
-      await error(`${base}/memories`, 503, {
+      // Reject malformed Unicode before storage, without changing the Employee.
+      await error(`${base}/memories`, 422, {
         method: "POST",
         body: { ...memoryInput, content: "\ud800" },
       });

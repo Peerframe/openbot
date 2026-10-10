@@ -25,7 +25,7 @@ import {
 import {
   launchThroughDisposableParent,
   loadDesktopModules,
-} from "../../../apps/desktop/scripts/python-product-probe.ts";
+} from "../../../apps/desktop/scripts/product-probe.ts";
 
 export async function smokePackagedTemporal({
   runtimeRoot,
@@ -33,9 +33,9 @@ export async function smokePackagedTemporal({
   temporalConfigPath,
 }: ProbePaths) {
   const privateConfig = await isolatedConfiguration(temporalConfigPath);
-  const { NativeServerController, launchPythonProductServer } =
+  const { NativeServerController, launchDesktopProductServer } =
     await loadDesktopModules(desktopDist);
-  const root = await realpath(await mkdtemp(join(tmpdir(), "openbot-python-temporal-smoke-")));
+  const root = await realpath(await mkdtemp(join(tmpdir(), "openbot-ts-temporal-smoke-")));
   const dataRoot = join(root, "local-server");
   let cookie: string | undefined;
   let base: string | undefined;
@@ -57,7 +57,7 @@ export async function smokePackagedTemporal({
       redirect: "error",
     });
     assert.equal(health.status, 200);
-    assert.equal(((await health.json()) as { phase: unknown }).phase, "python-product-candidate");
+    assert.equal(((await health.json()) as { phase: unknown }).phase, "typescript-product-candidate");
     const result = await fetch(`${url}/api/v1/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Origin: url },
@@ -85,7 +85,7 @@ export async function smokePackagedTemporal({
       delete env.OPENBOT_PLUGIN_LOCAL_ENDPOINTS;
       return testParentExit
         ? launchThroughDisposableParent(runtimeRoot, desktopDist, env)
-        : launchPythonProductServer(runtimeRoot, env);
+        : launchDesktopProductServer(runtimeRoot, env);
     },
     connect: authenticate,
     authenticate,
@@ -104,7 +104,7 @@ export async function smokePackagedTemporal({
       redirect: "error",
     });
     assert.equal(health.status, 200);
-    assert.equal(((await health.json()) as { phase: unknown }).phase, "python-product-candidate");
+    assert.equal(((await health.json()) as { phase: unknown }).phase, "typescript-product-candidate");
   };
   const stopped = async (pid: number, port: string) => {
     await controller.stop();
@@ -135,7 +135,7 @@ export async function smokePackagedTemporal({
     const created = await fetch(`${base}/api/v1/channels`, {
       method: "POST",
       headers,
-      body: JSON.stringify({ name: "Python Desktop synthetic", botIds: [] }),
+      body: JSON.stringify({ name: "TS Desktop synthetic", botIds: [] }),
     });
     assert.equal(created.status, 201);
     const channelId = ((await created.json()) as { channel: { id: unknown } }).channel.id;
@@ -172,7 +172,7 @@ export async function smokePackagedTemporal({
     for (const name of ["browser.json", "command.json"]) {
       stage = `invalid-${name.replace(".json", "")}-configuration`;
       const logins = ownerLogins;
-      // The engine configuration remains valid; the actual Python installation parser refuses {}.
+      // The engine configuration remains valid; the actual TS installation parser refuses {}.
       await writeFile(join(dataRoot, name), "{}", { mode: 0o600 });
       assert.equal((await controller.start()).status, "failed");
       assert.equal(ownerLogins, logins);
@@ -181,7 +181,7 @@ export async function smokePackagedTemporal({
       await rm(join(dataRoot, name));
     }
     stage = "invalid-private-config";
-    // This passes the Node ownership/size preflight, then fails Python's real config schema.
+    // This passes the Node ownership/size preflight, then fails the real TS config schema.
     await writeFile(join(dataRoot, "temporal.json"), '{"invalid_probe_configuration":true}', {
       mode: 0o600,
     });
@@ -215,7 +215,7 @@ export async function smokePackagedTemporal({
       workflowReplayVerified: false,
       parentEofStoppedActualApi: true,
       unsafeDirectoryRefusedAndPostgresStopped: true,
-      pythonProductHealth: true,
+      tsProductHealth: true,
       ownerLogin: true,
       postgresInitialized: true,
       restartPreservedData: true,

@@ -15,17 +15,17 @@ From a checkout prepared according to [CONTRIBUTING](../../CONTRIBUTING.md):
 
 ```sh
 npm run contracts:test
-npm run contracts:http:python
-npm run contracts:http:python -- --inventory
-npm run contracts:http:python -- --suite control
-npm run contracts:http:python -- --suite publisher
-npm run contracts:http:python -- --suite models
+npm run contracts:http:ts
+npm run contracts:http:ts -- --inventory
+npm run contracts:http:ts -- --suite control
+npm run contracts:http:ts -- --suite publisher
+npm run contracts:http:ts -- --suite models
 npm run contracts:http:ts
 npm run contracts:http:ts -- --suite publisher
 npm run contracts:http:ts -- --suite models
 ```
 
-The first command runs Python input/DTO serialization parity and Web consumption plus target-input
+The first command runs frozen legacy input/DTO serialization parity and Web consumption plus target-input
 tests. The second reuses the owned Docker fixture, migrates empty PostgreSQL, starts real
 `serve.py` in product mode, logs in, creates a synthetic Bot, then invokes the private-fixture CLI
 with all eleven black-box suites. They create identities, messages and Tasks, check CAS/pagination,
@@ -46,7 +46,7 @@ endpoint allowlist; it changes declarations and content only through a bounded p
 No tool is executed and no controller credential is sent to the product.
 These published records stand in for Worker publication; HTTP transactions are real,
 but Worker/Temporal execution is not exercised. All owned resources
-are removed on success/failure. Docker and the locked Worker Python environment are required.
+are removed on success/failure. Docker and the locked Node/npm dependencies are required.
 The inventory option records default product HTTP registrations in the existing migration research.
 It also records reviewed Web/Desktop/Node/native Host consumer files with their source digests and
 the actual registrar/composition boundaries. Source inventory does not establish consumer execution.
@@ -69,7 +69,7 @@ an idle target without an execution worker. Keep the private fixture outside the
 The same runner can be imported as `runWorkContracts`; every call requires an explicit target.
 An optional `work` object adds `{ taskId, intentDigest, actions: { approve, reject, expired, stale, unknown } }`:
 IDs are canonical UUIDs and the digest is64 lowercase hex characters. The owned all/work driver
-supplies the [SQL publication recipe](../../scripts/test-contracts-python.ts). `runWorkContracts(target, work)`
+supplies the [SQL publication recipe](../../scripts/server-contract-fixture.ts). `runWorkContracts(target, work)`
 checks successful approval/rejection, concurrent idempotent decision/event publication, expiry/generation/
 digest refusal, one pending reconciliation command, replay/CAS conflicts and lookup after cancellation.
 Requests cannot resolve unknown facts, spend tokens or admit execution. The private all fixture requires
@@ -86,7 +86,7 @@ responses remain4MiB. Review headers are bounded and cannot contain CR/LF; abort
 
 For `--suite lifecycle`, add a `lifecycle` object with `channelId`, `unreadMessageId` and
 `approvals: { approve, reject, expired }`, all canonical UUIDs. Prepare the same synthetic publication
-states and bounded audit event as the [owned fixture seeding](../../scripts/test-contracts-python.ts):
+states and bounded audit event as the [owned fixture seeding](../../scripts/server-contract-fixture.ts):
 one unread Bot message, two live and one expired pending legacy approvals on waiting Runs with an
 offline synthetic Node, and a `SETTINGS_PRIMARY_BOT_UPDATED` event with nullable previous ID,
 160-emoji `fileName`, 120-emoji `name` and a private sentinel. These fixtures are test inputs, never
@@ -96,7 +96,7 @@ Bot when deleting its selected identity; use a fresh disposable target.
 
 For `--suite employee`, add an `employee` object with canonical UUID `botId`, `sourceRunId`,
 `sourceTaskId`, `sourceWorkRunId` and `proposals: { accept, reject, native, incomplete }`.
-Use the [owned seeding recipe](../../scripts/test-contracts-python.ts): a separate `none` Bot with
+Use the [owned seeding recipe](../../scripts/server-contract-fixture.ts): a separate `none` Bot with
 two completed legacy Run proposals, one completed native Task/Run with completion digest and one
 incomplete native source. `runEmployeeContracts(target, employee)` covers Owner profile/memory,
 candidate skills, digest-bound review and both proposal provenance forms. Candidate learning remains
@@ -116,7 +116,7 @@ Use an idle disposable target; throttling and revocation leave deliberate state 
 `--suite artifacts` requires `artifacts: { valid, integrity, refusedKey, oversized, symlink? }`.
 The two `valid` records have UUID `id`, UTF-8 `name`, `mediaType` (`image/png` or `text/markdown`) and
 bounded `base64` bytes. Other fields identify published negative records; use the
-[owned seeding recipe](../../scripts/test-contracts-python.ts). `runArtifactContracts(target, artifacts)`
+[owned seeding recipe](../../scripts/server-contract-fixture.ts). `runArtifactContracts(target, artifacts)`
 checks exact bytes, response headers, integrity, key bounds, oversized files and optional symlink refusal.
 For native Work downloads, add `native: { taskId, valid, integrity, sizeMismatch, missing, oversized, symlink? }`
 inside `artifacts`. `taskId` binds the seeded completed Work source. Native valid records retain the same
@@ -129,7 +129,7 @@ suites with17 artifact checks. Whole-root storage measurement correctly refuses 
 ordering preserves its independent successful-storage gate. These are publication fixtures, not Worker-produced files.
 
 `--suite plugins` requires `plugins: { endpoint, token, controllerToken }`. The endpoint must be
-an exact `http://127.0.0.1:PORT/mcp` URL of the [owned MCP fixture](../../apps/server-python/scripts/contract-plugin-fixture.py);
+an exact `http://127.0.0.1:PORT/mcp` URL of the [owned MCP fixture](../../scripts/contract-plugin-fixture.ts);
 the two distinct credentials are64-character lowercase hex. The product must explicitly allow this
 one local endpoint. `runPluginContracts(target, plugins)` tests actual discovery, reviewed digest,
 disabled-by-default installation, revision/concurrent CAS, declaration/grant/membership guards,
@@ -140,7 +140,7 @@ qualified for authentication, malformed input and unknown-call refusal only. Suc
 decisions and native durable tool approval/execution remain separate acceptance items.
 
 `--suite browser` requires `browser: { frameBase64 }`, the bounded authored1-pixel PNG from the
-[owned fixture](../../scripts/test-contracts-python.ts). `runBrowserContracts(target, browser)` creates
+[owned fixture](../../scripts/server-contract-fixture.ts). `runBrowserContracts(target, browser)` creates
 and disposes its own Docker-profile Bot, enrolls an authenticated synthetic Node and returns authored
 frames over the real socket. It checks Owner/Origin/body admission, original identity binding, the
 default-off control gate, PNG byte validation, maintenance, view close/disconnect and refusal to rebind
@@ -172,7 +172,7 @@ private keys, passphrases or keyring paths. The unsigned suite's missing-trust r
 
 `--suite models` or `runModelContracts(target)` uses only the basic private fixture and requires a
 separately composed synthetic provider transport. The owned driver starts
-[`contract-model-fixture.py`](../../apps/server-python/scripts/contract-model-fixture.py), which injects
+[`ts-model-fixture.ts`](../../scripts/ts-model-fixture.ts), which injects
 the existing trusted constructor factory into real `serve.py`; no production setting/header/route
 selects this behavior. Owner HTTP, encrypted connection persistence, SDK serialization and current
 revision checks remain real. OpenAI Chat and Anthropic discovery/probe success, filtering/deduplication/

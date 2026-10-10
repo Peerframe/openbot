@@ -1,83 +1,74 @@
-# Python product deployment
+# TS product deployment
 
-The default container packages the real Python product API, built Web, retained PostgreSQL
-migrator and document parsers. It does not use the retiring TypeScript business Server or test oracle.
-The legacy TypeScript business Server has been retired. Use a new Compose project; existing legacy volumes are preserved and are not converted automatically.
+The default image contains the single `apps/server` control plane, built Web, canonical SQL
+migrations and retained document/OCR libraries. Node 24.21.0 is the sole product process.
+The explicit mTLS Temporal service, private storage and HTTPS configuration are required before
+the API starts. PostgreSQL and Temporal remain separate services.
 
-**The actual Linux arm64 image and disposable-container qualification passed on 2026-09-25.**
-Real Owner HTTP, built Web, all 43 canonical migrations, DOCX/PDF extraction, blank OCR
-initialization, original attachment/key/schema persistence and SIGTERM stop/restart passed.
-Four invalid-startup cases failed before schema creation; all owned resources were removed.
-The [bounded result and source hashes](PRODUCT_CONTAINER_RESULT.json) identify the exact image.
-The local result is a Docker VM run. Subsequent native Linux amd64/arm64 CI also passed on
-commit817d46c; [job-level evidence](../../docs/research/python-product-container.md#hosted-native-matrix-result)
-is distinct from the overall PR, which still has other failed checks. Configured Temporal and
-deployment remain separate gates.
-
-The identity-lifecycle increment (migration 0045) advances the build and smoke pin to46 migrations.
-The historical43-entry image evidence above is retained; new native CI must qualify the updated image.
-
-`serve.py` accepts only `OPENBOT_CONTROL_HOST=127.0.0.1` or `0.0.0.0`, with127.0.0.1 as the
-unchanged default. An invalid value fails before database, key or model initialization. This
-explicit image selects0.0.0.0; neither origins, cookies nor proxy trust changes automatically.
-
-To reproduce from the repository root:
+From a fresh checkout, build the shared packages and run the disposable qualification:
 
 ```sh
-docker build -f deploy/server/Dockerfile --target runtime-product -t openbot-python-product:candidate .
-python3 deploy/server/smoke-product.py --image openbot-python-product:candidate
+npm ci
+npm exec -- turbo run build --filter=@openbot/server
+docker build -f deploy/server/Dockerfile --target runtime-product -t openbot-server:candidate .
+node deploy/server/smoke-product.ts openbot-server:candidate
 ```
 
-The smoke creates only random-name disposable PostgreSQL/API containers, an internal network and
-one owned state volume, then removes those exact resources. No existing database, Docker socket
-mount, SSH, paid provider, Temporal engine or user data is selected. It checks real Owner HTTP,
-real built Web, all46 canonical migrations, Office/PDF extraction and blank-image offline OCR
-initialization, original attachment/key/schema persistence and SIGTERM stop/restart. Blank OCR
-checks engine/language loading, not recognition quality. The Uvicorn0.53.0 implementation restores
-and re-raises SIGTERM after shutdown, so the smoke accepts exit0 or143, never forced-kill137.
-Missing password, invalid origin/Temporal path and hidden Python dependencies must fail before
-creating the migration schema. The recorded run used this script against the actual image.
+The smoke owns random-name PostgreSQL/API containers, a PostgreSQL-backed mTLS Temporal fixture,
+private TLS configuration and state volumes. It checks real HTTPS Owner login, built Web, all58
+canonical migrations, one Node PID1, UID1000, read-only rootfs, dropped capabilities, session/channel
+restart, original document bytes and the private model-key hash. Actual DOCX/PDF extraction and
+blank-image OCR use the packaged parser and offline language data. Blank OCR proves initialization,
+not recognition quality. Synthetic data and generated passwords stay within these disposable
+resources; cleanup verifies ownership before deletion. Model calls are refused.
 
-For an explicitly selected deployment candidate, use a new Compose project and new named volumes;
-this is not an in-place old-volume upgrade instruction. Supply `OPENBOT_POSTGRES_PASSWORD` and
-`OPENBOT_OWNER_PASSWORD` through your trusted runtime environment, never Docker build arguments:
+For an operator-reviewed deployment, select a new Compose project and retain paired database,
+state/key and Temporal backups. Supply `OPENBOT_POSTGRES_PASSWORD`, `OPENBOT_OWNER_PASSWORD`,
+`OPENBOT_TS_PUBLIC_ORIGIN` (an exact HTTPS origin) and `OPENBOT_PRODUCT_CONFIG_DIRECTORY` through
+the trusted runtime environment. The configuration directory contains `server.pem`, `server.key`,
+`server-ca.pem` and `temporal.json` plus the TLS files it references. Its private files must be owned
+by UID1000 with mode0600. Use container paths in `temporal.json`, for example:
+
+```json
+{
+  "temporal_address": "temporal.internal:7233",
+  "namespace": "openbot",
+  "queue": "installation-queue",
+  "tls": {
+    "ca": "/run/openbot/temporal-ca.pem",
+    "certificate": "/run/openbot/temporal-client.pem",
+    "key": "/run/openbot/temporal-client.key",
+    "server_name": "temporal.internal"
+  }
+}
+```
+
+The Server derives its versioned TS queue from this installation queue and verifies the previous
+SQL/Temporal execution history is drained before admission. It preserves SQL history and refuses
+incomplete or unsafe configuration. Configure optional browser/command authority separately.
 
 ```sh
-docker compose -p openbot-python-product-candidate -f deploy/server/compose.yaml build
-docker compose -p openbot-python-product-candidate -f deploy/server/compose.yaml up -d
+docker compose -p openbot-product-candidate -f deploy/server/compose.yaml build
+docker compose -p openbot-product-candidate -f deploy/server/compose.yaml up -d
 ```
 
-Compose publishes only127.0.0.1:3001; PostgreSQL is not published. Defaults allow exactly the two
-localhost Web origins and loopback cookies. Explicitly configure secure cookies/origins for a
-separately reviewed HTTPS deployment; selecting a container listen address does not change those
-policies or add proxy trust. Server runs as UID/GID1000 with read-only rootfs, a128MiB private noexec
-tmpfs and `/var/lib/openbot` persistent state. Keep database and state/keys paired in backups.
+Compose publishes only127.0.0.1:3001 and keeps PostgreSQL private. The HTTPS certificate must match
+the public origin. Host and Origin validation remain exact; cookies use Secure/HttpOnly/SameSite
+and the `__Host-` name. The runtime uses UID/GID1000, a read-only rootfs and a128MiB private tmpfs.
+The final dependency tree is projected from the reviewed npm lock. Web/compiler inputs remain in
+the build stage; the runtime keeps the required Node, PostgreSQL and third-party notices.
 
-Without `OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH`, this is API-only. To opt in, supply an existing
-mTLS Temporal service and mount its explicit configuration/certificate/key files read-only via a
-separately chosen Compose override. Config and private key must be owned by UID1000 and0600;
-all referenced paths are container paths. Set that single explicit variable on the Server service.
-The retained ProductWorkService reads/validates them and starts its existing Worker. There is no
-embedded engine, plaintext fallback or automatic command/browser capability. Other trusted
-optional Control settings remain explicit runtime composition; no credentials are baked in.
-
-Python uses the58 external runtime pins in `requirements-product.lock` plus the locally built
-harness wheel; pytest and other Worker development helpers are excluded. Node uses43 locked
-parser/DB entries before platform filtering. Node24.21.0 and Python3.12.13 use existing exact official Bookworm image digests;
-build-only Web/TypeScript dependencies never enter the final image. Package notices, Node license,
-Python/component notices and THIRD_PARTY_NOTICES remain included. Build uses wheels only and
-fails when a pinned architecture lacks one. Local Linux arm64 and native Linux amd64/arm64 CI image smoke passed at their recorded commits.
-
-Local focused checks (no Docker or provider):
+Focused checks:
 
 ```sh
 node --test deploy/server/product-container.test.ts
-PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=apps/server-python/src:packages/harness/src apps/server-python/.worker-venv/bin/python -m pytest -p no:cacheprovider -q deploy/server/test_product_container.py apps/server-python/tests/test_entry.py
+npm exec -- vitest run --config scripts/vitest.integration.config.ts scripts/product-entry.integration.test.ts
 ```
 
-See [research and exact boundary](../../docs/research/python-product-container.md).
-
-The Desktop C7 candidate follows C2 and C4 with migration `0048_owner_preferences`
-(49 total). Build and smoke require the complete lineage. Historical image evidence above keeps
-its original scope; native container/migration qualification must run against this PR head.
-Preserve all already-applied SQL history.
+The first validates the lock projection, source closure, Docker/Compose configuration and migration
+pin. The second checks real configuration parsing with synthetic database/Server adapters: invalid
+inputs, storage refusal, canonical migration order, failed migration and undrained history. The
+container smoke above is the actual process/HTTP/parser qualification. CI retains Linux amd64 and
+arm64 jobs. Historical [Python image evidence](PRODUCT_CONTAINER_RESULT.json) and its
+[research record](../../docs/research/python-product-container.md) identify their original artifacts;
+current CI receipts identify the TS image under review.
