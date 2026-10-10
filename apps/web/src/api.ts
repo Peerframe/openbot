@@ -55,7 +55,6 @@ import {
   type ApprovalSettings,
   type ApprovalSettingsInput,
   approvalSettingsSchema,
-  type UpdateBotAppearanceInput,
   type BotAppearanceResult,
   type BrowserMaintenanceResult,
   browserMaintenanceResultSchema,
@@ -71,8 +70,9 @@ import {
   type TranscriptionSettingsInput,
   transcriptionSettingsInputSchema,
   transcriptionSettingsSchema,
-  workspacePrimaryBotSchema,
+  type UpdateBotAppearanceInput,
   workspacePrimaryBotInputSchema,
+  workspacePrimaryBotSchema,
 } from "@openbot/protocol";
 import { openEventStream, type RealtimeConnectionState } from "./event-stream";
 

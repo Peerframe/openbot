@@ -1,6 +1,6 @@
 import type {
-  PluginContentScope,
   PluginContentResultHttp,
+  PluginContentScope,
   PluginSnapshotHttp as PluginSnapshot,
 } from "@openbot/protocol";
 import { ApiError } from "./api";
@@ -14,8 +14,8 @@ export type {
   PluginPromptHttp as PluginPrompt,
   PluginResourceHttp as PluginResource,
   PluginSnapshotHttp as PluginSnapshot,
-  PluginToolHttp as PluginTool,
   PluginToolGrant as PluginGrant,
+  PluginToolHttp as PluginTool,
 } from "@openbot/protocol";
 
 // Preserve the Web's optional result projection while sourcing both payloads from strict HTTP DTOs.

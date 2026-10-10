@@ -5,7 +5,7 @@ import type {
   EmployeeImportPreview,
 } from "@openbot/domain";
 import { useEffect, useRef, useState } from "react";
-import { activateEmployeeImport, type ApiError, previewEmployeeImport } from "../api";
+import { type ApiError, activateEmployeeImport, previewEmployeeImport } from "../api";
 import { Dialog } from "./Dialog";
 import { DialogCheck } from "./ExportEmployeeDialog";
 import { PortableProfileSummaryCard, PortableSkillList } from "./PortableEmployeeReview";
