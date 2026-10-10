@@ -311,6 +311,8 @@ export async function withPlugin<T>(
     signal.removeEventListener("abort", abort);
     try {
       await client.close();
+    } catch {
+      // Cleanup cannot replace an observed result or the operation's original failure.
     } finally {
       await transport.finish();
     }
