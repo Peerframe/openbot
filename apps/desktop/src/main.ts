@@ -618,7 +618,7 @@ async function startDesktop(): Promise<void> {
         throw new Error("Operating-system secret storage is unavailable.");
       return (await safeStorage.decryptStringAsync(Buffer.from(value, "base64"))).result;
     },
-    launchServer: (env) => launchDesktopProductServer(nativeRuntimeRoot, env),
+    launchServer: (env, startup) => launchDesktopProductServer(nativeRuntimeRoot, env, startup),
     authenticate: authenticateLocalServer,
     connect: async (serverUrl, ownerPassword) => {
       const connected = await connectionController.configure(serverUrl);

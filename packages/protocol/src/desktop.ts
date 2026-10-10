@@ -205,6 +205,12 @@ export type NativeServerState =
       mode?: "initialize" | "resume";
       step: "checking" | "credentials" | "database" | "server" | "connecting";
     }>
+  | Readonly<{
+      status: "waiting";
+      mode: "initialize" | "resume";
+      reason: "docker_unavailable" | "temporal_unavailable";
+      localDocker: boolean;
+    }>
   | Readonly<{ status: "ready"; serverUrl: string }>
   | Readonly<{
       status: "failed";

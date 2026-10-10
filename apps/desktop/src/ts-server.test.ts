@@ -6,7 +6,12 @@ import { dirname, join } from "node:path";
 import { PassThrough } from "node:stream";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ spawn: vi.fn(), prepare: vi.fn(), preflight: vi.fn(), configuration: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  spawn: vi.fn(),
+  prepare: vi.fn(),
+  preflight: vi.fn(),
+  configuration: vi.fn(),
+}));
 vi.mock("node:child_process", async (original) => ({
   ...(await original<typeof import("node:child_process")>()),
   spawn: mocks.spawn,
@@ -18,6 +23,7 @@ vi.mock("./server-bootstrap.js", async (original) => ({
   productConfigurationEnvironment: mocks.configuration,
 }));
 
+import { TemporalUnavailableError } from "./server-bootstrap.js";
 import { TS_CANDIDATE } from "./ts-product-manifest.js";
 import {
   launchDesktopProductServer,
@@ -214,7 +220,9 @@ it("runs migration before the sole Server with an explicit environment and stops
   const f = await fixture();
   const managed = await launchDesktopProductServer(f.root, f.env);
   expect(mocks.preflight).toHaveBeenCalledOnce();
-  expect(mocks.preflight.mock.invocationCallOrder[0]).toBeLessThan(mocks.spawn.mock.invocationCallOrder[0]!);
+  expect(mocks.preflight.mock.invocationCallOrder[0]).toBeLessThan(
+    mocks.spawn.mock.invocationCallOrder[0]!,
+  );
   const [executable, args, options] = mocks.spawn.mock.calls[0]!;
   expect(executable).toBe(join(f.root, "node/bin/node"));
   expect(args).toEqual([join(f.root, "apps/server/dist/desktop-entry.js")]);
@@ -228,10 +236,7 @@ it("runs migration before the sole Server with an explicit environment and stops
     OPENBOT_TS_ARTIFACT_ROOT: join(f.root, "objects/work-artifacts"),
     OPENBOT_TS_PLUGIN_STORE_PATH: join(f.root, "objects/plugins/state.json"),
     OPENBOT_TS_PLUGIN_LOCAL_ENDPOINTS: "[]",
-    OPENBOT_TS_PARSER_WORKER_PATH: join(
-      f.root,
-      "apps/server/dist/parser-worker.js",
-    ),
+    OPENBOT_TS_PARSER_WORKER_PATH: join(f.root, "apps/server/dist/parser-worker.js"),
     OPENBOT_TS_NODE_MODULE_ROOT: join(f.root, "node_modules"),
     OPENBOT_TS_MODEL_CONNECTION_KEY_PATH: join(f.root, "model-connections.key"),
     OPENBOT_TS_OWNER_PASSWORD: f.env.OPENBOT_OWNER_PASSWORD,
@@ -302,4 +307,25 @@ it("never starts the Server after a migration preflight failure", async () => {
   mocks.preflight.mockRejectedValue(new Error("migration refused"));
   await expect(launchTsProductServer(f.root, f.env)).rejects.toThrow("migration refused");
   expect(mocks.spawn).not.toHaveBeenCalled();
+});
+
+it("retains a Temporal outage from preflight without starting the Server", async () => {
+  const f = await fixture();
+  mocks.preflight.mockRejectedValue(new TemporalUnavailableError());
+  await expect(launchTsProductServer(f.root, f.env)).rejects.toBeInstanceOf(
+    TemporalUnavailableError,
+  );
+  expect(mocks.spawn).not.toHaveBeenCalled();
+});
+it("recognizes only the fixed Server exit code after its connection fails", async () => {
+  const f = await fixture();
+  vi.mocked(fetch).mockImplementation(async () => {
+    f.child.emit("close", 75);
+    throw new Error("not listening");
+  });
+  await expect(launchTsProductServer(f.root, f.env)).rejects.toBeInstanceOf(
+    TemporalUnavailableError,
+  );
+  expect(mocks.spawn).toHaveBeenCalledOnce();
+  expect(f.child.kill).not.toHaveBeenCalled();
 });
