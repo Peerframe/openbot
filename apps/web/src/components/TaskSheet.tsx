@@ -1,3 +1,5 @@
+// 任务详情 sheet (TaskInspector artboard): a task's status, computer frame, 分工, steps, outputs and
+// model use, opened from a task card.
 import type { Artifact, Bot, ExecutionNode, Run, RunFrame, RunProgress } from "@openbot/domain";
 import { useEffect, useRef, useState } from "react";
 import { runStatusLabel, runStatusSummary, runTitle } from "../run-state";

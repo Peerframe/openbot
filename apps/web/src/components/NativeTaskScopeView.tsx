@@ -1,3 +1,4 @@
+// Read-only 已提交的任务范围 for a submitted 工作任务, read back from the Server.
 import { useEffect, useState } from "react";
 import { getNativeTaskScope, type NativeTaskScope } from "../native-task-api";
 

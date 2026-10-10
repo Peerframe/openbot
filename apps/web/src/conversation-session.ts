@@ -1,3 +1,5 @@
+// In-memory per-channel cache for the workspace session: drafts, loaded message pages, scroll
+// position and older-page cursors. Holds no authority and writes nothing to disk.
 import type { CreateMessageInput, Message, Run, SubmitTaskResult } from "@openbot/domain";
 import { type ComposerAttachment, type ComposerSkill, composeTaskText } from "./composer-context";
 import { selectedRecipientIds } from "./recipient-utils";

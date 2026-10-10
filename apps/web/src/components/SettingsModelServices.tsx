@@ -1,3 +1,4 @@
+// Settings → 模型服务: connected model services with enable switches, then the provider catalogue.
 import type { ModelConnection } from "@openbot/domain";
 import { useEffect, useState } from "react";
 import { ApiError, getWorkspace, updateModelConnection } from "../api";

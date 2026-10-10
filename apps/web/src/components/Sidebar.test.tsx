@@ -345,3 +345,46 @@ it("leads with the crowned 主 Bot and offers 设为主 Bot to the others", asyn
     await view.unmount();
   }
 });
+
+it("nudges an upgraded workspace without a 主 Bot until one is chosen or the hint is dismissed", async () => {
+  window.localStorage.removeItem("openbot.sidebar.primaryHintDismissed");
+  const props = {
+    bots,
+    channels,
+    runs: [],
+    ownerName: "Owner",
+    onSelectChannel: vi.fn(),
+    onSelectBot: vi.fn(),
+    onCreateBot: vi.fn(),
+    onCreateChannel: vi.fn(),
+    onSetPrimaryBot: vi.fn(async () => undefined),
+  };
+  const hint = (root: HTMLElement) => root.querySelector(".sb-primary-hint");
+  const none = await renderComponent(<Sidebar {...props} primaryBotId={null} />);
+  try {
+    expect(hint(none.container)?.textContent).toContain("选一个主 Bot");
+    await interact(() =>
+      none.container.querySelector<HTMLButtonElement>('[aria-label="不再提示"]')?.click(),
+    );
+    expect(hint(none.container)).toBeNull();
+  } finally {
+    await none.unmount();
+  }
+  // Dismissal is remembered on this device.
+  const again = await renderComponent(<Sidebar {...props} primaryBotId={null} />);
+  try {
+    expect(hint(again.container)).toBeNull();
+  } finally {
+    await again.unmount();
+  }
+  window.localStorage.removeItem("openbot.sidebar.primaryHintDismissed");
+  // A chosen 主 Bot, an older Server (undefined) or no Bots never show the hint.
+  for (const extra of [{ primaryBotId: "reviewer" }, { primaryBotId: undefined }, { bots: [] }]) {
+    const view = await renderComponent(<Sidebar {...props} primaryBotId={null} {...extra} />);
+    try {
+      expect(hint(view.container)).toBeNull();
+    } finally {
+      await view.unmount();
+    }
+  }
+});

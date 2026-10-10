@@ -1,3 +1,4 @@
+// Desktop onboarding step 连接服务电脑: enter the server computer's URL and connect to it.
 import { type FormEvent, useState } from "react";
 import type {
   ConfigureDesktopServerResult,

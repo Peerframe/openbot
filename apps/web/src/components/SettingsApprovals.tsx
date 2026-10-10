@@ -1,3 +1,5 @@
+// Settings → 审批与权限 (SettingsApprovals artboard): extra confirmations for reads and their exact
+// Bot/target exceptions, saved against the Server's revision.
 import type { ApprovalException, ApprovalSettings, Bot, Channel } from "@openbot/domain";
 import { useCallback, useEffect, useState } from "react";
 import { ApiError, getApprovalSettings, saveApprovalSettings } from "../api";

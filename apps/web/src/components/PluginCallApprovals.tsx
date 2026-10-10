@@ -1,3 +1,4 @@
+// 插件操作确认 in a channel: polls the plugin calls waiting for the Owner and approves or rejects each.
 import type { Bot } from "@openbot/domain";
 import { useEffect, useState } from "react";
 import { ApiError } from "../api";

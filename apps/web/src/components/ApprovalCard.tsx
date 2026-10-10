@@ -1,3 +1,5 @@
+// One pending approval: risk, expiry, summary and target, with 拒绝 / 批准 buttons that send the
+// Owner's decision. Used in the rail's approval stack and inside task cards.
 import type { Approval, ApprovalDecision, Bot, Channel } from "@openbot/domain";
 import { useState } from "react";
 import "./ApprovalCard.css";

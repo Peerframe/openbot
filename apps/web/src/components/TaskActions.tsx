@@ -1,3 +1,5 @@
+// Task controls shared by the task card and 任务详情: stop, resubmit and 补充指令 for tasks the
+// server computer runs itself.
 import type { Run } from "@openbot/domain";
 import { useState } from "react";
 import { ApiError, cancelNativeRun, createMessage, steerRun } from "../api";

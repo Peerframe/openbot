@@ -1,3 +1,5 @@
+// Logos for model providers and plugins (LobeHub icons, SVG Logos), falling back to a letter.
+// Presentation only: a logo never says what a plugin may do.
 import discord from "@iconify-icons/logos/discord-icon";
 import figma from "@iconify-icons/logos/figma";
 import github from "@iconify-icons/logos/github-icon";

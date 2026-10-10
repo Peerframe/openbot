@@ -1,3 +1,5 @@
+// Design preview fake Server (dev only): replaces fetch, EventSource and storage and answers every
+// route from the synthetic world. Fails closed and never touches the network.
 import { modelProviderPresets } from "@openbot/domain";
 import {
   attachmentsFor,

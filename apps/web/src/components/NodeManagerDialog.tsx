@@ -1,3 +1,5 @@
+// 配对一台工作电脑 dialog (DialogPairHost artboard): issue a one-time pairing token and list paired
+// work computers. Also the shared host-enrollment hook used by Settings → 工作主机.
 import type { ExecutionNode, NodeEnrollmentToken, NodeIdentitySummary } from "@openbot/domain";
 import { useCallback, useEffect, useState } from "react";
 import {

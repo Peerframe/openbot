@@ -1,3 +1,4 @@
+// Desktop first-run 欢迎使用 OpenBot: choose whether this computer hosts the server or connects to one.
 import { type FormEvent, useState } from "react";
 import type {
   DesktopSetupPlanInput,

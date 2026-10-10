@@ -1,3 +1,5 @@
+// In-app back/forward history of workspace locations (home, new chat, a conversation, 任务监督),
+// plus the design preview's start-location seam.
 import { useCallback, useState } from "react";
 
 export type WorkspaceLocation =

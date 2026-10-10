@@ -1,3 +1,4 @@
+// 候选经验 review in the memory panel: the Bot's knowledge proposals, each accepted or ignored.
 import type { KnowledgeProposal } from "@openbot/domain";
 import { useEffect, useId, useState } from "react";
 import { getKnowledgeProposals, reviewKnowledgeProposal } from "../api";

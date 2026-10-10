@@ -1,3 +1,5 @@
+// 编辑头像 popover on the Bot 信息 rail (BotInfo artboard): random, reset, head shape and jaw colour,
+// each saved at once against the profile revision.
 import type { Bot, BotAppearance, EmployeeProfile } from "@openbot/domain";
 import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { ApiError, updateBotAppearance } from "../api";

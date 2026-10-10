@@ -1,3 +1,5 @@
+// Attachment thumbnail: PNG/JPEG files load as an image that expands in a modal; other files show
+// their extension badge.
 import { useEffect, useState } from "react";
 import { extensionOf, getAttachmentImage } from "../channel-attachment-client";
 import type { UploadedComposerAttachment } from "../composer-context";

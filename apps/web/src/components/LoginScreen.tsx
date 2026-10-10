@@ -1,3 +1,4 @@
+// 进入 OpenBot sign-in screen: the Owner's password, with first-run progress on Desktop.
 import { type FormEvent, useState } from "react";
 import { ApiError } from "../api";
 import { OnboardingFrame } from "./Onboarding";

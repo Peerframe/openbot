@@ -1,3 +1,5 @@
+// 连接模型服务 dialog (DialogModel artboard): add or edit a model connection, with a free key check
+// that only lists the provider's models. Also the provider tiles and labels used in Settings.
 import type {
   ModelConnection,
   ModelConnectionDependencies,

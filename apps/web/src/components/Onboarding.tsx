@@ -1,3 +1,5 @@
+// Launch screen and the shared first-run frame (Launch, Welcome, Install, Connect, Login,
+// ModelSetup and WorkerSetup artboards) used by every start-up step.
 import type { Bot, BotAppearance } from "@openbot/domain";
 import { type ReactNode, useEffect, useState } from "react";
 import { RobotAvatar } from "./RobotAvatar";

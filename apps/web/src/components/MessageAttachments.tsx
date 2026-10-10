@@ -1,3 +1,5 @@
+// A message's text plus its attachment cards; each card loads the file and shows a placeholder once
+// the file has been permanently deleted.
 import type { Bot } from "@openbot/domain";
 import { type ReactNode, useEffect, useState } from "react";
 import {

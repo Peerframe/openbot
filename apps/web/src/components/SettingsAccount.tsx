@@ -1,3 +1,5 @@
+// Settings → 账户与安全 (SettingsAccount artboard): Owner password change, signed-in devices, and
+// summaries of the security rules and audit log.
 import type { OwnerSessionDevice } from "@openbot/domain";
 import { type FormEvent, useCallback, useEffect, useId, useState } from "react";
 import { ApiError, changeOwnerPassword, listOwnerSessions, revokeOtherOwnerSessions } from "../api";

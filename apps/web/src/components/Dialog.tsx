@@ -1,3 +1,4 @@
+// Shared modal dialog frame (DESIGN.md › Dialogs) on a native <dialog>; callers supply the actions.
 import { type CSSProperties, type ReactNode, useId } from "react";
 import { useModalDialog } from "./useModalDialog";
 
