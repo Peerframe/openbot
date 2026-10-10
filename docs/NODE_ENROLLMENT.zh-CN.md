@@ -320,5 +320,5 @@ systemd x64/arm64 证据仍待完成。协议还不能证明 Node 持有不可�
 不受信任网络前必须补齐这些控制。详见
 [ADR-0023](decisions/0023-one-time-node-enrollment.md)、
 [权限审查](research/posix-node-credential-permissions.md)、
-[Windows ACL 审查](research/windows-node-credential-acl.md)、[Server 共享机密 ACL](research/server-windows-secret-acl.zh-CN.md)、
+[Windows ACL 审查](research/windows-node-credential-acl.md)、[Server 共享机密 ACL](research/server-windows-secret-acl.md)、
 [Linux 服务决策](decisions/0032-linux-worker-host-service-profiles.md)与[安全模型](SECURITY.md)。

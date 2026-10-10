@@ -1,7 +1,5 @@
 # Research: AI SDK provider patches, September 15
 
-[English](ai-sdk-patches-september15.md) · [简体中文](ai-sdk-patches-september15.zh-CN.md)
-
 - Status: Reviewed; final integration checks required before merge
 - Date: 2026-09-15
 - Owner: OpenBot contributors
@@ -14,7 +12,7 @@
 ## Search evidence
 
 Reviewed the [reuse ledger](../OPEN_SOURCE_REUSE.md), [native Agent review](native-agent-loop.md),
-[Kimi integration review](kimi-desktop-model.md), and the current `apps/server/src/native-agent.ts`
+Kimi integration review, and the current `apps/server/src/native-agent.ts`
 adapter and contract tests before accepting these existing dependency upgrades.
 
 Searches on 2026-09-15: GitHub `repo:vercel/ai is:issue is:open anthropic`,

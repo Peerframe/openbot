@@ -1,7 +1,5 @@
 # Technology baseline
 
-[English](TECHNOLOGY.md) · [简体中文](TECHNOLOGY.zh-CN.md)
-
 Reviewed on 2026-09-28 against this checkout's lockfiles and manifests. Exact versions are review
 snapshots and must be updated through a focused, tested dependency change rather than silently
 floated. For live layout and setup, prefer [the repository map](REPOSITORY_MAP.md),
@@ -29,8 +27,7 @@ only where the operating system requires them.
 | Optional durable Work engine | Explicit Temporal composition when configured | Not created by ordinary API startup. |
 
 Historical Desktop foundation ADRs and research remain the record of those decisions; they are not
-a claim that the Node/Hono Server is still the live control plane. Migration evidence is historical
-in [MIGRATION_HANDOFF](MIGRATION_HANDOFF.md). Longer-term TypeScript consolidation remains a
+a claim that the Node/Hono Server is still the live control plane. Longer-term TypeScript consolidation remains a
 direction, starting with useful peripheral replacements. A core replacement needs its own verified
 cutover; this cleanup does not migrate the Python Server or harness core.
 
@@ -50,8 +47,6 @@ Worker Host; Client plus Server with Worker Host optional; advanced self-host). 
 Server origin confirmation, and native Worker enrollment details live in the current Desktop docs
 rather than this baseline: start from [Desktop contributor rules](../apps/desktop/AGENTS.md),
 [Desktop installation](DESKTOP_INSTALLATION.md), and [Desktop onboarding](DESKTOP_ONBOARDING.md).
-Python product packaging for Desktop is summarized in
-[DESKTOP_PYTHON_CANDIDATE](DESKTOP_PYTHON_CANDIDATE.md).
 
 ## Selected languages and runtimes
 

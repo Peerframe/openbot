@@ -22,7 +22,7 @@ macOS 保留原生红黄绿按钮和左侧栏收起开关。侧栏保留 **OpenB
 
 点击侧栏 Bot 打开其持久单独对话，右栏 Bot 信息显示详情、工作与成长、资料库和电脑；在其他地方点 Bot 的头像或名字也会打开这段对话和右栏。单独对话由 Server 绑定唯一 Bot 标识，
 反复打开复用原对话，禁止添加其他成员或将任务改派给其他 Bot，也不列入普通频道。
-见[单独对话调研](research/desktop-direct-conversations.zh-CN.md)。
+见[单独对话调研](research/desktop-direct-conversations.md)。
 
 后退和前进可以返回访问过的工作空间页面。新建频道后立即进入，从设置返回保留原页面、草稿和阅读位置。
 导航仅改变本机界面状态，不改变 Server 路由或权限。见[导航调研](research/desktop-navigation-continuity.md)。
@@ -40,7 +40,7 @@ Server 返回的真实标识。单独对话无需提及 Bot。输入区底部不
 
 **分享**提供任务产出下载和分享 Bot 本身。分享 Bot 时先预览档案与已验证技能；选中已审核的单文件
 技能正文后使用 v2 包。私人记忆、历史、密钥与电脑权限保留在来源 Server。
-接收方创建新 Bot，并在模型使用前审核导入的技能正文。见[员工分享说明](EMPLOYEE.zh-CN.md)。
+接收方创建新 Bot，并在模型使用前审核导入的技能正文。见[员工分享说明](EMPLOYEE.md)。
 
 完成 macOS arm64 本地设置后，再次打开会恢复原本的本地服务和数据库，用紧凑连接状态代替安装检查清单，
 沿用已保存凭据。系统密钥读取采用异步方式，系统授权期间启动窗口仍可响应；解锁失败不会覆盖
@@ -113,7 +113,7 @@ macOS 的应用、文件、编辑、显示和窗口菜单使用中文。文字�
 立即信任或激活。在 设置 › 技能 中审核来源、版本、全文、声明的能力和内容摘要。“Bots”页提供创建 Bot 和已有的
 Bot 模板审核导入流程。档案读取失败明确显示不可用，不视为空记录。这里是工作空间扩展界面，不是公共插件商店或
 任意可执行插件包安装器。见[入口调研](research/workspace-destinations.md)及
-[界面优化调研](research/desktop-ui-refresh.zh-CN.md)。
+[界面优化调研](research/desktop-ui-refresh.md)。
 
 在“技能”与“Bots”页签上方展开“插件”面板，选择“添加工具插件”，即可预览并安装 MCP Server 连接。
 审核声明后，为 Bot 授予选定工具或内容的权限，再启用插件。仅安装不会授予访问权限；调用仍受 Server
@@ -132,7 +132,7 @@ Bot 模板审核导入流程。档案读取失败明确显示不可用，不视�
 到期检查发现 Bot 已被移出频道时暂停对应计划，不会自动改派给其他 Bot。暂停或删除计划只停止后续提交，
 已经创建的 Run 和历史记录会保留。
 
-自动任务不授予额外权限。原生推理需要单独[启用 Agent](NATIVE_AGENT.zh-CN.md)；Worker 任务仍需
+自动任务不授予额外权限。原生推理需要单独[启用 Agent](NATIVE_AGENT.md)；Worker 任务仍需
 符合原有能力与审批要求。计划提交时间不代表执行或完成保证。旧版 Server 没有自动任务接口时显示不可用。
 当前仍是单 Server 运行，不代表支持多个 Server 副本共同调度。
 见[持久自动任务调研](research/server-automations.md)。
@@ -145,7 +145,7 @@ Server。CI 安装器目标为 macOS arm64、Windows x64 和 Linux x64；Intel �
 正式签名、macOS 公证、Windows 真机桌面和 SmartScreen 验收仍未完成。版本产物和发行边界见
 [安装说明](DESKTOP_INSTALLATION.zh-CN.md)与 [Windows 验证说明](WINDOWS_DESKTOP.zh-CN.md)。
 
-[原生 Agent](NATIVE_AGENT.zh-CN.md) 在 Owner 启用后提供模型回复。输入框通过认证的频道附件接口
+[原生 Agent](NATIVE_AGENT.md) 在 Owner 启用后提供模型回复。输入框通过认证的频道附件接口
 支持上述有界文本/代码、图片、PDF、Office/OpenDocument 和音视频附件。上传原件不会自动提取文字、OCR
 或转写。任务提交不会自动重试。已有原生任务停止与明确重新提交继续由 Server 管理；
 重新提交会创建新任务，不保证安全重放此前的副作用。
@@ -178,7 +178,7 @@ Server 保存唯一默认提供方/模型配置，由原生 Agent 任务共用�
 预设不保证账户能使用所列的每个模型，也不接受任意自定义代理地址。
 
 只保存密钥不会开启推理。Owner 勾选“启用原生 Agent”后，新建的 `none` 配置任务可通过
-[原生 Agent](NATIVE_AGENT.zh-CN.md) 执行有界的模型/工具/观察循环，将任务与所需频道上下文发送给
+[原生 Agent](NATIVE_AGENT.md) 执行有界的模型/工具/观察循环，将任务与所需频道上下文发送给
 所选模型，可能产生 API 费用。未实现的 Worker 能力仍不可用。旧版远程 Server 不支持此设置接口。
 
 ## 构建与高级自部署
@@ -214,7 +214,7 @@ C28 移除了 `/api/v1/settings/model` 及其模型列表接口。升级时，�
 `OPENBOT_CONTROL_MODEL_ENCRYPTION_KEY` 会导入模型连接一次。原文件与密钥保持不变；旧配置未启用时，
 导入的连接也不启用，现有 C7 默认模型不会被覆盖。持久迁移记录防止重建已删除的连接；导入成功后，
 启动不再依赖旧文件和旧密钥。新安装不生成单一模型专用密钥。保留旧密文时，也保留配套恢复密钥。
-见 [C28 决策](research/retire-singleton-model.md)及 [Server 部署](SERVER_CONTAINER.zh-CN.md)。
+见 [C28 决策](research/retire-singleton-model.md)及 [Server 部署](SERVER_CONTAINER.md)。
 
 CI 打包 Linux x64、Windows x64 和 macOS arm64，各端验证成功后保留未签名包七天。
 登录 GitHub 后，可从对应的成功 [CI 运行](https://github.com/yxflc11/openbot/actions/workflows/ci.yml)

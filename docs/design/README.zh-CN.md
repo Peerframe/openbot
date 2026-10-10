@@ -6,7 +6,7 @@
 - [组合头像参考图](openbot-avatar-system.png)：之前的组合式机器人参考图，已被 [Avatars 画板](desktop-ui-2026-10/Avatars.dc.html) 中无外框的头像取代；它引入的外观分层数据仍然兼容。
 - [头像源文件](avatars/README.zh-CN.md)：所有者的无框头像作品（v2 SVG），应用里的 v3 头像据此绘制。
 - [README 横幅](openbot-readme-banner.png)和[频道示意图](openbot-channel-demo.png)：当前 README 展示素材，用模拟数据从设计预览截取（`?scene=banner`，2172×724；`?scene=channel`，1440×900，2 倍）。
-- [头像](openbot-avatars.png)：三种头型、八种下颌颜色，从 `?scene=avatars` 截取，用于 `docs/INTERFACE.zh-CN.md`。
+- [头像](openbot-avatars.png)：三种头型、八种下颌颜色，从 `?scene=avatars` 截取，用于 `docs/INTERFACE.md`。
 - [Desktop 界面设计契约（2026-10）](desktop-ui-2026-10/README.zh-CN.md)：所有者确认的画板，所有界面都按它重建；
   另见[实施计划与分工](desktop-ui-2026-10/IMPLEMENTATION.zh-CN.md)。
 
@@ -14,7 +14,7 @@
 
 ## UI 修改前的阅读路线
 
-先读 [INTERFACE](../INTERFACE.zh-CN.md) 的相关段落，再按[UI 路线](../REPOSITORY_MAP.zh-CN.md#ui-交互)
+先读 [INTERFACE](../INTERFACE.md) 的相关段落，再按[UI 路线](../REPOSITORY_MAP.md#ui-interaction)
 阅读实际组件和测试。INTERFACE 同时包含现状和未来意图，范围以当前实现、测试及本次任务为准。
 布局与视觉以 [2026-10 设计契约](desktop-ui-2026-10/README.zh-CN.md)为准，保留 RobotAvatar 等资产；[tokens.css](../../apps/web/src/tokens.css) 拥有 `--ob-*` 令牌，
 [primitives.css](../../apps/web/src/primitives.css) 拥有焦点和全局基础样式，局部布局属于组件 CSS。复用附近原生按钮、表单和

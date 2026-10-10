@@ -7,8 +7,8 @@
   retain their rules; preference changes grant no execution or approval authority.
 
 Reuse [identity transactions](python-identity-transactions.md),
-[direct conversations](desktop-direct-conversations.md), [C7 preferences](desktop-owner-preferences.md)
-and [quick creation](quick-bot-creation.md). Reviewed releases remain PostgreSQL17.10
+[direct conversations](desktop-direct-conversations.md), C7 preferences
+and quick creation. Reviewed releases remain PostgreSQL17.10
 (PostgreSQL License), psycopg3.3.6 (LGPL-3.0), and Pydantic2.13.5 (MIT).
 No dependency, copied external source or new event infrastructure is introduced.
 

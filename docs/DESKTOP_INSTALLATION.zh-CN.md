@@ -69,8 +69,8 @@ PowerShell 脚本打开当前用户安装器并等待结果。如果系统执行
 
 Desktop 支持受限频道协作、更丰富附件、经审核 MCP 资料与应用、语音草稿和恢复启动。分享导出可复用 Bot 档案/已验证技能并下载成果，不发布私人记忆或聊天记录。当前 Windows 安装验收与历史证据分别记录在 [Windows 桌面版](WINDOWS_DESKTOP.zh-CN.md)。macOS arm64 随包 PostgreSQL 为 17.10；当前 Windows 包不包含 PostgreSQL。
 
-完整能力边界见 [Desktop 引导](DESKTOP_ONBOARDING.zh-CN.md)、[原生 Agent](NATIVE_AGENT.zh-CN.md)
-和 [Server 容器](SERVER_CONTAINER.zh-CN.md)。
+完整能力边界见 [Desktop 引导](DESKTOP_ONBOARDING.zh-CN.md)、[原生 Agent](NATIVE_AGENT.md)
+和 [Server 容器](SERVER_CONTAINER.md)。
 
 ## 构建与准备发布
 

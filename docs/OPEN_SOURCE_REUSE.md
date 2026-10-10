@@ -1,7 +1,5 @@
 # Open-source-first engineering
 
-[English](OPEN_SOURCE_REUSE.md) · [简体中文](OPEN_SOURCE_REUSE.zh-CN.md)
-
 ## Policy
 
 OpenBot researches new dependencies/versions, public protocols, authorization/security or persistent-data
@@ -54,16 +52,10 @@ fixes reuse valid decisions and reviewed versions; they do not reopen the full l
 
 | OpenBot area | Researched source | License | Decision and current status |
 | --- | --- | --- | --- |
-| Windows delivery reliability and required CI completion | Electron get 5.1.0 / `da84467e`; Packager 20.3.0 / `8c5cc941`; builder 26.16.1 / `7d3b30f3`; .NET Process; GitHub Actions dependency results | MIT; BSD-2-Clause; Microsoft/GitHub documentation terms | Retry only transient verified-download failures; observe fixture installation progress with idle and overall bounds; require every CI job in the protected completion check. No copied source. See [download](research/windows-ci-download-reliability.md), [installer](research/windows-installer-progress.md), and [merge gate](research/windows-ci-merge-gate.md). |
-| Documentation exemptions and ordinary-fix decision reuse | Git 2.55.0 / `e9019fca`; checkout 7.0.1 / `3d3c42e5` | GPL-2.0; MIT | Reuse committed Git diffs and blob identities to validate a short exemption for ordinary Markdown prose. Source, policy and protected technical content keep the research form; unchanged claims remain a review responsibility. No dependency or source copied; see [research](research/2026-09-15-research-exemptions.md). |
-| Contributor startup and clean-checkout verification | Turborepo 2.10.12 / `53752d45`; existing Node APIs and Postgres.js 3.4.9 | MIT; Node.js license; Unlicense | Reuse the dependency graph and filtered persistent tasks for Server/Web/optional Node. A bounded POSIX smoke starts the real root command against an empty loopback database before any build. No dependency or source copied; see [research](research/2026-09-15-contributor-startup.md). |
-| Streamed JSON request bounds | WHATWG Streams `b9ba9f49`; Hono 4.13.7 / `eebdf7be` reviewed | WHATWG terms; Node.js license; MIT | Reuse native readers and streaming UTF-8 decoding to count actual bytes, cancel overflow and preserve route-specific limits and errors. The reviewed Hono middleware trusts declared length and does not meet this cleanup contract unchanged. No source copied or dependency added; see [research](research/2026-09-15-request-body-limits.md). |
+| Windows delivery reliability and required CI completion | Electron get 5.1.0 / `da84467e`; Packager 20.3.0 / `8c5cc941`; builder 26.16.1 / `7d3b30f3`; .NET Process; GitHub Actions dependency results | MIT; BSD-2-Clause; Microsoft/GitHub documentation terms | Retry only transient verified-download failures; observe fixture installation progress with idle and overall bounds; require every CI job in the protected completion check. No copied source. See download, [installer](research/windows-installer-progress.md), and merge gate. |
 | Shared task, attachment and automation flow | PostgreSQL 17; ai 7.0.93 / 6359fd58; existing Zod 4.5.4 | PostgreSQL; Apache-2.0; MIT | Reuse the existing transaction and file lock, shared protocol descriptors and one Run-scoped tool map. Preserve paused schedule references and stop invalid occurrences with an additive outcome migration. No source copied or dependency added; see [research](research/task-flow-refactor.md). |
-| Ordered workspace state and retired assets | React 19.2.8 and existing browser AbortController / fetch contracts | MIT; WHATWG terms | One active snapshot request, ordered entity projections and immediate mutation results; remove unreferenced pixel assets and selectors, keep modular appearance compatibility. No state framework or copied source; see [research](research/workspace-state-refactor.md). |
 | MCP lifecycle and shared plugin contracts | MCP SDK 1.32.1; JSON Schema; Zod 4.5.4 | MIT; specification terms | Contextual schema traversal, bounded same-endpoint session termination and shared data contracts; Server authority and concurrency stay unchanged. Provider declarations reuse the wire schema. No source copied; see [research](research/plugin-flow-refactor.md), [reviewed advisory update](research/typescript-control-plane-p0.md#mcp-sdk-advisory-repair-2026-10-07). |
-| Migration authoring, enrollment and retained notices | Drizzle Kit 0.31.10; Node 26; PDF.js 6.3.289 | MIT; Apache-2.0 and package-specific notices | Disable automatic generation against handwritten history; provide a read-only plan, clear first enrollment instructions and complete backup/notice inventory. No automatic backup feature or source copied; see [research](research/developer-workflow-refactor.md). |
-| Official website and bilingual manuals | [Astro 7.2.10 / `2fdf7314`](https://github.com/withastro/astro/tree/2fdf731428aa738d5dcf3041b4e78eb9d036968c), [Starlight 0.42.0 / `88ad3c26`](https://github.com/withastro/starlight/tree/88ad3c2630487ba227a7b4ccbffc01a2bdf623a5), Vite 8.2.2; compared VitePress 1.6.4 | MIT | Reuse released static rendering, Markdown manuals, locale navigation, Pagefind search and sitemap. The public demo reuses real OpenBot React components with labeled synthetic data and has no Owner session or execution authority. The website now builds in the independent [openbot-website repository](https://github.com/yxflc11/openbot-website), which pins the product commit used for its demo; its dependencies no longer enter Server packaging. No framework source copied; see [research](research/official-site.md). Local build is verified separately from GitHub Pages publication. |
-| Channel Bot collaboration and richer attachments | ai 7.0.93 / 6359fd58; Hono 4.13.7; write-file-atomic 8.0.0; A2A v0.3.0 reviewed | Apache-2.0; MIT | Reuse SDK subagent tools and multimodal message parts, HTTP and immutable storage. Server creates bounded same-channel task trees with independent Bot identity; attachments now support 8 files/20 MiB with paged text, PNG/JPEG/PDF. No source copied; see [collaboration](research/channel-bot-collaboration.md), [attachments](research/channel-attachments.md), and [upgrade](CORE_UPGRADE.md). |
+| Channel Bot collaboration and richer attachments | ai 7.0.93 / 6359fd58; Hono 4.13.7; write-file-atomic 8.0.0; A2A v0.3.0 reviewed | Apache-2.0; MIT | Reuse SDK subagent tools and multimodal message parts, HTTP and immutable storage. Server creates bounded same-channel task trees with independent Bot identity; attachments now support 8 files/20 MiB with paged text, PNG/JPEG/PDF. No source copied; see collaboration and [attachments](research/channel-attachments.md). |
 | Approved Desktop UI refresh | React 19.2.8 / 1dd4ecb; Electron 44.2.0 / tag object 369b0d9d3afdd5b8c0bdb0ad42391443947a7424; WAI APG; existing OpenBot e8fa933 | MIT; W3C document terms | Reuse HTML controls and the existing renderer for a single creation entry, vertical full-window Settings/Plugins, structured member mentions and removable text/verified-skill request chips. The original 3 × 6,000-byte attachment design is historical; current attachments follow the shared 8-file/20-MiB contract and the complete task remains bounded to 8,000 characters; at most 2 skill requests grant no authority. Share explicitly previews/copies recent messages, without hosted publication. No copied source or new dependency; see [research](research/desktop-ui-refresh.md). |
 | Server-owned direct Bot conversations | PostgreSQL 17 / ec3f6a6a7dd82a8ce455a0710ef75172f9f318d1; Drizzle 0.45.2 / e7dfa14519f363229ccc3ead7b1b2f2051937efb; Postgres.js 3.4.9 | PostgreSQL License; Apache-2.0; Unlicense | Reuse database row locks, foreign keys and uniqueness for one fixed-membership Channel per Bot. Owner-only idempotent open, exact-ID routing and existing message/run audit remain Server-owned. Concurrent creation verified with a disposable PostgreSQL fixture; no source copied or dependency added. See [research](research/desktop-direct-conversations.md). |
 | Installable Desktop delivery and persistent model bootstrap | electron-builder 26.16.0 / f4610970f78b6ce223b1f4cee2b5e8f5caa14a48; existing Packager 20.3.0 and Fuses 2.1.3; Node 24.20.0 filesystem/crypto and Compose volumes | MIT; BSD-2-Clause; Node.js license; specification terms | Reuse builder only around verified prepackaged apps for DMG/NSIS/AppImage/DEB; verify complete source-pinned assets before creating a draft release. Private Server model-directory bootstrap retains keys and fails closed on corruption. No upstream source copied; see [research](research/desktop-installable-delivery.md) and [installation](DESKTOP_INSTALLATION.md). |
@@ -78,42 +70,28 @@ fixes reuse valid decisions and reviewed versions; they do not reopen the full l
 | Desktop presentation preferences and settings | HTML Web Storage and WAI-ARIA disclosure standards, reviewed 2026-09-05; existing React 19.2.8; compared electron-store 11.0.2 / e1470fd | WHATWG/W3C document terms; MIT | Reuse origin/profile-scoped storage and React useSyncExternalStore for allowlisted non-secret preferences, panel disclosure and dedicated settings categories (the alpha.3 refresh uses six vertical categories). Native buttons and form controls preserve accessibility semantics; storage errors retain an in-memory value and disclose persistence failure. No source copied; see [research](research/desktop-workspace-preferences.md). |
 | Desktop system notifications | Electron 44.3.0 main-process `Notification`; WHATWG Notifications API for the Web entry | MIT; WHATWG CC BY 4.0 spec | Reuse the platform notification APIs through one trusted-frame IPC channel with exact bounded `{title, body}`; renderer permissions stay denied, content is names only and clicks only focus the window. No dependency or copied source; see [ADR-0048](decisions/0048-owner-system-notifications.md). |
 | Native macOS Desktop sidebar material | Electron 44.2.0 native window/theme APIs and Apple AppKit standard sidebar material | MIT; Apple platform/API terms | Reuse setVibrancy with the semantic sidebar material, retain native window controls and expose only a boolean through trusted-frame IPC. Reduce Transparency and High Contrast override the local choice; other platforms or failures remain opaque. No transparent frameless window, private API or copied source; see [research](research/desktop-sidebar-material.md). |
-| Desktop color scheme (C25) | Electron 44.3.0 / 07e460719c75b2ec5ee4893f7d2192ef31c7b8c2 nativeTheme; existing private platform preference store | MIT | Reuse system/light/dark and native resolved colors through optional trusted-frame bridge; apply before window creation, preserve legacy preferences and accessibility material overrides. No new dependency or source copy; [targeted review](research/desktop-color-scheme.md). |
 | Workspace skill gallery | Agent Skills specification 69ef37e9424c0a7ea9dd2293b559e43ec8176379; React 19.2.8; existing OpenBot Employee review at fc0ad85 | Apache-2.0 code / CC-BY-4.0 documentation; MIT | Reuse actual authenticated Employee skill records, bounded concurrent reads and the existing Owner review surface. Search/state filters are a workspace projection, not a hosted marketplace, download path or executable activation. No source copied; see [research](research/workspace-destinations.md). |
 | Server-owned recurring task submissions | PostgreSQL 17 / ec3f6a6a7dd82a8ce455a0710ef75172f9f318d1; Drizzle 0.45.2; Postgres.js 3.4.9; compared pg-boss 12.26.0 / 31a4cf0093b0df73d077782689b738bcd0292021 and node-cron 4.6.0 / 0be2ca03ffebc79fa823081b8a44bff6f731a583 | PostgreSQL; Apache-2.0; Unlicense; MIT; ISC | Select PostgreSQL row locks and transactions before another queue dependency: due claim, normal Message/Run, audit and next occurrence commit together. Add bounded Owner CRUD and elapsed-interval polling with no backlog replay, active-Run overlap skip and a 50-record cap. Reuse existing routing/approval boundaries; no inference loop or multi-Server dispatch claim. No dependency or source added; see [research](research/server-automations.md). |
-| Isolated Desktop Preview identity | Electron 44.2.0; Electron Packager 20.3.0 / 8c5cc941018b1d890c7152734972c44b9b98f268 | MIT; BSD-2-Clause | Reuse native bundle/helper metadata and staged productName for a separately branded Preview app and profile. Keep the production identity and refuse its shared Worker companion in Preview. No source copied; see [research](research/desktop-preview-identity.md). |
-| Desktop channel workspace and usage panel | Existing React 19.2.8, W3C APG search / WCAG 2.2 ARIA23; Telegram Desktop v6.9.3 as visual reference only | MIT; W3C document terms; GPL-3.0 reference not incorporated | Native HTML search and chat log with three workspace regions. The approved refinement adds a shared toolbar and independently toggleable panels through existing presentation preferences, and prioritizes channel information in the inspector. No Telegram code/assets copied and no fabricated Token usage. See [layout research](research/desktop-channel-layout.md), [usage research](research/desktop-usage-panel.md), and the navigation/conversation/inspector entries above. |
-| Integrated Desktop onboarding | Electron 44.2.0; PostgreSQL 17.10 via @embedded-postgres/darwin-{arm64,x64} 17.10.0-beta.17 (c23ad8a0); Postgres.js 3.4.9; OpenAI/Anthropic model metadata HTTP APIs | MIT; PostgreSQL and bundled library licenses; Unlicense; API terms | Reuse native window chrome, binary-only PostgreSQL, utilityProcess, safeStorage, existing Server and production dependency traversal. Replace the four-option UI with service computer / remote client; retained legacy plans remain readable. Add bounded install lifecycle and Owner-only encrypted model defaults. Reuse the same main-process bootstrap identity for owned local session recovery; see [recovery review](research/desktop-local-session-recovery.md). No upstream implementation copied. See [research](research/desktop-integrated-onboarding.md) and [capability boundaries](DESKTOP_ONBOARDING.md). |
+| Integrated Desktop onboarding | Electron 44.2.0; PostgreSQL 17.10 via @embedded-postgres/darwin-{arm64,x64} 17.10.0-beta.17 (c23ad8a0); Postgres.js 3.4.9; OpenAI/Anthropic model metadata HTTP APIs | MIT; PostgreSQL and bundled library licenses; Unlicense; API terms | Reuse native window chrome, binary-only PostgreSQL, utilityProcess, safeStorage, existing Server and production dependency traversal. Replace the four-option UI with service computer / remote client; retained legacy plans remain readable. Add bounded install lifecycle and Owner-only encrypted model defaults. Reuse the same main-process bootstrap identity for owned local session recovery; see [recovery review](research/desktop-local-session-recovery.md). No upstream implementation copied. See research and [capability boundaries](DESKTOP_ONBOARDING.md). |
 | Desktop cross-platform handoff | Existing Electron 44.2.0 runtime metadata and actions/upload-artifact 7.0.1 / 043fb46d1a93c77aae656e7c1c64a875d1fc6a0a | MIT | Gate native service presentation by the existing platform bridge; retain validated bundles as commit-named tar archives for seven days. No new runtime dependency or authority; no source copied. See [research](research/desktop-cross-platform-handoff.md). |
 | Desktop application and language foundation | [Electron `v44.2.0`](https://github.com/electron/electron/releases/tag/v44.2.0), [Electron Packager `v20.3.0`](https://github.com/electron/packager/releases/tag/v20.3.0), [Electron Fuses `v2.1.3`](https://github.com/electron/fuses/releases/tag/v2.1.3), build-only [`@electron/asar` `4.3.0`](https://github.com/electron/asar/tree/v4.3.0), rejected [Electron Forge `v7.11.2`](https://github.com/electron/forge/releases/tag/v7.11.2), [Node.js `v24.20.0` LTS](https://nodejs.org/en/blog/release/v24.20.0), rejected [Tauri `v2.11.5`](https://github.com/tauri-apps/tauri/releases/tag/v2.11.5), rejected [Wails `v2.14.0`](https://github.com/wailsapp/wails/releases/tag/v2.14.0), and deferred [Playwright `v1.62.1`](https://github.com/microsoft/playwright/releases/tag/v1.62.1) | MIT; BSD-2-Clause; MIT; MIT; MIT; Node.js license; Apache-2.0/MIT; MIT; Apache-2.0 | Select Electron as the first released shell that preserves the existing TypeScript/React/Vite contributor and UI path, with direct stable Packager/Fuses adapters and build-only ASAR inventory validation. Reject Forge 7 after implementation validation found its Fuses 2 incompatibility, incomplete Electron 44 fuse coverage through its compatible Fuses 1 peer, and unresolved high/critical development advisories; Forge 8 remains a prerelease. Node 24 LTS is the new development baseline, while attested Worker releases remain on Node 22.22.2 until separately migrated. Tauri and Wails add a core language and OS-WebView variance; Playwright Electron support remains experimental. No source is copied; see [research evidence](research/desktop-application-foundation.md) and [ADR-0041](decisions/0041-desktop-application-foundation.md). Owner support links reuse the same main-process shell API behind two exact public destinations and current-window identity checks; see [fixed support-link review](research/desktop-support-links.md). |
-| Desktop local content protocol | [Electron 44.2.0 security checklist](https://www.electronjs.org/docs/latest/tutorial/security), [`protocol.handle`](https://www.electronjs.org/docs/latest/api/protocol), and [Electron fuses](https://www.electronjs.org/docs/latest/tutorial/fuses) | MIT | Use the released custom-protocol API behind an OpenBot path allowlist instead of restoring privileged `file://`. The handler is registered on the Desktop window's dedicated Session, serves only immutable renderer assets, and rejects unknown origins, methods, encoded separators, and traversal. No upstream source is copied; see [research evidence](research/desktop-local-content-protocol.md). |
 | Desktop Server connection | Electron `44.2.0` [`protocol.handle`](https://www.electronjs.org/docs/latest/api/protocol), [`Session.fetch`](https://www.electronjs.org/docs/latest/api/session), cookies and typed IPC; WHATWG Fetch/URL; existing [`write-file-atomic` `8.0.0`](https://github.com/npm/write-file-atomic/tree/v8.0.0); rejected [`electron-store` `11.0.2` / `e1470fd`](https://github.com/sindresorhus/electron-store/tree/v11.0.2) | MIT; WHATWG terms; ISC; MIT | Keep the packaged renderer same-origin and proxy only allowlisted REST/SSE requests through its dedicated Session to one health-verified, natively confirmed Server origin. Persist only a strict public origin with the existing atomic adapter; credentials remain in request memory and HttpOnly Session cookies. Reject remote UI, opaque origins, redirects, excess bodies, direct renderer networking, a local listener, and a generic IPC request bridge. No upstream source is copied; see [research evidence](research/desktop-server-connection.md) and [ADR-0042](decisions/0042-desktop-server-connection.md). |
 | Desktop setup intent | Existing React `19.2.8`, WAI-ARIA APG `7e4034b2`, Electron `44.2.0` typed context bridge, and [`write-file-atomic` `8.0.0`](https://github.com/npm/write-file-atomic/tree/v8.0.0); rejected XState `5.31.1` and React Hook Form `7.77.0` / `5b20741` | MIT; W3C Software and Document License; MIT; ISC; MIT; MIT | Use native form semantics, one discriminated React state, strict main-process persistence, and a derived checklist for the four product compositions and bounded planned Worker count. The plan is public intent only: it never proves installation, connection, enrollment, authorization, or platform support and triggers no service effect. Additional state-machine and form dependencies do not close a gap in this bounded slice. No upstream source is copied; see [research evidence](research/desktop-setup-plan.md) and [ADR-0043](decisions/0043-desktop-setup-intent.md). |
 | Desktop-guided macOS Worker onboarding | Existing OpenBot Swift Worker Host at `8252ea4`; Apple macOS 13+ `SMAppService`, Security, and app-bundled helper contracts; Electron `44.2.0`; Electron Packager `20.3.0`; Node.js `22.22.2`; rejected Electron utility processes and XState `5.31.1` | OpenBot MIT; Apple platform/API terms; MIT; MIT; Node.js license; MIT | Package the already reviewed Worker Host as one independently signed nested Desktop companion and add only a bounded stdin/stdout control envelope, authenticated main-process enrollment adapter, actual-state projection, and package inventory gates. The renderer supplies no token or executable path and receives only allowlisted status. Utility processes cannot provide the accepted login/reboot, Keychain, entitlement, or independent service lifecycle; a state-machine dependency does not close a gap in this ordered non-resumable transaction. No upstream source is copied; see [research evidence](research/desktop-macos-worker-onboarding.md) and [ADR-0044](decisions/0044-desktop-macos-worker-onboarding.md). |
 | Employee evolution and learning graph | [NousResearch/hermes-agent `63279301`](https://github.com/NousResearch/hermes-agent/tree/63279301bcbdc185c1b07b98a9312eb0c862f26d), especially `agent/learning_graph.py` and its skills/memory model | MIT | Adopt the product concepts: skills and memory are distinct, learned skills have provenance and usage evidence, and the profile visualizes their relationships. OpenBot's TypeScript/PostgreSQL implementation is local; no Hermes source has been copied. |
-| Employee evolution archive | [Hermes Agent `63279301`](https://github.com/NousResearch/hermes-agent/tree/63279301bcbdc185c1b07b98a9312eb0c862f26d), especially Desktop Star Map `time-axis.ts` and `timeline.tsx` | MIT | Adapt the truthful dated-journey, stable-order, provenance-first interaction to OpenBot's existing append-only Server events. Keep a native HTML filter/range/list surface rather than adopting Hermes' filesystem authority, D3/canvas runtime, or mutation model. No source is copied; see [research evidence](research/employee-evolution-archive.md). |
-| Owner-managed Employee profile details | [Hermes Agent `63279301`](https://github.com/NousResearch/hermes-agent/tree/63279301bcbdc185c1b07b98a9312eb0c862f26d), especially `EditProfileDialog.tsx`, `profile-config.tsx`, profile operations, and UI metadata CAS tests; [Kubernetes `v1.36.2`](https://github.com/kubernetes/kubernetes/tree/v1.36.2) `resourceVersion` update semantics | MIT; Apache-2.0 | Adopt explicit staged editing, routing descriptions, and stale-writer rejection. Reuse OpenBot's existing Zod/Hono/PostgreSQL revision mutation path and add only role/biography fields, content-free evolution/SSE metadata, and portable biography preservation. No upstream source is copied; see [research evidence](research/owner-employee-profile-details.md). |
 | Owner-managed Employee memory | [Hermes Agent `63279301`](https://github.com/NousResearch/hermes-agent/tree/63279301bcbdc185c1b07b98a9312eb0c862f26d), [Letta `0.16.7` / `f3332476`](https://github.com/letta-ai/letta/tree/f33324768950e6752f80d6c725873cc92d22f8b2), [Mem0 `ts-v3.0.5` / `75a37ec9`](https://github.com/mem0ai/mem0/tree/75a37ec93db7278e3bd9aaf2aa3d6e5139e6789d), and [LangMem `f8c7ebd6`](https://github.com/langchain-ai/langmem/tree/f8c7ebd6110c124a36995dab645a8cb0eb0b8210) | MIT; Apache-2.0; Apache-2.0; MIT | Adopt visible bounded mutation, manual editing, stable IDs/history, typed categories, and default-off automatic deletion. Reuse OpenBot's existing PostgreSQL/Zod/Hono/React stack and implement only revision-checked Owner commands plus content-free audit. No runtime or upstream source is incorporated. See [research evidence](research/owner-managed-employee-memory.md). |
-| Skill write review | [Hermes write-approval gate](https://github.com/NousResearch/hermes-agent/blob/63279301bcbdc185c1b07b98a9312eb0c862f26d/tools/write_approval.py), [OpenClaw `v2026.7.1-2`](https://github.com/openclaw/openclaw/tree/v2026.7.1-2), and [Agent Skills `69ef37e9`](https://github.com/agentskills/agentskills/tree/69ef37e9424c0a7ea9dd2293b559e43ec8176379) | MIT; MIT; Apache-2.0 code and CC-BY-4.0 docs | Adapt pending-review behavior to Server-owned records and expose stored metadata, dependencies, required capabilities, and evidence before an authenticated Owner verifies, suspends, resumes, or terminally revokes a skill. No executable bundle is installed; full file diffs, scanning, and proposal queues remain planned. No upstream source is copied. See [research evidence](research/owner-skill-review-surface.md). |
 | Portable skill format | [Agent Skills specification `69ef37e9`](https://github.com/agentskills/agentskills/tree/69ef37e9424c0a7ea9dd2293b559e43ec8176379) and its `skills-ref` validator | Apache-2.0 code; CC-BY-4.0 docs | Adopt the standard rather than invent a skill bundle. Current metadata uses its name and description limits. Executable `SKILL.md` archives and official-validator integration are not implemented yet. |
 | Third-party skill safety | [OpenClaw `428fa8e0`](https://github.com/openclaw/openclaw/tree/428fa8e0d3dac835628f6ac6466bb65ce175b249), including quarantined/scanned skill installation guidance | MIT | Adopt default-untrusted import, inspection before activation, containment, and explicit grants. OpenBot imports Employee-package skills only as disabled candidates. |
 | Reviewed Employee activation | [Backstage `v1.51.0`](https://github.com/backstage/backstage/tree/v1.51.0), [Kubernetes `v1.36.2` API dry-run](https://github.com/kubernetes/website/blob/main/content/en/docs/reference/using-api/api-concepts.md), and [OpenClaw `v2026.7.1-2`](https://github.com/openclaw/openclaw/tree/v2026.7.1-2) | Apache-2.0; Apache-2.0; MIT | Adopt preview → review → create, no-side-effect preview, and default-untrusted skills. OpenBot implements only its package-digest binding, fresh identity, atomic PostgreSQL receipt, and candidate-skill assignment. No upstream source is copied. See [research evidence](research/reviewed-employee-import-activation.md). |
-| Portable Employee profile review | [Hermes Agent `63279301`](https://github.com/NousResearch/hermes-agent/tree/63279301bcbdc185c1b07b98a9312eb0c862f26d) profile distributions and [Backstage `v1.51.0`](https://github.com/backstage/backstage/tree/v1.51.0) catalog descriptions | MIT; Apache-2.0 | Adapt Hermes' pre-install manifest review and user-data separation plus Backstage's descriptive metadata distinction. Reuse OpenBot's existing digest-bound quarantine and expose the already-validated optional biography before activation. No upstream source is copied; see [research evidence](research/portable-employee-profile-review.md). |
-| Portable Employee skill disclosure | [Agent Skills `69ef37e9`](https://github.com/agentskills/agentskills/tree/69ef37e9424c0a7ea9dd2293b559e43ec8176379), [OpenClaw `v2026.7.1-2`](https://github.com/openclaw/openclaw/tree/v2026.7.1-2), and [Hermes Agent `63279301`](https://github.com/NousResearch/hermes-agent/tree/63279301bcbdc185c1b07b98a9312eb0c862f26d) | Apache-2.0 code / CC-BY-4.0 docs; MIT; MIT | Adopt the standard required skill description and the read-before-enable boundary. Reuse OpenBot's validated package metadata and show description, version, capabilities, dependencies, and disabled state before activation. No executable bundle or upstream source is incorporated; see [research evidence](research/portable-employee-skill-disclosure.md). |
-| Employee export content preview | [Hermes Agent `63279301`](https://github.com/NousResearch/hermes-agent/tree/63279301bcbdc185c1b07b98a9312eb0c862f26d) profile distributions, [OpenClaw `v2026.7.1-2`](https://github.com/openclaw/openclaw/blob/v2026.7.1-2/scripts/openclaw-npm-release-check.ts), and [npm CLI `v11.6.0`](https://github.com/npm/cli/blob/v11.6.0/lib/commands/pack.js) | MIT; MIT; Artistic-2.0 | Adapt sender-side content inspection and OpenClaw/npm's same-pack-path inventory behavior. Reuse OpenBot's canonical package builder and expose only a bounded profile/skill projection from its result before download. No upstream source is copied; see [research evidence](research/employee-export-content-preview.md). |
-| Portable Employee skill dependency closure | [Agent Skills `69ef37e9`](https://github.com/agentskills/agentskills/tree/69ef37e9424c0a7ea9dd2293b559e43ec8176379), [Helm `v4.1.3`](https://github.com/helm/helm/blob/v4.1.3/internal/chart/v3/lint/rules/dependencies.go), and [OpenClaw `v2026.7.1-2`](https://github.com/openclaw/openclaw/tree/v2026.7.1-2) | Apache-2.0 code / CC-BY-4.0 docs; Apache-2.0; MIT | Agent Skills has no accepted inter-skill dependency field, so `dependencySlugs` is an explicit OpenBot v1 extension. Adapt Helm's fail-closed package closure and OpenClaw's no-silent-readiness principle: a verified skill that depends outside the verified export set blocks download. No upstream source is copied; see [research evidence](research/portable-employee-skill-dependency-closure.md). |
-| Employee export review binding | [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110.html), [RFC 6585](https://www.rfc-editor.org/rfc/rfc6585.html), [Kubernetes `v1.36.2`](https://github.com/kubernetes/kubernetes/tree/v1.36.2), [W3C Web Crypto Level 2](https://www.w3.org/TR/WebCryptoAPI/), npm [`ssri` v14.0.0](https://github.com/npm/ssri/tree/v14.0.0), and [Hono `4.13.7` / `eebdf7be`](https://github.com/honojs/hono/blob/eebdf7be39abf0a872671835ccce0c4f03ea497a/src/middleware/etag/index.ts) | IETF Trust; Apache-2.0; W3C Software and Document License; ISC; MIT | Adopt strong `ETag`/`If-Match`, `428`, opaque stale-version interaction, and native browser SHA-256 over received bytes. Reuse the canonical builder and bind download to the exact reviewed serialized bytes; Hono's cache middleware and Node-focused `ssri` are not added. No upstream source is copied; see [research evidence](research/employee-export-review-binding.md). |
 | Browser computer | [agent-computer narrow fork `29a83c19`](https://github.com/yxflc11/openbot-agent-computer-upstream/tree/29a83c1932fb67398dd7a36fa80c473e0230a637/agent-computer) | MIT, Copyright (c) 2026 CopilotKit | Owner approved the narrow fork on 2026-10-03: production `257c1280` plus only contribution `46eb7af8` profile-usage. Provider wiring is unchanged. Retain fork LICENSE and the image MIT notice; #730 stays open; switch back after upstream merge and qualification. See [research](research/storage-cleanup-follow-ups.md). |
 | Cross-platform computer use | [Cua `986b6f25`](https://github.com/trycua/cua/tree/986b6f257b1afddef0cbd4815bb2744eab7eadba) | MIT; optional components have separate terms | Plan a Provider integration for Windows, macOS, and Linux. Do not enable optional AGPL or model components without a separate distribution review. |
 | Provider conformance scenarios | [MCP Conformance `74edef34`](https://github.com/modelcontextprotocol/conformance/tree/74edef34d674f563537be8c6587cebaa58e830ca) | License transition: new code Apache-2.0, remaining historical code MIT, documentation CC-BY-4.0 | Adopt named executable scenarios, version-frozen requirements, visible expected failures, and independent checks on both ends of a connection. OpenBot uses local Vitest fixtures for its own protocol; no MCP code or documentation has been copied. |
 | Platform conformance claims | [OCI runtime-spec `6999a89a`](https://github.com/opencontainers/runtime-spec/tree/6999a89a76a0329f440d5740497bedb9dd431297) | Apache-2.0 | Adopt the principle that conformance is scoped to an explicit OS/architecture and that a failed required behavior blocks the claim. OpenBot does not implement or copy the OCI runtime contract here. |
 | Conformance evidence packaging | [CNCF Kubernetes Conformance `6fc6e660`](https://github.com/cncf/k8s-conformance/tree/6fc6e66092075b7443c9259629b607c15b7876b9) and [OCI runtime-tools `8a4db579`](https://github.com/opencontainers/runtime-tools/tree/8a4db579f5c88af5a0d036fad34bddc9c1f703f3) | Apache-2.0 | Adapt explicit product/target metadata, human-reproducible evidence, machine-readable results, and platform-scoped validation. OpenBot defines a bounded JSON report rather than adopting JUnit or TAP as its public Provider contract; no upstream code is copied. |
-| Provider conformance runner | [MCP Conformance `74edef34`](https://github.com/modelcontextprotocol/conformance/tree/74edef34d674f563537be8c6587cebaa58e830ca), [OCI runtime-tools `8a4db579`](https://github.com/opencontainers/runtime-tools/tree/8a4db579f5c88af5a0d036fad34bddc9c1f703f3), [Sonobuoy `v0.57.2`](https://github.com/vmware-tanzu/sonobuoy/tree/v0.57.2), and [Vitest `5.0.0` / `f441c6fa`](https://github.com/vitest-dev/vitest/tree/f441c6fab25e579c5b7dd3dd50538416f415fbae) | Apache-2.0/MIT transition; Apache-2.0; Apache-2.0; MIT | Adapt stable scenario ids, lifecycle/timeouts, explicit expected-failure debt, target-scoped execution, and separate evidence collection. None executes OpenBot's `ComputerProvider` contract, so add only the missing bounded orchestrator on the existing SDK and Node runtime. It runs outside the Server, suppresses raw thrown values, and cannot self-grant support. Root test runner pin is Vitest 5.0.0; no upstream source is copied; see [research evidence](research/provider-conformance-runner.md) and [Vitest 5 migration](research/vitest-5-migration.md). |
+| Provider conformance runner | [MCP Conformance `74edef34`](https://github.com/modelcontextprotocol/conformance/tree/74edef34d674f563537be8c6587cebaa58e830ca), [OCI runtime-tools `8a4db579`](https://github.com/opencontainers/runtime-tools/tree/8a4db579f5c88af5a0d036fad34bddc9c1f703f3), [Sonobuoy `v0.57.2`](https://github.com/vmware-tanzu/sonobuoy/tree/v0.57.2), and [Vitest `5.0.0` / `f441c6fa`](https://github.com/vitest-dev/vitest/tree/f441c6fab25e579c5b7dd3dd50538416f415fbae) | Apache-2.0/MIT transition; Apache-2.0; Apache-2.0; MIT | Adapt stable scenario ids, lifecycle/timeouts, explicit expected-failure debt, target-scoped execution, and separate evidence collection. None executes OpenBot's `ComputerProvider` contract, so add only the missing bounded orchestrator on the existing SDK and Node runtime. It runs outside the Server, suppresses raw thrown values, and cannot self-grant support. Root test runner pin is Vitest 5.0.0; no upstream source is copied; see [research evidence](research/provider-conformance-runner.md) and Vitest 5 migration. |
 | Agent/UI event protocol candidate | [AG-UI `faee4b13`](https://github.com/ag-ui-protocol/ag-ui/tree/faee4b13eabee191d9974f6b19a91b5668268995) | MIT | Evaluated for future agent-to-user event interoperability. Deferred: current work is the security-sensitive Server/Worker Host protocol, not an agent UI transport migration. No dependency or source was added. |
 | Accessible profile navigation and modal review | [WAI-ARIA APG `7e4034b2`](https://github.com/w3c/aria-practices/tree/7e4034b262bc0d25332e330d8a582aaf34113829), [React Spectrum `50279a10`](https://github.com/adobe/react-spectrum/tree/50279a10ab998572e240e44aa36f84a15c7c4f99), and [WCAG technique H102](https://www.w3.org/WAI/WCAG22/Techniques/html/H102) | W3C Software and Document License; Apache-2.0 | Adopt the standard tab roles/keyboard model and the native modal dialog lifecycle. Keep a thin local React bridge because these fixed controls do not justify a second component/style stack. No upstream source was copied. |
 | Contributor intake and review evidence | [OpenClaw `41344e0b`](https://github.com/openclaw/openclaw/tree/41344e0b7dbd5629f797c535c985fd87a323abe5), [Hermes Agent `63279301`](https://github.com/NousResearch/hermes-agent/tree/63279301bcbdc185c1b07b98a9312eb0c862f26d), [MCP `d4a6fc63`](https://github.com/modelcontextprotocol/modelcontextprotocol/tree/d4a6fc63648798ad6dc6daab6f79e73c9df14699), and [GitHub Issue Forms](https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/syntax-for-issue-forms) | MIT; Apache-2.0/CC-BY-4.0; documentation reference | Adapt issue-first routing, priority guidance, platform evidence, structured forms, and AI-assistance disclosure to OpenBot's security boundaries. No template text or source was copied. |
-| Research-before-implementation gate | [Rust RFC template `f17e8623`](https://github.com/rust-lang/rfcs/blob/f17e8623ee2e2854570dcdb936a9f4ab08c0fcd4/0000-template.md), [Kubernetes KEP template `6ab9bf71`](https://github.com/kubernetes/enhancements/blob/6ab9bf717d1228928740bdbfe761b6e62b870902/keps/NNNN-kep-template/README.md), [OpenSSF Scorecard workflow `54d8e4d3`](https://github.com/ossf/scorecard-action/blob/54d8e4d3c579f74e35c422a0a18e16bb58ad9426/.github/workflows/scorecards.yml), [actions/checkout `3d3c42e5`](https://github.com/actions/checkout/tree/3d3c42e5aac5ba805825da76410c181273ba90b1), and [actions/setup-node `82076278`](https://github.com/actions/setup-node/tree/820762786026740c76f36085b0efc47a31fe5020) | Apache-2.0/MIT; Apache-2.0; Apache-2.0; MIT; MIT | Adapt checked-in prior art, alternatives, verification, compatibility, and lifecycle evidence to a smaller OpenBot research record. Add a repository instruction and local PR-body gate; pin existing CI actions by commit. The checkout and setup-node pins were upgraded after separate [checkout v7](research/actions-checkout-v7.md) and [setup-node v7](research/actions-setup-node-v7.md) reviews. No upstream template or source was copied. |
-| Cross-platform hosted CI | [GitHub runner images `148c0a4a`](https://github.com/actions/runner-images/tree/148c0a4acb53bb2c7c853446a290aec86b61d3c3), [GitHub matrix documentation](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations), [actions/checkout `3d3c42e5`](https://github.com/actions/checkout/tree/3d3c42e5aac5ba805825da76410c181273ba90b1), [actions/setup-node `82076278`](https://github.com/actions/setup-node/tree/820762786026740c76f36085b0efc47a31fe5020), and Git `2.55.0` `gitattributes` | MIT; GitHub documentation/service terms; MIT; MIT; GPL-2.0 and Git documentation license | Use explicit GA runner labels and the native matrix contract for required Linux x64, Windows x64, and macOS arm64 portable checks. Reuse the reviewed full-commit action pins and exact Node version; use a narrow `text eol=lf` attribute for shipped systemd units while normalizing line endings only at the semantic test boundary. Hosted CI does not prove services, keyrings, GUI permissions, or real-device support. No upstream workflow source is copied; see the [baseline](research/cross-platform-node-ci.md), [checkout v7 review](research/actions-checkout-v7.md), and [setup-node v7 review](research/actions-setup-node-v7.md). |
 | Employee package authenticity | [DSSE `1d3370f6`](https://github.com/secure-systems-lab/dsse/tree/1d3370f62565bca041e97c8310b873ac340edc2e), [Sigstore JS `769a53d8`](https://github.com/sigstore/sigstore-js/tree/769a53d8713248a8bf49edfc2a5d1955b0dcc24d), and [in-toto Attestation `2dcd055e`](https://github.com/in-toto/attestation/tree/2dcd055e9f72e746687c306e35f4e59720ff45be) | Apache-2.0 | Adopt DSSE and pin `@sigstore/core` 4.0.1 for pre-authentication encoding. OpenBot implements only the package-specific Ed25519 key boundary and strict employee parsing. in-toto/Sigstore provenance and TUF-based distribution remain separate future adapters. No upstream source was copied. |
 | Owner Employee publisher-key lifecycle | [Cosign `v3.0.6`](https://github.com/sigstore/cosign/tree/v3.0.6), [TUF specification `v1.0.35`](https://github.com/theupdateframework/specification/tree/v1.0.35), [Notary specifications `v1.1.0`](https://github.com/notaryproject/specifications/tree/v1.1.0), and [Node.js `v22.23.2`](https://github.com/nodejs/node/tree/v22.23.2) | Apache-2.0; Community Specification License 1.0; Apache-2.0; MIT | Reuse Node's Ed25519 and encrypted PKCS#8/SPKI APIs, Cosign's private/public separation, Notary's out-of-band trust policy, and TUF's retained key-state concepts. OpenBot implements only its filesystem manifest, offline Owner CLI, and DSSE HTTP adapter; no upstream source is copied. See [research evidence](research/employee-publisher-key-lifecycle.md). |
 | Browser control-plane security | [Hono `eebdf7be`](https://github.com/honojs/hono/tree/eebdf7be39abf0a872671835ccce0c4f03ea497a) and [OWASP Cheat Sheet Series `b8586414`](https://github.com/OWASP/CheatSheetSeries/tree/b8586414a5c47ae68911edb97d4e7b7bc6301035) | MIT; documentation CC BY-SA 4.0 | Reuse Hono 4.13.7 `secureHeaders` and the fixed transport-level `bodyLimit`; apply OWASP's Secure/HttpOnly/SameSite, exact-Origin, TLS, and `__Host-` guidance. Remote misconfiguration and oversized public enrollment bodies now fail closed. No upstream source or text was copied. |
@@ -121,18 +99,15 @@ fixes reuse valid decisions and reviewed versions; they do not reopen the full l
 | Employee profile realtime invalidation | [Hermes Agent `63279301`](https://github.com/NousResearch/hermes-agent/tree/63279301bcbdc185c1b07b98a9312eb0c862f26d), [Hono `4.13.7` / `eebdf7be`](https://github.com/honojs/hono/tree/eebdf7be39abf0a872671835ccce0c4f03ea497a), and [Kubernetes client-go `v0.35.1`](https://github.com/kubernetes/client-go/tree/v0.35.1) | MIT; MIT; Apache-2.0 | Adopt Hermes' typed live-detail refresh and Kubernetes' authoritative relist recovery while reusing OpenBot's pinned Hono SSE path. The Server emits only a Bot id, allowlisted sections, and a timestamp after commit; Clients refetch the authenticated profile. No upstream source is copied. See [research evidence](research/employee-profile-realtime-invalidation.md). |
 | Node channel authority and liveness | [`ws` 8.21.3 `c791e707`](https://github.com/websockets/ws/tree/c791e707eab3c13dd9a261d2479c3cc4a49a6fed), [Kubernetes node-heartbeat KEP `e849163a`](https://github.com/kubernetes/enhancements/blob/e849163ac4a0a5241ba626bd9a99820bf1dcd279/keps/sig-node/589-efficient-node-heartbeats/README.md), and [Nomad `482b49bf`](https://github.com/hashicorp/nomad/tree/482b49bf1aec006f089bcfc7e632d8f6ac303e5e) | MIT; Apache-2.0; MPL-2.0 | Reuse `ws` limits and ping/pong; separate liveness reports from Server-owned assignment state. Messages and enrollment time are bounded, duplicate hello is rejected, and silent sockets are terminated. No upstream source was copied. |
 | Node bootstrap identity | [SPIFFE `99470b9a`](https://github.com/spiffe/spiffe/tree/99470b9abc825f14aa364dfa2c3b53b02ba5db5b), [SPIRE 1.15.2](https://github.com/spiffe/spire/tree/v1.15.2), [Tailscale `92ec1026`](https://github.com/tailscale/tailscale/tree/92ec102673bf46d72bab64b0a278b93c01a47f34), [Headscale 0.29.3](https://github.com/juanfont/headscale/tree/v0.29.3), [Kubernetes 1.36.2](https://github.com/kubernetes/kubernetes/tree/v1.36.2), and [Smallstep Certificates 0.30.2](https://github.com/smallstep/certificates/tree/v0.30.2) | Apache-2.0; BSD-3-Clause | Adopt short-lived, single-use bootstrap, digest-only Server storage, per-Node state, revocation, and one-time display. Hono and `write-file-atomic` provide the reusable HTTP/file mechanics; OpenBot locally implements only its PostgreSQL transaction, protocol, and audit gap. Proof of possession, PKI, rotation, keyrings, and replay protection remain a separate reviewed phase. No upstream source was copied. |
-| Owner Node management | [Headplane `v0.7.0`](https://github.com/tale/headplane/tree/v0.7.0), [Headscale `v0.29.3`](https://github.com/juanfont/headscale/tree/v0.29.3), and [Tailscale `92ec1026`](https://github.com/tailscale/tailscale/tree/92ec102673bf46d72bab64b0a278b93c01a47f34) | MIT; BSD-3-Clause | Adopt the device-list, explicit add, one-time bootstrap, durable machine state, and separated destructive-action journey. OpenBot reuses its existing native dialog, Owner session, realtime projection, and Node identity service because another control plane cannot safely become the authority for local identities. No upstream source was copied; see [research evidence](research/node-management-console.md). |
 | Atomic sensitive files | [`npm/write-file-atomic` 8.0.0](https://github.com/npm/write-file-atomic/tree/v8.0.0) | ISC | Use the released dependency for fsync, atomic rename, per-destination serialization, and temporary-file cleanup instead of maintaining those mechanics locally. Artifact and Node credential files request `0600`; final mode bits are verified only on POSIX because Windows does not implement owner/group/other permission classes. Windows ACL protection remains a separate review. No upstream source was copied. |
 | Artifact read integrity | [OCI Image Specification `13cff549`](https://github.com/opencontainers/image-spec/blob/13cff54902ec9ad6320cbc487a685b66fcd67171/descriptor.md#verification) and existing OpenBot Artifact metadata | Apache-2.0; MIT | Adopt size-before-SHA-256 verification over the existing authoritative record before serving bytes. No dependency or upstream source is added; object-store checksums and repair alerts remain future adapters. See [research evidence](research/artifact-read-integrity.md). |
 | POSIX credential permission drift | [OpenSSH portable `1bf5871a`](https://github.com/openssh/openssh-portable/blob/1bf5871aead6d73177d727add15ab0f14c258fdf/authfile.c), [OpenClaw `095d5220`](https://github.com/openclaw/openclaw/commit/095d522099653367e1b76fa5bb09d4ddf7c8a57c), and [`write-file-atomic` 8.0.0](https://github.com/npm/write-file-atomic/tree/v8.0.0) | BSD-style collection; MIT; ISC | Adapt OpenSSH's fail-closed group/other-bit invariant and opened-handle validation around the existing atomic adapters. OpenBot refuses exposed POSIX Node and Employee publisher credentials instead of silently repairing them; Windows ACLs and native keyrings remain a separate review. No upstream source was copied. See [research evidence](research/posix-node-credential-permissions.md). |
 | Windows Node credential ACL | Microsoft Learn `icacls`; .NET `FileSecurity`/`DirectorySecurity`; adapted from OpenBot Desktop `windows-native-security.ts` @ `729c16431057`; `write-file-atomic` 8.0.0 | Microsoft docs; MIT (OpenBot); ISC | Enforce Owner+SYSTEM-only DACLs for the file-backed Node credential directory and file on Windows; fail closed on unexpected Allow ACEs or reparse points. No new dependency and no package-lock change. Not Credential Manager/DPAPI. See [research evidence](research/windows-node-credential-acl.md). |
 | Shared Windows secret ACL (Server model/plugin N2) | OpenBot Node Windows ACL helpers extracted to `@openbot/windows-secret-acl`; Microsoft Learn `icacls`; .NET `FileSecurity`/`DirectorySecurity`; Desktop `windows-native-security.ts` lineage | MIT (OpenBot); Microsoft docs | Extract Owner+SYSTEM DACL + reparse-boundary helpers into a workspace package used by Node credential-store and Server model-settings/plugin-store/key files. Verify-only for existing dirs; protect newly created dedicated dirs before writes. Fingerprint + owner-SID cache avoids PowerShell on every hot read. No new external dependency. Not Credential Manager/DPAPI. See [research evidence](research/server-windows-secret-acl.md). |
 | Windows native ACL test harness (Server + Node) | OpenBot `@openbot/windows-secret-acl` production spawn hygiene (`runWindowsSecretAclScript`: inbox powershell, `shell:false`, `stdin.end()`, 15s `execFile` cap, .NET `GetAccessControl`); Vitest per-test timeout; Node `child_process.execFile` timeout | MIT (OpenBot); Node.js license; Vitest MIT | Bound only native Windows ACL Vitest deadlines from production PowerShell call count × 15s (+ small margin). Mirror production `broadenAcl` hygiene in native negatives — no `Get-Acl`/`Get-Item`/`Set-Acl`, no bare PATH powershell, no unbounded stdin. Keep real Owner+SYSTEM positive/negative assertions; production spawn timeout stays 15s; `cacheVerifiedState` stays default off. See [research evidence](research/windows-native-acl-test-budget.md). |
-| Root Vitest test runner | [Vitest `5.0.0` / `f441c6fa`](https://github.com/vitest-dev/vitest/tree/f441c6fab25e579c5b7dd3dd50538416f415fbae); peer Vite `^6.4 or ^7 or ^8` (repo hoists Vite 8.2.2); Node engines already `^22.22.2 or ^24.15.0 or >=26` | MIT | Exact-pin root `devDependency` vitest 5.0.0 + lockfile transitive `@vitest/*` 5.0.0. Keep existing assertions; do not set `clearMocks: false` unless a suite proves need. Optional `.vitest/` gitignore for v5 artifact dirs. Dependabot #27 is superseded by this researched migration (missing Open-source research on #27; Windows ACL 60s was harness, fixed by #42). No product source copied; see [research evidence](research/vitest-5-migration.md). |
 | Linux Worker Host service and Secret Service | [Secret Service API 0.2](https://specifications.freedesktop.org/secret-service/latest-single/), Ubuntu 24.04 [libsecret `0.21.4` / `6b5a6c28`](https://github.com/GNOME/libsecret/tree/6b5a6c28afc6dd93c232a4907a87c881079ff91b) and current [`0.21.7` / `0936f740`](https://github.com/GNOME/libsecret/tree/0936f740c02b60f02657729cd99f581db4517a41), [systemd `v255` / `db11bab3`](https://github.com/systemd/systemd/tree/db11bab38ccf1ed257f310d29070843d4c58ea01), [`@napi-rs/keyring` `2.0.0` / `f3449416`](https://github.com/Brooooooklyn/keyring-node/tree/f3449416a1b4bf11b0570f0a49395aacc84c8608), and archived [`node-keytar` `7.9.0` / `5adb540f`](https://github.com/atom/node-keytar/tree/5adb540f8557801c52254e969a6c7ed9ef4d16f0) | Specification; LGPL-2.1-or-later; LGPL-2.1-or-later; MIT; MIT | Adopt Secret Service only for a dedicated logged-in user and systemd hardening for the headless dedicated account. Use a bounded external `secret-tool` adapter because the maintained Node candidate silently falls back to a different Linux keyring and keytar is archived. Backend/session/helper failures never fall back to files. No upstream source is copied; see [research evidence](research/linux-worker-host-service-and-secret-service.md). |
 | Linux Worker Host verifiable archive | Official [Node.js `v22.22.2` / `2645dc73`](https://github.com/nodejs/node/tree/2645dc73720b1b4f27c49f395d3c66025ce126cc) release archives, [`@vercel/ncc` `0.45.0` / `cb1f1f05`](https://github.com/vercel/ncc/tree/cb1f1f058bfa7de4cb63f2411e14a724e714e260), [npm CLI `10.9.9` / `745d8d90`](https://github.com/npm/cli/tree/745d8d90b5403110d26ba332ba83d8c5a51f0578), [GNU tar 1.35](https://www.gnu.org/software/tar/manual/html_node/Reproducibility.html), Ubuntu 24.04 security-patched xz 5.4.5, [`actions/attest` `v4.2.2` / `1e69f48a`](https://github.com/actions/attest/tree/1e69f48acb82d1966a394da916b4c1698aa569d6), [`actions/upload-artifact` `v7.0.1` / `043fb46d`](https://github.com/actions/upload-artifact/tree/043fb46d1a93c77aae656e7c1c64a875d1fc6a0a), and the [`ubuntu-24.04-arm` inventory `c623f513`](https://github.com/actions/runner-images/blob/c623f51349e6e669403715506fe7f4c63b14e08b/images/ubuntu/Ubuntu2404-Arm64-Readme.md) | Node.js license; MIT; Artistic-2.0; GPL-3.0-or-later; public-domain/LGPL/GPL mix; MIT; MIT; MIT/tool licenses/service terms | Bundle the app as one audited JS entry, pair it with a hash-verified official runtime, and emit a production SPDX SBOM, canonical file manifest, and checksums. GNU tar/xz create the archive with fixed metadata/options and a same-job byte comparison because xz output can vary across builds. The tag matrix executes each package on a matching hosted x64/arm64 CPU before attestation. Local artifacts remain visibly unsigned; an authorized tag workflow must fail if provenance cannot be generated. Direct workflow uploads preserve bytes but are temporary review transport, not a GitHub Release. SEA remains experimental and `pkg` is archived. No upstream source is copied; see [research evidence](research/linux-worker-host-archive.md). |
 | Linux Worker Host recoverable installation | [FHS 3.0](https://refspecs.linuxfoundation.org/FHS_3.0/fhs/index.html), [POSIX.1-2024 `rename()`](https://pubs.opengroup.org/onlinepubs/9799919799/functions/rename.html), [systemd `v255` / `db11bab3`](https://github.com/systemd/systemd/tree/db11bab38ccf1ed257f310d29070843d4c58ea01), [GitHub CLI `v2.93.0`](https://github.com/cli/cli/tree/v2.93.0), GNU tar `1.35`, xz `5.4.5`, rejected [`node-tar` `7.5.22` / `2a22bfc5`](https://github.com/isaacs/node-tar/tree/2a22bfc5d3a432a606d9da0e2d87ba634aa3b1cb), rejected [`tar-stream` `3.2.1` / `246572f4`](https://github.com/mafintosh/tar-stream/tree/246572f479d92b0748b21c873e58c64a84a0b826), [Debian Policy `4.7.4.1`](https://www.debian.org/doc/debian-policy/), and [OSTree `v2026.1`](https://github.com/ostreedev/ostree/tree/v2026.1) | Standards; LGPL-2.1-or-later; MIT; GPL-3.0-or-later; public-domain/LGPL/GPL mix; BlueOak-1.0.0; MIT; GPL-2.0-or-later; LGPL-2.0-or-later | Adopt versioned `/opt` layout, private root-owned `/var/lib` transaction state, same-filesystem atomic symlink replacement, exact certificate-SAN attestation verification, strict GNU tar inventory/extraction, and systemd health checks. GitHub CLI's prefix-matching signer-workflow flag is rejected; node-tar's recent link/path advisory churn and tar-stream's missing filesystem policy make them unsuitable for this privileged boundary. Implement only the OpenBot version-selection, recovery-journal, and health-bound rollback gap. Generic systemd-sysupdate/OSTree deployment is too broad and Debian package scripts do not supply application rollback. No upstream source is copied; see [research evidence](research/linux-worker-host-install-transaction.md). |
-| Linux Worker Host privileged bootstrap boundary | [Node.js `v22.22.2` / `2645dc73`](https://github.com/nodejs/node/tree/2645dc73720b1b4f27c49f395d3c66025ce126cc), FHS 3.0, POSIX.1-2024 directory operations, [systemd `v255` / `db11bab3`](https://github.com/systemd/systemd/tree/db11bab38ccf1ed257f310d29070843d4c58ea01), Linux man-pages `6.19` `openat2`, rejected [`proper-lockfile` `4.1.2` / `9f8c303c`](https://github.com/moxystudio/node-proper-lockfile/tree/9f8c303c91998e8404a911dc11c54029812bca69), rejected [`fs-ext` `2.1.1` / `aded9760`](https://github.com/baudehlo/node-fs-ext/tree/aded976099c2b06c944f0897a9b004dbf266e234), rejected [`commander` `15.0.0` / `ba6d13dd`](https://github.com/tj/commander.js/tree/ba6d13ddb4243e5913367734f8c159089ffe7834), and rejected [`yargs` `18.1.0` / `8878a894`](https://github.com/yargs/yargs/tree/8878a894111e3fe7c98d84af546c0f34fa017492) | Node.js license; standards; LGPL-2.1-or-later; man-pages collection licenses; MIT; MIT; MIT; MIT | Copy an untrusted archive exactly once through an opened handle into fixed private root-owned state, then run provenance, extraction, and activation against only that imported path under one atomic-directory lease. Create missing fixed children with non-recursive Node `mkdir` only after validating each parent; never mutate an existing child with ownership or mode drift. Parse the two-operation command with pinned Node core in strict/token mode, derive architecture and ids internally, and never accept credentials in argv; Commander and Yargs add shipped privileged code without closing a boundary gap. `systemd-tmpfiles` is deferred because its wrong-existing-state diagnostic is not by itself a failing trust gate. Do not automatically reclaim a stale privileged lease. Lock identity cannot rely on overlay `dev`/`ino`/`ctimeMs` alone; a process-private exclusive token file and a pre-open source digest close replacement and same-size overwrite gaps ([identity review](research/linux-install-fs-identity.md)). Node core does not expose `openat2`; fixed destinations and non-writable root-owned ancestors close the first bootstrap gap without a new native binary. No upstream source is copied; see [research evidence](research/linux-worker-host-privileged-bootstrap.md). |
 | Windows Worker Host service boundary | [`Microsoft.Extensions.Hosting.WindowsServices` `10.0.11`](https://www.nuget.org/packages/Microsoft.Extensions.Hosting.WindowsServices/10.0.11) from [`dotnet/dotnet` `e2f47b01`](https://github.com/dotnet/dotnet/tree/e2f47b0110ed922f21a1522da67279133ce28f32), [`Meziantou.Framework.Win32.Jobs` `4.0.0` / `111934ad`](https://github.com/meziantou/Meziantou.Framework/tree/111934ad792cefd946e99bfd1bba71c39e45f163), Microsoft SCM/redirected-input/Job Object contracts, [Node.js `v22.22.2` / `2645dc73`](https://github.com/nodejs/node/tree/2645dc73720b1b4f27c49f395d3c66025ce126cc), rejected [WinSW `v2.12.0` / `eef5bade`](https://github.com/winsw/winsw/tree/eef5bade59fca0254e387ac73ed7625ba6aa7147), and rejected [`node-windows` `1.0.0-beta.8` / `e60ec01c`](https://github.com/coreybutler/node-windows/tree/e60ec01cb63f73a713581548d24256b25c5f93f8) | MIT; MIT; Microsoft documentation/API; Node.js license; MIT; MIT plus bundled components | Adopt Microsoft's released SCM lifetime in a self-contained single-file Windows x64 host. Use inherited redirected standard input for an exact bounded `START` then `SHUTDOWN` protocol: the verified Node entry point remains inert until Job assignment succeeds, closing the `Process.Start()` assignment window before any client or Provider side effect. A pinned unnamed Job Object with kill-on-close and no breakaway supplies forced containment; ordinary Windows signals and `Process.Kill(true)` cannot prove graceful or complete tree exit. Implement only fixed verified-child supervision, cooperative drain, redacted diagnostics, and install-transaction integration. Start with LocalService, but require native identity, ACL, shutdown, restart, upgrade, and credential-denial evidence before any support claim. WinSW and `node-windows` remain rejected. No upstream source is copied; see [research evidence](research/windows-worker-host-service.md). |
 | Windows Worker Host build lane | [`actions/setup-dotnet` `v5.3.0` / `9a946fdb`](https://github.com/actions/setup-dotnet/tree/9a946fdbd5fb07b82b2f5a4466058b876ab72bb2), [.NET SDK `10.0.400` / runtime `10.0.11`](https://github.com/dotnet/core/blob/main/release-notes/10.0/10.0.11/10.0.11.md), NuGet package locks, and GitHub-hosted `windows-2025` x64 | MIT; MIT; package-specific licenses; GitHub service/tool terms | Pin the first-party action by full commit and select the exact LTS SDK through `global.json`. Restore exact package graphs only with `--locked-mode`, run pure tests, and publish a self-contained single-file `win-x64` artifact whose inventory is checked but never uploaded by this gate. Reject the mutable preinstalled SDK, a locally duplicated install script, and floating action or SDK versions. This is compilation evidence, not SCM, signing, installer, Credential Manager, or platform-support evidence. No upstream source is copied; see [research evidence](research/windows-worker-host-build-lane.md). |
 | Windows Worker Host installer contract | Microsoft Windows Installer 5.0 service, configuration, ACL, component, upgrade, and rollback tables; conditional [`WiX Toolset v7.0.0` / `b8977d6f`](https://github.com/wixtoolset/wix/tree/b8977d6f88e7b68e000bac226a2814f236770570); rejected WiX v6/v3, MSIX packaged service, self-install/SCM scripts, and Electron wrappers | Windows platform/API terms; WiX source MS-RL and binary OSMF EULA v1.1; candidate-specific terms | Adopt inbox MSI standard transactions as the package contract and prohibit custom actions, downloads, credentials, mutable paths, disabled rollback, or pre-enrollment auto-start. WiX v7 is the first viable technical authoring adapter, but OpenBot will not download, execute, or add it until the Owner explicitly decides the OSMF EULA and any fee obligation. Keep compiled MSI-table tests adapter-independent. No upstream source or binary is incorporated; see [research evidence](research/windows-worker-host-installer.md). |
@@ -148,11 +123,10 @@ fixes reuse valid decisions and reviewed versions; they do not reopen the full l
 | Capability lease protocol (DEV-001 H2 design) | [RFC 9449 DPoP](https://datatracker.ietf.org/doc/rfc9449/), [RFC 9396 RAR](https://datatracker.ietf.org/doc/rfc9396/), [RFC 7519 JWT](https://datatracker.ietf.org/doc/html/rfc7519), selected [`jose@6.2.12`](https://www.npmjs.com/package/jose/v/6.2.12) / tag object [`99eaf5ed`](https://github.com/panva/jose/tree/v6.2.12) → commit [`505a55b8f73536082367b2614cb77e927ba96ec1`](https://github.com/panva/jose/commit/505a55b8f73536082367b2614cb77e927ba96ec1) ([`JWTVerifyOptions`](https://github.com/panva/jose/blob/main/docs/jwt/verify/interfaces/JWTVerifyOptions.md); [Node alg matrix #262](https://github.com/panva/jose/issues/262) lists `EdDSA` + `Ed25519`), compared [SPIRE `v1.15.3` / `2f7861ae`](https://github.com/spiffe/spire/releases/tag/v1.15.3), [PASETO `4.0.1` / `5c7812e818c1`](https://github.com/panva/paseto/tree/5c7812e818c1d50a47ce3baf107614c42ae16c43), [`macaroons.js` `0.3.9` / `0a036117`](https://github.com/nitram509/macaroons.js/tree/0a0361174a07), [Branca `0.5.0` / `498bb5f7`](https://github.com/tuupola/branca-js/tree/498bb5f76316), and Node.js `crypto.generateKeyPairSync('ed25519')` on engines `^22.22.2 or ^24.15.0 or >=26.0.0` | IETF Trust; MIT (jose, zero runtime deps); compared Apache-2.0/MIT; Node.js license | Proposed CONVERGE (gate not closed): **select jose@6.2.12** for JWS Compact JWT encode/verify; pin header `alg` to fully-specified **`Ed25519`** (reject `EdDSA` unless signing API forces a documented single-alg freeze); Server signs with private key, Node verifies with pinned public `kid` only (no `jku`/`jwk` remote fetch); Server owns PostgreSQL atomic approve+issue and single-consume/revoke races — **"library lacks lease-store semantics" is not a reason to reject jose for signature encoding**. Adopt RFC 9449/9396 claim/binding ideas; required `providerId` for side effects; protocol downgrade rejection; token ≤8192 bytes. Do not add SPIRE/OAuth/PASETO/macaroons/Branca. No runtime change until Accept + coding slice; Providers stay disabled. See [research](research/capability-lease-protocol.md) and [ADR-0045](decisions/0045-capability-lease-protocol.md). |
 | Durable login client identity and throttling | [RFC 7239](https://www.rfc-editor.org/rfc/rfc7239), [Hono Node Server `73c03adf`](https://github.com/honojs/node-server/tree/73c03adfb01928fcd5f5b20faebd5d692f83fc93), [OWASP Cheat Sheet Series `b8586414`](https://github.com/OWASP/CheatSheetSeries/tree/b8586414a5c47ae68911edb97d4e7b7bc6301035), NIST [SP 800-63B-4](https://doi.org/10.6028/NIST.SP.800-63B-4), and [PostgreSQL 17 `ec3f6a6a`](https://github.com/postgres/postgres/tree/ec3f6a6a7dd82a8ce455a0710ef75172f9f318d1) | IETF Trust; MIT; documentation CC BY-SA 4.0; public-domain U.S. government work; PostgreSQL License | Reuse Hono's direct socket address, honor exactly one `Forwarded` hop only from one configured trusted proxy, and store only a domain-separated digest in an atomic PostgreSQL bucket. `hono-rate-limiter` and `express-rate-limit` were rejected because storage middleware cannot establish the missing proxy trust contract. No upstream source is copied; see [research evidence](research/dev-001-short-term-hardening.md). |
 | Structured redacted operational logging | [Pino `10.3.1` / `6b344980`](https://github.com/pinojs/pino/tree/6b344980eae3ebed904fc87caf4bba0ab9dbe946), [Winston `3.19.0`](https://github.com/winstonjs/winston/tree/v3.19.0), and [OWASP Cheat Sheet Series `b8586414`](https://github.com/OWASP/CheatSheetSeries/tree/b8586414a5c47ae68911edb97d4e7b7bc6301035) | MIT; MIT; documentation CC BY-SA 4.0 | Use Pino behind a narrow local allowlisted API for levels, child correlation fields, and redaction. Do not expose generic object/error logging from control-plane code. Winston's transport breadth is unnecessary. No upstream source is copied; see [research evidence](research/dev-001-short-term-hardening.md). |
-| Web component interaction tests | [jsdom `30.0.1` / `6584485f`](https://github.com/jsdom/jsdom/tree/6584485f094d5b271553005b68804c93a455c002), [Happy DOM `20.14.0` / `eac5a380`](https://github.com/capricorn86/happy-dom/tree/eac5a38026b0569f2d52b609b2bb4cbaa94d9644), and [Vitest `5.0.0` / `f441c6fa`](https://github.com/vitest-dev/vitest/tree/f441c6fab25e579c5b7dd3dd50538416f415fbae) (jsdom env; browser mode still future) | MIT | Use exact-pinned jsdom only as a development test environment for React form, focus, button, alert, and async-state behavior under the root Vitest 5.0.0 runner. It matches the repository Node floor and needs no browser download or application network access. Happy DOM has relevant open disabled-control/timer differences; Vitest browser mode remains the future rendered cross-browser layer. No upstream source is copied; see [research evidence](research/dev-001-short-term-hardening.md) and [Vitest 5 migration](research/vitest-5-migration.md). |
+| Web component interaction tests | [jsdom `30.0.1` / `6584485f`](https://github.com/jsdom/jsdom/tree/6584485f094d5b271553005b68804c93a455c002), [Happy DOM `20.14.0` / `eac5a380`](https://github.com/capricorn86/happy-dom/tree/eac5a38026b0569f2d52b609b2bb4cbaa94d9644), and [Vitest `5.0.0` / `f441c6fa`](https://github.com/vitest-dev/vitest/tree/f441c6fab25e579c5b7dd3dd50538416f415fbae) (jsdom env; browser mode still future) | MIT | Use exact-pinned jsdom only as a development test environment for React form, focus, button, alert, and async-state behavior under the root Vitest 5.0.0 runner. It matches the repository Node floor and needs no browser download or application network access. Happy DOM has relevant open disabled-control/timer differences; Vitest browser mode remains the future rendered cross-browser layer. No upstream source is copied; see [research evidence](research/dev-001-short-term-hardening.md) and Vitest 5 migration. |
 | CI dependency and secret scanning | [TruffleHog `3.97.1` / `20652fbb`](https://github.com/trufflesecurity/trufflehog/tree/20652fbbdefffcdaa493a5bf57ab2ac6b1db715b), [Gitleaks `v8.27.2` / `c7acf33`](https://github.com/gitleaks/gitleaks/tree/c7acf33), and [npm CLI `10.9.9` / `745d8d90`](https://github.com/npm/cli/tree/745d8d90b5403110d26ba332ba83d8c5a51f0578) | AGPL-3.0; MIT; Artistic-2.0 | Run TruffleHog as a read-only, digest-pinned CI container with verification and updates disabled; it is not linked into or shipped with OpenBot. Select the exact reviewed npm CLI, use `npm ci --ignore-scripts` to validate and construct the complete lock tree, then run the production-only audit fail closed. Gitleaks remains the reserve static alternative; its official action's separate organization license is not adopted. See [research evidence](research/dev-001-short-term-hardening.md). See [exact historical fixture triage](research/credential-scan-fixture-triage.md) for the JSON adapter; full history and all detectors remain scanned. |
 | Browser egress hardening | [Squid7.7 `173863d3`](https://github.com/squid-cache/squid/tree/173863d3ec547d7fc5227ddbb5d8093c88b4842f), [OWASP SSRF Prevention Cheat Sheet `b8586414`](https://github.com/OWASP/CheatSheetSeries/blob/b8586414a5c47ae68911edb97d4e7b7bc6301035/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.md) and [agent-computer `257c1280`](https://github.com/CopilotKit/openbot/tree/257c1280d684089be9adb0b35cce262efc7064bf/agent-computer) | Separate Squid executable GPL-2.0-or-later; documentation CC BY-SA4.0; adapter MIT | Proxy-only qualification passed20 real cases; host enforcement remains unqualified. Squid exact name/port/source policy requires host packet enforcement and tunnel teardown; DNS preflight is not isolation. Keep product origins restricted to trusted fixtures. See [selected Linux boundary](research/linux-execution-boundary.md), [compiler/runtime record](research/browser-egress-policy.md) and [earlier gap](research/dev-001-short-term-hardening.md). |
 | Office visualization | Public Tencent Marvis product imagery supplied by the project owner | No reusable source-code license identified | Visual inspiration only. No Marvis code or assets are incorporated; the office remains a deferred optional plugin. |
-| Desktop event-stream lifecycle | Electron 44.2.0 / tag object `369b0d9d3afdd5b8c0bdb0ad42391443947a7424`; AbortController | MIT; Node.js license | Bound the single window to one workspace and one channel stream; abort on replacement/navigation/close. Existing protocol cancellation is insufficient for reconstructed responses. No copied source; [research](research/desktop-stream-lifecycle.md). |
 
 ## Retroactive coverage map
 
@@ -168,7 +142,6 @@ named boundary until the missing review is completed.
 | Provider SDK and current Docker browser adapter | Reviewed | CopilotKit/OpenBot `agent-computer`, Cua, MCP conformance, OCI evidence, and platform claim levels are recorded. Native Provider claims remain limited to their evidence. |
 | GitHub contribution and CI surface | Reviewed | Issue forms and RFC/KEP evidence are adapted locally. Existing checkout/setup actions are pinned to reviewed commits with credentials persistence disabled. |
 | PostgreSQL store and migration lifecycle | Reviewed | Drizzle/Postgres.js/PostgreSQL behavior is pinned. The journal and database history fail closed on drift; a real PostgreSQL CI job covers concurrent first migration and repeat startup. |
-| PostgreSQL and artifact backup/restore | Partial | Pinned native `pg_dump`/`pg_restore` plus paired private files have a repeatable completed-product restore probe, actual reader/decryption checks and key-failure counterexamples; see [review](research/python-product-paired-restore.md). Active-engine/online full restore, scheduling, backup encryption, retention and off-host adapters remain outside that accepted fixture. |
 | Multi-Server scheduling and event distribution | Partial | [Recurring submission research](research/server-automations.md) completes the bounded single-Server interval-schedule slice, including transactional claims and normal Run submission. Shared dispatch and event distribution remain unreviewed for multiple Server replicas; the single-process boundary remains. |
 | Office visualization plugin | Deferred | Only public product imagery was supplied; no reusable code license was identified, and this release does not expand the plugin. |
 
@@ -298,13 +271,13 @@ Reuse review complete: Agent Skills `69ef37e9424c0a7ea9dd2293b559e43ec8176379` a
 
 ## Kimi desktop model
 
-Use released @ai-sdk/moonshotai 3.0.45 / 8a09c78c039e2c092468eaeff97faaabf3b77366 (Apache-2.0), with a fixed CN endpoint and existing encrypted Owner settings. No source copied. [Research](research/kimi-desktop-model.md).
+Use released @ai-sdk/moonshotai 3.0.45 / 8a09c78c039e2c092468eaeff97faaabf3b77366 (Apache-2.0), with a fixed CN endpoint and existing encrypted Owner settings. No source copied.
 
-Desktop provider presets reuse the installed AI SDK adapters and Owner settings; see [Desktop integration review](research/desktop-model-presets.md) and [provider API evidence](research/model-service-presets.md). No upstream source copied.
+Desktop provider presets reuse the installed AI SDK adapters and Owner settings. No upstream source copied.
 
 Desktop public research reuses ai 7.0.93 / `6359fd58fe68eaade096b5d923bac26de84ca3bd`, @ai-sdk/moonshotai 3.0.45 / `8a09c78c039e2c092468eaeff97faaabf3b77366` (Apache-2.0), the official Kimi Formula and Tavily search contracts observed 2026-09-08, and the existing DNS-pinned source reader. Four web calls share the native Run's authority, audit and deadline. No upstream source copied; see [Desktop public web tools](research/desktop-public-web-tools.md).
 
-Channel presentation and Owner plugin controls reuse React 19.2.8, existing native HTML controls and OpenBot identities. Public Grok Bot observations, bounded UI projections and actual rendered checks are recorded in [channel presentation](research/channel-collaboration-presentation.md) and [plugin interface](research/plugin-owner-interface.md); no xAI artwork or implementation was copied.
+Channel presentation and Owner plugin controls reuse React 19.2.8, existing native HTML controls and OpenBot identities. Public Grok Bot observations, bounded UI projections and actual rendered checks were recorded in the channel presentation and plugin interface reviews; no xAI artwork or implementation was copied.
 
 The alpha.5 native-reference channel refinement continues these pinned dependencies and standards without incorporating proprietary source or private transcripts. See [native observation](research/channel-native-reference.md), [routing/context](research/channel-context-routing.md), [attachment presentation](research/channel-attachment-presentation.md), and [user-visible behavior](CHANNEL_EXPERIENCE.md).
 
@@ -314,19 +287,14 @@ Native startup diagnostics reuse Node v22.22.2 `diagnostics_channel` (MIT) insid
 
 Windows database startup reuses PostgreSQL REL_17_11 `pg_ctl` restricted-token launch and its documented PID-file/status contracts. The thin adapter verifies cluster, port, PID and start identity before cleanup or stop; no token API implementation or upstream source copied. See [research](research/windows-desktop-completion.md).
 
-Windows Desktop cold-start conformance reuses Electron 44.2.0 `safeStorage` (DPAPI), `utilityProcess`, existing `NativeServerController`, Node `process.kill(pid, 0)` liveness, PostgreSQL `postmaster.pid`, and the inbox PowerShell/`Start-Process` install gate. After one bootstrap lifetime (including one same-process retained restart so historical assertions are not relaxed), the gate runs **ten independent Electron process** start→exit cycles against self-made temp harness directories only. No new dependency and no product runtime change; see [research](research/windows-cold-start-conformance.md).
+Windows Desktop cold-start conformance reuses Electron 44.2.0 `safeStorage` (DPAPI), `utilityProcess`, existing `NativeServerController`, Node `process.kill(pid, 0)` liveness, PostgreSQL `postmaster.pid`, and the inbox PowerShell/`Start-Process` install gate. After one bootstrap lifetime (including one same-process retained restart so historical assertions are not relaxed), the gate runs **ten independent Electron process** start→exit cycles against self-made temp harness directories only. No new dependency and no product runtime change.
 
 ## Product repair adapters (2026-09-11)
 
-- Async Desktop credential access and explicit release targets reuse Electron 44.2.0 and existing packaging adapters: [research](research/product-repair-startup.md).
-- Portable Bot v2 instruction content reuses Agent Skills and the existing digest-reviewed import: [research](research/portable-bot-skills.md).
-- Native Bot content downloads preserve the reviewed optional boolean across the existing Electron 44.2.0 sandbox bridge: [research](research/native-bot-export-bridge.md). No new dependency or copied source; fixed IPC, digest and native-path checks remain.
-- The independent plugin starter copies the existing MIT example and now pins MCP SDK 1.32.1: [initial research](research/plugin-platform-completion.md), [reviewed advisory update](research/typescript-control-plane-p0.md#mcp-sdk-advisory-repair-2026-10-07).
+- The independent plugin starter copies the existing MIT example and now pins MCP SDK 1.32.1: [reviewed advisory update](research/typescript-control-plane-p0.md#mcp-sdk-advisory-repair-2026-10-07).
 
 Desktop search-account selection reuses Electron 44.2.0's explicit child environment map, without
-new dependencies or copied source: [review](research/desktop-explicit-search-key.md).
-
-- Node environment credential opt-in reuses Zod 4.5.4 cross-field validation and the existing store adapters; no new dependency or copied source. [Research](research/node-environment-credential-opt-in.md).
+new dependencies or copied source.
 
 H2 v1 profile follow-up selects RFC 8785 JCS with `canonicalize@5.0.0` / `7d97c70c79c9f52070e6c24c38a92f0dd9b32a57` (Apache-2.0, zero runtime dependencies), behind strict bounded input validation. The reviewed source and 86 upstream tests support the proposed serializer choice, not runtime lease availability. Exact typing, fingerprint vectors and connection-bound consume semantics: [research addendum](research/capability-lease-protocol.md#review-addendum-exact-v1-profile). No source copied or dependency installed.
 
@@ -341,32 +309,9 @@ Exact-pinned patch consolidation (Dependabot #24, #25, #26, #28; Vitest 5 #27 ex
 | @types/react-dom | `19.2.7` | MIT (DefinitelyTyped) | Web/Desktop typings; runtime `react-dom` stays `19.2.8` |
 | filename-reserved-regex | [`4.0.1` / `d267eb9`](https://github.com/sindresorhus/filename-reserved-regex/tree/d267eb977513e8137062ecca53a15fd78d5b6c92) | MIT | Windows reserved-name predicate for Employee export filenames |
 
-No upstream source copied. Evidence: [deps-patch research](research/deps-patch-hono-biome-types-filename.md).
-| PDF/Office parser dependency coherence | PDF.js 6.3.289 / `1c8020a7d4e43668ac287a3ecf9a8dbea17e4c56`; existing officeparser 7.8.0 and npm 10.9.9 | Apache-2.0; MIT; Artistic-2.0 | Synchronize the direct pin and exact global override, preserving the workspace resolution anchor and bounded Worker. Real PDF/Office tests and clean install remain gates; upstream Indic extraction limitation is documented. No copied source. See [research](research/pdfjs-6.3-lock-coherence.md). |
-| September 12 dependency maintenance | setup-dotnet 6.0.0 / a98b5685; @types/node 26.5.0; official Node 24.21.0 image; electron-builder 26.16.1 / 7d3b30f3 | MIT; Node and bundled Debian component licenses | Reuse existing upstreams and synchronize exact pins, lockfile and strict smoke assertions; no removed security gates, copied source or signing claim. See [research](research/dependency-ci-september12.md). |
+No upstream source copied.
 
 Desktop PostgreSQL parent lifecycle reuses macOS POSIX child wait/pipe primitives with the existing PostgreSQL binary package. The app-bundled thin supervisor retains direct-child signal authority and does not adopt PID-file processes. No upstream source copied; see [research](research/desktop-postgres-parent-lifecycle.md). macOS native acceptance remains required; Windows lifecycle is unchanged.
-
-### Empty attachment extraction
-
-Reuse review complete: PDF.js 6.3.289 (`1c8020a7d4e43668ac287a3ecf9a8dbea17e4c56`, Apache-2.0)
-and Tesseract.js 7.0.0 (`42eae669e4b3a66429d8516f078912cc747a89df`, Apache-2.0).
-A narrow Server adapter rejects whitespace-only extraction before persisting success and rejects
-legacy empty derived records before inference. No new PDF OCR or automatic binary fallback.
-No copied source; see [research](research/attachment-empty-extraction.md).
-
-### Chinese attachment extract-failure and original-save copy
-
-Reuse the existing exact-key presentation map (`nativeRunFailure`) and Electron 44.2.0
-`dialog.showSaveDialog` title/buttonLabel/message (`aa650d74597c652878629df0038a50485e156a09`,
-MIT). Map only the two Server empty-extract English sentences to Chinese; unknown, prefixed,
-or sibling failures stay unmapped so they cannot become the scanned-PDF reason. Translate the
-original-save dialog to match the Chinese report/image/employee dialogs. Reject i18next 26.4.2
-(`4dba50f20669c3678db0812255716eb7693ad2da`, MIT) for two strings. Server error semantics,
-original retention, cancel/retry, parser, OCR, and permissions are unchanged. No source copied;
-see [research](research/zh-attachment-copy.md).
-
-Windows receipt integration reuses PowerShell/.NET System.Text.Json and the existing bounded Node/WinPS process observer. Preserve literal timestamp precision and wait for the actual NSIS uninstall process; no new dependency or copied source. See [research](research/windows-receipt-orchestrator-identity.md).
 
 ### Web Vite serve CSP nonce
 
@@ -382,21 +327,11 @@ while rejecting its fixed nonce. No new dependency or copied upstream source; se
 Channel member layout reuses native controls and CSS Flexbox Level 1 (2025-10-14 CRD), with
 React 19.2.8 stable identities. Component-owned styles preserve avatars, bounded identity text,
 independent removal actions and keyboard focus after the row wrapper changed. No dependency or
-copied source; see [research](research/channel-member-layout.md).
+copied source.
 
 Native Run failure classification follows RFC 9457's machine-type/human-detail separation and
 Node.js v22.22.2 (`2645dc73`) public error-code guidance inside the existing Error/Run catalogue.
-No new HTTP error format, dependency or copied source; see the [classification review](research/native-failure-classification.md).
-
-## React runtime version coherence (2026-09-15)
-
-React and React DOM now reuse the matching official 19.3.0 release / `1d34f91dfde6bba84d08b683aaba164c7194dacb` (MIT), with `@types/react` 19.3.0 and compatible existing `@types/react-dom` 19.2.7. The prior 19.2.8 entries above describe their original reviews. A narrow official Dependabot group keeps runtime and declaration update proposals together; the upstream exact-version guard, existing interaction tests and production audit remain gates. No upstream source copied or local renderer introduced. See [research](research/react-19.3-version-coherence.md).
-
-## Vite 8.3 dependency coherence
-
-Reuse Vite 8.3.0 / `434e8e9495436a60789f2b588a04a6a24a3d1661` (MIT) with one shared
-resolution for the Web configuration and React plugin. Preserve strict types and existing CSP
-checks; no copied source or new dependency. See [review](research/vite-8.3-lock-coherence.md).
+No new HTTP error format, dependency or copied source.
 
 ## Reviewed dependency intake and September 15 runtime updates
 
@@ -413,7 +348,7 @@ historical review context; the lockfile and this follow-up identify the current 
 
 React DOM types 19.3.0 / DefinitelyTyped `de5e8f01d01a14ae4ae502283d3d09f042f1ad89`
 and Zod 4.6.2 / `e359f7378fe56d695134701cda1e9055a08892dc` (both MIT) preserve the
-existing renderer and validation contracts. No copied source; see the [review](research/dependency-types-zod-september15.md).
+existing renderer and validation contracts. No copied source.
 
 ## Server gates for a Python-driven loop (2026-09-23)
 
@@ -435,7 +370,6 @@ contracts and the package lock verifier. It validates the fixed installed packag
 initialization, with no automatic installation or fallback. No source copied or dependency added;
 see [activation research](research/python-runtime-activation.md).
 
-
 ## Python tool-schema compatibility (2026-09-23)
 
 Select jsonschema-rs 0.57.1 / 5f2f3f341f20a9460caef88f017d10ce2dc91227 (MIT) for the Python
@@ -444,16 +378,6 @@ the previous Python-regex validator refused them before model execution. The rel
 validator is preferred over a partial regex monkeypatch. Offline compilation, format annotations,
 bounded regex options and unchanged Server authority are required. No source copied; full evidence
 and pending integration gates: [schema review](research/python-schema-compatibility.md).
-
-## Optional Python Server packaging (2026-09-23)
-
-Reuse official Python 3.12.13 slim-bookworm / docker-library/python
-3362634339580d3232e65a66dd5a36c47ae7ff14 (MIT image source; PSF interpreter; Debian licenses),
-index sha256:4766d8b510c428e595d74b9cc5bbb2fae8e26316fffb4adc89908d79aacd58a2, and the existing
-Node 24.21.0 base with Docker multi-stage targets and Python venv/metadata contracts.
-The opt-in target keeps only the runtime dependency closure at existing pins and checks the
-installed profile before database startup. No new dependency, copied source or authority change.
-See [packaging research](research/python-server-container.md).
 
 ## Source migration lineage preflight (2026-09-23)
 
@@ -511,7 +435,6 @@ input adapters for optimistic descriptive profile updates. Owner authorization, 
 and audit remain one transaction. No new dependency, migration or copied upstream source; existing
 Zod license notices continue to cover reused input helpers. See [research](research/python-profile-details.md).
 
-
 ## Python queued task reference (2026-09-23)
 
 Reuse the already-reviewed PostgreSQL 17.11/Psycopg 3.3.6 transaction and locking APIs, Pydantic
@@ -520,7 +443,6 @@ selection, Run projections and message/run/audit atomicity; no new schema, depen
 source is introduced. Exact Zod notices remain bundled. The bounded SQL reader uses the accepted
 materialized-window pattern. Execution and file authority are not implied by queue persistence.
 See [design and acceptance](research/python-task-authority.md).
-
 
 ## Python control runtime supervision (2026-09-23)
 
@@ -531,7 +453,6 @@ source, tests, license, cancellation corrections and qualification evidence are 
 [the supervision review](research/python-control-runtime-supervision.md). The control host/process
 seam is locally verified; persisted execution and production selection remain pending.
 
-
 ## Python Owner run commands (2026-09-23)
 
 Reuse the reviewed PostgreSQL 17.11 row locks/transactions and Psycopg 3.3.6 for atomic cancellation,
@@ -540,7 +461,6 @@ adapter; actual Zod 4.6.2 schemas are the compatibility oracle. No dependency, m
 source copy or dispatcher change. The original OpenBot MIT application semantics are ported;
 see [frozen lifecycle design and acceptance](research/python-task-authority.md).
 
-
 ## Python model settings and provider services (2026-09-23)
 
 Reuse released OpenAI3.17.0/8c72a700 (Apache-2.0), Anthropic1.8.0/4421d56a (MIT),
@@ -548,7 +468,6 @@ PyCA cryptography50.0.1/ffde75a2 (Apache-2.0 OR BSD-3-Clause) and the reviewed
 HTTPX2 2.13.0 transport. Preserve the current11 provider endpoint allowlists and AES-GCM settings
 envelope; keep all keys, settings authority, retries and output checks in the Python control layer.
 No SDK source copied/patched; retain dependency notices. See [review](research/python-model-services.md).
-
 
 ## Durable execution candidate qualification (2026-09-23)
 
@@ -570,7 +489,7 @@ Reuse PostgreSQL 17.11 row locks/constraints (PostgreSQL License), psycopg 3.3.6
 (LGPL-3.0-only), the existing Owner transaction boundary and Pydantic models. Additive application
 Task/Action facts complement, rather than replace, the engine's recovery history. No new library,
 custom retry scheduler or copied upstream implementation. See [admission research](research/work-domain-admission.md).
-The separate [continuation probe](research/runtime-continuation.md) uses existing Pydantic AI 2.47.0 /
+The separate continuation probe uses existing Pydantic AI 2.47.0 /
 `77d5fce751ab8ab04bd5db4ed6acc1131a4baed6` (MIT) public deferred-result/history APIs with scripted
 models. Official granular durable adapters remain candidates; the probe does not establish a
 production checkpoint protocol or select an orchestration engine.
@@ -590,7 +509,6 @@ copied or changed. Its separate environment composes the existing lock files. Te
 public-work reference candidate, not a production engine selection; DBOS/deferred JSON remains
 viable. Product dependencies, default dispatch and private data remain unchanged.
 
-
 ## Public work recovery journey (2026-09-23)
 
 Reuse the pinned official Temporal/Pydantic AI adapters and existing PostgreSQL control stores.
@@ -604,7 +522,6 @@ The product handoff extension reuses the same PostgreSQL 17 Task-row lock and Te
 request, so an unacknowledged attempt is inspected rather than blindly submitted again after
 workflow history expiry. No new product dependency, scheduler or upstream source copy is involved;
 see [the bounded ingress review](research/work-temporal-journey.md#product-handoff-attempt-before-external-submission-2026-09-24).
-
 
 ## Runtime port durability boundary (2026-09-24)
 
@@ -626,17 +543,14 @@ process), Firecracker1.17 and OpenSandbox1.1 candidates, with exact commits and 
 The [VPS qualification extension](research/linux-vps-qualification.md) reuses these exact pins and systemd255 namespace primitives; implementation is in progress, not qualified. No upstream source is copied. Browser mechanics retain the
 existing MIT attribution. Command and browser authority/resource/egress gates remain explicit.
 
-
 ## Trusted engine transport and history replay (2026-09-23)
 
 Reuse Temporal Server1.32.0 native mTLS and Temporal Python1.33.0 TLSConfig/Replayer with the
 existing Pydantic AI2.47.0 plugin (all MIT; exact commits in the research). Disposable PKI uses
 OpenSSL CLI only as a test issuer, not a shipped CA or custom crypto. The Compose overlay follows
 the already-attributed upstream topology. No copied engine/SDK implementation, new dependency or
-product default change. See [transport](research/temporal-transport-security.md) and
-[replay](research/temporal-history-replay.md). mTLS authenticates one trusted control group, not
+product default change. See [transport](research/temporal-transport-security.md). mTLS authenticates one trusted control group, not
 API RBAC; same-version replay does not establish future workflow/SDK compatibility.
-
 
 ## Adjacent Temporal service upgrade (2026-09-23)
 
@@ -646,7 +560,6 @@ older server/sql-tool because official 1.31.3 container tags were unavailable wh
 CPython stdlib tarfile/gzip/hashlib performs bounded exact-member extraction, not a general updater.
 No upstream source copied, new dependency, custom schema migration or production default change.
 The two releases share the entire PostgreSQL schema tree. See [pins and actual qualification](research/temporal-release-upgrade.md).
-
 
 ## Durable model observations and optional OpenAI port (2026-09-24)
 
@@ -658,25 +571,6 @@ supports text/functions only and refuses hosted/media inputs. See [research and 
 for pins, licenses, independent review, actual SDK/PostgreSQL/mTLS restart proof and limits.
 No source copied; no live-provider acceptance, default activation or Linux isolation claim.
 
-### Product Worker and finite operator dispatch
-
-Reuse the pinned Temporal1.33.0/Pydantic AI2.47.0 Worker and Agent integration, existing admitted
-Action ports and control completion/digest contracts. Product composition owns one importable
-workflow and fresh per-Run services; the trusted verifier remains separate from model output.
-The operator CLI requires explicit mTLS/private configuration and makes one bounded dispatch
-pass over existing reservations. Recovery reads the original immutable completion/artifacts;
-it cannot grant authority, rerun verification or repeat effects. No upstream source copied or
-new scheduler/dependency introduced. See [qualification and limits](research/work-product-worker.md).
-
-
-## Durable product tool results (2026-09-25)
-
-Reuse Pydantic AI 2.47.0 `DeferredToolResults`, Temporal Python 1.33.0 Activities, PostgreSQL
-17.11 and the existing immutable private blob store. A thin opt-in adapter retains received
-tool content across acknowledgement loss; observed response bytes confer no authority or
-independent business-effect proof. No new dependency or upstream source copied. See the
-[pre-implementation review and contract](research/work-tool-results.md).
-
 ## Python product composition and lifecycle (2026-09-25)
 
 Reuse the reviewed Temporal/PydanticAI Worker, durable model/tool observations, PostgreSQL
@@ -685,7 +579,7 @@ selects one Worker; bounded admission passes leave continuation with Temporal. P
 history is explicitly versioned, and pending knowledge insertion shares verified publication's
 transaction. No new dependency or upstream implementation copied. Test-only original OpenBot MIT
 model oracles are retained with exact commit/hash for shallow checkouts. See
-[composition](research/python-product-runtime.md) and [model adapter](research/python-work-product-model.md).
+[composition](research/python-product-runtime.md).
 
 ## Product deferred approval (2026-09-24)
 
@@ -694,7 +588,6 @@ Activity/timer APIs, with the existing control Action, approval and reconciliati
 Control retains immutable proposals and performs authorization; SDK declarations do not grant
 execution. No upstream code copied, dependency or schema added. See
 [review, contracts and qualification](research/work-deferred-approval.md).
-
 
 ## Product closed-workflow lookup (2026-09-24)
 
@@ -710,54 +603,26 @@ PostgreSQL Task locks. Small additive domain records bind immutable instruction 
 existing proposal/admission/publication gates. No SDK fork or source copy; see
 [review and acceptance boundary](research/work-owner-corrections.md).
 
-## Consolidated Python product-control integration (2026-09-24)
-
-Reuse the pinned FastAPI/Pydantic/Psycopg/PostgreSQL stack and accepted Owner transaction,
-identity, work/receipt and file boundaries above. Port original OpenBot MIT product modules
-(model settings, workspace/profile, knowledge/skills, schedules, conversations and attachments)
-as responsibility groups while preserving the existing React/Electron DTOs. Existing source
-reviews remain applicable; no new framework or copied upstream source. The
-[PyYAML6.0.3 event adapter](research/python-skill-yaml.md) preserves the reviewed YAML1.2 core
-string/map metadata syntax; the released parser replaces the unaccepted line-parser draft.
-The product Worker lock is the exact union of reviewed control/Runtime/Temporal dependencies,
-without the discarded DBOS experiment dependency. Execution,
-client integration and retirement gates are recorded in the existing migration plan's current
-integration batches. This entry is implementation authorization/evidence reuse, not acceptance.
-
-## Channel admission into durable Work (2026-09-25)
-
-Reuse the accepted PostgreSQL 17.11 transaction and Temporal Python 1.33.0 handoff/correction
-ports. Add immutable source mapping and a read projection, preserving original channel text
-bounds and source history. Message, Work identity and pending admission commit together;
-publication and its Bot reply share the completion transaction. No new recovery loop, dependency
-or copied upstream source. See [review and local qualification](research/work-channel-admission.md).
-
 ## Python plugins, model connections and Worker transport (2026-09-25)
 
 Reuse official MCP1.29.0 (MIT), jsonschema4.26.0 (MIT), websockets17.0.1 (BSD-3-Clause),
 and the already pinned HTTP/Pydantic/PostgreSQL/cryptography dependencies. Thin adapters preserve
 Server authority, original encrypted storage, Owner grants and the retained Host protocol.
-See [plugins](research/python-plugins.md), [dependency pins](research/python-plugin-dependencies.md)
-and [Worker channel](research/python-worker-host.md). Per-Bot model connections translate original
+Per-Bot model connections translate original
 OpenBot MIT feature source `9cc73c9e78451e572f57d142d6b9caf62ccb78e2` under the existing
 [model service review](research/python-model-services.md); no external source copied.
 Fixed Node serialization preserves the original manifest digest; it runs no plugin code.
 The integrated macOS tests do not establish Linux isolation or Windows protected storage support.
 
 The restored thin model-connection client reuses the same OpenBot feature source and existing
-React/Zod forms, including Run-to-Work supervision links. See the
-[client integration review](research/python-model-client-restoration.md). The opt-in Desktop
+React/Zod forms, including Run-to-Work supervision links. The opt-in Desktop
 Python product package uses reviewed standalone CPython, Node and retained PostgreSQL/migration
-resources, without the TypeScript business Server; see
-[distribution pins and notices](research/desktop-python-product.md) and
-[candidate reproduction](DESKTOP_PYTHON_CANDIDATE.md). Work-bound knowledge uses the existing
-recent-record selection and typed version receipts, retaining Hermes Agent attribution; see
-[runtime knowledge review](research/python-work-knowledge-runtime.md).
+resources, without the TypeScript business Server. Work-bound knowledge uses the existing
+recent-record selection and typed version receipts, retaining Hermes Agent attribution.
 
 Human browser sessions preserve the fixed F protocol/UI/Node/provider path through Python Owner
 authority and a PostgreSQL pause/lease gate. Reuse the reviewed OpenBot MIT feature source and
-existing authenticated Worker channel; no new dependency or SQL. See the
-[browser session migration review](research/python-browser-sessions.md). Default takeover and
+existing authenticated Worker channel; no new dependency or SQL. Default takeover and
 Provider capability stay disabled until every real browser effect shares the gate; local synthetic
 HTTP/WebSocket tests do not qualify Chromium, Linux/runsc or real login-state preservation.
 
@@ -800,7 +665,7 @@ unknown evidence and removes authority. See the [interruption review](research/w
 and [content-free results](../experiments/work-journey/evidence/product-browser-interruption.json).
 The browser process remains alive in these cases; Host/profile migration is not inferred.
 
-The reviewed-click [handover repair](research/browser-approval-handover.md) retains pinned
+The reviewed-click handover repair retains pinned
 agent-computer `257c1280d684089be9adb0b35cce262efc7064bf` (MIT) and the existing Server approval
 contract. Only the local adapter changes: approval waiting releases the Bot queue, human take
 invalidates the prior generation, and a prepared click is consumed once. No dependency or upstream
@@ -808,20 +673,15 @@ source is added. The 34 focused synthetic checks passed; live browser/product au
 
 The explicit Python product Worker composes the existing Temporal/PydanticAI/deferred contracts
 with current source, knowledge, plugin and attachment gates. See the
-[service composition](research/python-product-runtime.md),
-[read tools](research/python-work-product-reads.md),
-[answer/report review](research/python-work-product-result.md) and
-[public web tools](research/python-work-product-web.md) records.
+[service composition](research/python-product-runtime.md) record.
 HTML extraction selects Beautiful Soup 4.15.0 and Soup Sieve 2.9.2 (MIT; C3 security-update evidence below), retaining historical release hashes in
-[dependency pins](research/python-work-web-pins.json) and complete bundled notices. No upstream
+dependency pins and complete bundled notices. No upstream
 source is copied; the existing private blob store preserves the report size contract without
 raising Action limits. Result review is a fallible quality signal, not external-effect proof.
 
 The native and continuation adapters reuse the same pinned stack: immutable non-secret Task
 profiles, SQL-owned child relations, released Temporal timers and finite historical failure
-closure. See [native Tasks](research/python-work-task-profiles.md),
-[collaboration](research/python-work-collaboration.md), [failure closure](research/python-work-failure.md)
-and [original media](research/work-product-media.md). OpenBot's retained MIT collaboration and
+closure. See [original media](research/work-product-media.md). OpenBot's retained MIT collaboration and
 multimodal contracts are adapted with attribution; no third-party implementation is copied.
 Complete plugin declarations reuse the existing24KiB contract through private content-addressed
 blobs; schema12KiB, arguments8KiB and Action16KiB limits remain unchanged.
@@ -832,15 +692,6 @@ without fabricating channels. Private knowledge receipts bind profile/scope; chi
 only narrowing grants and reuse fixed deadlines and unknown-no-resend behavior. Hermes learning
 attribution remains. No new dependency or third-party code copy; see the
 [reuse review](research/python-native-task-capabilities.md) and [bilingual contract](NATIVE_TASK_SCOPE.md).
-
-## Hard-terminal Task closure (2026-09-25)
-
-Thin adapter over pinned Temporal Python1.33.0 exact Describe/GetHistory and current
-PostgreSQL Task/ancestor locks. Reuses shared tree closure, preserves unknown effects
-and costs, and uses no extra executor. No upstream source copied; existing MIT notices
-remain. Review: [terminal recovery](research/work-terminal-recovery.md). Actual mTLS
-TERMINATED/TIMED_OUT, commit-before-ACK restart and four offline history replays passed;
-the separate synthetic SDK/real SQL checks cover malformed proof and authority races.
 
 ## Work command identity and fingerprints (2026-09-25)
 
@@ -854,13 +705,13 @@ vectors cover every token purpose. Parsing and signatures grant no Work authorit
 single consumption, host enforcement and artifact publication remain separate gates.
 See [source, release, issue, advisory and license review](research/work-command-authority.md).
 
-The same-transaction [command authority adapter](research/work-command-transactions.md) reuses
+The same-transaction command authority adapter reuses
 PostgreSQL 17 locks, existing Work admission/fences, ModelConnections and OwnerFiles snapshots.
 Migration0041 has no historical backfill; the later explicit product composition remains default-off.
 The dedicated disposable PostgreSQL fixture is included in the existing Worker gate. No new
 dependency, upstream implementation, clock service or execution/recovery framework is added.
 
-The [v2 readiness adapter](research/work-command-readiness.md) reuses these exact JOSE/JCS pins,
+The v2 readiness adapter reuses these exact JOSE/JCS pins,
 systemd v255 and Linux BOOTTIME primitives. Migration0042 preserves historical dispatches; the
 Node-only frame mirror reuses existing Zod4.6.2 and native WebCrypto. No source copied or dependency
 added. Command transport, protected Host and product routing are integrated behind explicit configuration;
@@ -868,15 +719,15 @@ real Linux product qualification remains open.
 
 ## Protected command Host and Unix transport (2026-09-25)
 
-The [protected Host](research/command-protected-host.md) reuses the reviewed systemd255,
+The protected Host reuses the reviewed systemd255,
 Docker29.8.1/containerd2.3.5/runsc release-20260914.0, existing bounded sandbox and output capacity
 helpers, and the pinned JOSE/JCS contracts. Its58 local tests include actual Unix peer credentials,
-with synthetic native effects; Linux acceptance remains open. The [Node transport](research/work-command-transport.md)
+with synthetic native effects; Linux acceptance remains open. The Node transport
 uses reviewed Node22.23.2 built-in Duplex/Buffer/TextDecoder APIs without a new dependency. Dsh
 implemented the public-spec candidate; root integrated and checked53 cases, including a real local
 Unix connection. Neither transport grants execution authority. No upstream source was copied.
 
-The [product command adapter](research/work-command-transactions.md) keeps the existing deferred
+The product command adapter keeps the existing deferred
 Action, approval, admission, ToolResults and final content review. Complete output is retained in
 the existing private Work blob store; the model receives a bounded untrusted excerpt. The
 [trusted installation](research/work-command-installation.md) reuses existing strict parsers,
@@ -885,17 +736,16 @@ The [full-entry qualification](research/work-command-product-qualification.md) u
 Owner HTTP, PostgreSQL/mTLS Temporal, OpenBotNodeClient and Unix transport fixtures. Synthetic
 Native evidence remains distinct from actual Linux enforcement.
 
-The [parser dependency separation](research/python-parser-runtime-retirement.md) reuses npm
+The parser dependency separation reuses npm
 workspaces and the existing exact lock resolver. The metadata-only `@openbot/python-node-runtime`
 owns the same PDF/Office/OCR/database roots independently of the old business Server. Versions,
 integrity pins, parser implementation, migration assets and bundled licenses are unchanged.
 
-The [frozen legacy Server test oracle](research/legacy-server-test-oracle.md) moves the Python
+The frozen legacy Server test oracle moves the Python
 control compatibility and S7 artifact-reader dependencies to an exact-hash, MIT test fixture.
 It reuses npm 10.9.9 workspace metadata, TypeScript 7.0.2 and unchanged existing dependency
 pins. No production entry point exports or ships it; the remaining default-runtime,
 container/bridge and real remote/browser qualification gates still precede final retirement.
-
 
 ## Fixed-image browser CDP qualification (2026-09-25)
 
@@ -924,11 +774,11 @@ Zod4.6.2. Neither tool depends on the legacy business Server or test oracle.
 
 ## Python product container (2026-09-25)
 
-The [architecture-specific CI scope](research/architecture-ci-scope.md) reuses GitHub Actions
+The architecture-specific CI scope reuses GitHub Actions
 `workflow_call` and required job results, plus the existing exact-pin Desktop Python and direct
 container qualification. Python product results are distinct from retained-client/legacy
 compatibility, and S7 participates in the protected aggregate. No dependency or upstream source
-is added; the [Chinese scope record](research/architecture-ci-scope.zh-CN.md) states the same limits.
+is added.
 
 The [direct product candidate](research/python-product-container.md) reuses the reviewed official
 Python3.12.13 and Node24.21.0 Bookworm image digests, unchanged63-distribution Worker lock,
@@ -944,8 +794,7 @@ parser/restart checks passed; native matrix CI reuses the same smoke without pub
 构建工具。默认仍监听127.0.0.1。真实本地Linux arm64镜像及独占临时Owner／Web／PG／解析／重启验收
 已通过，原生双架构CI复用同一smoke；不发布镜像、不切默认、不部署生产。
 
-
-Desktop's [fixed execution-file projection](research/desktop-python-product.md#fixed-execution-configuration-mapping--2026-09-26)
+Desktop's fixed execution-file projection
 reuses its existing canonical private dataRoot/lstat/UID/mode checks and the Server's no-follow
 installation readers. The fixed browser.json and command.json paths close a real packaged-entry
 gap without another configuration system, environment forwarding, runtime dependency or copied
@@ -961,7 +810,6 @@ No new dependency or upstream implementation is copied. Frozen oracle and canoni
 SQL remain unchanged. Container, native artifact and public startup checks cover the
 new defaults; historical evidence is not relabeled as current qualification.
 
-
 ## Installed Python harness and contributor tooling (2026-09-27)
 
 C2 preserves the reviewed execution/Temporal stack and extracts its single source to
@@ -969,66 +817,6 @@ C2 preserves the reviewed execution/Temporal stack and extracts its single sourc
 mypy 2.3.1 are isolated development tools, all MIT, no copied upstream source. Runtime, test and
 build/quality closures remain separate; exact references and tradeoffs are in
 [the package research](../packages/harness/RESEARCH.md#10-c2-installed-harness-and-contributor-tools-2026-09-27).
-
-## C3 CI qualification and production advisory repair
-
-Reuse the existing npm/Turbo graph and pinned Actions. YAML 2.9.0 (ISC) is promoted from an
-existing dependency to explicit root tooling; pip-audit 2.10.1 (Apache-2.0) audits the real Python
-product lock with an isolated exact tool closure. No upstream source is copied. Exact commits,
-primary sources and bounded alternatives are in [the CI decision](research/windows-ci-merge-gate.md).
-Soup Sieve 2.9.2 (MIT) fixes advisories found by this gate; retain Beautiful Soup and the bounded
-subprocess, with [targeted security-update evidence](research/python-work-product-web.md#c3-advisory-driven-soup-sieve-update-2026-09-27).
-
-C3 复用现有 npm/Turbo 图和已固定的 Actions。YAML 2.9.0 从已有依赖提升为显式根工具，
-pip-audit 2.10.1 在隔离工具环境审计实际 Python 生产锁；不复制上游源码。Soup Sieve 2.9.2
-修复该门发现的安全公告，保留原 HTML 提取契约和有界子进程；固定版本与针对性证据见上方链接。
-
-## Desktop Owner security (2026-10-01, C2)
-
-Reuse CPython 3.12.13 scrypt (PSF), PostgreSQL 17.11 transactions/locks and Psycopg 3.3.6.
-OWASP-aligned fixed KDF parameters, singleton persisted credential revisions and atomic session
-revocation retain Server authority. No dependency or upstream source copied. See the
-[security decision](research/desktop-owner-security.md); current-platform acceptance remains in its PR.
-
-## Desktop audit export (2026-10-01, C3)
-
-Reuse CPython 3.12.13 csv (PSF), RFC 4180 formatting and OWASP CSV-injection guidance with
-existing PostgreSQL 17.11/Psycopg 3.3.6 audit authority. Bounded SQL allowlists, keyset categories,
-spreadsheet-safe text and transactional event supplementation add no dependency or copied source.
-See [export research](research/desktop-audit-export.md).
-
-## Owner additional approval settings (2026-10-01)
-
-Reuse the existing Work exact-intent approval, product reads/web guards and retained Server policy
-research at OpenBot57341154b19d45686b2f71bce96fca38e1f07310. Compare Cedar4.13.0 and OPA1.21.1
-(versions, source pins, Apache-2.0 licenses and bounded integration decision in ADR-0049); retain a
-thin PostgreSQL guard for additional confirmation only. No source copied/dependency added; exact
-read exceptions never override baseline approval or permit delete/install/permission changes. See
-[research](research/desktop-approval-settings.md) and [ADR](decisions/0049-owner-approval-policy.md).
-
-## Desktop platform preferences and signed update bridge (2026-10-01)
-
-Reuse Electron 44.3.0 native startup/tray/shortcut/badge APIs, the existing restricted atomic JSON
-file, and released electron-updater 6.8.9 (MIT) for macOS/NSIS update verification. Exact source,
-configuration trust checks, alternative comparison and outstanding signed release qualification
-are recorded in [the review](research/desktop-platform-settings.md). No upstream code was copied
-or substantially adapted. Unsigned packages fail closed before updater construction.
-
-## Employee browser lifecycle adapter (2026-10-01)
-
-The [C6 review](research/desktop-browser-management.md) extends the already pinned MIT
-agent-computer `257c1280d684089be9adb0b35cce262efc7064bf` health/stop/reset surface through the
-original Server/Worker/Docker path. Reuse the durable human/agent gate and exact Host binding;
-no new browser manager or copied upstream source. Download/screenshot retention data scope is an
-explicit Owner-deferred follow-up, not a claimed setting implementation.
-
-## Server Owner display timezone and model defaults (2026-10-01)
-
-Reuse Python3.12 ZoneInfo/IANA validation, PostgreSQL17 row/revision/Owner transaction contracts,
-and existing identity/model connection resolution. The [C7 decision](research/desktop-owner-preferences.md)
-compares persistence alternatives and records exact reviewed main, fail-closed default inheritance
-and independent migration integration. No new dependency or copied source; credentials remain in the
-existing model service and no network call is performed by preferences publication.
 
 ## Reviewed plugin catalog source (2026-10-01)
 
@@ -1042,14 +830,6 @@ The 2026-10-07 [SDK advisory repair](research/typescript-control-plane-p0.md#mcp
 re-reviews catalog revision2 at `10f64b7a03e24c6b56003dedf5ca051d6458ea64`: MCP SDK1.32.1,
 updated manifest hash and four unchanged source/license/provenance hashes. Source commit, review
 record and hashes move together; catalog authority and live grant/manifest checks stay unchanged.
-
-## C12 quick identity composition (2026-10-02)
-
-[Quick creation](research/quick-bot-creation.md) extends the reviewed Python identity/direct
-conversation transactions and C7 defaults on PostgreSQL17 / psycopg3.3.6 / Pydantic2.13.5.
-One Owner transaction allocates an active-name slot and commits Bot, direct conversation,
-membership and audit. Existing partial uniqueness remains authoritative for ordinary name writes.
-No schema, dependency, external model call or upstream source incorporation is added.
 
 ## C10 avatar palette compatibility (2026-10-02)
 
@@ -1077,15 +857,6 @@ Owner approved maintaining the narrow fork on 2026-10-03 instead of waiting: [yx
 Conflicts and image qualification are recorded in the research record. #730 remains open; after
 upstream merge, review and qualify the upstream pin, then switch back. CopilotKit attribution,
 the fork root LICENSE and the image MIT notice are retained.
-
-## Optional quick-create greeting (2026-10-03)
-
-Reuse the approved [C11 contract](research/bot-appearance-and-greeting.md#c11-implementation-checkpoint-2026-10-03),
-existing C7/C12 encrypted model resolver, pinned Pydantic AI 2.47.0 model messages and the existing
-retry-disabled transport (OpenAI 3.17.0 / Anthropic 1.8.0; existing notices and pins retained).
-One tool-less call uses no history and cannot acquire Agent capabilities. PostgreSQL 17 nullable
-message origin and partial unique indexes enforce the one-attempt/one-first-message boundary;
-existing Owner transactions and audit remain authoritative. No dependency or upstream source copy.
 
 ## Retire singleton model settings (C28, 2026-10-05)
 
@@ -1180,7 +951,6 @@ Reject fs-ext2.1.1 (no openat), path-only core adapters (race gap), and an addit
 (build/maintenance cost). Exact sources, platform/packaging constraints and required interchange
 checks are in the [P3 decision](research/typescript-control-plane-p0.md#p3-protected-files-and-model-credentials-decision-2026-10-08).
 
-
 P3 attachment/storage ownership extends the same Koffi 3.3.2 adapter with fixed directory enumeration
 and rename operations, retaining OpenBot's purge journal and SQL-receipt protocol. Processing reuses
 the unchanged Node parser helper and reviewed package pins, and OpenAI 7.28.0's multipart audio API.
@@ -1192,7 +962,6 @@ Reuse retained identity/audit/Work cancellation transactions and the reviewed Op
 Anthropic0.131.0 SDKs. The already locked entities8.0.0 decoder (BSD-2-Clause) becomes an explicit
 runtime dependency for Python HTML-reference parity; no new install or copied upstream source.
 See the [lifecycle and greeting decision](research/typescript-control-plane-p0.md#p3-identity-lifecycle-and-optional-greeting-extension-2026-10-08).
-
 
 ### P3 complete product composition (2026-10-08)
 
@@ -1242,7 +1011,6 @@ P4 原生 Worker/浏览器任务将已审核的 ws8.21.3 提升为生产依赖�
 身份/人工接管锁及 Python 原有审批/回执语义，不新增浏览器管理器或数据库结构。详见上述记录，
 真实传输/引擎证据与可控浏览器 peer、待验收 Linux/已安装环境明确区分。
 
-
 P4's approved command adapter promotes the already reviewed jose6.2.12 and canonicalize5.0.0
 releases into the TS Server production closure. It ports the retained OpenBot v2 contract,
 preparation clock, SQL admission/consumption and product adapter over those released libraries;
@@ -1252,12 +1020,10 @@ interop uses production APIs. See the [command integration record](research/type
 P4 审批命令复用已审核的 jose6.2.12/canonicalize5.0.0，增加 TS Server 生产依赖边；沿用原
 v2 契约、准备时钟、SQL 单次许可和产品适配，真实 Python/TS API 互验，不新增版本或自写密码算法。
 
-
 The P4 native package gate reuses the pinned Temporal1.32.0 macOS arm64 Server as an owned
 SQLite/mTLS fixture only; production stays PostgreSQL/mTLS. It is not a bundled application or
 new product dependency. Reviewed release/archive/member hashes and alternatives are recorded in
 [the P4 native qualification decision](research/typescript-control-plane-p4.md#macos-native-qualification-engine-2026-10-09).
-
 
 The remaining P4 native CI journey reuses the protected Linux/runsc Host and the existing
 Squid7.7/Playwright1.62.1 composition with the same reviewed runtime members, image configs and

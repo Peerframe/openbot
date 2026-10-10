@@ -1,7 +1,5 @@
 # Repository map
 
-[简体中文](REPOSITORY_MAP.zh-CN.md)
-
 Start with the [root map](../AGENTS.md), then one route below and its local rules. Commands run from
 the repository root. When a route does not answer the question, follow imports, calls or a failing
 test. Setup is in [CONTRIBUTING](../CONTRIBUTING.md).
@@ -184,6 +182,4 @@ for a committed PR. `npm run check:affected` takes the same explicit arguments a
 validation lane; separate required jobs are printed. `npm run check` remains the repository total.
 The actual policy is [ci-selection](../scripts/ci-selection.ts), with success-only
 [aggregation](../scripts/ci-results.ts); counterexamples run via `npm run ci:check`. Read
-[contribution rules](../CONTRIBUTING.md#required-ci-completion) before CI work. The upgrade record's
-[historical producer/duty table](REPOSITORY_UPGRADE_PLAN.md#c3-check-duties-and-artifact-ownership)
-explains the accepted baseline; current scripts and workflows determine the applicable checks.
+[contribution rules](../CONTRIBUTING.md#required-ci-completion) before CI work. Current scripts and workflows determine the applicable checks.

@@ -1,7 +1,5 @@
 # Reviewed skill instructions
 
-[English](REVIEWED_SKILLS.md) · [简体中文](REVIEWED_SKILLS.zh-CN.md)
-
 An Owner can now import a single `SKILL.md` under **Settings → Skills → Install skill**.
 Paste its full contents or select a file up to 12 KiB, set a semantic version, and import it as a
 candidate. Select that skill, inspect the entire file, give a reason, choose Verify, and explicitly

@@ -1,7 +1,5 @@
 # ADR-0050: Move the control plane to TypeScript by route group
 
-English · [简体中文](0050-typescript-control-plane.zh-CN.md)
-
 - Status: Accepted — Owner approved P0–P5 execution on 2026-10-06
 - Date: 2026-10-06
 - Owner: @yxflc11
@@ -19,7 +17,7 @@ product is Python; the retired `apps/server` and frozen TS oracle cannot be reac
 shortcut. Existing uncommitted work belongs to its current authors and is outside this ADR.
 
 The plan reopens the language choice in [ADR-0046](0046-temporal-as-recovery-owner.md) and
-[the architecture migration record](../ARCHITECTURE_MIGRATION_PLAN.md). It preserves Temporal as the
+the architecture migration record. It preserves Temporal as the
 sole recovery owner and the Server as the sole authority. Approval changes the *target direction*;
 the current Python implementation remains active until each replacement passes its gate.
 

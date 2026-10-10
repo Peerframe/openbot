@@ -1,7 +1,5 @@
 # OpenBot Python harness
 
-English · [简体中文](README.zh-CN.md)
-
 The single active `openbot-agent-runtime` package lives here. It keeps the existing import name
 `openbot_agent_runtime`, bounded Pydantic AI loop and optional Temporal composition. It proposes
 work; Python control owns identity, authorization, routing, approvals, root budgets, facts and
@@ -89,6 +87,5 @@ have individually explained fixed caps in pyproject. These are reviewed exceptio
 baseline for new violations. Test/format changes do not change authorization or budget semantics.
 
 The [reuse evidence](RESEARCH.md#10-c2-installed-harness-and-contributor-tools-2026-09-27),
-[local rules](AGENTS.md), [repository map](../../docs/REPOSITORY_MAP.md) and
-[single current handoff](../../docs/REPOSITORY_UPGRADE_PLAN.md) give exact integration status and
-unverified platforms. Wheel success alone is not full product, native-platform or release qualification.
+[local rules](AGENTS.md) and [repository map](../../docs/REPOSITORY_MAP.md) give integration status
+and unverified platforms. Wheel success alone is not full product, native-platform or release qualification.

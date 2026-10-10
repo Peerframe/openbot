@@ -1,7 +1,5 @@
 # TS control-plane entry candidate
 
-[简体中文](README.zh-CN.md)
-
 Accepted [ADR-0050](../../docs/decisions/0050-typescript-control-plane.md) P2 introduces one public
 HTTP/Worker entry and one fixed private Python upstream. Python is the default owner of the 121
 HTTP operations and background services. Explicitly selected P3 groups transfer only their listed

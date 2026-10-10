@@ -1,7 +1,5 @@
 # Real logos for model providers and plugins
 
-English · [简体中文](brand-logos.zh-CN.md)
-
 - Status: Implemented (step 38)
 - Date: 2026-10-05
 - Owner: @yxflc11

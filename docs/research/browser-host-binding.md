@@ -6,7 +6,7 @@ This is product authority work; the separate PR #96 task owns CI repairs.
 ## Reuse and evidence
 
 Reuse the MIT OpenBot Python browser session and authenticated Worker adapters, already reviewed
-in [browser sessions](python-browser-sessions.md) and `docs/OPEN_SOURCE_REUSE.md`. Keep the
+in browser sessions and `docs/OPEN_SOURCE_REUSE.md`. Keep the
 separate CopilotKit/OpenBot agent-computer at
 [`257c1280d684089be9adb0b35cce262efc7064bf`](https://github.com/CopilotKit/openbot/tree/257c1280d684089be9adb0b35cce262efc7064bf/agent-computer),
 MIT, and Playwright 1.62.1, Apache-2.0. No third-party source is copied or dependency added.

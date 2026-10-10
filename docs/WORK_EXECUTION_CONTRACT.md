@@ -1,9 +1,7 @@
 # Work execution target contract
 
-[English](WORK_EXECUTION_CONTRACT.md) · [简体中文](WORK_EXECUTION_CONTRACT.zh-CN.md)
-
 Status: design contract, 2026-09-23; not an implemented API or schema. This refines the
-[approved delivery plan](ARCHITECTURE_MIGRATION_PLAN.md), rather than creating another roadmap.
+approved delivery plan, rather than creating another roadmap.
 The [durability experiment](../experiments/durable-execution/README.md) supplies narrow evidence;
 [Temporal is selected as the target recovery owner](decisions/0046-temporal-as-recovery-owner.md),
 while product integration and production activation remain open.

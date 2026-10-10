@@ -3,7 +3,7 @@
 - Status: offline boundary candidate; Linux browser acceptance remains open
 - Date:2026-09-25
 - Owner: OpenBot contributors
-- Related records: [Linux browser review](linux-browser-qualification.md), [browser sessions](python-browser-sessions.md), [reuse ledger](../OPEN_SOURCE_REUSE.md)
+- Related records: Linux browser review, browser sessions, [reuse ledger](../OPEN_SOURCE_REUSE.md)
 - Acceptance journey: one separately authorized native180-second case retains synthetic DOM/PNG, closes and reopens the same profile, proves internal namespace/seccomp diagnostics, then proves original Invocation cleanup and unchanged production state.
 - Security boundary: Server authority is unchanged. Models/webpages/browser/worker output remain untrusted; this grants no product capability. No new syscall permission, capability, network access or sandbox-disabling option.
 
@@ -44,7 +44,7 @@ Fixed [Node zlib](https://github.com/nodejs/node/blob/v24.18.1/doc/api/zlib.md#L
 
 `npm run test:browser:boundary` runs15 Node synthetic-stream and25 Python command/readback/budget/unknown checks without browser/container/SSH effects. Coverage includes malformed/bounded frames, session mismatch, no resend, lifecycle IDs, immediate DOM retention on PNG failure, actual diagnostic-session selection, CRC/pixels, fixed sandbox configuration, frozen helper hashes, Unix path bounds, partial-layout refusal and timed receipts.
 
-English/Chinese [README](../../experiments/browser-execution/README.md) and [translation](../../experiments/browser-execution/README.zh-CN.md) separate offline tests from Linux proof. Prior b2 reached Chrome but its25-second CLI was killed without render acceptance. A separate Mac CDP check reached viewport but navigation timed out; no Linux compatibility or cause is inferred. Missing old timestamps/artifacts are never reconstructed.
+The [README](../../experiments/browser-execution/README.md) separates offline tests from Linux proof. Prior b2 reached Chrome but its25-second CLI was killed without render acceptance. A separate Mac CDP check reached viewport but navigation timed out; no Linux compatibility or cause is inferred. Missing old timestamps/artifacts are never reconstructed.
 
 ## Unresolved questions
 

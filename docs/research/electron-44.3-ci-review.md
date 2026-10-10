@@ -1,7 +1,5 @@
 # Research: Electron 44.3.0 dependency review
 
-[English](electron-44.3-ci-review.md) · [简体中文](electron-44.3-ci-review.zh-CN.md)
-
 - Status: Reviewed; final integration CI required
 - Date: 2026-09-15
 - Related PR: #81

@@ -1,7 +1,5 @@
 # Agent runtime process profile v1
 
-[English](AGENT_RUNTIME_PROTOCOL.md) · [简体中文](AGENT_RUNTIME_PROTOCOL.zh-CN.md)
-
 Status: implemented internal ordinary-process profile, not a public API. Current Python control
 adapters are `runtime_host.py` / `runtime_process.py`; TS comparison inputs are frozen under
 `tests/oracles/legacy-server`. This invocation lifecycle is distinct from the optional Temporal

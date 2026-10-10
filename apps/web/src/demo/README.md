@@ -1,7 +1,5 @@
 # Website interaction demo
 
-[简体中文](README.zh-CN.md)
-
 This independent static entry imports the **actual** `Sidebar`, `ChannelWorkspace`, `RobotAvatar`, message actions, reactions, task inspector and product styles. It is not a screenshot or a separately drawn product UI. A fixed synthetic collaboration illustrates a task, two delegated Bots, incremental text, and a Markdown deliverable. The visible label explicitly says that no model is connected.
 
 From the repository root:

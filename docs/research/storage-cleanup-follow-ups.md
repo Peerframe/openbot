@@ -1,7 +1,5 @@
 # C22–C24: storage cleanup follow-ups
 
-English · [简体中文](storage-cleanup-follow-ups.zh-CN.md)
-
 - Status: Contracts implemented; C23 Owner-approved narrow fork qualified
 - Date: 2026-10-03
 - Owner: @yxflc11
@@ -16,11 +14,11 @@ English · [简体中文](storage-cleanup-follow-ups.zh-CN.md)
 ## Trigger and existing decision
 
 - Trigger: public protocol (three new or extended commands) and the persistent-data boundary of
-  [C21](channel-storage-purge.md).
+  C21.
 - Existing decision and reviewed pin: C21's private file catalog, staging journal, per-file audit
   and `attachment_cleanup_receipts`; C19's bounded single-snapshot
-  [reference counts](channel-attachment-reference-counts.md); C6 browser maintenance over the
-  pinned MIT `agent-computer` `257c1280` (see [the C6 record](desktop-browser-management.md)).
+  reference counts; C6 browser maintenance over the
+  pinned MIT `agent-computer` `257c1280` (see the C6 record).
 - Changed assumption or precise missing evidence: the SettingsStorage and ChannelFilesTrash boards
   need three facts that no route provides. Step 25 (#169) therefore ships three documented
   deviations: 清空回收站 is per channel only, 浏览器数据 is absent, and there is no 查看引用.

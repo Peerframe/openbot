@@ -1,7 +1,5 @@
 # S7 synthetic migration qualification
 
-[English](README.md) · [简体中文](README.zh-CN.md)
-
 This experiment qualifies a minimal retained-data path for two historical SQL lineages. It is
 preparation for S7, not a production migration utility or evidence that S7 is complete.
 

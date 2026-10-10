@@ -82,7 +82,7 @@ Provider 上报能力只说明“可能做到”；Server 策略与 Run 级短�
 
 Run offer 现在要求精确能力主版本；Server 路由和工作主机都会拒绝缺失或不兼容的版本，旧能力
 别名不能作为后备路径。可执行矩阵和真实支持等级见
-[Provider 一致性测试](PROVIDER_CONFORMANCE.zh-CN.md)。
+[Provider 一致性测试](PROVIDER_CONFORMANCE.md)。
 
 ## 目标 Provider 布局
 

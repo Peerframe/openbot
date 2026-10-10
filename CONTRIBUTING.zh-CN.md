@@ -32,8 +32,6 @@ OpenBot 必须方便多位独立开发者参与，不能形成只有项目负责
 5. 文档、无障碍证据和忠实翻译；
 6. 只有完成 Issue 级设计对齐后，才接受宽泛的新子系统。
 
-如果想直接领取范围清晰的工作，请从[贡献者任务包](docs/CONTRIBUTOR_TASKS.zh-CN.md)开始。
-
 ## 从哪里开始
 
 | 情况 | 入口 | 必须提供的证据 |
@@ -51,7 +49,7 @@ OpenBot 必须方便多位独立开发者参与，不能形成只有项目负责
 
 ## 本地开发
 
-需要 Node.js 22.22.2（CI 基线）、npm 10.9.9、Python 3.12+、Docker 和 Docker Compose。其他 Node.js 版本必须满足 `package.json` 的精确 engines 范围。使用 `npm ci` 复现已提交的锁文件。模块职责、扩展入口和定向检查见[仓库地图](docs/REPOSITORY_MAP.zh-CN.md)。
+需要 Node.js 22.22.2（CI 基线）、npm 10.9.9、Python 3.12+、Docker 和 Docker Compose。其他 Node.js 版本必须满足 `package.json` 的精确 engines 范围。使用 `npm ci` 复现已提交的锁文件。模块职责、扩展入口和定向检查见[仓库地图](docs/REPOSITORY_MAP.md)。
 
 ```bash
 git clone https://github.com/Peerframe/openbot.git
@@ -71,9 +69,9 @@ npm run dev
 保持终端运行。`scripts/dev-python.ts` 先校验锁定 Worker 环境，通过 Turbo 构建共享包，再启动 Python Server/Web。打开 `http://localhost:5173`，
 使用 `.env` 中的 Owner 密码登录；Server 使用端口 `3001`。这已足够进行前端和控制平面开发。
 执行 Work 另需明确的模型设置与 mTLS Temporal 配置；启动 API 不会创建引擎。已有 checkout 应保留原 `.env` 和数据目录。
-使用临时数据库复现 CI 的全新启动流程，见 [Server 启动冒烟说明](apps/server-python/README.zh-CN.md)。
+使用临时数据库复现 CI 的全新启动流程，见 [Server 启动冒烟说明](apps/server-python/README.md)。
 
-做一次小型 UI 修改时，先通过[仓库地图](docs/REPOSITORY_MAP.zh-CN.md)定位组件，在开发命令
+做一次小型 UI 修改时，先通过[仓库地图](docs/REPOSITORY_MAP.md)定位组件，在开发命令
 运行期间修改并检查真实页面。例如频道成员菜单位于
 `apps/web/src/components/ChannelMembersMenu.tsx`；另开终端运行定向测试：
 
@@ -101,12 +99,12 @@ npm run dev:node
 `apps/node/data/node/identity.json`，因为 Node 开发命令的工作目录为 `apps/node`；切换工作目录
 时应使用绝对路径。重启会复用凭据，无需重新签发 token。token 过期或被拒绝时由 Owner 重新
 签发，不得用任意 bearer 凭据绕过登记。未配置兼容 Provider 的 Node 不上报执行能力，适配器
-说明见 [Provider 符合性](docs/PROVIDER_CONFORMANCE.zh-CN.md)。根目录 `npm run dev` 只启动
+说明见 [Provider 符合性](docs/PROVIDER_CONFORMANCE.md)。根目录 `npm run dev` 只启动
 Server/Web；Node 完成登记后按需另启。前端和控制平面开发不要求启动 Node。
 
 修改 schema 前运行只读命令
 `npm run migration:plan --workspace @openbot/db -- --name describe_change`，并遵循
-[手写迁移契约](docs/DATABASE.zh-CN.md#编写迁移)。自动 `generate` 已停用。
+[手写迁移契约](docs/DATABASE.md#author-a-migration)。自动 `generate` 已停用。
 
 提交 PR 前遵循[适用验证规则](#ai-开发入口与验证)：实现和脚本修改须运行 `npm run check`，
 文字与贡献指令修改运行适用的文档和工作流检查。运行 `npm audit` 并满足必要的安全和托管 CI 门；
@@ -118,7 +116,7 @@ Server/Web；Node 完成登记后按需另启。前端和控制平面开发不�
 
 - 普通修复和接线复用已有决定。新增依赖/版本、公共协议、授权/安全或持久数据边界及重大架构
   选择，才在实现前补针对性证据。按[根触发规则](AGENTS.zh-CN.md#实现前调研)和
-  [研究指南](docs/research/README.zh-CN.md)只审查受影响的决定。
+  [研究指南](docs/research/README.md)只审查受影响的决定。
 - 选择顺序是开放标准、正式依赖、薄适配器、向上游贡献、窄 fork，最后才是有文档依据的本地
   差集。
 - Server 始终保存任务、审批、身份、策略和审计的唯一真相。
@@ -130,7 +128,7 @@ Server/Web；Node 完成登记后按需另启。前端和控制平面开发不�
 - README 不堆大型架构图；使用简短文本流程、表格和专门文档链接。
 
 根目录的 [AGENTS.md](AGENTS.md) 同时约束人工和自动化贡献者。扩展旧代码前，先在
-[追溯复用账本](docs/OPEN_SOURCE_REUSE.zh-CN.md)找到对应条目；缺失或不完整时只补本次相关证据，不重复全栈调查。
+[追溯复用账本](docs/OPEN_SOURCE_REUSE.md)找到对应条目；缺失或不完整时只补本次相关证据，不重复全栈调查。
 
 ### 必要 CI 全部完成
 
@@ -153,7 +151,7 @@ npm run check:affected -- --base "$BASE_SHA" --head "$HEAD_SHA"
 
 范围基于 npm 锁文件的传递消费者图及少量 Python、Desktop 动态和打包映射。
 `npm run ci:check` 包含选择/汇总反例和真实缓存/零测试验证。无局部测试的包不再暴露虚假的
-测试成功任务，明确依靠消费者覆盖及局部缺口。职责和产物归属见[唯一交接](docs/REPOSITORY_UPGRADE_PLAN.md#c3-check-duties-and-artifact-ownership)。
+测试成功任务，明确依靠消费者覆盖及局部缺口。
 
 使用 npm 入口（`npm run` / `npm exec -- turbo`），让缓存通过 `npm_config_user_agent`
 纳入实际 npm、Node、OS、架构身份，以及源码、锁依赖图、生成器、配置和声明的运行环境。
@@ -175,7 +173,7 @@ npm、GitHub Actions 和 Docker 通过 `open-pull-requests-limit: 0` 暂停普�
 普通更新先选择有限批次，审查精确上游版本和已有复用记录，写入研究证据，再同步修改
 manifest 与锁文件。触发 CI 前填写 PR 的研究部分，执行干净安装和 `npm run check`，
 等待最新云端 `check` 通过后合并。Dependabot 自动发布说明是待审提议，不能视为已完成研究。
-参见[流程决定](docs/research/dependency-update-intake.zh-CN.md)。
+参见[流程决定](docs/research/dependency-update-intake.md)。
 
 具备持续维护的研究流程后再恢复普通自动提议。修改 Dependabot 配置会立即扫描；上限指
 同时开放的 PR 数量，并非每周总量。恢复时保留安全更新和既有主版本限制。
@@ -193,7 +191,7 @@ CI 才要求 PR 正文包含 `## Open-source research`：其中需链接一份�
 ### AI 开发入口与验证
 
 [开发入口](.agents/README.zh-CN.md)链接已有工作流与职责。
-按[AGENTS](AGENTS.zh-CN.md) → [仓库地图](docs/REPOSITORY_MAP.zh-CN.md)相关路线 → 局部规则、契约、
+按[AGENTS](AGENTS.zh-CN.md) → [仓库地图](docs/REPOSITORY_MAP.md)相关路线 → 局部规则、契约、
 消费者和测试阅读。`.agents/skills` 提供 `openbot-change`、`openbot-check`、`openbot-ui`、
 `openbot-review`，只选择当前工作流。这些是仓库开发指令，不是 Employee 技能，不得打进产品载荷。
 
@@ -206,8 +204,7 @@ AGENTS 链接的 SKILL.md，记录实际生效方式。这里未配置 Claude �
 不代表纯文字。纯文字/指令运行适用检查；脚本/实现修改交接前仍须 `npm run check`。必要云端及
 发布/迁移/安全门不变，仅通过反例验证的 CI 选择器可以声明某 lane 不适用。记录测试数、缓存、跳过和缺失环境。
 
-[已完成升级记录](docs/REPOSITORY_UPGRADE_PLAN.md)保留带日期的证据和限制，不是常驻 C1/C2/C3
-待办。以当前请求和 checkout 为起点，保留本地结案记录。UI 使用
+以当前请求和 checkout 为起点，保留本地结案记录。UI 使用
 [既有设计索引](docs/design/README.zh-CN.md)、现有 tokens/组件及受影响状态。
 发现/读取验收只证明可以找到职责和检查，不代表实现、渲染验收或托管 CI 已完成。
 
@@ -215,7 +212,7 @@ AGENTS 链接的 SKILL.md，记录实际生效方式。这里未配置 Claude �
 提供网页的 Python 产品，带 `--entry ts` 时再在前面放上 TS 入口；然后在你已安装的 Chrome 里操作真实界面（换浏览器用
 `-- --browser <路径>`），最后给出通过或不通过的报告和截图。先准备好 Python（`apps/server-python/scripts/bootstrap-worker.sh`）
 并构建网页，Docker 要在运行。已知缺口在 `scripts/ui-acceptance-report.ts` 里按确切接口放行；
-见[调研记录](docs/research/ui-acceptance-automation.zh-CN.md)。每次 TypeScript 迁移的 HTTP 接口组
+见[调研记录](docs/research/ui-acceptance-automation.md)。每次 TypeScript 迁移的 HTTP 接口组
 切换前，都要在当前候选上运行 `npm run ui:acceptance -- --entry ts`，达到 `PASS 12/12`，
 并保留输出目录里的报告和截图。未预期的 workspace 503 会让关卡失败；根据报告步骤和
 成对的服务日志检查转发路径。

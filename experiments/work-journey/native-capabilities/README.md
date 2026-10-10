@@ -1,7 +1,5 @@
 # Native Task product qualification
 
-[English](README.md) · [简体中文](README.zh-CN.md)
-
 The 2026-09-25 case used real Owner HTTP, PostgreSQL, ProductWorkRuntime, and mTLS Temporal.
 The model transport alone was synthetic. An explicit native scope authorized an uploaded CSV,
 Owner-enabled memory, and one colleague. The root read the attachment/memory, delegated a real

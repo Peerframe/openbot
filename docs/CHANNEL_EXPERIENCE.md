@@ -32,7 +32,7 @@ The channel conversation has been rebuilt after inspecting the installed Grok Bo
 - A disposable PostgreSQL integration suite covers atomic multi-recipient creation, independent identity, queued context, explicit old references, cancellation and authority boundaries.
 - Reference observation used existing conversations and reversible unsent drafts; no reference-service message, file upload or publication was sent. Exportable preview data is synthetic.
 
-The previous [core upgrade](CORE_UPGRADE.md) documents Bot delegation, persistent files and MCP tools; these capabilities remain in place. See the [plugin author guide](PLUGINS.md) for extension contracts.
+Bot delegation, persistent files and MCP tools from the earlier core upgrade remain in place. See the [plugin author guide](PLUGINS.md) for extension contracts.
 
 ## Rendered acceptance, 2026-09-10
 

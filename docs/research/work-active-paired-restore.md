@@ -82,8 +82,7 @@ replay without changing product rows or external counters; decoded Payloads are 
 fixture media and the listed Owner/session, Control DB, model and saved-connection secrets. Runtime role/schema denials remain intact.
 
 See [bounded public evidence](../../experiments/work-journey/evidence/active-paired-restore.json)
-and [English](../../experiments/work-journey/README.md#active-task-paired-cold-restore) /
-[Chinese](../../experiments/work-journey/README.zh-CN.md#活动-task-成套冷恢复) reproduction instructions.
+and the [reproduction instructions](../../experiments/work-journey/README.md#active-task-paired-cold-restore).
 The source and target resources are owned/random and removed after the run; private local
 archives/keys/config/history are excluded from the integration patch. No upstream third-party
 source was copied; existing repository MIT fixtures were reused/adapted. Exact Worker/server

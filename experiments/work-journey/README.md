@@ -1,7 +1,5 @@
 # Public work journey recovery reference
 
-[English](README.md) · [简体中文](README.zh-CN.md)
-
 This reference connects the real Python control API/store to the Runtime's opt-in Temporal
 composition. Runtime PortModel/PortToolset execute scripted model/read steps; deferred write
 proposals return to the existing control-owned approval, effect verification and Artifact

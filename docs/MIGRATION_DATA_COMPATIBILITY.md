@@ -1,7 +1,5 @@
 # Migration source and data compatibility
 
-[English](MIGRATION_DATA_COMPATIBILITY.md) · [简体中文](MIGRATION_DATA_COMPATIBILITY.zh-CN.md)
-
 The feature source at `9cc73c9e78451e572f57d142d6b9caf62ccb78e2` cannot directly upgrade its
 19-migration database to the migration baseline `c33e03f1a14de739196113769c59fdaace9029e7`.
 The first 17 SQL files match exactly. Indices 17 and 18 reuse timestamps for different changes:
@@ -50,5 +48,4 @@ The final transfer must stop competing writers, validate references/counts/diges
 semantics, produce a restorable paired backup, and define post-cutover rollback after new writes.
 An old code checkout or old database snapshot alone is not a safe post-cutover rollback plan.
 Unknown external effects remain unresolved until reconciled. This document authorizes no live
-production change. See [stage plan](ARCHITECTURE_MIGRATION_PLAN.md) and
-[research](research/migration-lineage-audit.md).
+production change. See the [research](research/migration-lineage-audit.md).

@@ -10,7 +10,7 @@
 | --- | --- | --- |
 | `jose` | 6.2.12 | 2018 Filip Skokan；MIT；上游许可保留在生产依赖中 |
 | `canonicalize` | 5.0.0 | Apache-2.0；上游许可保留在生产依赖中；P4 使用发布 API，未复制实现 |
-| Temporal TypeScript SDK 及 SDK 传递依赖 | 1.24.0 | 2021–2025 Temporal Technologies Inc.；MIT；上游许可保留在依赖中，见 [P4 审核](docs/research/typescript-control-plane-p4.zh-CN.md) |
+| Temporal TypeScript SDK 及 SDK 传递依赖 | 1.24.0 | 2021–2025 Temporal Technologies Inc.；MIT；上游许可保留在依赖中，见 [P4 审核](docs/research/typescript-control-plane-p4.md) |
 | `source-map-js` | 1.2.2 | 2009–2011 Mozilla Foundation 与贡献者；BSD-3-Clause；保留上游许可 |
 | Microsoft .NET、`Microsoft.Extensions.*`、`System.*` | 锁文件及发布运行时确定 | .NET Foundation 与贡献者；MIT |
 | `Meziantou.Framework.Win32.Jobs` | 4.0.0 | Gérald Barré；MIT |
@@ -39,8 +39,8 @@ Server 使用显式 OpenAI、Anthropic、OpenRouter 和 Moonshot 适配器；SDK
 实际调用入口。生产依赖树及产物保留各包的 `LICENSE`。未复制上游实现源码。
 
 研究依据：[MCP 插件](docs/research/third-party-mcp-plugins.md)、[原生 Agent](docs/research/native-agent-loop.md)、
-[OpenRouter](docs/research/openrouter-model-entry.md)、[本次 SDK 补丁](docs/research/ai-sdk-patches-september15.zh-CN.md)、
-[Electron 更新](docs/research/electron-44.3-ci-review.zh-CN.md)。
+[OpenRouter](docs/research/openrouter-model-entry.md)、[本次 SDK 补丁](docs/research/ai-sdk-patches-september15.md)、
+[Electron 更新](docs/research/electron-44.3-ci-review.md)。
 
 当前原生 PostgreSQL 暂存仅使用 `@embedded-postgres/darwin-arm64`
 `17.10.0-beta.17`（MIT packager；PostgreSQL 17.10 使用其自身许可证）。Intel Mac 和 Windows

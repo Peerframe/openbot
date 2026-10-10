@@ -1,7 +1,7 @@
 # C28: retire singleton model configuration
 
 Reviewed on 2026-10-05 against OpenBot `010439bb9002fabb7e1facd8450ee85edbafa309`.
-Reuse the C7 [Owner preferences decision](desktop-owner-preferences.md), the
+Reuse the C7 Owner preferences decision, the
 [Python model services review](python-model-services.md), PostgreSQL 17.10,
 OpenAI 3.17.0 / `8c72a700`, and the existing AES-GCM connection cipher. No new dependency,
 copied source, provider endpoint, or authority framework.

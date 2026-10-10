@@ -81,7 +81,7 @@ OPENBOT_CONTROL_PLUGIN_LOCAL_ENDPOINTS=["http://127.0.0.1:4318/mcp"]
 
 实现普通 **MCP 2025-11-25 兼容 Streamable HTTP 服务** 即可，可使用其他语言。
 OpenBot 固定官方 SDK **1.32.1**，提交 `ff07b001194fe60ee9deb2121cf119057565796d`，
-不要求作者接私有 SDK。见[初始调研](research/third-party-mcp-plugins.md)及[安全版本审阅](research/typescript-control-plane-p0.zh-CN.md#mcp-sdk公告修复2026-10-07)。
+不要求作者接私有 SDK。见[初始调研](research/third-party-mcp-plugins.md)及[安全版本审阅](research/typescript-control-plane-p0.md#mcp-sdk-advisory-repair-2026-10-07)。
 
 | 内容 | 当前范围 |
 | --- | --- |
@@ -170,4 +170,4 @@ HTML 界面使用 `ui://` 资源和 `text/html;profile=mcp-app` MIME，完整响
 
 当前界面宿主使用官方 MCP Apps 1.7.5 AppBridge：双层隔离 iframe，支持本地交互与已授权资源读取；不开放工具调用、发消息、模型上下文修改或外部网络/设备。
 
-MCP 会话通过 SDK 向相同受校验端点发送终止请求，最多等待 5 秒并兼容 HTTP 405；清理结束前保留并发名额。清理失败不会重放业务调用，也不能证明远端已删除会话。Schema 关键字限制只作用于对应位置，普通字段名如 `format` 可以使用。公开数据契约与界面共享，授权仍由 Server 决定。见[研究](research/plugin-flow-refactor.zh-CN.md)。
+MCP 会话通过 SDK 向相同受校验端点发送终止请求，最多等待 5 秒并兼容 HTTP 405；清理结束前保留并发名额。清理失败不会重放业务调用，也不能证明远端已删除会话。Schema 关键字限制只作用于对应位置，普通字段名如 `format` 可以使用。公开数据契约与界面共享，授权仍由 Server 决定。见[研究](research/plugin-flow-refactor.md)。

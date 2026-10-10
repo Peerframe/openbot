@@ -1,7 +1,5 @@
 # Employee package signing
 
-[English](EMPLOYEE_SIGNING.md) · [简体中文](EMPLOYEE_SIGNING.zh-CN.md)
-
 OpenBot can sign the existing identity-free `openbot.employee/v1` template with an Owner-controlled
 Ed25519 key. The result is a DSSE envelope. A receiving Server accepts that envelope only when its
 local trust store already contains the publisher public key.

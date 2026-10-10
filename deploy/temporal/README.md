@@ -1,7 +1,5 @@
 # Temporal PostgreSQL qualification profile
 
-[English](README.md) · [简体中文](README.zh-CN.md)
-
 This explicit single-host reference uses released Temporal Server/admin-tools **1.32.0** and
 PostgreSQL **17.11**, pinned by image digest. It qualifies engine persistence for the
 [public work journey](../../experiments/work-journey/README.md); it does not enable a production

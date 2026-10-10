@@ -162,8 +162,7 @@ when **all** of the following are true, or when an Owner explicitly schedules a 
   each passed Compose parsing, warning-free Dockerfile checks, seven-workspace compilation,
   and the full Server smoke with all 18 migrations. Both logs contain the successful smoke marker.
 - `npm run check` passed locally on the same source. The independent review findings and the
-  remaining roadmap gates are recorded in [DEV-002](../reviews/DEV-002.md), with a matching
-  [Chinese record](../reviews/DEV-002.zh-CN.md). This records hosted test evidence, not a release.
+  remaining roadmap gates were recorded in review DEV-002. This records hosted test evidence, not a release.
 
 
 ## Nested Server workspace production dependency packaging (2026-09-11)

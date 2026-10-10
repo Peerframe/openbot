@@ -1,7 +1,5 @@
 # Durable execution qualification
 
-[English](README.md) · [简体中文](README.zh-CN.md)
-
 This is an isolated DBOS 3.0.0 candidate experiment, not an OpenBot dispatcher. It tests actual
 SIGKILL and restart with a disposable PostgreSQL 17.11 container and a loopback HTTP effect service.
 No model, user database, private configuration or production provider is used. The engine has

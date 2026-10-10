@@ -88,7 +88,7 @@ docs and the full check with that same virtualenv present.
 ## Integration follow-up
 
 Reuse the existing digest-pinned PostgreSQL CI service, disposable collaboration database and
-required `database` job (existing [CI gate review](windows-ci-merge-gate.md)); add the headless
+required `database` job (existing CI gate review); add the headless
 suite to its invocation with one worker and no file parallelism, because both suites reset that
 fixture. No new action, credential or service is required. Hosted execution is not yet verified.
 The first report-download acceptance now explicitly selects the replacement executor seam.
