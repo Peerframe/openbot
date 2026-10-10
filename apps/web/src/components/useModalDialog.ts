@@ -1,3 +1,4 @@
+// Hook that opens a native modal <dialog> and reports its close or cancel back to React state.
 import { useCallback, useEffect, useRef } from "react";
 
 /**
@@ -21,7 +22,8 @@ export function useModalDialog(onClose: () => void) {
     const dialog = dialogRef.current;
     if (dialog === null) return;
 
-    openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    openerRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const handleCancel = (event: Event) => {
       event.preventDefault();
       closeDialog();

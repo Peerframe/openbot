@@ -1,3 +1,4 @@
+// Plugins dialog (Plugins artboard) over the workspace: choose which Bots use each plugin.
 import type { Bot } from "@openbot/domain";
 import type { PluginContentScope } from "../plugin-api";
 import { CloseIcon } from "./Icons";

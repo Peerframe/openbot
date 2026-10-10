@@ -1,3 +1,5 @@
+// Rows of Settings → 通用 and 通知: Desktop start-up options, the Dock badge, and the Owner's time
+// zone and default model for new Bots.
 import type {
   DesktopPlatformPreferences,
   DesktopPlatformState,

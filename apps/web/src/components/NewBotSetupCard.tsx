@@ -1,3 +1,4 @@
+// 你最想让我先帮你做什么？ card (NewBotChat artboard) in a new Bot's empty 单聊; the answer sets its role.
 import type { Bot } from "@openbot/domain";
 import { type FormEvent, useState } from "react";
 import { RobotAvatar } from "./RobotAvatar";

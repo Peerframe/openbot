@@ -1,3 +1,5 @@
+// Settings → 记忆 for one Bot (ProfileMemory artboard): candidate knowledge to review, then its
+// long-term memories with search, type filter and per-memory model-use switch.
 import type { CreateEmployeeMemoryInput, EmployeeMemory, EmployeeProfile } from "@openbot/domain";
 import { type FormEvent, type ReactNode, useId, useMemo, useState } from "react";
 import { createEmployeeMemory, deleteEmployeeMemory, updateEmployeeMemory } from "../api";

@@ -1,3 +1,4 @@
+// Lets an artifact card save a report through the Desktop shell instead of a browser download.
 import { getOpenBotDesktopBridge } from "./desktop-runtime";
 
 export type ArtifactSaveStatus = "saved" | "cancelled" | "busy" | "unavailable" | "exists";

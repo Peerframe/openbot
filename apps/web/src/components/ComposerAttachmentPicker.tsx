@@ -1,3 +1,5 @@
+// Composer attachment strip: pick, drag-drop or paste files, upload them and show the draft's
+// attachments, within the per-message limit of 8 files and 20 MB.
 import { type RefObject, useEffect, useRef, useState } from "react";
 import { extensionOf, formatAttachmentSize, middleEllipsis } from "../channel-attachment-client";
 import {

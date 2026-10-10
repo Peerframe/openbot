@@ -1,3 +1,5 @@
+// Composer attachment and skill model: file type and size checks, upload to the channel, and the
+// task text that lists requested skills and attachment markers.
 import {
   ATTACHMENT_ACCEPT,
   ATTACHMENT_EXTENSIONS,

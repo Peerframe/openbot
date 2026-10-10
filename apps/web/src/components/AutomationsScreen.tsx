@@ -1,3 +1,5 @@
+// Settings → 例行任务 (SettingsRoutines artboard): lists, creates, pauses and deletes the Server's
+// scheduled routines for the workspace's Bots.
 import type { Bot, Channel } from "@openbot/domain";
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { ApiError } from "../api";

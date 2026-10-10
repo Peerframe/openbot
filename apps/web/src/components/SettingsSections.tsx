@@ -1,3 +1,5 @@
+// Shared settings building blocks (group, row, workspace loader) and small sections: the approval
+// rules summary, the audit log with CSV export, and the 例行任务 entry.
 import type { WorkspaceSnapshot } from "@openbot/domain";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import {

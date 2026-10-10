@@ -1,3 +1,5 @@
+// Right rail for a 频道 (Main and ChannelInfo artboards): details, 资料库 and members tabs, with
+// approvals, recent runs and work computers. A 单聊 uses BotInfoRail instead.
 import type {
   ApprovalDecision,
   Artifact,

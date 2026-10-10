@@ -1,3 +1,4 @@
+// Settings row for the workspace's 主 Bot; a save tells the workspace to re-read so the crown moves.
 import type { WorkspacePrimaryBot } from "@openbot/domain";
 import { useEffect, useState } from "react";
 import { ApiError, setWorkspacePrimaryBot } from "../api";

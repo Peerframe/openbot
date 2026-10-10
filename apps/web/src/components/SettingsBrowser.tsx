@@ -1,3 +1,5 @@
+// Settings → 员工浏览器 (SettingsBrowser artboard): each Docker Bot's browser status, with open,
+// restart and clear.
 import type { Bot, BrowserMaintenanceResult } from "@openbot/domain";
 import { useState } from "react";
 import { ApiError, maintainEmployeeBrowser } from "../api";

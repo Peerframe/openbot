@@ -1,3 +1,5 @@
+// 频道文件 dialog (ChannelFiles artboard): uploads and Bot outputs, the 回收站, permanent delete and
+// 查看引用. Also exports the hook that loads a channel's attachment list.
 import type { Artifact } from "@openbot/domain";
 import { useEffect, useState } from "react";
 import {

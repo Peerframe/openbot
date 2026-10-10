@@ -1,3 +1,5 @@
+// Scope form for a new 工作任务: Owner attachments (upload, process, delete) and opt-in extras such as
+// web, plugins, knowledge and collaborating Bots. Granted only as far as the Server allows.
 import type { Bot } from "@openbot/domain";
 import {
   ATTACHMENT_ACCEPT,

@@ -1,3 +1,4 @@
+// Portal slot that puts a settings section's primary action in the dialog header.
 import { createContext, type ReactNode, useContext } from "react";
 import { createPortal } from "react-dom";
 

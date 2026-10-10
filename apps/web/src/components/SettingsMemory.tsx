@@ -1,3 +1,4 @@
+// Settings → 记忆 (SettingsMemory artboard): pick a Bot and manage its memory panel.
 import type { Bot, EmployeeProfile } from "@openbot/domain";
 import { useCallback, useEffect, useState } from "react";
 import { getEmployeeProfile } from "../api";

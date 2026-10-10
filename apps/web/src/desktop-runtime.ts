@@ -1,22 +1,24 @@
+// Typed access to the Desktop preload bridge (window.openbotDesktop); undefined in a plain browser.
 import type {
   OpenBotDesktopBridge as DesktopBridge,
   DesktopRuntimeInfo,
   DesktopNavigationMenuState as NavigationMenuState,
 } from "@openbot/protocol";
+
 export type {
-  DesktopConnectionState,
   ConfigureDesktopServerResult,
+  DesktopConnectionState,
+  DesktopLocalWorkerOperationResult,
+  DesktopLocalWorkerState,
+  DesktopNavigationCommand,
   DesktopSetupMode,
   DesktopSetupPlanInput,
   DesktopSetupPlanState,
-  SaveDesktopSetupPlanResult,
-  DesktopLocalWorkerState,
-  DesktopLocalWorkerOperationResult,
   DesktopSidebarMaterialState,
-  DesktopNavigationCommand,
   EmployeeTemplateSaveInput,
   EmployeeTemplateSaveResult,
   NativeServerState,
+  SaveDesktopSetupPlanResult,
 } from "@openbot/protocol";
 
 // Older Desktop bridges may omit runtime metadata; feature detection remains local.

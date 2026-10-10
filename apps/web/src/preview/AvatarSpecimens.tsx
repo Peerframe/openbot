@@ -1,3 +1,4 @@
+// Design preview specimen sheets for the Avatars and GroupAvatars artboards, using real avatars.
 import type { Bot, BotAppearance, BotStatus, RunStatus } from "@openbot/domain";
 import { GroupAvatar } from "../components/GroupAvatar";
 import { RobotAvatar } from "../components/RobotAvatar";

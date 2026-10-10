@@ -1,3 +1,5 @@
+// 导入 Bot 模板 dialog (DialogImport artboard): upload a package, review the Server's quarantine check,
+// then confirm to create a new Bot with no computer authority and skills pending review.
 import type {
   Bot,
   EmployeeImportActivationResult,
@@ -5,7 +7,7 @@ import type {
   EmployeeImportPreview,
 } from "@openbot/domain";
 import { useEffect, useRef, useState } from "react";
-import { activateEmployeeImport, type ApiError, previewEmployeeImport } from "../api";
+import { type ApiError, activateEmployeeImport, previewEmployeeImport } from "../api";
 import { Dialog } from "./Dialog";
 import { DialogCheck } from "./ExportEmployeeDialog";
 import { PortableProfileSummaryCard, PortableSkillList } from "./PortableEmployeeReview";

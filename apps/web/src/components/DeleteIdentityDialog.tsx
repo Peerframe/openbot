@@ -1,3 +1,5 @@
+// Permanent-delete confirmation for a Bot or 频道 (DialogDelete artboard). The Server decides what is
+// removed and may refuse; closing never deletes.
 import type { Bot, Channel } from "@openbot/domain";
 import { useState } from "react";
 import { ApiError } from "../api";

@@ -1,3 +1,4 @@
+// Step list in 任务详情: the Server's exact step count and stage names, folding the middle past 12.
 import type { Run, RunProgress, RunProgressDetails } from "@openbot/domain";
 import { type ReactNode, useEffect, useState } from "react";
 import { getRunProgress } from "../api";
