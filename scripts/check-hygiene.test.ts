@@ -18,8 +18,8 @@ const clean: Record<string, string> = {
   "docs/research/README.md": "[choice](choice.md)\n",
   "apps/web/src/App.tsx": "// The workspace shell.\nexport const App = 1;\n",
   "apps/web/AGENTS.md": "Short rules.\n",
-  "experiments/probe/run.py": "print(1)\n",
-  "package.json": '{"scripts":{"probe":"python3 experiments/probe/run.py"}}\n',
+  "experiments/probe/run.ts": "// Probe.\nexport {};\n",
+  "package.json": '{"scripts":{"probe":"node experiments/probe/run.ts"}}\n',
 };
 const zero: HygieneBaseline = { nestedRules: {}, undocumentedFiles: {} };
 
@@ -103,10 +103,13 @@ test("nested rules have a line budget; recorded exceptions may only shrink", () 
 });
 
 test("an experiment that nothing runs is refused", () => {
-  const files: Record<string, string> = { ...clean, "experiments/forgotten/notes.py": "x = 1\n" };
+  const files: Record<string, string> = {
+    ...clean,
+    "experiments/forgotten/notes.ts": "export {};\n",
+  };
   assert.match(checkHygiene(input(files)).join("\n"), /experiments\/forgotten: nothing in code/u);
   // Another experiment depending on it keeps it alive.
-  files["experiments/probe/requirements.txt"] = "-r ../forgotten/requirements.txt\n";
+  files["experiments/probe/run.ts"] = 'import "../forgotten/notes.ts";\n';
   assert.deepEqual(checkHygiene(input(files)), []);
 });
 
@@ -128,6 +131,22 @@ test("new source files must say what they are for; the recorded gap only shrinks
     checkHygiene(input(files, recorded)).join("\n"),
     /lower undocumentedFiles\["apps\/web"\]/u,
   );
+});
+
+test("Python files and packaging names cannot come back", () => {
+  for (const name of [
+    "scripts/fix.py",
+    "experiments/probe/requirements-dev.txt",
+    "apps/tool/pyproject.toml",
+    ".python-version",
+  ])
+    assert.match(
+      checkHygiene(input({ ...clean, [name]: "x\n" })).join("\n"),
+      new RegExp(`${name.replaceAll(".", "\\.")}: Python was retired in P5 \\(ADR-0050\\)`, "u"),
+    );
+  // Similar names that are not Python stay allowed.
+  const similar = { ...clean, "docs/requirements.md": "x\n", "apps/web/src/copy.pyx.ts": "// x\n" };
+  assert.deepEqual(checkHygiene(input(similar)), []);
 });
 
 test("an opening comment may follow a shebang but not code", () => {

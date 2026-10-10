@@ -3,7 +3,8 @@
 P5 required qualification uses `npm run test:work:ts`, `npm run test:temporal:boundary`,
 `npm run test:temporal:upgrade`, `product-command-probe.ts`, and `product-browser-probe.ts`.
 The actual native entries are selected by the repository CI workflow on a disposable Linux runner.
-The Python commands and results below are dated P0–P4 provenance; they are retired entry points.
+The Python commands and results below are dated P0–P4 provenance. Their probes, fixtures and
+requirement files were deleted after P5; read them at [the last revision that had them](https://github.com/Peerframe/openbot/tree/50837bea7bf63290aab250f84fe1b705f942efdb/experiments/work-journey).
 
 This reference connects the real Python control API/store to the Runtime's opt-in Temporal
 composition. Runtime PortModel/PortToolset execute scripted model/read steps; deferred write

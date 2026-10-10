@@ -1,7 +1,8 @@
 # Isolated mTLS terminal qualification
 
-Historical P4 evidence: this probe imports the retired Python Server package, which P5 removed,
-so it no longer runs from `main`. Reproduce it from the
+Historical P4 evidence: this probe imported the retired Python Server package, and its source was
+deleted after P5 ([last revision](https://github.com/Peerframe/openbot/tree/50837bea7bf63290aab250f84fe1b705f942efdb/experiments/work-journey/terminal-recovery)). Live TS
+probes still read `resources.yaml`. Reproduce it from the
 [P4-era revision](https://github.com/Peerframe/openbot/tree/e25d91520dbda664705a77c76c1af456a064a39d);
 current qualification commands are listed in the [work journey README](../README.md).
 

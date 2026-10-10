@@ -33,6 +33,7 @@ Exact candidates and maintained upstream sources:
 Primary contracts and actual measurements are recorded in
 [durability qualification](../research/durable-execution-qualification.md),
 [Temporal review](../research/temporal-durability-review.md),
+[SDK composition](../research/sdk-durability-integration.md),
 [public work journey](../research/work-temporal-journey.md),
 [PostgreSQL operations](../research/temporal-postgres-operations.md),
 [transport](../research/temporal-transport-security.md), and

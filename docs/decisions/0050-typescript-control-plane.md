@@ -249,10 +249,12 @@ semantics retained by the migration; their old setup commands are historical.
 
 The new Work path retains the [task authority](../research/python-task-authority.md),
 [model service](../research/python-model-services.md), [admission](../research/work-domain-admission.md),
+[native Task scope](../research/python-native-task-capabilities.md),
 [artifact publication](../research/work-artifact-publication.md) and
 [lookup-only reconciliation](../research/work-reconciliation-commands.md) decisions.
 The [former supervisor](../research/python-control-runtime-supervision.md),
-[runtime activation](../research/python-runtime-activation.md) and
+[runtime activation](../research/python-runtime-activation.md),
+[product Worker composition](../research/python-product-runtime.md) and
 [headless acceptance](../research/headless-runtime-acceptance.md) records document the retired
 process/wheel implementation; TS Work recovery, Linux native execution and packaged lifecycle checks
 replace those mechanisms without introducing a second authority or retrying unknown effects.

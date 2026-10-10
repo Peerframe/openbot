@@ -844,7 +844,7 @@ therefore supplies the Docker-local name without changing content. The failed or
 owned runtime was removed and zero-container/firewall host baseline matched. P4 is still open.
 The private packet now gives the exact independently pinned loaded Squid manifest its original
 local tag before the unchanged config/manifest/platform guard. This follows the retained command
-[offline-load binding](../../experiments/linux-execution/deadline_probe.py); it changes no image
+[offline-load binding](https://github.com/Peerframe/openbot/blob/50837bea7bf63290aab250f84fe1b705f942efdb/experiments/linux-execution/deadline_probe.py); it changes no image
 content, source enforcement, routes, runtime budget or host daemon. Actual failure stderr was not
 retained publicly, so the transport-name attribution rests on the observed operation and loader
 contract, not an original daemon message. Fresh native browser and all current-head CI remain required.
