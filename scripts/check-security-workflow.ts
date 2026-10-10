@@ -289,10 +289,12 @@ export function validatePythonProductWorkflow(source: string, migrationSource: s
   hasCommands(
     job("browser-product"),
     [
-      "experiments/work-journey/product_browser_probe.py",
+      "node --import tsx experiments/work-journey/product-browser-probe.ts",
+      "node --import tsx experiments/work-journey/product-browser-native.ts",
+      "for recovery in pages response-loss; do",
       "for recovery in control node replacement response-loss browser-restart; do",
     ],
-    "Python browser",
+    "TS browser",
   );
   hasCommands(
     job("browser-product"),

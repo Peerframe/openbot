@@ -265,6 +265,8 @@ test("all C2 gates and real product recovery stay required when selected", () =>
     ["temporal-qualification", "npm run test:temporal:upgrade"],
     ["harness", "npm run contracts:legacy"],
     ["browser-product", "control node replacement response-loss browser-restart"],
+    ["browser-product", "node --import tsx experiments/work-journey/product-browser-native.ts"],
+    ["browser-product", "for recovery in pages response-loss; do"],
     ["server-container", "deploy/server/smoke-product.ts"],
     ["server-container", "scripts/product-entry.integration.test.ts"],
     ["desktop-product", "--filter=@openbot/desktop --filter=@openbot/server --filter=@openbot/web"],

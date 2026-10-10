@@ -583,8 +583,7 @@ jobs:
         timeout-minutes: 15
         shell: bash
         run: |
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B \
-            experiments/work-journey/p4_native_browser.py \
+          node --import tsx experiments/work-journey/product-browser-native.ts \
             --output "$RUNNER_TEMP/openbot-browser-ts-native" \
             --upstream "$RUNNER_TEMP/openbot-browser-upstream" \
             --browsers "$RUNNER_TEMP/openbot-browser-binaries"
@@ -592,7 +591,7 @@ jobs:
         timeout-minutes: 8
         shell: bash
         run: |
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/product_browser_probe.py \
+          node --import tsx experiments/work-journey/product-browser-probe.ts \
             --output "$RUNNER_TEMP/openbot-browser-product" \
             --upstream "$RUNNER_TEMP/openbot-browser-upstream" \
             --browsers "$RUNNER_TEMP/openbot-browser-binaries"
@@ -608,7 +607,7 @@ jobs:
         shell: bash
         run: |
           for recovery in control node replacement response-loss browser-restart; do
-            "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/product_browser_probe.py \
+            node --import tsx experiments/work-journey/product-browser-probe.ts \
               --output "$RUNNER_TEMP/openbot-browser-recovery-$recovery" \
               --upstream "$RUNNER_TEMP/openbot-browser-upstream" \
               --browsers "$RUNNER_TEMP/openbot-browser-binaries" \
@@ -619,8 +618,8 @@ jobs:
         shell: bash
         run: |
           for recovery in pages response-loss; do
-            "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/product_browser_probe.py \
-              --entry ts --recovery "$recovery" \
+            node --import tsx experiments/work-journey/product-browser-probe.ts \
+              --recovery "$recovery" \
               --output "$RUNNER_TEMP/openbot-browser-ts-$recovery" \
               --upstream "$RUNNER_TEMP/openbot-browser-upstream" \
               --browsers "$RUNNER_TEMP/openbot-browser-binaries"
