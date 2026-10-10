@@ -1,3 +1,5 @@
+// Browser client for the Server's /api/v1 routes and realtime streams. Responses are validated
+// before the UI uses them; the Server stays the source of truth for state and authorization.
 import type {
   Approval,
   ApprovalDecision,

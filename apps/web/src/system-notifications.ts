@@ -1,3 +1,5 @@
+// Opt-in system notifications for new Bot replies and approvals, through Desktop or the browser
+// Notifications API. Notices name only the Bot and channel, never message text.
 import type { Approval, Bot, Channel } from "@openbot/domain";
 import { getOpenBotDesktopBridge } from "./desktop-runtime";
 

@@ -1,3 +1,5 @@
+// One EventSource subscription with reconnect, watchdog and cleanup, used by api.ts for realtime
+// updates. Callers parse and validate the events.
 export type RealtimeConnectionState = "connecting" | "live" | "retrying";
 export type EventStreamSession = {
   /** Records valid activity; false if the stream is no longer active afterwards. */

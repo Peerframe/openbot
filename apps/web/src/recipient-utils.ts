@@ -1,3 +1,4 @@
+// Composer recipient selection: add, remove or select everyone, up to six Bots per message.
 export const MAX_MESSAGE_RECIPIENTS = 6;
 
 export interface RecipientSelection {
