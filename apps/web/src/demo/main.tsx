@@ -1,3 +1,4 @@
+// Entry point of demo.html (`npm run build:demo`): installs the demo transport, then renders Demo.
 import { DemoAdapter } from "./adapter";
 import { installDemoTransport } from "./install";
 import "../global-styles";

@@ -1,3 +1,4 @@
+// Client for the Server's automation routes (例行任务): list, create, enable or pause, delete.
 import type { Automation, CreateAutomationInput } from "@openbot/protocol";
 import { ApiError } from "./api";
 

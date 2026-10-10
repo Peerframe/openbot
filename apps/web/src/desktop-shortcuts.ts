@@ -1,3 +1,4 @@
+// Display label for a Desktop keyboard shortcut (⌘ on macOS, Ctrl elsewhere); display only.
 import { getOpenBotDesktopBridge } from "./desktop-runtime";
 
 /** This is display metadata only; command authority remains in the native menu. */

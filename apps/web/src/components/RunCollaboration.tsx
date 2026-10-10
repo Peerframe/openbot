@@ -1,3 +1,5 @@
+// Bot-to-Bot delegation in a conversation: links child runs to their parent from Server records and
+// shows the 参与协作 list, delegation notices and the delegated reply's context.
 import type { Bot, Message, Run } from "@openbot/domain";
 import { runStatusLabel, runStatusSummary, runTitle } from "../run-state";
 import { RobotAvatar } from "./RobotAvatar";

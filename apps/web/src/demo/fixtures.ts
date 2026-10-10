@@ -1,3 +1,4 @@
+// Fixed Bots, channel, prompt, report and messages for the website demo; synthetic data only.
 import type { Artifact, Bot, Channel, Message, Run } from "@openbot/domain";
 
 export const demoTime = "2026-09-10T01:30:00.000Z";

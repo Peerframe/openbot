@@ -1,3 +1,5 @@
+// Entry point of the Web app (index.html): installs global styles, favicon and colour scheme, then
+// renders App.
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App.tsx";

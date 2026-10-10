@@ -1,3 +1,4 @@
+// Shared inline SVG line icons (sidebar, header, composer, settings); decorative, aria-hidden.
 import type { ReactNode } from "react";
 
 interface IconProps {

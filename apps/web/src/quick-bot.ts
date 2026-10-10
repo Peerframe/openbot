@@ -1,3 +1,5 @@
+// 创建新 Bot helpers: the quick-created Bot's placeholder role, a fresh random look, and the failure
+// notice. The Server allocates the name and opens its 单聊.
 import type { Bot, BotAppearance } from "@openbot/domain";
 
 /*

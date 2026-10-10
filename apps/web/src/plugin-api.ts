@@ -1,3 +1,5 @@
+// Client for the Server's plugin routes: request helper, plugin list, content paths and the
+// Chinese error messages shown for each failure status.
 import type {
   PluginContentScope,
   PluginContentResultHttp,

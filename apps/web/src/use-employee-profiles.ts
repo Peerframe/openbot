@@ -1,3 +1,4 @@
+// Hook that reads several Bots' profiles, at most four requests at a time (Settings → 技能, 导入与导出).
 import type { EmployeeProfile } from "@openbot/domain";
 import { useEffect, useState } from "react";
 import { getEmployeeProfile } from "./api";

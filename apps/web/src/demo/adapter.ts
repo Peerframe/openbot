@@ -1,3 +1,5 @@
+// Scripted fake Server for the website demo: answers fetch and event-stream calls from fixed
+// fixtures and plays the demo run step by step. Never reaches a real Server.
 import {
   type Artifact,
   type ChannelRealtimeEvent,

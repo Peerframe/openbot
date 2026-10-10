@@ -1,3 +1,5 @@
+// Web app root. App walks start-up (Desktop setup, install and connection, login, onboarding,
+// model setup); AuthenticatedWorkspace then renders the signed-in workspace and its unread counts.
 import type { ApprovalDecision, AuthSessionSnapshot, Channel, RunFrame } from "@openbot/domain";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {

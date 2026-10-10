@@ -1,3 +1,5 @@
+// Plugin detail panels: declared tools, prompts and resources, update review with a declaration
+// diff, the plugin's own UI and resources, and links to the plugin catalogue docs.
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   type Plugin,

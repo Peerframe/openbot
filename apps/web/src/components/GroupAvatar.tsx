@@ -1,3 +1,4 @@
+// A 频道's stacked-heads avatar with one status dot (GroupAvatars artboard).
 import type { Bot, BotStatus, RunStatus } from "@openbot/domain";
 import type { CSSProperties } from "react";
 import { avatarPresence, RobotAvatar } from "./RobotAvatar";

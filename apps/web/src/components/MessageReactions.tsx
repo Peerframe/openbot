@@ -1,3 +1,4 @@
+// The Owner's saved reactions under a message bubble, and the emoji labels shared with the picker.
 import type { MessageReaction, ReactionEmoji } from "@openbot/domain";
 import { useState } from "react";
 import "./MessageReactions.css";

@@ -1,3 +1,5 @@
+// Client for Work task resources: a task's submitted scope and the Owner's task attachments
+// (list, upload, process, delete).
 import {
   type AttachmentOperation,
   nativeTaskScopeSchema,

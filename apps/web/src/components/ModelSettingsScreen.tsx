@@ -1,3 +1,5 @@
+// Model setup: connections plus the default model, as the onboarding step 给 Bot 选一个模型 or
+// embedded in Settings.
 import { useState } from "react";
 import { OnboardingFrame } from "./Onboarding";
 import { OwnerPreferenceSettings } from "./SettingsGeneral";

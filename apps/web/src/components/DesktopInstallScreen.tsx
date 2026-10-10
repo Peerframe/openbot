@@ -1,3 +1,4 @@
+// Desktop onboarding progress screen while the bundled server installs or resumes on this computer.
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { NativeServerState, OpenBotDesktopBridge } from "../desktop-runtime";
 import { LaunchScreen, OnboardingFrame } from "./Onboarding";

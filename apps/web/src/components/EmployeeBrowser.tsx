@@ -1,3 +1,5 @@
+// 员工浏览器 dialog (EmployeeBrowser artboard): live view of a Bot's Docker browser, where the Owner
+// can take control (接管), navigate, click, type and scroll, then hand it back to the Bot.
 import type { Bot } from "@openbot/domain";
 import type { BrowserAction, BrowserSessionView } from "@openbot/protocol";
 import { useCallback, useEffect, useRef, useState } from "react";

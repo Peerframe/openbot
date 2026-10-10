@@ -1,3 +1,5 @@
+// Per-Bot grant for one plugin in Settings → 插件: 不授权, confirm each call, or allow read-only calls.
+// Shows 已保存 only once the Server's snapshot confirms the write.
 import type { Bot } from "@openbot/domain";
 import { useRef, useState } from "react";
 import type { Plugin, PluginGrant } from "../plugin-api";

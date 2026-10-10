@@ -1,3 +1,5 @@
+// Channel file client: fetch, preview, rename, download and 回收站 purge/cleanup of attachments,
+// plus file-name formatting shared by the composer, messages, task cards and the 文件 manager.
 import {
   type AttachmentOperation,
   attachmentByteLimit,

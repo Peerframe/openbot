@@ -1,3 +1,5 @@
+// Right-click menus for sidebar rows and groups (ContextMenu artboard). Pin, group, mute, hide and
+// unread are per device; rename, delete and add-Bot are Server writes passed in by the caller.
 import type { Bot } from "@openbot/domain";
 import {
   type KeyboardEvent,

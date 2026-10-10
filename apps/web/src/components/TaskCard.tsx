@@ -1,3 +1,5 @@
+// Task card in the conversation (TaskCards artboard): status, step count, latest progress, outputs,
+// approvals and collaborators, updated in place as the Server reports progress.
 import type {
   Approval,
   ApprovalDecision,

@@ -1,3 +1,4 @@
+// Reads the Owner's sign-in session at start-up and, on a local Desktop host, restores it once.
 import type { AuthSessionSnapshot } from "@openbot/domain";
 
 /** Recover identity only; never replay the operation that received HTTP 401. */

@@ -1,3 +1,5 @@
+// Plugin list shared by Settings → 插件 (SettingsPlugins artboard) and the Plugins dialog: search,
+// install, update, uninstall and per-Bot grants.
 import type { Bot, ReviewedPluginCatalog } from "@openbot/domain";
 import { Fragment, type MutableRefObject, useEffect, useRef, useState } from "react";
 import { getPluginCatalog } from "../api";
