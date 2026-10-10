@@ -105,6 +105,16 @@ export function validateSecurityWorkflow(source: string): void {
   for (const step of security.steps)
     if (step.run) assert(!step.conditional, "Security commands cannot be conditionally bypassed.");
 
+  hasCommands(
+    requiredJob(workflow, "server-container"),
+    [
+      "--test /workspace/qualification/kernel-facts.test.ts",
+      "OPENBOT_READONLY_KERNEL_TEST=1",
+      "--network none --read-only",
+      "--cap-drop ALL --cap-add SETUID --cap-add SETGID --user 0",
+    ],
+    "Linux kernel qualification",
+  );
   const scope = requiredJob(workflow, "scope");
   assert(!scope.conditional && !scope.source.needs, "Scope must run independently.");
   assert.equal(
@@ -160,7 +170,7 @@ export function validateSecurityWorkflow(source: string): void {
     portable,
     [
       "turbo run test --concurrency=2 --filter=@openbot/desktop --filter=@openbot/node --filter=@openbot/windows-secret-acl",
-      "turbo run build --filter=@openbot/desktop --filter=@openbot/node --filter=@openbot/python-node-runtime",
+      "turbo run build --filter=@openbot/desktop --filter=@openbot/node --filter=@openbot/server --filter=@openbot/web",
       "node apps/desktop/scripts/prepare-native-server.ts",
       "node apps/desktop/scripts/package.ts",
       "npm run make:installers --workspace @openbot/desktop",
@@ -172,7 +182,7 @@ export function validateSecurityWorkflow(source: string): void {
     [
       "--filter=@openbot/desktop",
       "--filter=@openbot/node",
-      "--filter=@openbot/python-node-runtime",
+      "--filter=@openbot/server --filter=@openbot/web",
       "node scripts/build-macos-worker-host-candidate.ts",
       "https://nodejs.org/dist/v22.22.2/node-v22.22.2-darwin-arm64.tar.gz",
       "OPENBOT_DESKTOP_MACOS_WORKER_COMPANION=$companion_root/OpenBot Worker Host.app",
@@ -219,6 +229,8 @@ export function validateSecurityWorkflow(source: string): void {
       "derive-product-lock.py --check",
       "npm run contracts:check",
       "npm run contracts:test",
+      "node apps/web/src/test/work-http-probe.mjs",
+      "node --test experiments/work-journey/desktop-temporal/observe-pollers.test.ts experiments/work-journey/desktop-temporal/probe-support.test.ts",
       "npm run contracts:http:python",
       "npm run contracts:http:python -- --suite publisher",
       "npm run contracts:http:python -- --suite models",
@@ -289,6 +301,15 @@ export function validatePythonProductWorkflow(source: string, migrationSource: s
     "Python browser",
   );
   hasCommands(
+    job("browser-product"),
+    [
+      "experiments/linux-execution/qualify-native.ts",
+      "experiments/linux-execution/native-helper.ts",
+      '"$(command -v node)" "$RUNNER_TEMP/openbot-native-qualify.cjs"',
+    ],
+    "Actual migrated TS native adapter",
+  );
+  hasCommands(
     job("browser-egress"),
     [
       "experiments/browser-execution/egress-fixture.Dockerfile",
@@ -298,7 +319,19 @@ export function validatePythonProductWorkflow(source: string, migrationSource: s
     ],
     "Browser egress",
   );
-  const container = job("python-product-container");
+  hasCommands(
+    job("temporal-qualification"),
+    [
+      'OPENBOT_TEMPORAL_PREVIOUS_ARCHIVE="$RUNNER_TEMP/temporal_1.31.3_linux_amd64.tar.gz" npm run test:temporal:upgrade',
+    ],
+    "Actual TS adjacent upgrade",
+  );
+  hasCommands(
+    job("harness"),
+    ["npm run contracts:legacy", "npm run test:linux:contracts"],
+    "Retained adapter compatibility and protected Host",
+  );
+  const container = job("server-container");
   assert.deepEqual(
     matrixRows(container)
       .map((row) => `${String(row.runner)}:${String(row.arch)}`)
@@ -309,42 +342,32 @@ export function validatePythonProductWorkflow(source: string, migrationSource: s
   hasCommands(
     container,
     [
+      "scripts/product-entry.integration.test.ts",
       "--target runtime-product",
       "--file deploy/server/Dockerfile",
-      "deploy/server/smoke-product.py --image openbot-server:product-smoke",
+      "deploy/server/smoke-product.ts openbot-server:product-smoke",
     ],
     "Python product container",
   );
-  const preview = job("python-desktop-preview");
+  const preview = job("desktop-product");
   assert.equal(preview.source["runs-on"], "macos-15");
   const stages = [
-    "--filter=@openbot/desktop --filter=@openbot/python-node-runtime",
-    "node apps/desktop/scripts/prepare-native-server.ts --python-product",
-    "node apps/desktop/scripts/smoke-python-product.ts apps/desktop/out/python-product-runtime",
-    "node apps/desktop/scripts/package.ts --preview --python-product",
-    "OpenBot Python Preview.app/Contents/Resources/native-runtime",
+    "--filter=@openbot/desktop --filter=@openbot/server --filter=@openbot/web",
+    "node apps/desktop/scripts/prepare-native-server.ts",
+    "node apps/desktop/scripts/smoke-product.ts apps/desktop/native-runtime",
+    "node apps/desktop/scripts/package.ts --preview",
+    "node apps/desktop/scripts/verify-product.ts",
+    'node apps/desktop/scripts/smoke-product.ts "apps/desktop/out/preview/OpenBot Preview-darwin-arm64/OpenBot Preview.app/Contents/Resources/native-runtime"',
+    "apps/desktop/native-runtime/node/bin/node apps/desktop/scripts/measure-ts-product.ts apps/desktop/native-runtime",
   ];
-  const script = hasCommands(preview, stages, "Python Preview");
+  const script = hasCommands(preview, stages, "TS Desktop product");
   assert(
     ordered(script, stages),
-    "Python Preview must stage, smoke, package, then smoke the installed payload.",
+    "TS Desktop must build, default-stage, smoke, package, verify and smoke actual payload before measurement.",
   );
   assert(
-    !/prepare:native|npm run package|--filter=@openbot\/server(?:\s|$)|apps\/server\//.test(script),
-    "Python Preview cannot substitute retired packaging.",
-  );
-  const mixedStages = [
-    "npm exec -- turbo run build --filter=@openbot/server-ts",
-    "node apps/desktop/scripts/prepare-native-server.ts --ts-product",
-    "node apps/desktop/scripts/smoke-python-product.ts apps/desktop/out/ts-product-runtime",
-    "node apps/desktop/scripts/package.ts --preview --ts-product",
-    "OpenBot TS Preview.app/Contents/Resources/native-runtime",
-    "apps/desktop/out/ts-product-runtime/node/bin/node apps/desktop/scripts/measure-ts-product.ts apps/desktop/out/ts-product-runtime",
-  ];
-  const mixedScript = hasCommands(preview, mixedStages, "Mixed TS Preview");
-  assert(
-    ordered(mixedScript, mixedStages),
-    "TS Preview must build, stage, smoke, package, smoke the installed pair, then measure same-source overhead.",
+    !/--python-product|--ts-product|tests\/oracles\/legacy-server\//.test(script),
+    "Desktop gate must qualify the default product, never an opt-in or oracle entry.",
   );
   assert.equal(
     job("synthetic-migration").uses,

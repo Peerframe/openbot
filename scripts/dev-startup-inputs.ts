@@ -16,8 +16,7 @@ export async function assertFreshSourceCheckout(root: string): Promise<void> {
   for (const group of ["apps", "packages", "providers"]) {
     for (const name of await readdir(join(root, group))) {
       const directory = join(root, group, name);
-      // Installing the Python wheel is a startup prerequisite. Only npm package
-      // builds can mask a missing shared JS build in the source-startup journey.
+      // Prebuilt packages can mask missing prerequisites in the cold startup journey.
       if (!existsSync(join(directory, "package.json"))) continue;
       assert(
         !existsSync(join(directory, "dist")),

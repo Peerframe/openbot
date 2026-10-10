@@ -21,7 +21,7 @@ flowchart LR
 ## The Server is moving from Python to TypeScript
 
 [ADR-0050](decisions/0050-typescript-control-plane.md) moves the Server from `apps/server-python`
-to `apps/server-ts` one route group at a time. Both use the same PostgreSQL schema
+to `apps/server` one route group at a time. Both use the same PostgreSQL schema
 (`packages/db`) and the same wire contracts (`packages/protocol`), so data never moves between them.
 
 | Phase | State |
@@ -29,16 +29,16 @@ to `apps/server-ts` one route group at a time. Both use the same PostgreSQL sche
 | P0–P2 | Done: shared contracts, the TS public entry, and forwarding to a private Python upstream |
 | P3 | Done: when selected, TS owns the Owner session and 109 of the 121 product operations, and is the only SSE publisher |
 | P4 | Done: when selected, TS also owns Work execution, its Temporal workers and the agent runtime; open Python histories drain on Python workers |
-| P5 | Next: TS becomes the default, Python, its harness and the forwarding code are removed, and `apps/server-ts` is renamed `apps/server` |
+| P5 | In progress: the explicit TS candidate is a single Server with direct Web/Worker entry and deployment-time legacy drain checks. The `apps/server` rename is implemented; Python retirement, complete qualification and the standalone-Node target decision remain open |
 
-Until P5, an installation runs Python unless the TS groups are selected explicitly. The selection
-switches, the forwarder and the Python drain are temporary and leave in P5.
+The P5 candidate removes group selection and forwarding. Default packaging still uses the legacy
+Python path pending retirement approval; the existing installation is not changed by this candidate.
 
 ## Runtime boundaries
 
 | Component | Responsibility | Authority it does not have |
 | --- | --- | --- |
-| Server (`apps/server-ts`, `apps/server-python`) | Owner sessions, Bot and channel identity, membership, routing, task state, approvals, audit, agent execution and plugin access | Models and external data cannot override Server policy |
+| Server (`apps/server`, `apps/server-python`) | Owner sessions, Bot and channel identity, membership, routing, task state, approvals, audit, agent execution and plugin access | Models and external data cannot override Server policy |
 | `apps/web` | Conversations, drafts, task supervision, settings and extension presentation | No database access, provider credentials or authorization decisions |
 | `apps/desktop` | Bundles the client, a typed restricted bridge, connection policy and the local Server lifecycle | Renderer content cannot call arbitrary main-process operations |
 | `apps/node` | Outbound enrollment, advertised capabilities, assignment lifecycle and Provider dispatch | Declaring a capability does not authorize a task or side effect |

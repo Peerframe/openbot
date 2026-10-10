@@ -6,11 +6,11 @@ import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import proto from "@temporalio/proto";
 import { Worker } from "@temporalio/worker";
-import { entryOptions } from "../../apps/server-ts/src/config.js";
-import { runEntry } from "../../apps/server-ts/src/lifetime.js";
-import type { ModelTransport } from "../../apps/server-ts/src/model-network.js";
-import { WorkCommandDispatches } from "../../apps/server-ts/src/work-command-dispatches.js";
-import { WorkExecution } from "../../apps/server-ts/src/work-execution.js";
+import { entryOptions } from "../../apps/server/src/config.js";
+import { runEntry } from "../../apps/server/src/lifetime.js";
+import type { ModelTransport } from "../../apps/server/src/model-network.js";
+import { WorkCommandDispatches } from "../../apps/server/src/work-command-dispatches.js";
+import { WorkExecution } from "../../apps/server/src/work-execution.js";
 
 if (process.argv[2] === "--replay") {
   assert.equal(process.argv.length, 4);

@@ -17,12 +17,12 @@
   ],
   "scripts": {
     "build": "turbo run build",
-    "check": "npm run ci:check && npm run oracle:check && npm run test:browser:boundary && npm run docs:check && npm run research:check && npm run server:container:check && npm run migrations:check && npm run security:config-check && npm run worker-host:macos:check && npm run release:check && npm run lint && npm run typecheck && npm run test && npm run build",
+    "check": "npm run ci:check && npm run oracle:check && npm run test:browser:boundary && npm run docs:check && npm run research:check && npm run server:architecture:check && npm run server:container:check && npm run migrations:check && npm run security:config-check && npm run worker-host:macos:check && npm run release:check && npm run lint && npm run typecheck && npm run test:linux:contracts && npm run test && npm run build",
     "db:up": "docker compose --env-file .env -p openbot-python-dev -f deploy/server/compose.dev.yaml up -d postgres",
     "db:stop": "docker compose --env-file .env -p openbot-python-dev -f deploy/server/compose.dev.yaml stop postgres",
     "db:verify": "npm run oracle:build && node scripts/verify-database.mjs",
-    "dev": "node --env-file-if-exists=.env scripts/dev-python.ts",
-    "dev:server": "node --env-file-if-exists=.env scripts/dev-python.ts --server-only",
+    "dev": "node --env-file-if-exists=.env scripts/dev-server.ts",
+    "dev:server": "node --env-file-if-exists=.env scripts/dev-server.ts --server-only",
     "dev:web": "turbo run dev --filter=@openbot/web",
     "dev:node": "turbo run dev --filter=@openbot/node",
     "dev:smoke": "node scripts/smoke-dev-startup.ts",
@@ -47,7 +47,7 @@
     "test:runtime:python": "node scripts/test-runtime-headless.mjs --python",
     "test:runtime:linux": "node scripts/test-runtime-linux.ts",
     "typecheck:parsers": "tsc --noEmit -p apps/server-python/tsconfig.parsers.json",
-    "typecheck": "turbo run build --filter=@openbot/db --filter=@openbot/protocol --filter=@openbot/server-ts --filter=@openbot/node && tsc --noEmit -p scripts/tsconfig.json && tsc --noEmit -p experiments/work-journey/tsconfig.json && npm run typecheck:parsers && turbo run typecheck",
+    "typecheck": "turbo run build --filter=@openbot/db --filter=@openbot/protocol --filter=@openbot/server --filter=@openbot/node && tsc --noEmit -p scripts/tsconfig.json && tsc --noEmit -p experiments/work-journey/tsconfig.json && npm run typecheck:parsers && turbo run typecheck",
     "worker-host:macos:check": "node --test scripts/check-macos-worker-host.test.ts scripts/macos-worker-host-release.test.ts && node scripts/check-macos-worker-host.ts",
     "worker-host:macos:native-check": "swift build --package-path apps/worker-host-macos && swift test --package-path apps/worker-host-macos",
     "plugin:create": "node scripts/create-mcp-plugin.ts",
@@ -59,9 +59,8 @@
     "server:product-container:check": "npm run server:container:check",
     "contracts:generate": "npm run generate --workspace @openbot/work-contract-generator",
     "contracts:check": "npm run check --workspace @openbot/work-contract-generator",
-    "contracts:http:python": "npm exec -- turbo run build --filter=@openbot/db --filter=@openbot/protocol && node scripts/test-contracts-python.ts",
-    "contracts:http:ts": "npm exec -- turbo run build --filter=@openbot/db --filter=@openbot/server-ts && node scripts/test-contracts-python.ts --entry ts",
-    "contracts:http:tls": "npm exec -- turbo run build --filter=@openbot/db --filter=@openbot/server-ts && node scripts/test-contracts-tls.ts",
+    "contracts:http:ts": "npm exec -- turbo run build --filter=@openbot/db --filter=@openbot/server && node scripts/test-contracts-ts.ts",
+    "contracts:http:tls": "npm exec -- turbo run build --filter=@openbot/db --filter=@openbot/server && node scripts/test-contracts-tls.ts",
     "harness:build": "sh packages/harness/scripts/build.sh",
     "harness:check": "sh packages/harness/scripts/check.sh",
     "harness:wheel": "sh packages/harness/scripts/check-wheel.sh",
@@ -69,9 +68,15 @@
     "contracts:test": "npm exec -- turbo run build --filter=@openbot/web^... && npm exec --workspace @openbot/web -- vitest run --config vitest.contract.config.ts && npm run test --workspace @openbot/contract-tests",
     "ci:scope": "node scripts/ci-scope.ts",
     "ui:acceptance": "node scripts/ui-acceptance.ts",
-    "ci:check": "node --test scripts/ci-scope.test.ts scripts/ui-acceptance-report.test.ts scripts/check-python-audit.test.ts scripts/check-ci-cache.test.ts scripts/python-acceptance-fixture.test.ts scripts/output-redaction.test.ts scripts/smoke-dev-startup.test.ts apps/server-python/scripts/python-comparator.test.ts scripts/dev-startup-inputs.test.ts scripts/dev-processes.test.ts experiments/work-journey/probe-inputs.test.ts experiments/work-journey/browser_response_loss.test.ts",
+    "ci:check": "node --test scripts/ci-scope.test.ts scripts/ui-acceptance-report.test.ts scripts/check-python-audit.test.ts scripts/check-ci-cache.test.ts scripts/python-acceptance-fixture.test.ts scripts/output-redaction.test.ts scripts/smoke-dev-startup.test.ts apps/server-python/scripts/python-comparator.test.ts scripts/dev-startup-inputs.test.ts scripts/dev-processes.test.ts experiments/work-journey/probe-inputs.test.ts experiments/work-journey/browser_response_loss.test.ts scripts/temporal-release.test.ts scripts/temporal-upgrade.test.ts",
     "check:affected": "node scripts/check-affected.ts",
-    "test:work:ts": "npm exec -- turbo run build --filter=@openbot/server-ts --filter=@openbot/db --filter=@openbot/node && node scripts/run-work-ts.ts"
+    "test:work:ts": "npm exec -- turbo run build --filter=@openbot/server --filter=@openbot/db --filter=@openbot/node && npm exec -- vitest run --config scripts/vitest.integration.config.ts scripts/work-control.integration.test.ts scripts/work-product.integration.test.ts scripts/legacy-work-preflight.integration.test.ts",
+    "test:control:ts": "npm exec -- turbo run build --filter=@openbot/server --filter=@openbot/db --filter=@openbot/node && npm exec -- vitest run --config scripts/vitest.integration.config.ts scripts/control-cohorts.integration.test.ts scripts/command-compatibility.integration.test.ts",
+    "server:architecture:check": "node --test scripts/check-server-architecture.test.ts && node scripts/check-server-architecture.ts",
+    "contracts:http:python": "npm exec -- turbo run build --filter=@openbot/db --filter=@openbot/protocol && node scripts/test-contracts-python.ts",
+    "contracts:legacy": "npm run oracle:build && node --test scripts/legacy-adapter.test.mjs",
+    "test:temporal:upgrade": "npm exec -- turbo run build --filter=@openbot/server --filter=@openbot/node && npm exec -- vitest run --config scripts/vitest.integration.config.ts scripts/temporal-upgrade.integration.test.ts",
+    "test:linux:contracts": "npm exec -- turbo run build --filter=@openbot/server && node --test experiments/linux-execution/*.test.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.13",
@@ -84,7 +89,8 @@
     "turbo": "2.10.12",
     "typescript": "7.0.2",
     "vitest": "5.0.0",
-    "yaml": "2.9.0"
+    "yaml": "2.9.0",
+    "tar": "7.5.22"
   },
   "overrides": {
     "pdfjs-dist": "6.3.289"

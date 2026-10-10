@@ -404,7 +404,17 @@ export async function runControlContracts(input: ContractTarget, password: strin
         const value = ready(await stream.next(), event);
         if (event === "workspace.ready") workspaceReadySchema.parse(value);
         else assert.equal(channelReadySchema.parse(value).channelId, channelId);
-        assert.equal(await stream.next(), "event: heartbeat\ndata: alive\n\n");
+        // A complete Server can finish an earlier admitted Run between these polls.
+        // Validate every intervening invalidation and still require bounded idle liveness.
+        let heartbeat = false;
+        for (let poll = 0; poll < 4; poll++) {
+          const next = await stream.next();
+          if (next === "event: heartbeat\ndata: alive\n\n") { heartbeat = true; break; }
+          const update = ready(next, event);
+          if (event === "workspace.ready") workspaceReadySchema.parse(update);
+          else assert.equal(channelReadySchema.parse(update).channelId, channelId);
+        }
+        assert(heartbeat, "The stream must become idle after bounded background completion.");
       } finally {
         await stream.close();
       }

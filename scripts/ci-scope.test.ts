@@ -85,8 +85,8 @@ test("harness includes real installed and persistent consumers", () => {
       "harness",
       "python-runtime",
       "temporal-qualification",
-      "python-product-container",
-      "python-desktop-preview",
+      "server-container",
+      "desktop-product",
       "browser-product",
     ] as const satisfies readonly JobName[])
       assert(plan.required.includes(job), `${file}: ${job}`);
@@ -100,7 +100,7 @@ test("runtime Markdown and prompt resources follow actual consumers", () => {
   ]) {
     const plan = select(file);
     assert(plan.required.includes("python-runtime"), file);
-    assert(plan.required.includes("python-product-container"), file);
+    assert(plan.required.includes("server-container"), file);
   }
   const web = select("apps/web/src/prompts/tool.md");
   assert(web.workspaces.includes("@openbot/web"));
@@ -384,10 +384,10 @@ test("transitive runtime consumers keep platform, browser and Python qualificati
 });
 
 test("actual Work HTTP consumers and conformance inputs retain the cross-language gate", () => {
-  const mixed = select("apps/server-ts/src/app.ts");
+  const mixed = select("apps/server/src/app.ts");
   assert(mixed.required.includes("harness"));
   assert(mixed.required.includes("python-runtime"));
-  assert(mixed.workspaces.includes("@openbot/server-ts"));
+  assert(mixed.workspaces.includes("@openbot/server"));
   assert.deepEqual(select("packages/contract-tests/src/work.ts").required, JOBS);
   for (const path of [
     "apps/web/src/work-api.ts",
@@ -479,8 +479,8 @@ test("the native parser source keeps types and installed Python consumers", () =
   assert(plan.rootChecks.includes("typecheck:parsers"));
   for (const job of [
     "python-runtime",
-    "python-product-container",
-    "python-desktop-preview",
+    "server-container",
+    "desktop-product",
   ] as const)
     assert(plan.required.includes(job), job);
 });
@@ -488,12 +488,12 @@ test("the native parser source keeps types and installed Python consumers", () =
 test("TS Work retains Python coexistence, real Temporal and package consumers", () => {
   const plan = select("packages/work/src/workflows.ts");
   assert(plan.workspaces.includes("@openbot/work"));
-  assert(plan.workspaces.includes("@openbot/server-ts"));
+  assert(plan.workspaces.includes("@openbot/server"));
   for (const job of [
     "harness",
     "python-runtime",
     "temporal-qualification",
-    "python-desktop-preview",
+    "desktop-product",
   ] as const)
     assert(plan.required.includes(job));
 });

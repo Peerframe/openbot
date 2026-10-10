@@ -42,14 +42,14 @@ OpenBot 必须方便多位独立开发者参与，不能形成只有项目负责
 | 安全漏洞 | Private Security Advisory | 影响和最小安全复现；不要创建公开 Issue |
 | 只是安装疑问 | 现有文档；启用后使用 Discussions | 没有可复现缺陷时不要创建 Bug |
 
-主要代码区域：产品和移动端体验在 `apps/web`；控制平面与实时同步在 `apps/server-python`、
+主要代码区域：产品和移动端体验在 `apps/web`；控制平面与实时同步在 `apps/server`、
 `packages/db`；Node 协议在 `apps/node`、`packages/protocol`；电脑集成在 `providers/*` 与
-`packages/provider-sdk`；策略和安全在 `apps/server-python/src/openbot_server`、`docs/SECURITY.md`；可选体验在
+`packages/provider-sdk`；策略和安全在 `apps/server/src`、`docs/SECURITY.md`；可选体验在
 `packages/office-plugin`。当前 Python 执行核心在 `packages/harness`，验证及真实消费者安装同一 wheel；聚焦命令见该包 README。
 
 ## 本地开发
 
-需要 Node.js 22.22.2（CI 基线）、npm 10.9.9、Python 3.12+、Docker 和 Docker Compose。其他 Node.js 版本必须满足 `package.json` 的精确 engines 范围。使用 `npm ci` 复现已提交的锁文件。模块职责、扩展入口和定向检查见[仓库地图](docs/REPOSITORY_MAP.md)。
+TS 开发需要 Node.js 22.22.2（CI 基线）、npm 10.9.9、Docker、Docker Compose 和明确的 mTLS Temporal 配置。Python 暂时仍供等待退役批准的旧检查使用。其他 Node.js 版本必须满足 `package.json` 的精确 engines 范围。使用 `npm ci` 复现已提交的锁文件。模块职责、扩展入口和定向检查见[仓库地图](docs/REPOSITORY_MAP.md)。
 
 ```bash
 git clone https://github.com/Peerframe/openbot.git
@@ -57,19 +57,20 @@ cd openbot
 cp .env.example .env
 ```
 
-先替换 `.env` 中的 `OPENBOT_CONTROL_OWNER_PASSWORD`，再运行：
+先替换 `.env` 中的 `OPENBOT_TS_OWNER_PASSWORD`，将 `OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH` 指向
+已有 [Temporal 服务](deploy/temporal/README.md) 的自有配置，再运行：
 
 ```bash
 npm ci
-apps/server-python/scripts/bootstrap-worker.sh
 npm run db:up
 npm run dev
 ```
 
-保持终端运行。`scripts/dev-python.ts` 先校验锁定 Worker 环境，通过 Turbo 构建共享包，再启动 Python Server/Web。打开 `http://localhost:5173`，
-使用 `.env` 中的 Owner 密码登录；Server 使用端口 `3001`。这已足够进行前端和控制平面开发。
-执行 Work 另需明确的模型设置与 mTLS Temporal 配置；启动 API 不会创建引擎。已有 checkout 应保留原 `.env` 和数据目录。
-使用临时数据库复现 CI 的全新启动流程，见 [Server 启动冒烟说明](apps/server-python/README.md)。
+保持终端运行。scripts/dev-server.ts 通过 Turbo 构建共享包，再启动单一 Server 和 Web。
+打开 http://localhost:5173，使用 Owner 密码登录；Server 使用端口 3001。API 启动需要 Temporal，
+不会创建引擎；执行模型任务时另需模型设置。保留已有 checkout 的 .env 和数据目录。
+冷启动检查从没有构建产物的 checkout 运行 npm run dev:smoke；OPENBOT_DEV_SMOKE_DATABASE_URL
+须指向空的本机临时数据库，名称以 _dev_smoke 结尾。检查自建临时 Temporal，验证真实 Web、代理和 Owner 登录。
 
 做一次小型 UI 修改时，先通过[仓库地图](docs/REPOSITORY_MAP.md)定位组件，在开发命令
 运行期间修改并检查真实页面。例如频道右栏位于
@@ -208,14 +209,11 @@ AGENTS 链接的 SKILL.md，记录实际生效方式。这里未配置 Claude �
 [既有设计索引](docs/design/README.zh-CN.md)、现有 tokens/组件及受影响状态。
 发现/读取验收只证明可以找到职责和检查，不代表实现、渲染验收或托管 CI 已完成。
 
-整体界面验收只需一条命令：`npm run ui:acceptance`（TS 入口构建好后加 `-- --entry ts`）。它会搭起临时的 PostgreSQL、
-提供网页的 Python 产品，带 `--entry ts` 时再在前面放上 TS 入口；然后在你已安装的 Chrome 里操作真实界面（换浏览器用
-`-- --browser <路径>`），最后给出通过或不通过的报告和截图。先准备好 Python（`apps/server-python/scripts/bootstrap-worker.sh`）
-并构建网页，Docker 要在运行。已知缺口在 `scripts/ui-acceptance-report.ts` 里按确切接口放行；
-见[调研记录](docs/research/ui-acceptance-automation.md)。每次 TypeScript 迁移的 HTTP 接口组
-切换前，都要在当前候选上运行 `npm run ui:acceptance -- --entry ts`，达到 `PASS 12/12`，
-并保留输出目录里的报告和截图。未预期的 workspace 503 会让关卡失败；根据报告步骤和
-成对的服务日志检查转发路径。
+整体界面验收运行 npm run ui:acceptance，默认使用 TS，--entry python 会被拒绝。
+先构建 @openbot/server、@openbot/web 并启动 Docker。命令自建临时 PostgreSQL 和 mTLS Temporal，
+由真实 Server 提供构建后的 Web，驱动已安装 Chrome（--browser 可指定其他浏览器），输出收据和截图。
+每次较大退役改动后，当前候选须达到 PASS 12/12。非预期 503 会使验收失败，应检查对应步骤及自有服务日志。
+此流程无需 Python 环境；见[验收记录](docs/research/ui-acceptance-automation.md)。
 
 ## 提交 Pull Request
 

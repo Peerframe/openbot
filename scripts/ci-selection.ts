@@ -16,8 +16,8 @@ export const JOBS = [
   "temporal-qualification",
   "browser-product",
   "browser-egress",
-  "python-product-container",
-  "python-desktop-preview",
+  "server-container",
+  "desktop-product",
   "synthetic-migration",
 ] as const;
 
@@ -28,8 +28,8 @@ const PYTHON_CONSUMERS = [
   "python-runtime",
   "temporal-qualification",
   "browser-product",
-  "python-product-container",
-  "python-desktop-preview",
+  "server-container",
+  "desktop-product",
   "synthetic-migration",
 ] as const;
 
@@ -192,7 +192,7 @@ export function selectChecks(
         broaden(`Cross-language authority: ${file}`);
       continue;
     }
-    if (file.startsWith("apps/server-ts/")) {
+    if (file.startsWith("apps/server/")) {
       python();
       selected.add("harness");
     }
@@ -253,8 +253,8 @@ export function selectChecks(
       selected.add("temporal-qualification");
     } else if (name === "@openbot/desktop" || name === "@openbot/python-node-runtime") {
       selected.add("portable");
-      selected.add("python-desktop-preview");
-      if (name === "@openbot/python-node-runtime") selected.add("python-product-container");
+      selected.add("desktop-product");
+      if (name === "@openbot/python-node-runtime") selected.add("server-container");
     } else if (name === "@openbot/employee-publisher") {
       selected.add("python-runtime");
     }

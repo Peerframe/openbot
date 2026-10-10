@@ -52,5 +52,4 @@ tests/test_work_product_web.py
 tests/test_model_connections.py
 ../../experiments/work-journey/test_product_command_remote.py
 ../../experiments/work-journey/test_product_host_fixture.py
-../../deploy/server/test_product_container.py
 tests/test_bot_greeting.py

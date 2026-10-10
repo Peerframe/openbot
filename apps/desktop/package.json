@@ -10,7 +10,7 @@
   "main": "dist/main.js",
   "scripts": {
     "build": "npm run build:renderer && npm run build:main",
-    "build:main": "tsc -p tsconfig.json",
+    "build:main": "node -e \"(require('node:fs').existsSync('dist') ? require('node:fs').readdirSync('dist') : []).filter(n => /\\.(?:js|d\\.ts)(?:\\.map)?$/.test(n)).forEach(n => require('node:fs').rmSync('dist/'+n))\" && tsc -p tsconfig.json",
     "build:renderer": "npm run build:desktop --workspace @openbot/web",
     "package": "npm run build && npm run prepare:native && node scripts/package.ts",
     "icons:generate": "node scripts/generate-icons.ts",
@@ -18,9 +18,9 @@
     "package:installers": "npm run package && npm run make:installers",
     "package:preview": "npm run build && npm run prepare:native && node scripts/package.ts --preview",
     "start": "npm run build && electron .",
-    "test": "vitest run src scripts",
+    "test": "vitest run src scripts --maxWorkers=2",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "prepare:native": "turbo run build --filter=@openbot/python-node-runtime && node scripts/prepare-native-server.ts"
+    "prepare:native": "turbo run build --filter=@openbot/server --filter=@openbot/web && node scripts/prepare-native-server.ts"
   },
   "dependencies": {
     "electron-updater": "6.8.9",

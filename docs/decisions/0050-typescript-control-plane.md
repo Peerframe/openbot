@@ -165,12 +165,12 @@ Inventory Python in probes, experiments, generators, developer commands and requ
 port or retire each dependency with retained replacement evidence. Historical test input may remain
 as inert provenance, but cannot leave Python necessary for mandatory setup/checks.
 
-Removing CPython is required. Removing the extra standalone Node is also the requested packaging
-target, but is **not yet qualified**: Temporal's reviewed Worker supports genuine Node 20/22/24
-and uses native modules, threads and VM APIs. Test the exact Electron utility-process ABI, Worker
-lifecycle, parser helpers and native loading before promising that Electron can replace it.
-If that fails, keeping Node is a proposed target change requiring the Owner's decision; it is not
-silent completion of P5. PostgreSQL and Temporal deployment simplification remains out of scope.
+Removing CPython is required. The Owner approved retaining standalone Node on2026-10-10:
+Electron44.3.0's utility Node24.20 did not enforce the required permission boundaries in the real
+probe, while standalone Node24.21 refused both forbidden file reads and child execution.
+Temporal, parser helpers and native loading continue using that reviewed Node distribution.
+Package-only-current-platform Temporal core-bridge is a post-P5 size optimization. PostgreSQL and
+Temporal deployment simplification remains out of scope.
 
 ## Gates and approval boundary
 
@@ -200,3 +200,39 @@ measurements do not qualify active Temporal memory or Windows/Intel Mac. See the
 
 No upstream source is copied or substantially adapted by this ADR. Existing license notices remain;
 new production dependency notices belong to the phase that installs them.
+
+
+## P5 dependency and runtime qualification (2026-10-10)
+
+The direct Server serves the built Web client through `@fastify/static` **10.1.6**, MIT,
+[npm source commit `b38a463df891157215b81fbecdb80ed828299f86`](https://github.com/fastify/fastify-static/tree/b38a463df891157215b81fbecdb80ed828299f86).
+The [released plugin](https://github.com/fastify/fastify-static/releases/tag/v10.1.6) supports the
+retained Fastify 5 API. This pin includes the case-insensitive route/`allowedPath` fix in
+[10.1.4 / GHSA-r799-r9gc-m956](https://github.com/fastify/fastify-static/security/advisories/GHSA-r799-r9gc-m956).
+Using the maintained Fastify plugin removes the private proxy and avoids a second static-file
+implementation; it preserves the existing request lifecycle and streaming limits. The Server
+additionally refuses hidden files, escaping symlinks and API fallback. The downloaded package's
+LICENSE stays in the runtime closure. Source copied or substantially adapted: **no**.
+
+Electron **44.3.0**, embedded Node **24.20.0**, ABI **149**, was exercised on macOS arm64.
+Koffi loading, Temporal native loading, threads, VM and workflow bundling passed the local probe.
+That does not establish a complete Worker lifecycle. The necessary restricted-parser gate failed:
+`utilityProcess.fork` accepted `execArgv` but its child did not enable `process.permission`; reads
+outside the allowed fixture directory and child spawning both succeeded. The exact same probe on
+standalone Node **24.21.0** denied both operations. Run
+`node scripts/qualify-electron-permissions.ts` with that standalone Node to reproduce the comparison;
+it creates only disposable files and a separate Electron profile. Its `qualified: false` result is
+an observed blocker, not a waived permission boundary. The relevant primary APIs are
+[Electron utilityProcess](https://www.electronjs.org/docs/latest/api/utility-process) and
+[Node permissions](https://nodejs.org/docs/latest-v24.x/api/permissions.html).
+
+The Owner approved retaining standalone Node on 2026-10-10 after this permission failure.
+The default TS package retains Node 24.21.0 and its restricted parser child. This resolves the
+packaging target decision; it does not waive the remaining migration or installation gates.
+
+Post-P5 size optimization: package only the current platform's `@temporalio/core-bridge` native
+release. Keep the reviewed version and license, verify the loader's platform selection and repeat
+native Worker lifecycle/recovery qualification before removing other platform binaries.
+The existing installed app, profiles and rollback sets stay untouched until separate installation
+approval. Python retirement remains required by this ADR; approved implementation and qualified
+retirement are distinct from acceptance of the remaining standalone-Node packaging deviation.

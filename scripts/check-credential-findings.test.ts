@@ -17,7 +17,7 @@ function fixture(index = 0): Finding {
       {
         base: "http://127.0.0.1:3102",
         password: "pass",
-        file: "apps/server-ts/src/app.test.ts",
+        file: "apps/server/src/app.test.ts",
         line: 482,
       },
       {

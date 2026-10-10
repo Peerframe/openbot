@@ -12,8 +12,8 @@ the full contribution process are in [CONTRIBUTING](CONTRIBUTING.md).
 | --- | --- |
 | `apps/web` | React Web UI ([rules](apps/web/AGENTS.md), [design entry](docs/design/README.md)) |
 | `apps/desktop` | Thin Electron shell that runs the product locally ([rules](apps/desktop/AGENTS.md)) |
-| `apps/server-ts` | TypeScript control plane, the target for every route ([rules](apps/server-ts/AGENTS.md), [ADR-0050](docs/decisions/0050-typescript-control-plane.md)) |
-| `apps/server-python` | Python control plane, retiring route group by route group under ADR-0050 ([rules](apps/server-python/AGENTS.md)) |
+| `apps/server` | Single TypeScript control plane ([rules](apps/server/AGENTS.md), [ADR-0050](docs/decisions/0050-typescript-control-plane.md)) |
+| `apps/server-python` | Legacy Python control retained until packaging/CI retirement is approved ([rules](apps/server-python/AGENTS.md)) |
 | `apps/node`, `providers/*` | Worker Node and execution providers |
 | `packages/protocol` | Shared wire contracts ([rules](packages/protocol/AGENTS.md)) |
 | `packages/db` | PostgreSQL schema and migrations |
@@ -23,7 +23,7 @@ the full contribution process are in [CONTRIBUTING](CONTRIBUTING.md).
 | `docs/decisions` | ADRs: the accepted architecture decisions |
 | `docs/research` | Evidence for individual decisions; open only the record you need |
 
-`apps/server` holds only a retirement note. [REPOSITORY_MAP](docs/REPOSITORY_MAP.md) lists
+[REPOSITORY_MAP](docs/REPOSITORY_MAP.md) lists
 representative entry points and tests for common tasks.
 
 ## Workflows

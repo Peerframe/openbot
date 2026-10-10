@@ -250,6 +250,11 @@ test("all C2 gates and real product recovery stay required when selected", () =>
   for (const [job, fragment] of [
     ["harness", "npm run harness:wheel"],
     ["harness", "npm run contracts:test"],
+    ["harness", "node apps/web/src/test/work-http-probe.mjs"],
+    [
+      "harness",
+      "node --test experiments/work-journey/desktop-temporal/observe-pollers.test.ts experiments/work-journey/desktop-temporal/probe-support.test.ts",
+    ],
     ["harness", "npm run contracts:http:python"],
     ["harness", "npm run contracts:http:python -- --suite publisher"],
     ["harness", "npm run contracts:http:python -- --suite models"],
@@ -260,20 +265,20 @@ test("all C2 gates and real product recovery stay required when selected", () =>
     ["harness", "npm run contracts:http:tls -- --suite publisher"],
     ["harness", "npm run contracts:http:tls -- --suite models"],
     ["temporal-qualification", "--engine postgres-mtls --upgrade-archive"],
+    ["temporal-qualification", "npm run test:temporal:upgrade"],
+    ["harness", "npm run contracts:legacy"],
     ["browser-product", "control node replacement response-loss browser-restart"],
-    ["python-product-container", "deploy/server/smoke-product.py"],
-    ["python-desktop-preview", "node apps/desktop/scripts/package.ts --preview --python-product"],
-    ["python-desktop-preview", "npm exec -- turbo run build --filter=@openbot/server-ts"],
-    ["python-desktop-preview", "node apps/desktop/scripts/prepare-native-server.ts --ts-product"],
+    ["server-container", "deploy/server/smoke-product.ts"],
+    ["server-container", "scripts/product-entry.integration.test.ts"],
+    ["desktop-product", "--filter=@openbot/desktop --filter=@openbot/server --filter=@openbot/web"],
+    ["desktop-product", "node apps/desktop/scripts/prepare-native-server.ts"],
+    ["desktop-product", "node apps/desktop/scripts/smoke-product.ts apps/desktop/native-runtime"],
+    ["desktop-product", "node apps/desktop/scripts/package.ts --preview"],
+    ["desktop-product", "node apps/desktop/scripts/verify-product.ts"],
+    ["desktop-product", "OpenBot Preview.app/Contents/Resources/native-runtime"],
     [
-      "python-desktop-preview",
-      "node apps/desktop/scripts/smoke-python-product.ts apps/desktop/out/ts-product-runtime",
-    ],
-    ["python-desktop-preview", "node apps/desktop/scripts/package.ts --preview --ts-product"],
-    ["python-desktop-preview", "OpenBot TS Preview.app/Contents/Resources/native-runtime"],
-    [
-      "python-desktop-preview",
-      "apps/desktop/out/ts-product-runtime/node/bin/node apps/desktop/scripts/measure-ts-product.ts apps/desktop/out/ts-product-runtime",
+      "desktop-product",
+      "apps/desktop/native-runtime/node/bin/node apps/desktop/scripts/measure-ts-product.ts apps/desktop/native-runtime",
     ],
   ] as const)
     assert.throws(() =>
@@ -318,4 +323,30 @@ test("obsolete PR cancellation cannot cancel main qualification", () => {
       }),
     ),
   );
+});
+
+test("Linux kernel and protected Host gates cannot be omitted or conditionally bypassed", () => {
+  for (const [job, fragment] of [
+    ["server-container", "--test /workspace/qualification/kernel-facts.test.ts"],
+    ["server-container", "OPENBOT_READONLY_KERNEL_TEST=1"],
+    ["server-container", "--network none --read-only"],
+    ["harness", "npm run test:linux:contracts"],
+    ["browser-product", "experiments/linux-execution/qualify-native.ts"],
+  ] as const) {
+    assert.throws(() =>
+      check(
+        changed((v) => {
+          const step = command(v, job, fragment);
+          step.run = step.run.replace(fragment, "omitted");
+        }),
+      ),
+    );
+    assert.throws(() =>
+      check(
+        changed((v) => {
+          command(v, job, fragment).if = "false";
+        }),
+      ),
+    );
+  }
 });

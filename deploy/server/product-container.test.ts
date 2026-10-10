@@ -36,27 +36,22 @@ async function withTemp(prefix: string, body: (dir: string) => Promise<void>): P
   }
 }
 
-test("runtime is the exact retained parser/DB closure, with no business Server or oracle", () => {
+test("runtime is the exact complete Server closure, with no retired runtime or oracle", () => {
   const result = project(lock, "runtime");
   assert.deepEqual(
     result.graph,
-    collectProductionPackageGraph(lock, "packages/python-node-runtime"),
+    collectProductionPackageGraph(lock, "apps/server"),
   );
-  assert.equal(result.graph.packageKeys.length, 43);
-  assert.deepEqual(result.graph.workspaceKeys, ["packages/db", "packages/python-node-runtime"]);
+  assert.ok(result.graph.packageKeys.includes("node_modules/@temporalio/worker"));
+  assert.ok(result.graph.packageKeys.includes("node_modules/officeparser"));
+  assert.deepEqual(result.graph.workspaceKeys, ["apps/server", "packages/db", "packages/domain", "packages/employee-publisher", "packages/logging", "packages/protocol", "packages/work"]);
   for (const key of result.graph.packageKeys)
     assert.deepEqual(result.lock.packages[key], lock.packages[key]);
 });
 
 test("build adds only fixed Web workspaces and reviewed tools at original integrity/version", () => {
   const result = project(lock, "build");
-  assert.deepEqual(result.graph.workspaceKeys, [
-    "apps/web",
-    "packages/db",
-    "packages/domain",
-    "packages/protocol",
-    "packages/python-node-runtime",
-  ]);
+  assert.deepEqual(result.graph.workspaceKeys, ["apps/server", "apps/web", "packages/db", "packages/domain", "packages/employee-publisher", "packages/logging", "packages/protocol", "packages/work"]);
   for (const key of result.graph.packageKeys) {
     assert.equal(pkg(result.lock.packages, key).version, pkg(lock.packages, key).version);
     assert.equal(pkg(result.lock.packages, key).integrity, pkg(lock.packages, key).integrity);
@@ -66,11 +61,11 @@ test("build adds only fixed Web workspaces and reviewed tools at original integr
   assert.ok(!result.graph.packageKeys.some((key) => /vitest|jsdom|turbo/.test(key)));
 });
 
-test("removed Server/oracle workspaces and links cannot affect either projection", () => {
+test("retired Python/oracle workspaces and links cannot affect either projection", () => {
   const copy = structuredClone(lock);
   for (const [key, value] of Object.entries(copy.packages)) {
     if (
-      key.includes("apps/server") ||
+      key.includes("apps/server-python") ||
       key.includes("tests/oracles") ||
       value.name?.includes("legacy-server") ||
       value.resolved?.includes("tests/oracles")
@@ -118,32 +113,30 @@ test("explicit Docker target uses immutable bases and selective public context",
   const file = await readFile(new URL("./Dockerfile", import.meta.url), "utf8");
   assert.match(
     file,
-    /python:3\.12\.13-slim-bookworm@sha256:4766d8b510c428e595d74b9cc5bbb2fae8e26316fffb4adc89908d79aacd58a2/,
-  );
-  assert.match(
-    file,
     /node:24\.21\.0-bookworm-slim@sha256:2fe369e969550cde8e867afc3fe370b260140cab4a23d467074295b42163d553/,
   );
   assert.doesNotMatch(
     file,
-    /COPY \. \.|apps\/server\/|tests\/oracles|\.worker-venv|OPENBOT_CONTROL_OWNER_PASSWORD|OPENBOT_DATABASE_URL/,
+    /COPY \. \.|apps\/server-python\/|tests\/oracles|\.worker-venv|OPENBOT_CONTROL_OWNER_PASSWORD|OPENBOT_DATABASE_URL/,
   );
-  assert.match(file, /--only-binary=:all: --no-deps/);
-  assert.match(file, /verify_environment.py --product/);
+  assert.doesNotMatch(file, /python|harness|wheels/);
+  assert.match(file, /deploy\/server\/product-entry.ts/);
   assert.match(file, /COPY --from=product-build \/workspace\/apps\/web\/dist/);
   assert.match(file, /COPY apps\/desktop\/resources\/openbot-icon\.png/);
   assert.match(file, /USER 1000:1000/);
   assert.match(file, /STOPSIGNAL SIGTERM/);
   const ignore = await readFile(new URL("./Dockerfile.dockerignore", import.meta.url), "utf8");
   assert.ok(ignore.startsWith("**\n"));
-  assert.doesNotMatch(ignore, /!apps\/server\/|!tests\/|!.*\.venv/);
+  assert.doesNotMatch(ignore, /!apps\/server-python\/|!tests\/|!.*\.venv/);
   assert.ok(ignore.includes("!apps/desktop/resources/openbot-icon.png\n"));
 });
 
-test("standalone Compose uses distinct volumes, no published PG or automatic engine", async () => {
+test("standalone Compose requires explicit TLS and engine configuration, without published PG", async () => {
   const file = await readFile(new URL("./compose.yaml", import.meta.url), "utf8");
   assert.match(file, /127\.0\.0\.1:3001:3001/);
-  assert.doesNotMatch(file, /5432:5432|privileged:|docker.sock|TEMPORAL|COMMAND_CONFIG|restart:/);
+  assert.doesNotMatch(file, /5432:5432|privileged:|docker.sock|restart:/);
+  assert.match(file, /OPENBOT_CONTROL_TEMPORAL_CONFIG_PATH/);
+  assert.match(file, /OPENBOT_TS_TLS_CERT_PATH/);
   assert.match(file, /product-postgres:/);
   assert.match(file, /product-state:/);
   assert.match(file, /read_only: true/);
@@ -153,7 +146,7 @@ test("malformed lock input is refused and caller input is not mutated", () => {
   assert.throws(() => project(null, "runtime"));
   assert.throws(() => project({ packages: [] }, "runtime"));
   const broken = structuredClone(lock);
-  pkg(broken.packages, "packages/python-node-runtime").dependencies = "x";
+  pkg(broken.packages, "apps/server").dependencies = "x";
   assert.throws(() => project(broken, "build"));
   const before = structuredClone(lock);
   project(lock, "build");
@@ -163,7 +156,7 @@ test("malformed lock input is refused and caller input is not mutated", () => {
 test("workspace manifest that differs from the lock is refused", async () => {
   await withTemp("openbot-product-src-", async (source) => {
     await writeFile(join(source, "package-lock.json"), JSON.stringify(lock));
-    for (const key of ["packages/db", "packages/python-node-runtime"]) {
+    for (const key of project(lock, "runtime").graph.workspaceKeys) {
       const manifest = (await readJson(join(root, key, "package.json"))) as Record<string, unknown>;
       if (key === "packages/db") manifest.version = "0.0.0-drift";
       await mkdir(join(source, key), { recursive: true });
@@ -200,11 +193,8 @@ test("missing migration DSN refuses before loading the database package", () => 
 test("product delivery counts agree with the requalified canonical migration target", async () => {
   const { target } = await verifySources();
   const preflight = await readFile(join(root, "deploy/server/product-preflight.ts"), "utf8");
-  const smoke = await readFile(join(root, "deploy/server/smoke-product.py"), "utf8");
   assert.equal(
     Number(preflight.match(/const MIGRATION_COUNT = (\d+);/u)?.[1]),
     target.migrations.length,
   );
-  assert.equal(Number(smoke.match(/'migrations':(\d+)/u)?.[1]), target.migrations.length);
-  assert.ok(smoke.includes(`=='${target.migrations.length}'`));
 });

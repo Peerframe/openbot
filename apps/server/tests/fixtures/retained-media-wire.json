@@ -1,0 +1,65 @@
+[
+  {
+    "protocol": "responses-v1",
+    "version": "4.0.66",
+    "projection": [
+      {
+        "mediaType": "image/png",
+        "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jZ1kAAAAASUVORK5CYII=",
+        "name": null
+      },
+      {
+        "mediaType": "image/jpeg",
+        "data": "/9j/c3ludGhldGljLWpwZWctd2lyZS1vbmx5/9k=",
+        "name": null
+      },
+      {
+        "mediaType": "application/pdf",
+        "data": "JVBERi0xLjQKMSAwIG9iaiA8PC9UeXBlIC9DYXRhbG9nPj4gZW5kb2JqCiUlRU9G",
+        "name": "年度报告.pdf"
+      }
+    ]
+  },
+  {
+    "protocol": "chat-completions-v1",
+    "version": "4.0.66",
+    "projection": [
+      {
+        "mediaType": "image/png",
+        "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jZ1kAAAAASUVORK5CYII=",
+        "name": null
+      },
+      {
+        "mediaType": "image/jpeg",
+        "data": "/9j/c3ludGhldGljLWpwZWctd2lyZS1vbmx5/9k=",
+        "name": null
+      },
+      {
+        "mediaType": "application/pdf",
+        "data": "JVBERi0xLjQKMSAwIG9iaiA8PC9UeXBlIC9DYXRhbG9nPj4gZW5kb2JqCiUlRU9G",
+        "name": "年度报告.pdf"
+      }
+    ]
+  },
+  {
+    "protocol": "anthropic-messages-v1",
+    "version": "4.0.53",
+    "projection": [
+      {
+        "mediaType": "image/png",
+        "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jZ1kAAAAASUVORK5CYII=",
+        "name": null
+      },
+      {
+        "mediaType": "image/jpeg",
+        "data": "/9j/c3ludGhldGljLWpwZWctd2lyZS1vbmx5/9k=",
+        "name": null
+      },
+      {
+        "mediaType": "application/pdf",
+        "data": "JVBERi0xLjQKMSAwIG9iaiA8PC9UeXBlIC9DYXRhbG9nPj4gZW5kb2JqCiUlRU9G",
+        "name": "年度报告.pdf"
+      }
+    ]
+  }
+]

@@ -230,7 +230,7 @@ const REVIEWED_FIXTURES: readonly ReviewedFixture[] = Object.freeze([
     detectorType: 17,
     detectorName: "URI",
     commit: "a240b810ea08bde29004e947b0ffc0298ad8dd1a",
-    file: "apps/server-ts/src/app.test.ts",
+    file: "apps/server/src/app.test.ts",
     line: 482,
     raw: "bffe218d778d151c026509588e4353e36a6de1300239101b34b1dd45b8efbcec",
     rawV2: "bffe218d778d151c026509588e4353e36a6de1300239101b34b1dd45b8efbcec",

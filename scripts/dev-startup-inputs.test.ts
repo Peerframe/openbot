@@ -8,24 +8,20 @@ import { assertFreshSourceCheckout } from "./dev-startup-inputs.ts";
 async function fixture(t: TestContext): Promise<string> {
   const root = await mkdtemp(join(tmpdir(), "openbot-startup-inputs-"));
   t.after(() => rm(root, { recursive: true, force: true }));
-  for (const path of ["apps/web", "packages/harness/dist", "providers"])
+  for (const path of ["apps/web", "packages", "providers"])
     await mkdir(join(root, path), { recursive: true });
   await writeFile(join(root, "apps/web/package.json"), '{"name":"@openbot/web"}');
-  await writeFile(
-    join(root, "packages/harness/dist/openbot_agent_runtime-0.1.0-py3-none-any.whl"),
-    "fixture",
-  );
   return root;
 }
 
-test("fresh source accepts the required Python wheel and example configuration", async (t) => {
+test("fresh source needs no runtime wheel and accepts example configuration", async (t) => {
   const root = await fixture(t);
   await writeFile(join(root, ".env.example"), "");
   await writeFile(join(root, "apps/web/.env.example"), "");
   await assertFreshSourceCheckout(root);
 });
 
-test("a Python wheel does not exempt prebuilt app, shared package or provider JS", async (t) => {
+test("fresh source refuses prebuilt app, shared package or provider JS", async (t) => {
   const root = await fixture(t);
   for (const path of ["apps/web", "packages/domain", "providers/coder"]) {
     await mkdir(join(root, path, "dist"), { recursive: true });

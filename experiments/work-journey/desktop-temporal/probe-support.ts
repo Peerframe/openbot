@@ -80,7 +80,7 @@ export async function isolatedConfiguration(path: string): Promise<string> {
     )
       throw new Error();
     // Isolate polling authority from other Workers. All other fields survive unchanged so
-    // bundled Python, not this test harness, remains the final configuration authority.
+    // the bundled Server, not this test harness, remains the final configuration authority.
     config.queue = `openbot-desktop-probe-${randomUUID()}`;
     const data = JSON.stringify(config);
     if (Buffer.byteLength(data) > maximumBytes) throw new Error();
@@ -97,11 +97,11 @@ export async function observeBundledPollers(
   configPath: string,
   startedAt: number,
 ): Promise<PollerObservation> {
-  const helper = fileURLToPath(new URL("./observe-pollers.py", import.meta.url));
+  const helper = fileURLToPath(new URL("./observe-pollers.ts", import.meta.url));
   const data = await new Promise<string>((resolve, reject) => {
     const child = spawn(
-      join(runtimeRoot, "python/bin/python3.12"),
-      ["-I", "-B", helper, runtimeRoot, configPath, String(startedAt)],
+      join(runtimeRoot, "node/bin/node"),
+      [helper, runtimeRoot, configPath, String(startedAt)],
       {
         cwd: runtimeRoot,
         env: { PATH: "/usr/bin:/bin", LANG: "C.UTF-8" },

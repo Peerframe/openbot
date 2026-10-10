@@ -2,6 +2,7 @@ import type { Run } from "@openbot/domain";
 import { describe, expect, it } from "vitest";
 import {
   indexActiveRunsByBot,
+  nativeRunFailure,
   isActiveRun,
   mergeArtifacts,
   mergeNodes,
@@ -169,5 +170,15 @@ describe("runTitle (P2 acceptance, 2026-10-07)", () => {
       "处理附件",
     );
     expect(runTitle({ title: "整理本周周报" })).toBe("整理本周周报");
+  });
+});
+
+// A generic terminal code must not expose the backend message or hide model-specific guidance.
+describe("nativeRunFailure", () => {
+  it("localizes task_failed and retains model_unavailable guidance", () => {
+    expect(nativeRunFailure(run({ status: "failed", errorCode: "task_failed", errorMessage: "Task failed." })))
+      .toBe("任务未能完成，请查看任务详情，确认失败原因后再提交。");
+    expect(nativeRunFailure(run({ status: "failed", errorCode: "model_unavailable" })))
+      .toBe("模型服务暂时不可用，请检查模型配置与服务状态。");
   });
 });

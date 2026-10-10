@@ -1049,3 +1049,60 @@ rejected legacy Docker archive/custom-client paths and exact qualification limit
 P4 一次性原生 CI 仅用固定 Ubuntu Skopeo 安全维护包复制 OCI 镜像；匿名 TLS 校验和原始
 manifest/config、平台、归档指纹不变，不复制上游源码或新增产品依赖。上述决定记录关闭回执竞态、
 真实 SDK 排序/重放正反例和仍待完成的实际原生验收。
+
+
+### P5 direct Server and native-runtime qualification (2026-10-10)
+
+The Server directly uses MIT `@fastify/static`10.1.6 at
+`b38a463df891157215b81fbecdb80ed828299f86`, replacing the temporary forwarding dependency.
+It retains Fastify5.12.5 and the previously reviewed parser/OCR, SQL and Temporal pins.
+No upstream implementation is copied. [ADR-0050's P5 evidence](decisions/0050-typescript-control-plane.md#p5-dependency-and-runtime-qualification-2026-10-10)
+records the static-file security fix and the actual Electron44.3.0 permission failure. Keeping
+standalone Node24.21.0 is Owner-approved after the actual Electron permission probe failed.
+
+P5's Python archive-probe replacement promotes the already locked development-only `tar`7.5.22
+(BlueOak-1.0.0, [commit 2a22bfc](https://github.com/isaacs/node-tar/tree/2a22bfc5d3a432a606d9da0e2d87ba634aa3b1cb))
+to a direct development dependency. Its [streaming Parser](https://github.com/isaacs/node-tar/blob/v7.5.22/src/parse.ts)
+is reused only to read entries; extraction APIs, archive paths, ownership and permissions never
+select destinations. The existing system-tar stdout approach cannot preserve all prior duplicate,
+ignored-member and gzip-trailer assertions; a custom tar parser would add format maintenance.
+The reviewed [resource-bound advisory](https://github.com/isaacs/node-tar/security/advisories/GHSA-23hp-3jrh-7fpw)
+is addressed here with independently bounded gzip output, member counts, exact archive/member
+hashes and exclusive writes of two fixed names. Existing upstream pack/extract issues #461, #462,
+#464, #467 and #468 do not affect this read-only adapter. Real small tar fixtures retain all old
+positive/negative checks. Runtime/production closures do not include this direct development pin.
+Source copied or substantially adapted from upstream: no.
+
+The P5 protected Linux fixture port retains the original kernel boundary using the already
+reviewed Koffi3.3.2 ABI adapter (see P0 POSIX evidence), not wire-supplied identity/time.
+Linux [SO_PEERCRED](https://man7.org/linux/man-pages/man7/unix.7.html) and
+[clock_gettime](https://man7.org/linux/man-pages/man2/clock_gettime.2.html) retain the accepted
+peer UID, CLOCK_MONOTONIC/CLOCK_BOOTTIME and boot-ID checks. The
+[upstream pointer API](https://koffi.dev/pointers) carries only fixed-size output arrays.
+Only Linux x64/arm64 ABIs are admitted; missing Node accepted-socket descriptors fail closed.
+A separate C addon would add a build/distribution closure; process-reported UID and wall time
+cannot replace these kernel facts. This is fixture migration, not additional platform support;
+actual low-UID/runsc qualification remains required before retiring the old fixture.
+No upstream source is copied.
+
+P5's native helper keeps the reviewed systemd255/Docker29.8.1/runsc packet and fixed binary/image
+hashes. It replaces Python `setns` with the existing host's
+[util-linux nsenter2.39.3](https://github.com/util-linux/util-linux/blob/v2.39.3/sys-utils/nsenter.c)
+(GPL-2.0-only executable, invoked separately; no source incorporation). Linux
+[setns](https://man7.org/linux/man-pages/man2/setns.2.html) forbids changing a mount namespace while
+sharing CLONE_FS; a direct call from multithreaded Node is therefore unsuitable. The single-threaded
+nsenter child enters only mount/network namespaces through two already-open descriptors. The helper
+rechecks namespace, original InvocationID/cgroup and expiry before create/start; no PID-only target,
+user/PID namespace or ambient environment adoption is enabled. Its exact host version is checked.
+A custom native launcher would add another build/security boundary without improving this scope.
+The existing Node22.22.2 CI relay runtime and Owner-approved Node24.21.0 remain the admitted versions;
+this does not qualify new product platforms. Missing or changed readbacks fail closed.
+
+The same Koffi3.3.2 adapter reads only the stable leading LP64 Linux `fstatvfs` fields from a
+fixed 128-byte output buffer; the upstream
+[glibc statvfs layout](https://github.com/bminor/glibc/blob/glibc-2.39/sysdeps/unix/sysv/linux/bits/statvfs.h)
+and the required x64/arm64 kernel gates check the capacity/readonly facts. No structure pointer or field
+is provided by a caller. Root-private fixture code, original create/start reservations, typed empty
+stop hooks, dedicated ext4 capacity and PID1 lifetime remain required. Local synthetic regression
+counts do not substitute for the selected actual systemd/runsc CI gate. Source copied or substantially
+adapted from upstream: no.

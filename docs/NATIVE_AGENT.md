@@ -172,7 +172,7 @@ databases. Integration suites sharing the same fixture database must run seriall
 
 The first TypeScript implementation of these responsibilities lived in the retired `apps/server`
 and can be read in Git history. The current owners are `packages/work` (workflows, activities and
-the engine) and `apps/server-ts/src/work-runtime.ts` (the agent runtime with its model, tool,
+the engine) and `apps/server/src/work-runtime.ts` (the agent runtime with its model, tool,
 authority, storage and audit ports), with the Python runtime in `packages/harness` until P5 removes it.
 
 The headless suite verifies authenticated task-to-download delivery, tool failure without partial
@@ -187,7 +187,7 @@ For fast edits after dependencies are built:
 
 ```sh
 npm run test --workspace @openbot/work
-npm run test --workspace @openbot/server-ts
+npm run test --workspace @openbot/server
 ```
 
 Run `npm run check` before handoff and the headless command after changing task lifecycle or
@@ -201,7 +201,7 @@ Docker, Server process or model account:
 ```sh
 npm ci --ignore-scripts
 npm run test --workspace @openbot/work
-npm run test --workspace @openbot/server-ts
+npm run test --workspace @openbot/server
 ```
 
 The unit accepts a prepared instruction, bounded messages, an abort signal and the shared Run

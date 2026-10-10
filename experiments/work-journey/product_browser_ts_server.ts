@@ -5,9 +5,9 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Worker } from "@temporalio/worker";
 import proto from "@temporalio/proto";
-import { entryOptions } from "../../apps/server-ts/src/config.js";
-import { runEntry } from "../../apps/server-ts/src/lifetime.js";
-import type { ModelTransport } from "../../apps/server-ts/src/model-network.js";
+import { entryOptions } from "../../apps/server/src/config.js";
+import { runEntry } from "../../apps/server/src/lifetime.js";
+import type { ModelTransport } from "../../apps/server/src/model-network.js";
 
 if (process.argv[2] === "--replay") {
   assert.equal(process.argv.length, 4);

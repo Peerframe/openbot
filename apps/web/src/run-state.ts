@@ -1,3 +1,4 @@
+/** Projects persisted run state and safe, actionable failure messages for the Web UI. */
 import type { Artifact, ExecutionNode, Run, RunProgress } from "@openbot/domain";
 
 const activeStatuses = new Set<Run["status"]>([
@@ -154,6 +155,7 @@ export function nativeRunFailure(run: Run): string {
     tool_unavailable: "工具未能完成，请检查任务中的公开网址和所需能力。",
     task_timeout: "任务超时，请缩小任务范围或检查模型连接。",
     server_interrupted: "服务电脑中断了任务，服务恢复后可重新提交。",
+    task_failed: "任务未能完成，请查看任务详情，确认失败原因后再提交。",
     execution_failed: "任务未能完成，请检查模型配置、频道权限和任务范围。",
   };
   return messages[run.errorCode ?? ""] ?? run.errorMessage ?? "任务已结束。";

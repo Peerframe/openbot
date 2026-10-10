@@ -47,7 +47,7 @@ export interface HygieneBaseline {
 /** Source areas whose files should open with a comment that says what the file is for. */
 export const DOCUMENTED_AREAS: Readonly<Record<string, RegExp>> = {
   "apps/web": /^apps\/web\/src\/.+\.tsx?$/u,
-  "apps/server-ts": /^apps\/server-ts\/src\/.+\.ts$/u,
+  "apps/server": /^apps\/server\/src\/.+\.ts$/u,
   "apps/desktop": /^apps\/desktop\/src\/.+\.ts$/u,
   packages: /^packages\/[^/]+\/src\/.+\.tsx?$/u,
   scripts: /^scripts\/[^/]+\.ts$/u,

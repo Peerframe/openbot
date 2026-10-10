@@ -7,9 +7,9 @@ import {
   redact,
 } from "./ui-acceptance-report.ts";
 
-test("arguments default to the Python entry and reject unknown or incomplete values", () => {
+test("arguments default to the TS entry and reject unknown or incomplete values", () => {
   assert.deepEqual(parseAcceptanceArgs([]), {
-    entry: "python",
+    entry: "ts",
     browser: undefined,
     out: undefined,
     headed: false,
@@ -20,7 +20,8 @@ test("arguments default to the Python entry and reject unknown or incomplete val
     out: undefined,
     headed: true,
   });
-  assert.throws(() => parseAcceptanceArgs(["--entry", "go"]), /python or ts/);
+  assert.throws(() => parseAcceptanceArgs(["--entry", "go"]), /must be ts/);
+  assert.throws(() => parseAcceptanceArgs(["--entry", "python"]), /Python entry is retired/);
   assert.throws(() => parseAcceptanceArgs(["--browser"]), /needs a value/);
   assert.throws(() => parseAcceptanceArgs(["--browser", "--headed"]), /needs a value/);
   assert.throws(() => parseAcceptanceArgs(["--fast"]), /Unknown argument/);

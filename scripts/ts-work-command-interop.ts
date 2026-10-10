@@ -5,12 +5,12 @@ import { fileURLToPath } from "node:url";
 import {
   type CommandPurpose,
   commandFingerprint,
-} from "../apps/server-ts/dist/work-command-contract.js";
+} from "../apps/server/dist/work-command-contract.js";
 import {
   CommandSigner,
   type CommandVerificationPin,
   CommandVerifier,
-} from "../apps/server-ts/dist/work-command-crypto.js";
+} from "../apps/server/dist/work-command-crypto.js";
 
 type Vector = {
   value: Record<string, unknown>;

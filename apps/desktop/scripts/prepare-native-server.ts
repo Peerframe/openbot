@@ -5,41 +5,25 @@ import { fileURLToPath } from "node:url";
 import {
   type NativeRuntimeLock,
   nativeOptionalPackageApplies,
-  pythonCandidateGraph,
-  mixedCandidateGraph,
+  productCandidateGraph,
 } from "./native-runtime-policy.ts";
 import { buildPostgresSupervisor } from "./postgres-supervisor-build.ts";
-import { stagePythonProduct } from "./python-runtime.ts";
+import { stageNodeRuntime } from "./node-runtime.ts";
 import { TS_CANDIDATE } from "../src/ts-product-manifest.ts";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const args = process.argv.slice(2);
-if (
-  args.length > 1 ||
-  (args.length === 1 && !["--python-product", "--ts-product"].includes(args[0]!))
-)
-  throw new Error("Native runtime preparation accepts only --python-product or --ts-product.");
-const pythonProduct = args[0] === "--python-product";
-const tsProduct = args[0] === "--ts-product";
-if ((pythonProduct || tsProduct) && (process.platform !== "darwin" || process.arch !== "arm64"))
-  throw new Error("Native product candidates support only macOS arm64.");
-const output = join(
-  root,
-  "apps/desktop",
-  tsProduct
-    ? "out/ts-product-runtime"
-    : pythonProduct
-      ? "out/python-product-runtime"
-      : "native-runtime",
-);
+if (args.length > 1 || (args.length === 1 && args[0] !== "--ts-product"))
+  throw new Error("Native runtime preparation accepts only optional --ts-product.");
+const output = join(root, "apps/desktop", args[0] === "--ts-product" ? "out/ts-product-runtime" : "native-runtime");
 if (process.platform !== "darwin" || process.arch !== "arm64") {
   // Remove only generated staging, never profiles or installed services.
   await rm(output, { recursive: true, force: true });
-  console.log("Native Python service omitted: this platform ships the remote client.");
+  console.log("Local Server omitted: this platform ships the remote client.");
   process.exit(0);
 }
 const lock: NativeRuntimeLock = JSON.parse(await readFile(join(root, "package-lock.json"), "utf8"));
-const graph = tsProduct ? mixedCandidateGraph(lock) : pythonCandidateGraph(lock);
+const graph = productCandidateGraph(lock);
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
 await cp(join(root, "LICENSE"), join(output, "LICENSE"));
@@ -108,16 +92,25 @@ for (const key of graph.packageKeys) {
     }
   }
 }
-await stagePythonProduct(root, output);
+{
+  await stageNodeRuntime(output);
+  await mkdir(join(output, "desktop"));
+  await mkdir(join(output, "deploy/server"), { recursive: true });
+  for (const name of ["legacy-work-preflight.ts", "prepare-product.ts"])
+    await cp(join(root, "deploy/server", name), join(output, "deploy/server", name));
+  await cp(join(root, "apps/desktop/native/product-migrate.mjs"), join(output, "desktop/product-migrate.mjs"));
+  await mkdir(join(output, "apps/web"), { recursive: true });
+  await cp(join(root, "apps/web/dist"), join(output, "apps/web/dist"), { recursive: true });
+}
 await readdir(join(output, "postgres/bin"));
 // Selection is written only after the complete locked payload has been staged.
-if (tsProduct) {
+{
   await accessTsEntry();
   await writeFile(join(output, "ts-control.json"), `${JSON.stringify(TS_CANDIDATE, null, 2)}\n`);
 }
 console.log("Staged app-owned native Server runtime; no services started.");
 
 async function accessTsEntry() {
-  for (const path of ["apps/server-ts/dist/desktop-entry.js", "apps/server-ts/dist/app.js"])
+  for (const path of ["apps/server/dist/desktop-entry.js", "apps/server/dist/app.js"])
     if (!(await lstat(join(output, path))).isFile()) throw new Error("TS entry is incomplete.");
 }

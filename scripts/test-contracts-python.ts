@@ -1,3 +1,4 @@
+/** Retained Python CI gate pending approved retirement; TS contract gates use Vitest. */
 import assert from "node:assert/strict";
 import type { ChildProcess } from "node:child_process";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
@@ -69,6 +70,10 @@ for (let index = 0; index < args.length; index++) {
       "Use [--entry python|ts] [--suite NAME] [--inventory] [--tls]; options must not repeat.",
     );
 }
+function requireRetainedPython(value: string, secure: boolean) {
+  assert(value === "python" && !secure, "Use contracts:http:ts or contracts:http:tls for the migrated Server; this retained driver only preserves the existing Python CI gate until retirement is approved.");
+}
+requireRetainedPython(entry, tls);
 assert(!inventory || selectedSuite === "all", "Inventory requires the complete all-suite run.");
 assert(!inventory || entry === "python", "Inventory records the actual Python registrations.");
 const tlsDirectory = tls ? process.env.OPENBOT_CONTRACT_TLS_DIRECTORY : undefined;
@@ -254,7 +259,7 @@ try {
       process.execPath,
       selectedSuite === "models"
         ? ["scripts/ts-model-fixture.ts", modelReceipt]
-        : ["apps/server-ts/dist/serve.js"],
+        : ["apps/server/dist/serve.js"],
       {
         ...allowlistedEnvironment(["PATH", "HOME", "TMPDIR"]),
         OPENBOT_TS_PYTHON_ORIGIN: `http://127.0.0.1:${pythonPort}`,
@@ -451,133 +456,6 @@ try {
     console.log(
       "Mixed → direct Python → mixed switch retained the public URL, SQL Bot and issued Owner session; one writer at each step.",
     );
-  }
-  let pluginQualification: (() => Promise<void>) | undefined;
-  if (
-    entry === "ts" &&
-    [
-      "all",
-      "control",
-      "resources",
-      "artifacts",
-      "lifecycle",
-      "employee",
-      "automations",
-      "plugins",
-      "browser",
-    ].includes(selectedSuite)
-  ) {
-    // Python-only contracts must not load optional compiled TS acceptance modules.
-    const { qualifyP3Completion } = await import("./ts-p3-completion-acceptance.ts");
-    const { qualifyIdentityLifecycle } = await import("./ts-identity-lifecycle-acceptance.ts");
-    const { qualifyFileOwnership } = await import("./ts-files-acceptance.test.ts");
-    const { qualifyChannelReads } = await import("./ts-channel-read-acceptance.ts");
-    const { qualifyPluginOwnership } = await import("./ts-plugins-acceptance.ts");
-    const { qualifySchedulingOwnership } = await import("./ts-scheduling-acceptance.ts");
-    const { qualifyEmployeeOwnership } = await import("./ts-employee-acceptance.ts");
-    const { qualifyProductReads } = await import("./ts-product-reads-acceptance.ts");
-    const { qualifyModelOwnership } = await import("./ts-model-acceptance.ts");
-    const { qualifyOwnerAuth } = await import("./ts-owner-auth-acceptance.ts");
-    const { qualifyPrimaryBotWrite } = await import("./ts-primary-bot-acceptance.ts");
-    const { qualifyProductIdentity } = await import("./ts-product-identity-acceptance.ts");
-    const { qualifyTranscriptionRead } = await import("./ts-transcription-acceptance.ts");
-    const ownershipAcceptance = {
-      databaseUrl: dsn,
-      origin: baseUrl,
-      privateOrigin: `http://127.0.0.1:${pythonPort}`,
-      cookie,
-      async stopPython() {
-        await stopOwned(child);
-      },
-      async restorePython() {
-        child = startPython(true);
-        await waitReady();
-      },
-      async reverseToPython() {
-        assert(entryChild);
-        await stopOwned(entryChild);
-        await stopOwned(child);
-        child = startPython(true, false);
-        entryChild = startEntry(false);
-        await waitReady();
-      },
-      async restoreTs() {
-        assert(entryChild);
-        await stopOwned(entryChild);
-        await stopOwned(child);
-        child = startPython(true);
-        entryChild = startEntry();
-        await waitReady();
-      },
-    };
-    if (["all", "control"].includes(selectedSuite)) {
-      await qualifyTranscriptionRead(ownershipAcceptance);
-      await qualifyPrimaryBotWrite(ownershipAcceptance);
-      cookie = await qualifyOwnerAuth({ ...ownershipAcceptance, password });
-      await qualifyChannelReads({ ...ownershipAcceptance, cookie });
-      await qualifyProductIdentity({ ...ownershipAcceptance, cookie });
-      await qualifyModelOwnership({ ...ownershipAcceptance, cookie });
-    }
-    if (["all", "control", "lifecycle", "resources", "artifacts"].includes(selectedSuite)) {
-      await qualifyProductReads({ ...ownershipAcceptance, cookie });
-      await qualifyFileOwnership({
-        ...ownershipAcceptance,
-        cookie,
-        objectRoot: join(directory, "objects"),
-      });
-    }
-    if (["all", "lifecycle", "automations"].includes(selectedSuite))
-      await qualifySchedulingOwnership({
-        ...ownershipAcceptance,
-        cookie,
-        async admit(scheduleId) {
-          const config = join(directory, "automation-admission.json");
-          const workRoot = join(directory, "automation-work");
-          await mkdir(workRoot, { mode: 0o700 });
-          await writeFile(
-            config,
-            JSON.stringify({
-              dsn,
-              scheduleId,
-              objectRoot: join(directory, "objects", "attachments"),
-              workRoot,
-            }),
-            { mode: 0o600 },
-          );
-          const admission = processes.start(
-            join(root, "apps/server-python/.worker-venv/bin/python"),
-            ["-I", "-B", "apps/server-python/scripts/contract-automation-admission.py", config],
-            environment,
-          );
-          const deadline = setTimeout(() => admission.kill("SIGTERM"), 30000);
-          try {
-            await processes.waitSuccess(admission);
-          } finally {
-            clearTimeout(deadline);
-            await rm(config);
-          }
-        },
-      });
-    if (["all", "lifecycle"].includes(selectedSuite))
-      await qualifyIdentityLifecycle({
-        ...ownershipAcceptance,
-        cookie,
-        root,
-        modelKeyPath: join(directory, "objects", "model-connections.key"),
-      });
-    if (["all", "plugins"].includes(selectedSuite))
-      pluginQualification = () =>
-        qualifyPluginOwnership({
-          ...ownershipAcceptance,
-          cookie,
-          endpoint: plugins.endpoint,
-          token: plugins.token,
-          storePath: join(directory, "objects", "plugins", "state.json"),
-        });
-    if (["all", "employee"].includes(selectedSuite))
-      await qualifyEmployeeOwnership({ ...ownershipAcceptance, cookie });
-    if (["all", "browser"].includes(selectedSuite))
-      await qualifyP3Completion({ ...ownershipAcceptance, cookie });
   }
   // This owned database has no Worker. Seed publication states so HTTP decision/unread
   // contracts exercise real transactions without claiming execution by a production Host.
@@ -917,19 +795,6 @@ try {
     }
   }
   await runCli(fixture, selectedSuite);
-  if (pluginQualification && selectedSuite === "all") {
-    // The control contract deliberately rotates the password and revokes every old session.
-    // This independent fixture starts with fresh authority after that successful security test.
-    const fresh = randomBytes(32).toString("base64url");
-    const sessionDatabase = createDatabase(dsn);
-    try {
-      await sessionDatabase.client`INSERT INTO auth_sessions(id,token_digest,owner_id,expires_at) VALUES(${randomUUID()},${createHash("sha256").update(fresh).digest("hex")},'owner',clock_timestamp()+interval '5 minutes')`;
-    } finally {
-      await sessionDatabase.close();
-    }
-    cookie = `${tls ? "__Host-openbot_session" : "openbot_session"}=${fresh}`;
-  }
-  await pluginQualification?.();
   if (selectedSuite === "all" || selectedSuite === "nodes" || selectedSuite === "browser") {
     const evidence = createDatabase(dsn);
     try {
@@ -1009,7 +874,8 @@ try {
             "apps/desktop/src/desktop-server-actions.ts",
             "apps/desktop/src/report-save.ts",
             "apps/desktop/src/main.ts",
-            "apps/desktop/src/python-server.ts",
+            "apps/desktop/src/ts-server.ts",
+            "apps/desktop/src/server-bootstrap.ts",
             "apps/desktop/src/native-server.ts",
             "apps/desktop/src/local-worker-controller.ts",
           ],

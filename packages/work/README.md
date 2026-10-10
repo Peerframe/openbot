@@ -2,7 +2,7 @@
 
 This package implements the new `OpenBotWorkTsV1` Temporal workflow, single-attempt handoff,
 immutable start-history inspection and trusted Activity identity. Server-owned SQL admission and
-fences live in `apps/server-ts/src/work-handoff.ts` and `work-execution.ts`. Model/tool policy,
+fences live in `apps/server/src/work-handoff.ts` and `work-execution.ts`. Model/tool policy,
 receipts and publication remain Server responsibilities. No package imports an application.
 
 The explicit P4 product candidate composes these Activities through the TS Server supervisor,

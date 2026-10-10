@@ -4,11 +4,10 @@ Start with the [root map](../AGENTS.md), then one route below and its local rule
 the repository root. When a route does not answer the question, follow imports, calls or a failing
 test. Setup is in [CONTRIBUTING](../CONTRIBUTING.md).
 
-The control plane is moving from Python (`apps/server-python`) to TypeScript (`apps/server-ts`) by
-route group under [ADR-0050](decisions/0050-typescript-control-plane.md); read
-[the TS rules](../apps/server-ts/AGENTS.md) before changing that boundary. `apps/server` holds only
-a retirement note, and the [frozen oracle](../tests/oracles/legacy-server/AGENTS.md) is comparison
-input only. The Python agent runtime is `packages/harness`.
+The single TypeScript control plane is in [apps/server](../apps/server/AGENTS.md), following
+[ADR-0050](decisions/0050-typescript-control-plane.md). The [frozen oracle](../tests/oracles/legacy-server/AGENTS.md)
+is comparison input only. Legacy Python packaging and CI remain pending retirement approval;
+the Python-specific routes below describe those retained gates, not the TS development entry.
 
 ## UI interaction
 
@@ -24,7 +23,7 @@ input only. The Python agent runtime is `packages/harness`.
 - Checks: `npm exec -- turbo run build --filter=@openbot/web^...`, then
   `npm exec --workspace @openbot/web -- vitest run src/components/ContextRail.test.tsx` and
   `npm run typecheck --workspace @openbot/web`. Choose the affected component's test, not a fixed demo.
-- Environment: locked `npm ci`; actual page via the documented Python Server/Web dev loop, synthetic
+- Environment: locked `npm ci`; actual page via the documented TS Server/Web dev loop, synthetic
   Owner/database, wide/narrow viewport and affected states. No paid model needed. Component tests
   alone do not verify rendered behavior. Read [Desktop rules](../apps/desktop/AGENTS.md) for bridge work.
 
