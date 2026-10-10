@@ -307,6 +307,34 @@ const REVIEWED_FIXTURES: readonly ReviewedFixture[] = Object.freeze([
     raw: "15ff853549b0957c0de5f3e8db4edc74d4fbdc10fda10276d0bedf1b31c0d75f",
     rawV2: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   },
+  // #222 was squash-merged, so the same reviewed fixtures reappear under its merge commit.
+  {
+    detectorType: 87,
+    detectorName: "SentryToken",
+    commit: "eadee8d53a3e0788f707e74d81c6cb054df349f4",
+    file: "experiments/linux-execution/native-config.ts",
+    line: 16,
+    raw: "3488860627e07cf82ec8321f043b8f12578e7b01106da1d0cd0528ba73cc3af6",
+    rawV2: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  },
+  {
+    detectorType: 17,
+    detectorName: "URI",
+    commit: "eadee8d53a3e0788f707e74d81c6cb054df349f4",
+    file: "scripts/integration/fixtures/web-contract-compatibility.json",
+    line: 16842,
+    raw: "e06cc9e19ac9e1a142ddd18d57a2580ca1843e10b32b66c7c0d7b172ec04584e",
+    rawV2: "7a94e3cfc283b30c4c15eaecd68e74bca9a9c6d91945a93dec4cb9df2af9f322",
+  },
+  {
+    detectorType: 87,
+    detectorName: "SentryToken",
+    commit: "eadee8d53a3e0788f707e74d81c6cb054df349f4",
+    file: "experiments/linux-execution/native-config.ts",
+    line: 17,
+    raw: "15ff853549b0957c0de5f3e8db4edc74d4fbdc10fda10276d0bedf1b31c0d75f",
+    rawV2: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  },
 ]);
 
 function digest(value: unknown): string | undefined {
