@@ -1,3 +1,4 @@
+// Hover actions beside a message bubble (MessageActions artboard): 回应 picker, 回复 and the 更多 menu.
 import {
   type Message,
   type MessageReaction,

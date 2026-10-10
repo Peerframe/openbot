@@ -1,3 +1,5 @@
+// Left sidebar (Sidebar artboard): search, 「+」, 主 Bot, pinned and grouped conversations with unread
+// and activity, the plugins row and the 「我」 account menu.
 import type { Bot, Channel, ChannelMessagePreview, Run } from "@openbot/domain";
 import {
   type KeyboardEvent,

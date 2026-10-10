@@ -1,3 +1,4 @@
+// 你的工作，从这里开始 (EmptyWorkspace artboard): home screen while the workspace has no conversation.
 import type { Bot } from "@openbot/domain";
 import { GroupAvatar } from "./GroupAvatar";
 import { useModelServices } from "./ModelSelector";

@@ -1,3 +1,5 @@
+// 附件操作 menu on one attachment: extract text, OCR or transcribe, move to or restore from the
+// 回收站, and download. Shown in the composer picker and on message attachments.
 import type { AttachmentOperation } from "@openbot/protocol";
 import { useEffect, useRef, useState } from "react";
 import {

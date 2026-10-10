@@ -1,3 +1,5 @@
+// 分享 Bot 模板 dialog (DialogExport artboard): review the Server's redacted preview, then download
+// that exact package. Preview parts are reused by the import dialog.
 import type { Bot, EmployeeExportExclusion, EmployeeExportPreview } from "@openbot/domain";
 import { useEffect, useState } from "react";
 import { type ApiError, getEmployeeExportPreview } from "../api";

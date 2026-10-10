@@ -1,3 +1,4 @@
+// 语音转写 setting under Settings → 模型服务: which OpenAI connection transcribes voice attachments.
 import type { ModelConnection } from "@openbot/domain";
 import { useEffect, useState } from "react";
 import {

@@ -1,3 +1,4 @@
+// Search box for long settings lists, shown once a list passes 20 entries (LongLists rule).
 import { useState } from "react";
 
 /** LongLists: a settings list gets a search box once it holds more than 20 entries. */

@@ -1,3 +1,5 @@
+// Bot head avatar (Avatars artboard v3): head shape, jaw colour, status dot and working motion,
+// plus the birth and restyle animations. Also the appearance defaults and the eight jaw colours.
 import type {
   Bot,
   BotAccessory,

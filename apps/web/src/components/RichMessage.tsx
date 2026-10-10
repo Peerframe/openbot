@@ -1,3 +1,5 @@
+// Safe message text renderer: `code`, **bold**, https links and the 频道's Bot names as tags. Model
+// text never becomes markup.
 import type { Bot } from "@openbot/domain";
 import type { CSSProperties, ReactNode } from "react";
 import { getOpenBotDesktopBridge } from "../desktop-runtime";

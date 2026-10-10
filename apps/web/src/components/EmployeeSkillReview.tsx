@@ -1,3 +1,5 @@
+// Settings → 技能 for one Bot (ProfileSkills artboard): skills by state and the Owner's review of the
+// selected one. Skill state never grants computer authority.
 import type {
   EmployeeProfile,
   EmployeeSkill,

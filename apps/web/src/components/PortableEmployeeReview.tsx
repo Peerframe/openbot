@@ -1,3 +1,4 @@
+// Profile summary and skill list of a Bot template, shown when exporting or importing it.
 import type { PortableEmployeeProfileSummary, PortableEmployeeSkillSummary } from "@openbot/domain";
 import "./PortableEmployeeReview.css";
 

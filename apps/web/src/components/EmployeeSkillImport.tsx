@@ -1,3 +1,4 @@
+// 导入 SKILL.md button: uploads one skill file as a candidate that is used only after review.
 import { type FormEvent, useState } from "react";
 import { importEmployeeSkill } from "../api";
 

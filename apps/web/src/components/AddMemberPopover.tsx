@@ -1,3 +1,5 @@
+// 添加成员 popover (AddMember artboard): searches the Bots not yet in a 频道 and adds the chosen one.
+// Opened from the members tab of the channel context rail.
 import type { Bot } from "@openbot/domain";
 import { type KeyboardEvent, useEffect, useId, useRef, useState } from "react";
 import { RobotAvatar } from "./RobotAvatar";

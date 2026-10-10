@@ -1,3 +1,4 @@
+// Settings → 工作主机 (SettingsHosts artboard): paired work computers, their live state, and pairing.
 import type { ExecutionNode } from "@openbot/domain";
 import { type ReactNode, useEffect, useState } from "react";
 import { getWorkspace } from "../api";

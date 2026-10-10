@@ -1,3 +1,4 @@
+// 添加工具插件 form: preview an MCP endpoint's declared tools, then install it. Installing grants no Bot.
 import { type FormEvent, useState } from "react";
 import { type PluginManifest, pluginError, pluginRequest } from "../plugin-api";
 import { PluginContentDeclarations } from "./PluginPlatformPanels";
