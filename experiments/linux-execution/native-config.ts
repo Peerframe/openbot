@@ -1,10 +1,10 @@
 /** Root-owned native packet pins. The wire cannot select executables, source, images or paths. */
 import { createHash } from "node:crypto";
 import { lstatSync, realpathSync } from "node:fs";
-import { dirname, isAbsolute, join } from "node:path";
+import { basename, dirname, isAbsolute, join } from "node:path";
 import { isDeepStrictEqual as same } from "node:util";
 import { commandValue } from "../../apps/server/dist/work-command-values.js";
-import { digest, directory, requireFact } from "./protected-io.ts";
+import { digest, directory, requireFact, Refused } from "./protected-io.ts";
 import { command } from "./native-unit.ts";
 export const reviewedBinaryHashes = {
   containerd: "8260dd2b405520c10d44f1b75ace6b58e2579d10113cadc6d6b8df533ff68f6e",
@@ -42,13 +42,19 @@ export function nativeEnvironment(config: NativeConfiguration) {
   return { LANG: "C", LC_ALL: "C", PATH: config.binaries + ":/usr/sbin:/usr/bin:/sbin:/bin" };
 }
 export function trustedFile(path: string, expected?: string) {
-  requireFact(isAbsolute(path) && realpathSync(path) === path, "unsafe_native_file");
+  requireFact(isAbsolute(path) && realpathSync(path) === path, "native_file_alias");
   directory(dirname(path), 0, false);
   const value = lstatSync(path);
-  requireFact(
-    value.isFile() && value.nlink === 1 && value.uid === 0 && !(value.mode & 0o022),
-    "unsafe_native_file",
-  );
+  if (!value.isFile() || value.nlink !== 1 || value.uid !== 0 || value.mode & 0o022)
+    throw new Refused("unsafe_native_file", {
+      cause: {
+        file: basename(path),
+        regular: value.isFile(),
+        links: value.nlink,
+        uid: value.uid,
+        mode: value.mode & 0o7777,
+      },
+    });
   if (expected)
     requireFact(
       /^[a-f0-9]{64}$/.test(expected) && digest(path) === expected,

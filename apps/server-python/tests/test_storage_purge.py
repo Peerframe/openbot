@@ -431,6 +431,7 @@ def test_real_lifecycle_scheduler_and_unknown_commit_keep_completion(seed, tmp_p
         done = asyncio.Event()
         async def due():
             result = await original_due()
+            assert result and result["outcome"] == "completed", result
             done.set()
             return result
         monkeypatch.setattr(service.storage, 'run_due', due)

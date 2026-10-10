@@ -57,7 +57,7 @@ FROM product-node AS runtime-product
 ENV NODE_ENV=production
 ENV OPENBOT_TS_HOST=0.0.0.0 OPENBOT_TS_PORT=3001
 ENV OPENBOT_TS_OBJECT_ROOT=/var/lib/openbot/objects OPENBOT_TS_ARTIFACT_ROOT=/var/lib/openbot/artifacts
-ENV OPENBOT_TS_WORK_FILE_ROOT=/var/lib/openbot/artifacts OPENBOT_TS_MODEL_CONNECTION_KEY_PATH=/var/lib/openbot/objects/model-connections.key
+ENV OPENBOT_TS_WORK_FILE_ROOT=/var/lib/openbot/artifacts
 ENV OPENBOT_CONTROL_WEB_ROOT=/workspace/apps/web/dist
 RUN groupmod --new-name openbot node && usermod --login openbot --shell /usr/sbin/nologin node \
  && install -d -o openbot -g openbot -m 0700 /var/lib/openbot /var/lib/openbot/objects /var/lib/openbot/artifacts

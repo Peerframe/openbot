@@ -238,5 +238,7 @@ main().catch((error) => {
   process.stderr.write(
     (error instanceof Error ? error.message : "native_qualification_failed") + "\n",
   );
+  if (error instanceof Error && error.message === "unsafe_native_file")
+    process.stderr.write(JSON.stringify({ nativeFileFacts: error.cause }) + "\n");
   process.exitCode = 1;
 });
