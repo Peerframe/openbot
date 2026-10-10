@@ -277,7 +277,11 @@ export function validateSecurityWorkflow(source: string): void {
 export function validateProductWorkflow(source: string, migrationSource: string): void {
   const workflow = workflowDocument(source);
   const job = (id: string) => requiredJob(workflow, id);
-  hasCommands(job("control-runtime"), ["npm run dev:smoke", "npm run test:control:ts"], "TS control");
+  hasCommands(
+    job("control-runtime"),
+    ["npm run dev:smoke", "npm run test:control:ts"],
+    "TS control",
+  );
   hasCommands(
     job("temporal-qualification"),
     ["npm run test:work:ts", "npm run test:temporal:boundary"],

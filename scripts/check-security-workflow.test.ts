@@ -2,10 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { stringify } from "yaml";
-import {
-  validateProductWorkflow,
-  validateSecurityWorkflow,
-} from "./check-security-workflow.ts";
+import { validateProductWorkflow, validateSecurityWorkflow } from "./check-security-workflow.ts";
 import { SETUP_NODE, workflowDocument } from "./workflow-policy.ts";
 import {
   type CommandStep,
