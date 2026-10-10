@@ -1,5 +1,10 @@
 # Native Task product qualification
 
+Historical P4 evidence: the probe and replay below import the retired Python Server package, which
+P5 removed, so they no longer run from `main`. Reproduce them from the
+[P4-era revision](https://github.com/Peerframe/openbot/tree/e25d91520dbda664705a77c76c1af456a064a39d);
+current qualification commands are listed in the [work journey README](../README.md).
+
 The 2026-09-25 case used real Owner HTTP, PostgreSQL, ProductWorkRuntime, and mTLS Temporal.
 The model transport alone was synthetic. An explicit native scope authorized an uploaded CSV,
 Owner-enabled memory, and one colleague. The root read the attachment/memory, delegated a real
@@ -35,7 +40,7 @@ Prerequisites are the existing pinned Worker environment, Node dependencies, Doc
 OpenSSL and reviewed engine images described in the [journey reference](../README.md).
 Provide a private JSON fixture with `dsn` and `ownerName` for an explicitly owned, canonically
 migrated loopback database named `openbot_control_test_*`, with no Work Tasks. The fixture must
-have mode0600 and the output must be new or empty. The same fixture format is already used by
+have mode 0600 and the output must be new or empty. The same fixture format is already used by
 the control tests; no real profile or provider account is required.
 
 ```sh

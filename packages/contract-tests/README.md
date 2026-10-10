@@ -16,18 +16,14 @@ From a checkout prepared according to [CONTRIBUTING](../../CONTRIBUTING.md):
 ```sh
 npm run contracts:test
 npm run contracts:http:ts
-npm run contracts:http:ts -- --inventory
-npm run contracts:http:ts -- --suite control
 npm run contracts:http:ts -- --suite publisher
 npm run contracts:http:ts -- --suite models
-npm run contracts:http:ts
-npm run contracts:http:ts -- --suite publisher
-npm run contracts:http:ts -- --suite models
+npm run contracts:http:tls
 ```
 
-The first command runs frozen legacy input/DTO serialization parity and Web consumption plus target-input
-tests. The second reuses the owned Docker fixture, migrates empty PostgreSQL, starts real
-`serve.py` in product mode, logs in, creates a synthetic Bot, then invokes the private-fixture CLI
+The first command runs the Web contract consumers and this package's client and target-input
+tests. The second reuses the owned Docker fixture, migrates empty PostgreSQL, starts the real
+TypeScript Server, logs in, creates a synthetic Bot, then invokes the private-fixture CLI
 with all eleven black-box suites. They create identities, messages and Tasks, check CAS/pagination,
 model dependency guards, raw upload/download bytes, real DOCX parsing in both attachment scopes,
 reference protection, cleanup receipts, lifecycle guards, reactions, cancel/steer, approval settings,
@@ -38,18 +34,16 @@ resource/prompt/app reads, original browser Host binding/observation/maintenance
 Employee download bytes, quarantined import/concurrent activation and SSE ready/heartbeat/reconnect/abort. They revoke sessions,
 change the fixture password and log out. Model connections use synthetic keys; successful
 discovery/test/transcription is never invoked. No configured data, `.env`, real model credentials
-or Temporal installation are used. The owned fixture seeds an unread Bot message, waiting approvals
+or existing Temporal installation are used; the fixture owns a disposable mTLS Temporal service. The owned fixture seeds an unread Bot message, waiting approvals
 and one safe/private audit event, plus legacy/native completed and incomplete knowledge proposal sources,
 an expired bootstrap token, native proposed/expired/stale/unknown actions and published artifact files/metadata.
-A separately authenticated loopback MCP fixture reuses official SDK1.29.0 and the product's exact-local
+A separately authenticated loopback MCP fixture reuses official SDK 1.29.0 and the product's exact-local
 endpoint allowlist; it changes declarations and content only through a bounded private controller.
 No tool is executed and no controller credential is sent to the product.
 These published records stand in for Worker publication; HTTP transactions are real,
 but Worker/Temporal execution is not exercised. All owned resources
 are removed on success/failure. Docker and the locked Node/npm dependencies are required.
-The inventory option records default product HTTP registrations in the existing migration research.
-It also records reviewed Web/Desktop/Node/native Host consumer files with their source digests and
-the actual registrar/composition boundaries. Source inventory does not establish consumer execution.
+`contracts:http:tls` runs the same suites over HTTPS with a disposable test CA.
 The all/resources driver additionally invokes the actual Web client through the Desktop proxy using
 Node Fetch: five settings PUT operations and Owner attachment upload/list/download/delete against
 the real disposable product. This catches method/header drift; installed Electron and target-platform
@@ -68,7 +62,7 @@ and a Bot with the `none` profile. The suite creates/corrects/cancels synthetic 
 an idle target without an execution worker. Keep the private fixture outside the repository.
 The same runner can be imported as `runWorkContracts`; every call requires an explicit target.
 An optional `work` object adds `{ taskId, intentDigest, actions: { approve, reject, expired, stale, unknown } }`:
-IDs are canonical UUIDs and the digest is64 lowercase hex characters. The owned all/work driver
+IDs are canonical UUIDs and the digest is 64 lowercase hex characters. The owned all/work driver
 supplies the [SQL publication recipe](../../scripts/server-contract-fixture.ts). `runWorkContracts(target, work)`
 checks successful approval/rejection, concurrent idempotent decision/event publication, expiry/generation/
 digest refusal, one pending reconciliation command, replay/CAS conflicts and lookup after cancellation.
@@ -77,12 +71,12 @@ this metadata; basic standalone Work targets retain create/read/correct/cancel/r
 `--suite resources` or `runResourceContracts(target)` runs model/storage/attachment cases and
 uses the included [synthetic DOCX](fixtures/README.md). It requires the target's existing released
 document parser. Storage settings are restored to default-off during the run.
-Document extraction requests allow35s for the product's30s parser deadline; other requests retain10s.
-The all-suite child has a180s limit; focused children retain120s. Each is stopped and reaped on failure.
+Document extraction requests allow 35s for the product's 30s parser deadline; other requests retain 10s.
+The all-suite child has a180s limit; focused children retain 120s. Each is stopped and reaped on failure.
 The owned driver accepts `--suite` with the same suite names as the private CLI below; `--inventory`
 requires `all`. Unknown/repeated options and partial inventory requests fail before fixture creation.
-Browser JSON responses explicitly allow8MiB for the existing5MiB PNG/base64 ceiling; other JSON
-responses remain4MiB. Review headers are bounded and cannot contain CR/LF; abort signals remain explicit.
+Browser JSON responses explicitly allow 8MiB for the existing 5MiB PNG/base64 ceiling; other JSON
+responses remain 4MiB. Review headers are bounded and cannot contain CR/LF; abort signals remain explicit.
 
 For `--suite lifecycle`, add a `lifecycle` object with `channelId`, `unreadMessageId` and
 `approvals: { approve, reject, expired }`, all canonical UUIDs. Prepare the same synthetic publication
@@ -104,7 +98,7 @@ inspired by Hermes Agent. No task completion or model use is executed by these f
 
 `--suite automations` or `runAutomationContracts(target)` requires an empty disposable schedule set.
 It creates future schedules, checks pause/resume against current membership and parallel admission at
-the50-record ceiling, then deletes only its owned schedules. Actual due submission and Temporal
+the 50-record ceiling, then deletes only its owned schedules. Actual due submission and Temporal
 recovery are separate gates.
 
 `--suite nodes` requires `nodes: { expiredNodeId, expiredToken }`, with one already-expired token
@@ -120,17 +114,17 @@ bounded `base64` bytes. Other fields identify published negative records; use th
 checks exact bytes, response headers, integrity, key bounds, oversized files and optional symlink refusal.
 For native Work downloads, add `native: { taskId, valid, integrity, sizeMismatch, missing, oversized, symlink? }`
 inside `artifacts`. `taskId` binds the seeded completed Work source. Native valid records retain the same
-fields, allow2–3 records,255-character names, empty bytes and `application/octet-stream` as well as PNG/Markdown.
-The owned driver includes3 records and checks raw8MiB-store downloads, RFC5987 filenames, sandbox headers,
+fields, allow 2–3 records,255-character names, empty bytes and `application/octet-stream` as well as PNG/Markdown.
+The owned driver includes 3 records and checks raw 8MiB-store downloads, RFC5987 filenames, sandbox headers,
 the Work snapshot's digest/size/download links, digest/size mismatch, missing files, oversize and no-follow.
 The private `all` fixture requires `native`; a standalone artifacts fixture can retain legacy-only scope.
-The driver first runs19 checks with both owned symlinks, removes only those links, then runs all
-suites with17 artifact checks. Whole-root storage measurement correctly refuses any symlink, so this
+The driver first runs 19 checks with both owned symlinks, removes only those links, then runs all
+suites with 17 artifact checks. Whole-root storage measurement correctly refuses any symlink, so this
 ordering preserves its independent successful-storage gate. These are publication fixtures, not Worker-produced files.
 
 `--suite plugins` requires `plugins: { endpoint, token, controllerToken }`. The endpoint must be
 an exact `http://127.0.0.1:PORT/mcp` URL of the [owned MCP fixture](../../scripts/contract-plugin-fixture.ts);
-the two distinct credentials are64-character lowercase hex. The product must explicitly allow this
+the two distinct credentials are 64-character lowercase hex. The product must explicitly allow this
 one local endpoint. `runPluginContracts(target, plugins)` tests actual discovery, reviewed digest,
 disabled-by-default installation, revision/concurrent CAS, declaration/grant/membership guards,
 untrusted resource/prompt/app payloads, ordinary-resource byte limits, update reset, deletion and
@@ -139,13 +133,13 @@ a legacy pending call because it has no legacy Run authority guard; that HTTP de
 qualified for authentication, malformed input and unknown-call refusal only. Successful legacy
 decisions and native durable tool approval/execution remain separate acceptance items.
 
-`--suite browser` requires `browser: { frameBase64 }`, the bounded authored1-pixel PNG from the
+`--suite browser` requires `browser: { frameBase64 }`, the bounded authored 1-pixel PNG from the
 [owned fixture](../../scripts/server-contract-fixture.ts). `runBrowserContracts(target, browser)` creates
 and disposes its own Docker-profile Bot, enrolls an authenticated synthetic Node and returns authored
 frames over the real socket. It checks Owner/Origin/body admission, original identity binding, the
 default-off control gate, PNG byte validation, maintenance, view close/disconnect and refusal to rebind
 a same-id Host with new credentials. No Chromium or browser Provider is started. The current product
-entry retains a wait after client abort until the original command's25s deadline; the suite checks
+entry retains a wait after client abort until the original command's 25s deadline; the suite checks
 its bounded release and zero automatic retry. It does not claim immediate disconnect cancellation.
 Trusted human-control/Work browser composition remains a separate acceptance item.
 
@@ -160,7 +154,7 @@ Only owned identities are deleted. Preview creates no identity, memory or Host a
 
 `--suite publisher` is the configured signing variant, separate from the unsigned `all` composition.
 The owned driver initializes an ephemeral encrypted keyring with the retained offline CLI, supplies
-both existing `OPENBOT_CONTROL_PUBLISHER_*` paths to real `serve.py` and deletes the entire private
+both existing `OPENBOT_CONTROL_PUBLISHER_*` paths to the real Server and deletes the entire private
 subtree on success/failure. It never loads `.env` or prints private keys/passphrases.
 For another disposable target, add only `publisher: { keyid, publicKey }` to the private fixture:
 `keyid` is an `ed25519:` SPKI-SHA256 fingerprint and `publicKey` is bounded public PEM.
@@ -173,12 +167,12 @@ private keys, passphrases or keyring paths. The unsigned suite's missing-trust r
 `--suite models` or `runModelContracts(target)` uses only the basic private fixture and requires a
 separately composed synthetic provider transport. The owned driver starts
 [`ts-model-fixture.ts`](../../scripts/ts-model-fixture.ts), which injects
-the existing trusted constructor factory into real `serve.py`; no production setting/header/route
+the existing trusted constructor factory into the real Server; no production setting/header/route
 selects this behavior. Owner HTTP, encrypted connection persistence, SDK serialization and current
 revision checks remain real. OpenAI Chat and Anthropic discovery/probe success, filtering/deduplication/
 256-ID bounds, unsaved verification, invalid credentials, redirects, invalid JSON, oversized declared
 responses and unavailable providers are checked. Private provider diagnostics and credentials cannot
-enter public errors. The owned receipt requires exactly10 discoveries and4 explicit no-tool probes,
+enter public errors. The owned receipt requires exactly 10 discoveries and 4 explicit no-tool probes,
 with zero unauthorized dispatch, retry or fallback; it records counts only. It never contacts a live
 provider or loads `.env`. This establishes API/SDK transport contracts, not actual model/Task execution.
 CI requires unsigned all, signed publisher and models as three separate disposable runs.
@@ -195,4 +189,4 @@ bounded frames/deadlines and every stream is explicitly closed. SSE tests qualif
 slow-reader coalescing plus authoritative refresh, channel tombstone and workspace/channel password
 revocation. These streams emit content-free ready notifications with no replay IDs; saturation-level
 transport pressure remains unqualified. The runner separately refuses UTF-8 truncation, incomplete
-frames and over4MiB of actual UTF-8 bytes; synthetic framing tests are not product-pressure evidence.
+frames and over 4MiB of actual UTF-8 bytes; synthetic framing tests are not product-pressure evidence.

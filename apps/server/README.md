@@ -29,7 +29,8 @@ Temporal, keys, files and subprocesses. Work scenarios exercise real control/eng
 with synthetic model and effect peers; they do not qualify a native Linux sandbox or paid provider.
 Native container/Desktop scripts separately verify packaging and lifecycle.
 
-P5 is still in progress: default Desktop Python packaging and retained Python CI retirement await
-approval. The explicit macOS arm64 TS candidate contains one standalone Node, whose retention is
-an Owner decision after the Electron permission qualification failed. No candidate installation or
-release is implied. See the [architecture phase table](../../docs/ARCHITECTURE.md) for current scope.
+P5 is merged ([#222](https://github.com/Peerframe/openbot/pull/222)): Desktop packaging and
+required CI use only this Server, and the Python control plane and harness are retired. The macOS
+arm64 Desktop package bundles it with one standalone Node, which the Owner retained after the
+Electron permission qualification failed. Installing or releasing a new Desktop build is a separate,
+explicitly approved step. See the [architecture phase table](../../docs/ARCHITECTURE.md) for current scope.

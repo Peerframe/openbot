@@ -1,5 +1,9 @@
 # Offline Work command components — inactive candidate
 
+This page records the P4-era Python candidate design and its snake_case component names. P5 retired
+that implementation; the retained command components now live in the TypeScript Server's
+`apps/server/src/work-command-*.ts` modules. See [Verification](#verification) for current checks.
+
 This candidate validates Control transactions for a future offline Linux command path. It does not register a product tool, HTTP/WebSocket endpoint, Node command, Provider or execution service. `docker-linux` remains unavailable for product Work until the integration gates below are closed. Browser execution is outside this candidate.
 
 ## Authority and immutable source
@@ -44,4 +48,10 @@ The authority SQL is integrated as `0041_work_command_authority.sql`; readiness 
 
 The focused suite uses a fresh owned loopback PostgreSQL 17.11 fixture, the complete canonical migration history, real Work/Owner/model-connection/file services, real SDK `ActivityEnvironment` for one entry test, and explicitly synthetic immutable history, transport and native readiness. It covers concurrent single consume, both cancel/consume lock winners, SQL-trigger rollback, stale handoff/claim/source/model/member/correction/Node identity, fixed original deadlines, changed/deleted/foreign inputs and opaque preparation identity. It runs no provider network, model request, Docker command workload or live Temporal engine.
 
-Run `test_work_command_store.py` only with a separate disposable `OPENBOT_COMMAND_TEST_FIXTURE` JSON (`fixtureKind=work-command-authority`, loopback `openbot_control_test_...` DSN and synthetic Owner token). Apply the complete canonical migration history first. The Worker dependency profile and both Python source packages are required. The cross-language codec vectors already live in the standard test fixtures directory. Tests delete only their own model connection IDs; the enclosing disposable fixture owns all remaining synthetic rows/files and must clean up its exact container/volume. Do not point this suite at a shared test fixture or real profile.
+The Python suite described above (`test_work_command_store.py`) retired with the Python Server in P5;
+its [P4-era source](https://github.com/Peerframe/openbot/blob/e25d91520dbda664705a77c76c1af456a064a39d/apps/server-python/tests/test_work_command_store.py)
+remains historical evidence. Current TypeScript coverage runs from the repository root:
+`npm run test --workspace @openbot/server` for the command codec and value checks,
+`npm run test:control:ts` for frozen legacy command-signature compatibility, and
+`npm run test:work:ts` for command Work scenarios on owned PostgreSQL/Temporal fixtures. Do not
+point these suites at a shared fixture or real profile.

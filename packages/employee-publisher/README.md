@@ -14,14 +14,18 @@ npm run test --workspace @openbot/employee-publisher
 ```
 
 Use the [signing guide](../../docs/EMPLOYEE_SIGNING.md) for Owner-only key locations, trust,
-rotation and Python configuration. The root launcher preserves the CLI's historical
+rotation and Server configuration. The root launcher preserves the CLI's historical
 `apps/server` relative-path base without requiring that directory to exist; prefer absolute
 paths for new deployments. Never copy private keys or passphrases into an Employee package.
 
-The legacy TypeScript Server has retired; its frozen oracle remains test evidence. This package
+The original legacy TypeScript Server has retired; its frozen oracle remains test evidence. This package
 retains the offline key lifecycle, template formats and validation. Obsolete Store contracts,
 request schemas and task-routing functions from the original source closure have been removed.
 `SOURCE.json` describes the initial extraction, including paths that have since retired; it is
-historical provenance, not a current source manifest. Runtime authority remains in Python.
+historical provenance, not a current source manifest. Runtime authority belongs to the
+TypeScript Server in `apps/server`.
 
-The P3 TS candidate reuses the pure `agent-skills` and `sensitive-content` subpath exports. These parse bounded text without database, filesystem, keyring or network authority; they do not start the offline CLI. The selected TS service owns its authenticated SQL transactions. Default/reverse Python ownership is retained during migration.
+The Server reuses the pure `agent-skills` and `sensitive-content` subpath exports, plus
+`employee-package` for portability. The text parsers run without database, filesystem, keyring or
+network authority, and none of these exports starts the offline CLI. The Server owns its
+authenticated SQL transactions.

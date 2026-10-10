@@ -1,14 +1,14 @@
 # Command-only Linux execution precursor
 
-Status2026-09-25: **real Linux/runsc command boundary and independent native lifetime tested; product execution remains disabled**.
+Status 2026-09-25: **real Linux/runsc command boundary and independent native lifetime tested; product execution remains disabled**.
 This standard-library experiment owns no Task identity, authorization, budget, approval or
 Artifact publication. Its append-only ledger prevents another create/start for a consumed
 Action/epoch; it is not an authenticated admission service or a replacement recovery engine.
 
 ## Reviewed implementation and actual evidence
 
-Reuse Docker29.8.1 / Moby `464cd50c3d9e92877d56940ea160de6fca7bea23`, gVisor
-release-20260914.0 / `95eb5d5930b0e7736826cc2cb949ba9d2c4d5d29` and OCI1.3.0 /
+Reuse Docker 29.8.1 / Moby `464cd50c3d9e92877d56940ea160de6fca7bea23`, gVisor
+release-20260914.0 / `95eb5d5930b0e7736826cc2cb949ba9d2c4d5d29` and OCI 1.3.0 /
 `92249139eea7161e13745abd4cb6d0ea02a3227a`. No upstream source is copied and no Python
 dependency is added. Host provisioning uses the released Docker/containerd/runsc/systemd
 binaries, not a new sandbox implementation. Exact primary-source decisions and host pins are
@@ -18,21 +18,21 @@ in [boundary research](../../docs/research/linux-execution-boundary.md) and
 [REAL_HOST_BOUNDARY.json](REAL_HOST_BOUNDARY.json) records the tested source hashes and five
 actual private-daemon cases on Linux x86-64/cgroupv2:
 
-- UID10001, read-only root/input, only loopback, refused supervisor canary and external route;
+- UID 10001, read-only root/input, only loopback, refused supervisor canary and external route;
   actual cpu.max, memory.max, zero swap and host pids.max readback.
 - A64MiB dedicated ext4 output device returns ENOSPC before exceeding its capacity.
 - A100GiB sparse logical file is rejected before hashing its holes.
 - A real successful start whose response is discarded recovers the original result; a new
   controller is refused another start and the command creates its one effect once.
-- Guest RLIMIT_NPROC is512/512, cannot be increased by the workload, and a narrowed32 limit
-  allows31 children before EAGAIN. Guest real-user counters differ from host cgroup tasks.
+- Guest RLIMIT_NPROC is 512/512, cannot be increased by the workload, and a narrowed 32 limit
+  allows 31 children before EAGAIN. Guest real-user counters differ from host cgroup tasks.
 
 Exact-owned containers, private mounts and loop attachments are cleaned up after each case.
 The separate [REAL_HOST_DEADLINE.json](REAL_HOST_DEADLINE.json) qualifies four fresh per-Action
 systemd units: baseline, controller death, paused private Docker daemon, and a queued start.
 Each original Docker/containerd/runsc process tree ended with native `timeout`, without controller
-cleanup causing the verdict or another start. Observed cessation was0.12–0.31 seconds after the
-nominal60-second lifetime, within the declared five-second observation bound. This is ordinary
+cleanup causing the verdict or another start. Observed cessation was 0.12–0.31 seconds after the
+nominal 60-second lifetime, within the declared five-second observation bound. This is ordinary
 systemd/kernel scheduling, not a hard real-time guarantee. Every business outcome remains unknown.
 All owned trees/mounts/loop devices were cleaned;10 production container identities/start/state
 and semantic IPv4/IPv6 firewall rules remained unchanged. Authenticated product admission,
@@ -42,16 +42,16 @@ image-general confinement, browser networking and takeover remain separate gates
 
 The protected command Host also passed its first full native case; see
 [REAL_PROTECTED_COMMAND.json](REAL_PROTECTED_COMMAND.json). An actual unprivileged Node relay,
-private namespaces, signed readiness/receipt, one original start and exact18-byte CSV passed.
-The original50-second unit stopped within its five-second observation margin (155ms observed);
+private namespaces, signed readiness/receipt, one original start and exact 18-byte CSV passed.
+The original 50-second unit stopped within its five-second observation margin (155ms observed);
 owned resources and ephemeral keys were cleaned and existing services/firewalls were unchanged.
 The signer in this case is synthetic Control. Real Work/Temporal authority through the product
 entry remains a separate required integration gate.
 
 [REAL_BROWSER_CHROOT_ATTEMPT.json](REAL_BROWSER_CHROOT_ATTEMPT.json) records the separate failed
 Chromium b2 attempt. The prior chroot fatal disappeared, but the first Chrome process reached the
-probe25-second limit without accepted render evidence. Fifteen sampled Chrome processes retained
-NoNewPrivs and seccomp; the original180-second unit expired and its resources were cleaned. Existing
+probe 25-second limit without accepted render evidence. Fifteen sampled Chrome processes retained
+NoNewPrivs and seccomp; the original 180-second unit expired and its resources were cleaned. Existing
 services/firewalls were unchanged. These observations do not qualify browser use or takeover.
 
 | File | Purpose |
@@ -86,7 +86,7 @@ python3 experiments/linux-execution/sandbox.py check \
 For real boundary qualification, the trusted operator first provisions the reviewed isolated
 service and offline image. Join that daemon's **actual** network/mount namespaces, then run
 `qualify_running_host.py --root /owned-test --unit openbot-qualification-<name>.service
---prefix <fresh-case-prefix>`. The helper requires an owned0700 root, pinned binaries/image,
+--prefix <fresh-case-prefix>`. The helper requires an owned 0700 root, pinned binaries/image,
 private `daemon.json` identity evidence, private containerd and matching namespaces. It creates
 only new synthetic Action subtrees and bounded ext4 files. Never run against a production or
 shared daemon. Its provisioning interface is a qualification fixture, not a product API.
@@ -129,7 +129,7 @@ apparent bytes before reading sparse data, and rejects concurrent identity/size 
 `enforced:false` describes collection itself: a digest/size check is not storage enforcement or
 an authorized Artifact publication. Files and image/device evidence remain separate.
 
-Python control must still consume the exact Task/Run/Action epoch, approval and resource grant,
+The Server must still consume the exact Task/Run/Action epoch, approval and resource grant,
 serialize cancellation/revocation, and publish verified artifacts. Temporal retains continuation;
 the host helper owns only execution/receipts. Browser sessions, supervised writes, takeover,
 downloads and document/code deliverables need their separate contract journeys. No capability

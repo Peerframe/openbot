@@ -1,7 +1,7 @@
 # Windows 桌面版
 
 当前 Windows x64 Desktop 是远程客户端，需要连接已有 OpenBot Server；仅 macOS arm64 随包
-提供本地 Python 服务。安装 Desktop 不会注册 Worker Host，也不会授予电脑控制权限。
+提供本地 TypeScript Server，且该服务还需要正在运行的 Temporal 引擎（见 [Desktop 安装](DESKTOP_INSTALLATION.zh-CN.md)）。安装 Desktop 不会注册 Worker Host，也不会授予电脑控制权限。
 
 ## 安装与启动
 
@@ -48,7 +48,7 @@ $env:RUNNER_TEMP = $env:TEMP
 
 验收必须完成两个远程客户端 safeStorage 生命周期及卸载、清理。`summary.json` 只记录允许的
 进程身份、密文摘要等字段，不包含原始密文、密码或测试配置目录。CI 产物暂沿用历史名称
-`windows-desktop-cold-start-<源码 SHA>`；应读取其中 schemaVersion2 与远程客户端回执，不能
+`windows-desktop-cold-start-<源码 SHA>`；应读取其中 schemaVersion 2 与远程客户端回执，不能
 根据名称推断做了十次 PostgreSQL 冷启动。必须查看对应源码的实际执行结果，工作流定义本身
 不代表已执行。本轮清理尚未在 Windows 原生环境运行当前源码的安装、DPAPI 或安装后 GUI。
 
