@@ -23,7 +23,7 @@ import compatibility from "../../scripts/integration/fixtures/command-compatibil
 import { LinuxNative, type NativeReservation } from "./linux-native.ts";
 import { nativeClock } from "./kernel-facts.ts";
 import { reviewedBinaryHashes, reviewedImage, type NativeConfiguration } from "./native-config.ts";
-import { cgroupMembers } from "./native-unit.ts";
+import { cgroupMembers, NativeCommandFailure } from "./native-unit.ts";
 import {
   directory,
   digest,
@@ -169,11 +169,15 @@ async function main() {
       policyDigest: "e".repeat(64),
     },
   };
-  let record: NativeReservation | undefined, failure: unknown;
+  let record: NativeReservation | undefined,
+    failure: unknown,
+    stage = "reserve";
   const checks: Record<string, boolean> = {};
   try {
     record = await native.reserve(binding, authorization, instance);
+    stage = "prepare";
     await native.prepare(record, authorization, nativeClock());
+    stage = "readiness";
     const proof = await native.readiness(record, authorization);
     checks.originalUnitAndCapacity = true;
     const launch = {
@@ -182,9 +186,11 @@ async function main() {
       expiresBoottimeUs: nativeClock()[1] + 5000000,
       digest: "f".repeat(64),
     };
+    stage = "execute";
     await native.execute(record, operation, launch);
     await assert.rejects(() => native.execute(record!, operation, launch));
     checks.noSecondLaunch = true;
+    stage = "lookup";
     const deadline = nativeClock()[0] + 8000000;
     let observation: Awaited<ReturnType<LinuxNative["lookup"]>> | undefined;
     while (nativeClock()[0] < deadline) {
@@ -206,6 +212,7 @@ async function main() {
       1,
     );
     // An already running/exited container stays in the original PID1 lifetime after our control work ends.
+    stage = "expiry";
     const remaining = proof.activeMonotonicUs + proof.runtimeMaxUs - nativeClock()[0];
     if (remaining > 0) await delay(remaining / 1000 + 250);
     const stopDeadline = nativeClock()[0] + 5000000;
@@ -242,7 +249,13 @@ async function main() {
           );
         process.stderr.write(
           JSON.stringify({
-            nativeFailure: { active: state.ActiveState, result: state.Result, helperCodes },
+            nativeFailure: {
+              stage,
+              active: state.ActiveState,
+              result: state.Result,
+              helperCodes,
+              ...(error instanceof NativeCommandFailure ? { command: error.diagnostic } : {}),
+            },
           }) + "\n",
         );
       } catch {

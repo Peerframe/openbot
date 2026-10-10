@@ -559,13 +559,23 @@ jobs:
             --helper "$RUNNER_TEMP/openbot-native-helper.cjs" \
             --koffi "$GITHUB_WORKSPACE/node_modules/koffi" \
             > "$RUNNER_TEMP/openbot-native-ts-adapter.json"
+      - name: Prepare the root-private TS product Host fixture
+        shell: bash
+        run: |
+          node_modules/.bin/esbuild experiments/work-journey/product-host-native.ts \
+            --bundle --platform=node --format=cjs --target=node22 --external:koffi \
+            --outfile="$RUNNER_TEMP/openbot-product-host.cjs"
+          sudo env GITHUB_ACTIONS=true NODE_PATH="$GITHUB_WORKSPACE/node_modules" \
+            "$(command -v node)" "$RUNNER_TEMP/openbot-product-host.cjs" prepare \
+            "$RUNNER_TEMP/openbot-command-node.cjs" "$RUNNER_TEMP/openbot-native-command-ts.json"
+          sudo chown "$(id -u):$(id -g)" "$RUNNER_TEMP/openbot-native-command-ts.json"
       - name: Qualify the TS approved command on the actual protected Linux/runsc Host
         timeout-minutes: 5
         shell: bash
         run: |
           "$RUNNER_TEMP/openbot-work-reference/bin/python" -B \
             experiments/work-journey/product_command_probe.py --entry ts --claim-approval-race \
-            --native-ci-config "$RUNNER_TEMP/openbot-native-command.json" \
+            --native-ci-config "$RUNNER_TEMP/openbot-native-command-ts.json" \
             --output "$RUNNER_TEMP/openbot-command-ts-native" \
             --node-bundle "$RUNNER_TEMP/openbot-command-node.cjs"
       - name: Qualify the TS isolated Linux browser, profile replacement and original native expiry

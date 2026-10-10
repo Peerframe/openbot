@@ -1,17 +1,40 @@
 /** Reads original PID1 unit identity and cgroup membership; no lifecycle mutation. */
 import { existsSync, lstatSync, readdirSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { isDeepStrictEqual as same } from "node:util";
 import { strictCommandJson } from "../../apps/server/dist/work-command-values.js";
 import { readKernelText } from "./output-capacity.ts";
 import { requireFact } from "./protected-io.ts";
 import { unitShow } from "./native-facts.ts";
-import { SubprocessCommander } from "./subprocess.ts";
+import { SubprocessCommander, type CommandResult } from "./subprocess.ts";
 export type NativeCommand = (
   argv: readonly string[],
   timeoutMs?: number,
   limit?: number,
 ) => Promise<string>;
+/** Exposes fixed failure facts only; stdout and unstructured stderr stay private. */
+export class NativeCommandFailure extends Error {
+  readonly diagnostic: {
+    operation: string;
+    status: number | null;
+    timedOut: boolean;
+    uncertain: boolean;
+    outputTruncated: boolean;
+    helperCode: string | null;
+  };
+  constructor(operation: string, result: CommandResult) {
+    super("native_command_unknown");
+    const code = result.stderr.trim();
+    this.diagnostic = {
+      operation: /^[a-z-]{1,40}$/.test(operation) ? operation : "unknown",
+      status: result.status,
+      timedOut: result.timedOut,
+      uncertain: result.uncertain,
+      outputTruncated: result.outputTruncated,
+      helperCode: /^[a-z_]{1,80}$/.test(code) ? code : null,
+    };
+  }
+}
 export function command(environment: Record<string, string>): NativeCommand {
   return async (argv, timeoutMs = 3000, limit = 1048576) => {
     requireFact(
@@ -23,7 +46,7 @@ export function command(environment: Record<string, string>): NativeCommand {
       environment,
       captureLimit: limit,
     }).run(argv.slice(1), timeoutMs);
-    requireFact(result.ok, "native_command_unknown");
+    if (!result.ok) throw new NativeCommandFailure(basename(argv[0]), result);
     return result.stdout.trim();
   };
 }

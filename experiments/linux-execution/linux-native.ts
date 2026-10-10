@@ -40,6 +40,7 @@ import {
 } from "./native-config.ts";
 import {
   command,
+  NativeCommandFailure,
   cgroupMembers,
   showUnit,
   stopHooks,
@@ -304,7 +305,7 @@ export class LinuxNative implements NativeHost {
         timeoutMs,
         captureLimit: limit,
       });
-    requireFact(result.ok, "native_command_unknown");
+    if (!result.ok) throw new NativeCommandFailure(mode, result);
     return result.stdout.trim();
   }
   async execute(value: NativeRecord, operation: CommandOperation, launch: Launch) {

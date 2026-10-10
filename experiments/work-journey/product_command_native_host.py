@@ -48,13 +48,18 @@ def failure_record(error):
 class NativeHost:
     def __init__(self,configuration,directory):
         value=json.loads(Path(configuration).read_text())
-        require(type(value) is dict and type(value.get('version')) is int and value=={'version':1,'program':str(PROGRAM)},'explicit_native_ci_configuration_required')
+        require(type(value) is dict and type(value.get('version')) is int,'explicit_native_ci_configuration_required')
+        if value=={'version':1,'program':str(PROGRAM)}:
+            self.entry=['/usr/bin/python3','-B',str(PROGRAM)]
+        elif value=={'version':2,'program':'/opt/obp5/code/product-host.cjs','node':'/opt/obp5/code/node'}:
+            self.entry=[value['node'],value['program']]
+        else:raise ValueError('explicit_native_ci_configuration_required')
         require(sys.platform=='linux','linux_required')
         self.directory=directory;self.process=self.monitor=None;self.port=None;self.route=None;self.server_reservation=None
 
     async def spawn(self,operation,payload):
         require(operation in ('stage','run','check','cleanup'),'invalid_native_ci_operation')
-        child=await asyncio.create_subprocess_exec('/usr/bin/sudo','-n','/usr/bin/python3','-B',str(PROGRAM),operation,
+        child=await asyncio.create_subprocess_exec('/usr/bin/sudo','-n',*self.entry,operation,
             stdin=asyncio.subprocess.PIPE,stdout=asyncio.subprocess.PIPE,stderr=asyncio.subprocess.PIPE,limit=MAXIMUM)
         child.stdin.write(json.dumps(payload).encode());await child.stdin.drain();child.stdin.close()
         return child

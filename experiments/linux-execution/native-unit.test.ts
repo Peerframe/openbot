@@ -1,7 +1,13 @@
 /** Unit/readback and expiry counterexamples; synthetic commands do not qualify systemd/runsc. */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { durationUs, validateUnit, stopHooks, unitName } from "./native-unit.ts";
+import {
+  durationUs,
+  validateUnit,
+  stopHooks,
+  unitName,
+  NativeCommandFailure,
+} from "./native-unit.ts";
 import { guardLifecycle } from "./native-runtime.ts";
 import { DockerCli } from "./docker-cli.ts";
 import type { CommandResult } from "./subprocess.ts";
@@ -149,3 +155,31 @@ for (const change of ["boot", "instance", "expired"])
     );
     assert.throws(() => cli.create([]), /native_guard_expired/);
   });
+
+test("native command diagnostics retain fixed codes while excluding arbitrary output", () => {
+  const base = {
+    argv: [],
+    stdout: "private stdout",
+    stderr: "native_guard_expired\n",
+    status: 1,
+    ok: false,
+    uncertain: false,
+    timedOut: false,
+    outputTruncated: false,
+    capturedBytes: 1,
+  };
+  const failure = new NativeCommandFailure("execute", base);
+  assert.equal(failure.message, "native_command_unknown");
+  assert.equal(failure.diagnostic.helperCode, "native_guard_expired");
+  for (const stderr of [
+    "private cookie=synthetic",
+    "-----BEGIN PRIVATE KEY-----",
+    "first\nsecond",
+    "x".repeat(81),
+  ]) {
+    const redacted = new NativeCommandFailure("execute", { ...base, stderr });
+    assert.equal(redacted.diagnostic.helperCode, null);
+    assert(!JSON.stringify(redacted.diagnostic).includes(stderr));
+    assert(!JSON.stringify(redacted.diagnostic).includes(base.stdout));
+  }
+});
