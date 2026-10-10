@@ -91,7 +91,36 @@ export function ApprovalPolicySettings() {
   );
 }
 
+// Every event type the Server writes (apps/server/src) has a label; an unknown type falls back to
+// its category, so the Owner never sees an internal code such as "auth login succeeded".
 const auditLabels: Record<string, string> = {
+  AUTH_LOGIN_SUCCEEDED: "登录成功",
+  AUTH_LOGIN_FAILED: "登录失败",
+  AUTH_LOGOUT: "退出登录",
+  OWNER_PASSWORD_CHANGED: "修改密码",
+  OWNER_SESSIONS_REVOKED: "退出其他设备",
+  SETTINGS_OWNER_UPDATED: "更改偏好设置",
+  SETTINGS_APPROVAL_UPDATED: "更改审批规则",
+  SETTINGS_STORAGE_UPDATED: "更改存储设置",
+  SETTINGS_TRASH_AUTO_PURGE_RUN: "自动清空回收站",
+  MODEL_CONNECTION_CREATED: "添加模型服务",
+  MODEL_CONNECTION_UPDATED: "更新模型服务",
+  MODEL_CONNECTION_DELETED: "删除模型服务",
+  EMPLOYEE_MODEL_UPDATED: "更改 Bot 模型",
+  EMPLOYEE_APPEARANCE_UPDATED: "更新 Bot 头像",
+  BOT_GREETING_STARTED: "Bot 开始打招呼",
+  BOT_GREETING_FAILED: "Bot 打招呼失败",
+  AUTOMATION_CREATED: "创建例行任务",
+  AUTOMATION_PAUSED: "暂停例行任务",
+  AUTOMATION_RESUMED: "恢复例行任务",
+  AUTOMATION_DELETED: "删除例行任务",
+  AUTOMATION_OCCURRENCE: "执行例行任务",
+  CHANNEL_ATTACHMENT_PURGED: "清理频道附件",
+  BROWSER_COMMAND: "浏览器操作",
+  BROWSER_CONTROL_STATE: "切换浏览器控制",
+  BROWSER_HOST_BOUND: "绑定浏览器主机",
+  BROWSER_TRANSPORT_ADMITTED: "允许浏览器连接",
+  BROWSER_TRANSPORT_CLAIMED: "接管浏览器连接",
   CHANNEL_CREATED: "创建频道",
   CHANNEL_RENAMED: "重命名频道",
   CHANNEL_DELETED: "删除频道",
@@ -130,7 +159,7 @@ function auditTitle(event: AuditEvent) {
       event.details.primaryBotId == null ? "未设置" : (event.details.to ?? "未知 Bot");
     return `更改主 Bot：${previous} → ${current}`;
   }
-  const label = auditLabels[event.type] ?? event.type.replaceAll("_", " ").toLocaleLowerCase();
+  const label = auditLabels[event.type] ?? `${auditCategoryLabels[event.category ?? "other"]}事件`;
   const from = event.details.from;
   const to = event.details.to;
   if (typeof from === "string" && typeof to === "string") return `${label}：${from} → ${to}`;
