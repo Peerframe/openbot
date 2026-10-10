@@ -42,6 +42,38 @@ const diagnosticCodes = new Set([
   "start_already_reserved",
   "create_already_reserved",
 ]);
+export const nativePhases = [
+  "entry",
+  "record-verified",
+  "helper-pins-verified",
+  "runtime-pins-verified",
+  "guard-verified",
+  "namespace-joined",
+  "prepared",
+  "create-requested",
+  "created",
+  "start-requested",
+  "start-observed",
+] as const;
+export type NativePhase = (typeof nativePhases)[number];
+/** Fixed phase names and bounded monotonic durations only; no paths, command output or inputs. */
+export function nativeProgress(stderr: string) {
+  const progress: { phase: NativePhase; elapsedMs: number }[] = [];
+  if (stderr.length > 32768) return progress;
+  for (const line of stderr.split("\n")) {
+    const matched = /^native-stage:([a-z-]+):([0-9]{1,6})$/.exec(line);
+    if (!matched || !nativePhases.includes(matched[1] as NativePhase)) continue;
+    const elapsedMs = Number(matched[2]);
+    if (
+      elapsedMs > 150000 ||
+      elapsedMs < (progress.at(-1)?.elapsedMs ?? 0) ||
+      progress.length >= nativePhases.length
+    )
+      continue;
+    progress.push({ phase: matched[1] as NativePhase, elapsedMs });
+  }
+  return progress;
+}
 /** Exposes fixed failure facts only; stdout and unstructured stderr stay private. */
 export class NativeCommandFailure extends Error {
   readonly diagnostic: {
@@ -51,10 +83,11 @@ export class NativeCommandFailure extends Error {
     uncertain: boolean;
     outputTruncated: boolean;
     helperCode: string | null;
+    progress: ReturnType<typeof nativeProgress>;
   };
   constructor(operation: string, result: CommandResult) {
     super("native_command_unknown");
-    const code = result.stderr.trim();
+    const code = result.stderr.trim().split("\n").at(-1) ?? "";
     this.diagnostic = {
       operation: /^[a-z-]{1,40}$/.test(operation) ? operation : "unknown",
       status: result.status,
@@ -62,6 +95,7 @@ export class NativeCommandFailure extends Error {
       uncertain: result.uncertain,
       outputTruncated: result.outputTruncated,
       helperCode: diagnosticCodes.has(code) ? code : null,
+      progress: nativeProgress(result.stderr),
     };
   }
 }

@@ -33,7 +33,7 @@ async function port() {
   await new Promise<void>((resolve) => server.close(() => resolve()));
   return value;
 }
-async function heldWork(dsn: string, engine: Engine, stage: Stage) {
+export async function heldWork(dsn: string, engine: Pick<Engine, "settings">, stage: Stage) {
   const directory = await realpath(await mkdtemp(join(tmpdir(), "openbot-upgrade-work-")));
   const admin = createDatabase(dsn),
     name = "upgrade_" + randomBytes(8).toString("hex");

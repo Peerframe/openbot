@@ -184,3 +184,33 @@ test("native command diagnostics retain fixed codes while excluding arbitrary ou
     assert(!JSON.stringify(redacted.diagnostic).includes(base.stdout));
   }
 });
+
+test("native diagnostic progress accepts only fixed phases and bounded monotonic times", () => {
+  const value = new NativeCommandFailure("execute", {
+    argv: [],
+    stdout: "private-output",
+    stderr: [
+      "native-stage:entry:0",
+      "native-stage:record-verified:4",
+      "native-stage:private-payload:8",
+      "native-stage:prepared:3",
+      "native-stage:created:150001",
+      "cookie=private",
+      "native_guard_expired",
+    ].join("\n"),
+    status: null,
+    timedOut: true,
+    uncertain: true,
+    outputTruncated: false,
+    capturedBytes: 100,
+    ok: false,
+  }).diagnostic;
+  assert.deepEqual(value.progress, [
+    { phase: "entry", elapsedMs: 0 },
+    { phase: "record-verified", elapsedMs: 4 },
+  ]);
+  assert.equal(value.helperCode, "native_guard_expired");
+  assert.equal(value.timedOut, true);
+  assert.equal(value.uncertain, true);
+  assert(!JSON.stringify(value).includes("private"));
+});

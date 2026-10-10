@@ -451,6 +451,8 @@ jobs:
         run: npm run test:work:ts
         env:
           OPENBOT_TEMPORAL_TEST_PYTHON: ${{ runner.temp }}/openbot-work-reference/bin/python
+      - name: Qualify TS mTLS rotation, engine/database SIGKILL and incompatible schemas
+        run: npm run test:temporal:boundary
       - name: Qualify adjacent Temporal release recovery with PostgreSQL and mutual TLS
         shell: bash
         env:

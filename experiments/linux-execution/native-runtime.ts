@@ -30,7 +30,7 @@ import {
   privateMountFlags,
   verifyRuntimeSocketMount,
 } from "./native-facts.ts";
-import { command, showUnit } from "./native-unit.ts";
+import { command, showUnit, type NativePhase } from "./native-unit.ts";
 import { verifyEnteredNamespaces } from "./namespace-command.ts";
 import { readKernelText, verifyOutputCapacity } from "./output-capacity.ts";
 import { directory, exclusive, fsyncDirectory, readRecord, requireFact } from "./protected-io.ts";
@@ -40,7 +40,7 @@ import type {
   CommandOperation,
 } from "../../apps/server/dist/work-command-contract.js";
 import type { Launch } from "./protected-host.ts";
-export function childRecord(root: string) {
+export function childRecord(root: string, progress: (phase: NativePhase) => void = () => {}) {
   requireFact(
     process.platform === "linux" && process.arch === "x64" && process.geteuid?.() === 0,
     "qualified_linux_root_required",
@@ -48,11 +48,14 @@ export function childRecord(root: string) {
   directory(root);
   const record = checkedReservation(readRecord(join(root, "native.json")) as NativeReservation);
   requireFact(record.root === root, "native_root_changed");
+  progress("record-verified");
   trustedFile(record.configuration.helper, record.configuration.helperSha256);
   trustedFile(record.configuration.node, record.configuration.nodeSha256);
+  progress("helper-pins-verified");
   // The secrets directory is intentionally inaccessible inside this unit; helpers never read it.
   for (const [name, hash] of Object.entries(record.configuration.binaryHashes))
     trustedFile(join(record.configuration.binaries, name), hash);
+  progress("runtime-pins-verified");
   return record;
 }
 export function dockerCli(record: NativeReservation) {
@@ -290,13 +293,18 @@ export function guardLifecycle(
   cli.start = (id) => start(id, budget());
   return cli;
 }
-export async function execute(record: NativeReservation) {
+export async function execute(
+  record: NativeReservation,
+  progress: (phase: NativePhase) => void = () => {},
+) {
   const launch = readRecord(join(record.root, "launch.json")) as {
     operation: CommandOperation;
     guard: Launch;
   };
   guard(launch.guard, record.instancePath);
+  progress("guard-verified");
   await joinOriginal(record, true);
+  progress("namespace-joined");
   guard(launch.guard, record.instancePath);
   const engine = sandbox(record),
     prepared = await prepareAction({
@@ -315,7 +323,9 @@ export async function execute(record: NativeReservation) {
         record.configuration.secretsDirectory,
       ],
     });
+  progress("prepared");
   guardLifecycle(engine.cli, launch.guard, record.instancePath);
+  progress("create-requested");
   const created = await engine.create(prepared),
     inspected = await engine.cli.inspect(created.container_id);
   requireFact(
@@ -323,8 +333,11 @@ export async function execute(record: NativeReservation) {
       object(object(object(inspected.HostConfig).LogConfig).Config).compress === "false",
     "logging_readback_changed",
   );
+  progress("created");
   guard(launch.guard, record.instancePath);
+  progress("start-requested");
   await engine.startOnce(created);
+  progress("start-observed");
   exclusive(join(record.root, "created.json"), created);
 }
 export async function lookup(record: NativeReservation, includeOutput = false) {

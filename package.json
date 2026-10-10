@@ -76,6 +76,7 @@
     "contracts:http:python": "npm exec -- turbo run build --filter=@openbot/db --filter=@openbot/protocol && node scripts/test-contracts-python.ts",
     "contracts:legacy": "npm run oracle:build && node --test scripts/legacy-adapter.test.mjs",
     "test:temporal:upgrade": "npm exec -- turbo run build --filter=@openbot/server --filter=@openbot/node && npm exec -- vitest run --config scripts/vitest.integration.config.ts scripts/temporal-upgrade.integration.test.ts",
+    "test:temporal:boundary": "npm exec -- turbo run build --filter=@openbot/server --filter=@openbot/node && npm exec -- vitest run --config scripts/vitest.integration.config.ts scripts/temporal-boundary.integration.test.ts",
     "test:linux:contracts": "npm exec -- turbo run build --filter=@openbot/server && node --test experiments/linux-execution/*.test.ts experiments/work-journey/product-host-boundary.test.ts experiments/work-journey/product-native-protocol.test.ts experiments/work-journey/product-native-controller.test.ts"
   },
   "devDependencies": {
