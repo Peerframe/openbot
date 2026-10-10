@@ -1166,3 +1166,11 @@ manifest `713cfbf4a0ac19f40e1bb9919893e126b74a5c8cf5d0623c9f89515c8f74c6fa` and 
 The adapter still creates one exclusive output and fsyncs it; the full product journey still
 copies the original admitted CSV. Exact image verification, approval/claim checks, isolation and lifetime
 are unchanged. This reuses the product's reviewed Node distribution rather than adding a dependency.
+
+P5 native packet sealing follows the existing root-owned single-link file contract. The reviewed
+[Node 22.22.2 libuv copy implementation](https://github.com/nodejs/node/blob/v22.22.2/deps/uv/src/unix/fs.c#L1251-L1258)
+restores the source UID/GID even when root creates a new copy. The packet adapter explicitly seals
+only its fresh destination files through no-follow file descriptors, verifies UID/GID 0 and the
+fixed mode, and retains all launcher hash/ownership checks. A disposable Linux root regression
+reproduces the old UID 1001 copy, verifies the correction and unchanged source, and rejects symlinks,
+hardlinks, directories and unapproved modes. No upstream code is copied or dependency changed.

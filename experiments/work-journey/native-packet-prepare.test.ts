@@ -2,7 +2,19 @@
 import assert from "node:assert/strict";
 import { createHash, X509Certificate } from "node:crypto";
 import { once } from "node:events";
-import { lstat, mkdir, mkdtemp, readdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import {
+  chown,
+  copyFile,
+  link,
+  lstat,
+  mkdir,
+  mkdtemp,
+  readdir,
+  readFile,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test, { type TestContext } from "node:test";
@@ -17,6 +29,7 @@ import {
   prepareNativePacket,
   replaceExact,
   SQUID_TAG,
+  sealPacketFile,
 } from "./native-packet-prepare.ts";
 import { prepareNativeTls } from "./native-packet-tls.ts";
 
@@ -248,4 +261,40 @@ test("digest-only repositories and registry ports survive the exact native expor
       );
     }
   }
+});
+
+test("copied packet files retain root ownership while source files remain unchanged", {
+  skip:
+    process.platform !== "linux" || process.geteuid?.() !== 0
+      ? "Requires disposable Linux root"
+      : false,
+}, async (t) => {
+  const directory = await root(t),
+    source = join(directory, "runner-owned"),
+    target = join(directory, "packet-copy");
+  await writeFile(source, "sealed input", { mode: 0o644 });
+  await chown(source, 1001, 1001);
+  const before = await lstat(source);
+  await copyFile(source, target);
+  assert.equal((await lstat(target)).uid, 1001, "Reproduce libuv's preserved source owner");
+  await sealPacketFile(target);
+  const sealed = await lstat(target);
+  assert.equal(sealed.uid, 0);
+  assert.equal(sealed.gid, 0);
+  assert.equal(sealed.mode & 0o777, 0o600);
+  assert.equal(sealed.nlink, 1);
+  assert.notEqual(sealed.ino, before.ino);
+  assert.equal(await readFile(target, "utf8"), "sealed input");
+  const after = await lstat(source);
+  assert.equal(after.uid, before.uid);
+  assert.equal(after.gid, before.gid);
+  assert.equal(after.mode, before.mode);
+  assert.equal(after.ctimeMs, before.ctimeMs);
+  const alias = join(directory, "alias");
+  await symlink(source, alias);
+  await assert.rejects(sealPacketFile(alias));
+  await link(target, join(directory, "hardlink"));
+  await assert.rejects(sealPacketFile(target), /Single regular packet copy/);
+  await assert.rejects(sealPacketFile(directory), /Single regular packet copy/);
+  await assert.rejects(sealPacketFile(source, 0o666), /Fixed packet file mode/);
 });
