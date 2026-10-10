@@ -46,8 +46,10 @@ uses no new dependency, and every failure message says how to fix it. It enforce
    `check-developer-entrypoints.ts`.
 6. Every `experiments/*` directory is still run by code, scripts, `package.json` or CI.
 7. Source files open with a comment saying what they are for.
-8. No tracked `.py`, `requirements*.txt`, `pyproject.toml` or `.python-version` file, since P5
-   retired Python (ADR-0050); an explicit allow-list in the script is empty by default.
+8. Python is allowed at the edges (SDKs, tooling, small scripts), as in other TypeScript agent
+   harnesses such as DeepSeek's `dsh`, but never in the product (Server, Web, Desktop, Node and
+   their shared packages, ADR-0050), and every `.py` file must be run by CI, `package.json`,
+   scripts or other code. The owner relaxed the earlier outright ban on 2026-10-11.
 
 Rules 5 and 7 start from a recorded baseline in `scripts/hygiene-baseline.json` that may only go
 down; the check asks for the baseline to be lowered as soon as files improve.

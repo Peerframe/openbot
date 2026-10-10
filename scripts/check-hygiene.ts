@@ -24,15 +24,15 @@ const DATED_DOC = /(?:PLAN|ROADMAP|STATUS|WORKLOG|HANDOFF|CLEANUP|TODO)[^/]*\.md
 
 export const NESTED_RULES_MAX_LINES = 60;
 
-/** Python sources and packaging files. P5 (ADR-0050) retired the last Python runtime. */
-const PYTHON_FILE =
-  /(?:^|\/)(?:[^/]+\.py|requirements[^/]*\.txt|pyproject\.toml|\.python-version)$/u;
-
 /**
- * Non-Python artifacts that must keep a Python-looking name. Empty by default; an entry needs a
- * reason in the PR that adds it.
+ * Python is welcome at the edges (an SDK for Python users, sandbox or document tooling, small
+ * scripts), as in other TypeScript agent harnesses. The product itself stays one language: P5
+ * (ADR-0050) moved the control plane, Worker and clients to TypeScript, and splitting them again
+ * is what made the repository incoherent.
  */
-export const PYTHON_NAME_ALLOWED: ReadonlySet<string> = new Set<string>();
+const PYTHON_SOURCE = /\.py$/u;
+const TYPESCRIPT_ONLY =
+  /^(?:apps\/(?:server|web|desktop|node)|packages\/(?:protocol|domain|db|work))\//u;
 
 /** Paths written in backticks in living docs must exist. ADRs and research records are dated evidence. */
 const PATH_ROOTS = "apps|packages|providers|plugins|scripts|docs|experiments|tests|deploy";
@@ -208,10 +208,34 @@ export function checkHygiene(input: HygieneInput): string[] {
       );
   }
 
-  // 8. Python stays retired: the control plane, Worker and probes are TypeScript.
-  for (const file of files)
-    if (PYTHON_FILE.test(file) && !PYTHON_NAME_ALLOWED.has(file))
-      failures.push(`${file}: Python was retired in P5 (ADR-0050); write this in TypeScript`);
+  // 8. Python only at the edges, and only while something still runs it.
+  const pythonRunners = files.filter(
+    // Evidence JSON only records hashes; package.json is the JSON that runs things.
+    (file) =>
+      !file.endsWith(".md") &&
+      (!file.endsWith(".json") || basename(file) === "package.json") &&
+      !file.startsWith("docs/"),
+  );
+  for (const file of files.filter((path) => PYTHON_SOURCE.test(path))) {
+    if (TYPESCRIPT_ONLY.test(file)) {
+      failures.push(
+        `${file}: the product (Server, Web, Desktop, Node and their shared packages) is TypeScript (ADR-0050); keep Python to SDKs, tooling and scripts`,
+      );
+      continue;
+    }
+    const name = basename(file);
+    const folder = dirname(file);
+    const run = pythonRunners.some(
+      (runner) =>
+        runner !== file &&
+        (read(runner).includes(name) ||
+          (name.startsWith("test_") && read(runner).includes(folder))),
+    );
+    if (!run)
+      failures.push(
+        `${file}: nothing in CI, package.json, scripts or other code runs this Python file; wire it up or delete it`,
+      );
+  }
 
   return failures;
 }

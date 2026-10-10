@@ -133,20 +133,27 @@ test("new source files must say what they are for; the recorded gap only shrinks
   );
 });
 
-test("Python files and packaging names cannot come back", () => {
-  for (const name of [
-    "scripts/fix.py",
-    "experiments/probe/requirements-dev.txt",
-    "apps/tool/pyproject.toml",
-    ".python-version",
-  ])
-    assert.match(
-      checkHygiene(input({ ...clean, [name]: "x\n" })).join("\n"),
-      new RegExp(`${name.replaceAll(".", "\\.")}: Python was retired in P5 \\(ADR-0050\\)`, "u"),
-    );
-  // Similar names that are not Python stay allowed.
-  const similar = { ...clean, "docs/requirements.md": "x\n", "apps/web/src/copy.pyx.ts": "// x\n" };
-  assert.deepEqual(checkHygiene(input(similar)), []);
+test("Python is allowed at the edges while something runs it, never in the product", () => {
+  // A small script that CI or package.json runs is fine, with its tests and packaging files.
+  const tooling: Record<string, string> = {
+    ...clean,
+    "scripts/encode_gif.py": "print(1)\n",
+    "scripts/tests/test_encode_gif.py": "import encode_gif\n",
+    "scripts/requirements.txt": "pillow==11.0.0\n",
+    "package.json":
+      '{"scripts":{"gif":"python3 scripts/encode_gif.py && pytest scripts/tests","probe":"python3 experiments/probe/run.py"}}\n',
+  };
+  assert.deepEqual(checkHygiene(input(tooling)), []);
+  // A Python file nothing runs is dead code.
+  const dead = { ...tooling, "scripts/forgotten.py": "print(1)\n" };
+  assert.match(checkHygiene(input(dead)).join("\n"), /scripts\/forgotten\.py: nothing in CI/u);
+  // The product stays TypeScript even when something would run the file.
+  const product: Record<string, string> = { ...tooling, "apps/server/src/helper.py": "x = 1\n" };
+  product["package.json"] = '{"scripts":{"h":"python3 apps/server/src/helper.py"}}\n';
+  assert.match(
+    checkHygiene(input(product)).join("\n"),
+    /helper\.py: the product .* is TypeScript/u,
+  );
 });
 
 test("an opening comment may follow a shebang but not code", () => {
