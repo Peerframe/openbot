@@ -9,7 +9,7 @@ import {
   allowlistedEnvironment,
   OwnedDockerFixture,
   startControlPostgres,
-} from "./python-acceptance-fixture.ts";
+} from "./acceptance-fixture.ts";
 import { startUpgradeTemporalFixture } from "./temporal-upgrade-fixture.ts";
 import { qualifyWorkUpgrade } from "./integration/work-upgrade.ts";
 it("retains authority, original histories and no-replay behavior across 1.31.3 to 1.32.0 and cold restore", {

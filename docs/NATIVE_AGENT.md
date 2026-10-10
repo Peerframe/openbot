@@ -150,48 +150,20 @@ revocation. Reports receive one source footer when prepared for publication.
 
 ## Contribute without a UI or model account
 
-From a fresh checkout, use the repository's Node version, npm and a running Docker daemon with
-Linux container support:
+Use the repository's Node/npm versions and Docker with Linux containers:
 
 ```sh
 npm ci --ignore-scripts
-node scripts/test-runtime-headless.mjs
+npm run test:control:ts
+npm run test:work:ts
 ```
 
-The command builds only the Server's shared dependencies, starts a digest-pinned PostgreSQL 17.11
-fixture on a random loopback port, runs the isolated execution, native and collaboration tests serially, and removes
-its own container and temporary report files. The first run may download the image. No Web or
-Electron build, `.env`, Owner setup, model API key or paid request is required. Missing prerequisites
-fail the command; the acceptance suite does not silently skip its database checks.
-
-If an existing disposable PostgreSQL service is preferred, set
-`OPENBOT_COLLAB_TEST_DATABASE_URL` to a loopback URL whose database name starts with
-`openbot_collab_test_` (letters, digits and underscores only). Fixture tables in that database are
-reset. The command never uses `OPENBOT_DATABASE_URL`; it does not remove externally supplied
-databases. Integration suites sharing the same fixture database must run serially.
-
-The first TypeScript implementation of these responsibilities lived in the retired `apps/server`
-and can be read in Git history. The current owners are `packages/work` (workflows, activities and
-the engine) and `apps/server/src/work-runtime.ts` (the agent runtime with its model, tool,
-authority, storage and audit ports), with the Python runtime in `packages/harness` until P5 removes it.
-
-The headless suite verifies authenticated task-to-download delivery, tool failure without partial
-publication, durable cancellation before a late result, SSE response disconnection without task
-abort, correction-time report retention, and optional learning saturation. Existing native and
-collaboration suites verify consumed reference revocation and bounded colleague joins.
-Requests use Hono's in-process HTTP interface and the real PostgreSQL driver; this is not a deployed
-socket/proxy test, paid-provider evaluation, process-crash recovery test or desktop certification.
-The fixture settings/model adapter is test-only and is never enabled by a production environment flag.
-
-For fast edits after dependencies are built:
-
-```sh
-npm run test --workspace @openbot/work
-npm run test --workspace @openbot/server
-```
-
-Run `npm run check` before handoff and the headless command after changing task lifecycle or
-publication behavior. See the [acceptance research](research/headless-runtime-acceptance.md).
+These commands build cold prerequisites, own disposable PostgreSQL/mTLS Temporal fixtures and use
+synthetic model/provider responses. No paid account or user database is used. The Work suite checks
+real process death, authority, deferred approval, cancellation, corrections, receipts, publication,
+collaboration and history replay. Product HTTP/TLS contracts have separate black-box consumers.
+Native command/browser qualification remains a required Linux CI gate; a synthetic peer does not
+prove kernel isolation. Current owners are `apps/server/src/work-runtime.ts` and `packages/work`.
 
 ## Isolated execution ports
 
@@ -274,53 +246,10 @@ These Node fixtures alone do not establish Python integration or Linux product s
 paired acceptance below runs the actual Python child. See the [wire profile](AGENT_RUNTIME_PROTOCOL.md)
 and [transport research](research/python-runtime-transport.md).
 
-### Paired runtime acceptance
+### Runtime acceptance
 
-`npm run test:runtime:python` selects the real Python process for the Owner API/PostgreSQL journeys.
-It requires the package-local virtual environment and its runtime worker entry, runs the Python
-package checks first, and fails if either prerequisite is absent; it never falls back to TypeScript.
-The collaboration Runner cases use the same selection, including child cancellation and joined
-results; the focused unit tests retain their explicitly selected adapters.
-
-The paired journeys cover report download, cancellation, persisted scope revocation, durable
-audit/usage failure, the eight-step budget, per-step Owner corrections, approve/reject/cancel
-during plugin approval, provisional public streaming, and retained reports across continuation.
-They use deterministic SDK model responses and a synthetic plugin connector; they send no paid
-model request or external plugin effect. On macOS, both selected runtime lanes passed 222 cases
-across nine files, including 15 Owner API/database journeys. The Python lane first passed its
-367 package tests. The report journey preserves a Chinese filename through artifact download;
-delegation exercises provider IDs reused by a later model step. These are deterministic integration
-results, not paid-provider reliability measurements.
-
-### Explicit source-install selection
-
-The standalone Server accepts `OPENBOT_AGENT_RUNTIME=typescript|python`, defaulting to TypeScript.
-For the experimental Python path, bootstrap the package-local environment, run
-`npm run test:runtime:python`, then start the Server with `OPENBOT_AGENT_RUNTIME=python`.
-The normal Model Settings opt-in is still required; this selector grants no additional tool or
-model access. Root tasks, delegated tasks and continuation use the same selected adapter.
-
-Startup checks the fixed package worker, interpreter, imports and dependency lock from an empty
-temporary directory with a minimal environment. An absent or incompatible package fails before
-database migration or interrupted-Run recovery. There is no automatic install, command/script
-configuration, or fallback. Existing PostgreSQL data and migrations are unchanged. The optional
-[Python Server container](SERVER_CONTAINER.md#optional-python-execution-image) bundles the fixed
-interpreter and runtime dependency closure. The separate Linux reference result below covers
-the acceptance image; container packaging has its own startup and lifecycle smoke. See [activation research](research/python-runtime-activation.md).
-
-### Linux reference acceptance fixture
-
-`npm run test:runtime:linux` builds the dedicated `deploy/runtime-acceptance/Dockerfile` test image
-with pinned Node 24.21.0, Python 3.12.13 and the existing lockfiles, then runs the paired acceptance
-command against an owned PostgreSQL container. Only Docker and Node are needed on the host; the
-first build downloads public dependencies. The test containers share an isolated loopback namespace
-with no external network or published host ports. Model credentials and local collaboration files
-are excluded. The command removes its uniquely named containers and tagged image on exit; Docker
-may retain normal build-cache layers. It never selects or resets an existing database.
-
-This is a Linux/amd64 acceptance fixture, distinct from the production Server image. Running it on
-an ARM Mac uses emulation and does not prove native hosted CI or desktop support. The final
-reference run passed 369 Python tests and all 222 Server/PostgreSQL tests across nine files, with
-no external network. Earlier fixture failures and their corrections are recorded in the research.
-The `python-runtime` CI job runs this same command and is required by `check`; hosted execution
-has not been triggered from this local task.
+P5 uses the single TS execution path; the Python selector, subprocess and wheel are retired.
+Run `npm run test:work:ts` for actual persisted execution and `npm run test:linux:contracts` for
+protected Host boundaries. Required CI also qualifies the actual Linux command/browser composition,
+the product container on amd64/arm64, and the macOS arm64 staged and packaged Desktop runtime.
+Historical Python results remain in dated research and Git; they are not current setup instructions.

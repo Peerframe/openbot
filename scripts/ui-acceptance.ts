@@ -25,7 +25,7 @@ import {
   OwnedDockerFixture,
   runFixtureCommand,
   startControlPostgres,
-} from "./python-acceptance-fixture.ts";
+} from "./acceptance-fixture.ts";
 import {
   type AcceptanceOptions,
   classifyResponses,

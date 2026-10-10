@@ -395,7 +395,7 @@ PostgreSQL rows and validates existing Owner sessions; the default TypeScript Se
 writes; explicit Owner-auth selection is reviewed below. The fixed SQL history, read-only transactions, bounded requests and revocation checks
 remain explicit. No upstream source copied, second migration engine or model authority added.
 Installed dependency notices remain intact. See [research](research/python-control-read-slice.md)
-and [development/paired fixture](../apps/server-python/README.md).
+and [development/paired fixture](https://github.com/Peerframe/openbot/blob/e25d91520dbda664705a77c76c1af456a064a39d/apps/server-python/README.md).
 
 ## Python Owner-auth reference (2026-09-23)
 
@@ -816,7 +816,7 @@ C2 preserves the reviewed execution/Temporal stack and extracts its single sourc
 `packages/harness`. Hatchling 1.32.4 builds an explicitly selected typed wheel; Ruff 0.16.8 and
 mypy 2.3.1 are isolated development tools, all MIT, no copied upstream source. Runtime, test and
 build/quality closures remain separate; exact references and tradeoffs are in
-[the package research](../packages/harness/RESEARCH.md#10-c2-installed-harness-and-contributor-tools-2026-09-27).
+[the package research](https://github.com/Peerframe/openbot/blob/e25d91520dbda664705a77c76c1af456a064a39d/packages/harness/RESEARCH.md#10-c2-installed-harness-and-contributor-tools-2026-09-27).
 
 ## Reviewed plugin catalog source (2026-10-01)
 
@@ -1148,3 +1148,21 @@ and a clean environment, with bounded capture and process-group termination. The
 and actual Linux3.0.22/macOS handshake tests verify this fixture-only integration. Generated public CA trust is imported only into the packet's
 new NSS database. Real TLS handshakes cover the valid name, wrong name and unknown CA.
 This replaces Python cryptography in fixture setup without changing product TLS provisioning.
+
+The P5 native browser and kernel fixtures retain the reviewed systemd, util-linux, gVisor,
+Chromium and Squid pins and their original 600/150-second lifetimes. TypeScript replaces the
+Python fixture drivers without changing admitted routes, canary addresses, resources or cleanup.
+Namespace entry reuses the existing descriptor-bound nsenter adapter. The Sentry observer opens
+the original proc directory, compares cgroup/start-time and executable inode before reading bounded
+argv, and rechecks identity afterwards. This follows the kernel's
+[proc directory descriptor lifetime contract](https://docs.kernel.org/filesystems/proc.html);
+a retained descriptor cannot be redirected to a recycled PID. No upstream source was copied.
+
+The fixed native command qualification also uses the already reviewed Node24.21.0 bookworm-slim
+image instead of a CPython sample payload. Its existing index
+`2fe369e969550cde8e867afc3fe370b260140cab4a23d467074295b42163d553` selects the Linux amd64
+manifest `713cfbf4a0ac19f40e1bb9919893e126b74a5c8cf5d0623c9f89515c8f74c6fa` and configuration
+`1cc81b664ff520c96dde07893e717ff070f9f7bd8bbcec50e10fa2f3cb5c4b1c`, read from the official registry.
+The adapter still creates one exclusive output and fsyncs it; the full product journey still
+copies the original admitted CSV. Exact image verification, approval/claim checks, isolation and lifetime
+are unchanged. This reuses the product's reviewed Node distribution rather than adding a dependency.

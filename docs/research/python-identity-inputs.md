@@ -17,7 +17,7 @@
 
 The OpenBot schemas remain project-owned. The UUID pattern is adapted from Zod 4.6.2 (MIT),
 commit e359f7378fe56d695134701cda1e9055a08892dc, src/v4/core/regexes.ts. Its full copyright/permission
-notice is bundled in [the Python package](../../apps/server-python/THIRD_PARTY_NOTICES.md), so it
+notice is bundled in [the Python package](https://github.com/Peerframe/openbot/blob/e25d91520dbda664705a77c76c1af456a064a39d/apps/server-python/THIRD_PARTY_NOTICES.md), so it
 survives Python-only distribution. The whitespace set follows ECMAScript's documented productions.
 Installed dependencies are unmodified; the existing read/auth dependency reviews still apply.
 

@@ -5,7 +5,7 @@ import { bundleWorkflowCode } from "@temporalio/worker";
 import { createDatabase } from "@openbot/db";
 import { installWorkRuntime } from "@openbot/work";
 import { it } from "vitest";
-import { allowlistedEnvironment, OwnedDockerFixture, startControlPostgres } from "./python-acceptance-fixture.ts";
+import { allowlistedEnvironment, OwnedDockerFixture, startControlPostgres } from "./acceptance-fixture.ts";
 import { startTemporalFixture } from "./temporal-fixture.ts";
 import { qualifyWorkProduct } from "./integration/work-product.ts";
 it("retains actual authority, receipts, cancellation and no-replay behavior through product execution", async () => {

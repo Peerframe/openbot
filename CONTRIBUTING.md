@@ -47,7 +47,7 @@ Start with the [repository map](docs/REPOSITORY_MAP.md) for module ownership, co
 | --- | --- |
 | Product and mobile UX | `apps/web`, `docs/INTERFACE.md` |
 | Control plane and realtime | `apps/server`, `packages/db` |
-| Python execution core | `packages/harness` (current harness source) |
+| Agent execution and durable Work | `apps/server/src/work-runtime.ts`, `packages/work` |
 | Node protocol and reliability | `apps/node`, `packages/protocol` |
 | Computer integrations | `providers/*`, `packages/provider-sdk` |
 | Policy and security | `apps/server/src`, `docs/SECURITY.md` |
@@ -67,7 +67,7 @@ expected behavior, milestone, and permission boundary are recorded before implem
 
 ## Local development
 
-TS development requires Node.js 22.22.2 (the CI baseline), npm 10.9.9, Docker with Docker Compose, and an explicit mTLS Temporal configuration. Python is still required only by retained legacy checks pending retirement approval. Other Node.js releases must satisfy the exact engine range in `package.json`. Use `npm ci` to reproduce the committed lockfile.
+TS development requires Node.js 22.22.2 (the CI baseline), npm 10.9.9, Docker with Docker Compose, and an explicit mTLS Temporal configuration. Other Node.js releases must satisfy the exact engine range in `package.json`. Use `npm ci` to reproduce the committed lockfile.
 
 ```bash
 git clone https://github.com/Peerframe/openbot.git
@@ -184,7 +184,7 @@ retains full repository validation before implementation/script handoff. Prose u
 repository gates; AGENTS, skills and prompts also need behavioral discovery/reading acceptance.
 Contract, lock, generator, build, CI and unmapped inputs conservatively select the full set.
 
-Selection follows the npm lockfile's transitive consumer graph plus explicit Python, dynamic
+Selection follows the npm lockfile's transitive consumer graph plus explicit control, dynamic
 Desktop and packaging edges. `npm run ci:check` exercises scope/result counterexamples and real
 cache/zero-test behavior. No-test packages expose no fake passing test task; their actual consumer
 coverage and missing local tests remain explicit.
@@ -193,15 +193,14 @@ Use npm entrypoints (`npm run` / `npm exec -- turbo`) so the Turbo cache hashes 
 Node, OS and architecture identity in `npm_config_user_agent`. Source, lockfile graph, generators,
 config and declared runtime environment also enter task hashes. Direct standalone Turbo invocations
 without that identity are not qualification evidence. CI restores npm downloads only, not earlier
-successful Turbo test results. Local cached successes must be labeled; root gates and real Python,
+successful Turbo test results. Local cached successes must be labeled; root gates and real control,
 Temporal and installed-artifact probes run outside this cache. Parallel jobs own separate checkouts;
 builds within a job precede packaging, which consumes their outputs without rebuilding them.
 Obsolete PR jobs cancel; main and tag-only release qualification retain their own lifecycles.
 
-Security audits include `npm audit --omit=dev --audit-level=high` and `sh scripts/audit-python.sh`.
-The latter uses an isolated pinned audit tool against the exact production Python closure and
-rejects skipped/incomplete reports or known advisories. Network failure is a failed gate, not a
-clean audit. Normal PR checks do not establish an unsigned artifact, signing/notarization or a
+Security audits use `npm audit --omit=dev --audit-level=high` after locked installation.
+Production package-graph and artifact checks reject missing, development-only or stale dependencies.
+Network failure is a failed gate, not a clean audit. Normal PR checks do not establish an unsigned artifact, signing/notarization or a
 release: changed payloads still need actual packaged startup/refusal/cleanup on supported targets.
 
 ### Dependency update intake

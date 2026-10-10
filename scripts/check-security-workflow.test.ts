@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { stringify } from "yaml";
 import {
-  validatePythonProductWorkflow,
+  validateProductWorkflow,
   validateSecurityWorkflow,
 } from "./check-security-workflow.ts";
 import { SETUP_NODE, workflowDocument } from "./workflow-policy.ts";
@@ -37,7 +37,7 @@ function command(value: FixtureWorkflow, id: string, fragment: string): CommandS
 }
 const check = (text: string): void => {
   validateSecurityWorkflow(text);
-  validatePythonProductWorkflow(text, migration);
+  validateProductWorkflow(text, migration);
 };
 
 test("real CI preserves security and independent installed product qualifications", () =>
@@ -136,7 +136,7 @@ test("production audits retain exact CLI, coverage and fail-closed execution", (
       command(v, "security", "npm audit ").if = false;
     },
     (v) => {
-      command(v, "security", "audit-python.sh").run = "echo omitted";
+      command(v, "security", "scripts/production-package-graph.test.ts").run = "echo omitted";
     },
     (v) => {
       const steps = fixtureSteps(fixtureJob(v, "security"));
@@ -205,13 +205,13 @@ test("native portable capabilities survive without unrelated repeated suites", (
 test("selection cannot bypass required qualifications or lose the authoritative PR input", () => {
   const mutations: readonly Mutation[] = [
     (v) => {
-      fixtureJob(v, "python-runtime").if = "false";
+      fixtureJob(v, "control-runtime").if = "false";
     },
     (v) => {
       fixtureJob(v, "browser-product").if = "github.actor == 'maintainer'";
     },
     (v) => {
-      delete fixtureJob(v, "harness").needs;
+      delete fixtureJob(v, "contracts").needs;
     },
     (v) => {
       command(v, "scope", "ci-scope.ts").run = "node scripts/ci-scope.ts --local";
@@ -246,24 +246,27 @@ test("selection cannot bypass required qualifications or lose the authoritative 
   ];
   for (const mutate of mutations) assert.throws(() => check(changed(mutate)));
 });
-test("all C2 gates and real product recovery stay required when selected", () => {
+test("all migrated gates and real product recovery stay required when selected", () => {
   for (const [job, fragment] of [
-    ["harness", "npm run harness:wheel"],
-    ["harness", "npm run contracts:test"],
-    ["harness", "node apps/web/src/test/work-http-probe.mjs"],
+    ["control-runtime", "npm run dev:smoke"],
+    ["control-runtime", "npm run test:control:ts"],
+    ["temporal-qualification", "npm run test:work:ts"],
+    ["contracts", "npm run contracts:check"],
+    ["contracts", "npm run contracts:test"],
+    ["contracts", "node apps/web/src/test/work-http-probe.mjs"],
     [
-      "harness",
+      "contracts",
       "node --test experiments/work-journey/desktop-temporal/observe-pollers.test.ts experiments/work-journey/desktop-temporal/probe-support.test.ts",
     ],
-    ["harness", "npm run contracts:http:ts"],
-    ["harness", "npm run contracts:http:ts -- --suite publisher"],
-    ["harness", "npm run contracts:http:ts -- --suite models"],
-    ["harness", "npm run contracts:http:tls"],
-    ["harness", "npm run contracts:http:tls -- --suite publisher"],
-    ["harness", "npm run contracts:http:tls -- --suite models"],
-    ["temporal-qualification", "--engine postgres-mtls --upgrade-archive"],
+    ["contracts", "npm run contracts:http:ts"],
+    ["contracts", "npm run contracts:http:ts -- --suite publisher"],
+    ["contracts", "npm run contracts:http:ts -- --suite models"],
+    ["contracts", "npm run contracts:http:tls"],
+    ["contracts", "npm run contracts:http:tls -- --suite publisher"],
+    ["contracts", "npm run contracts:http:tls -- --suite models"],
+    ["temporal-qualification", "npm run test:temporal:boundary"],
     ["temporal-qualification", "npm run test:temporal:upgrade"],
-    ["harness", "npm run contracts:legacy"],
+    ["contracts", "npm run contracts:legacy"],
     ["browser-product", "control node replacement response-loss browser-restart"],
     ["browser-product", "node --import tsx experiments/work-journey/product-browser-native.ts"],
     ["browser-product", "for recovery in pages response-loss; do"],
@@ -291,7 +294,7 @@ test("all C2 gates and real product recovery stay required when selected", () =>
   assert.throws(() =>
     check(
       changed((v) => {
-        command(v, "harness", "npm run harness:wheel").if = "runner.os == 'Windows'";
+        command(v, "contracts", "npm run contracts:check").if = "runner.os == 'Windows'";
       }),
     ),
   );
@@ -304,7 +307,7 @@ test("all C2 gates and real product recovery stay required when selected", () =>
     ),
   );
   assert.throws(() =>
-    validatePythonProductWorkflow(source, migration.replace("workflow_call:", "push:")),
+    validateProductWorkflow(source, migration.replace("workflow_call:", "push:")),
   );
 });
 test("obsolete PR cancellation cannot cancel main qualification", () => {
@@ -329,11 +332,13 @@ test("Linux kernel and protected Host gates cannot be omitted or conditionally b
     ["server-container", "--test /workspace/qualification/kernel-facts.test.ts"],
     ["server-container", "OPENBOT_READONLY_KERNEL_TEST=1"],
     ["server-container", "--network none --read-only"],
-    ["harness", "npm run test:linux:contracts"],
+    ["contracts", "npm run test:linux:contracts"],
     ["browser-product", "experiments/linux-execution/qualify-native.ts"],
     ["browser-product", "experiments/work-journey/native-packet-prepare.ts"],
     ["browser-product", "experiments/work-journey/native-browser-launcher.ts"],
+    ["browser-product", "experiments/work-journey/native-browser.ts"],
     ["browser-product", "bzip2=1.0.8-5.1ubuntu0.1"],
+    ["browser-egress", 'sudo "$root/node" "$root/network-qualification.cjs" launch'],
   ] as const) {
     assert.throws(() =>
       check(

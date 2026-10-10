@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { DevProcessOwner } from "./dev-processes.ts";
-import { allowlistedEnvironment } from "./python-acceptance-fixture.ts";
+import { allowlistedEnvironment } from "./acceptance-fixture.ts";
 import { issueTlsFixture } from "./tls-fixture.ts";
 
 export async function runContractSuites(tls: boolean, args: readonly string[]) {

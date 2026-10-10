@@ -45,11 +45,11 @@ OpenBot 必须方便多位独立开发者参与，不能形成只有项目负责
 主要代码区域：产品和移动端体验在 `apps/web`；控制平面与实时同步在 `apps/server`、
 `packages/db`；Node 协议在 `apps/node`、`packages/protocol`；电脑集成在 `providers/*` 与
 `packages/provider-sdk`；策略和安全在 `apps/server/src`、`docs/SECURITY.md`；可选体验在
-`packages/office-plugin`。当前 Python 执行核心在 `packages/harness`，验证及真实消费者安装同一 wheel；聚焦命令见该包 README。
+`packages/office-plugin`。执行核心在 `apps/server/src/work-runtime.ts`，耐久工作流在 `packages/work`。
 
 ## 本地开发
 
-TS 开发需要 Node.js 22.22.2（CI 基线）、npm 10.9.9、Docker、Docker Compose 和明确的 mTLS Temporal 配置。Python 暂时仍供等待退役批准的旧检查使用。其他 Node.js 版本必须满足 `package.json` 的精确 engines 范围。使用 `npm ci` 复现已提交的锁文件。模块职责、扩展入口和定向检查见[仓库地图](docs/REPOSITORY_MAP.md)。
+TS 开发需要 Node.js 22.22.2（CI 基线）、npm 10.9.9、Docker、Docker Compose 和明确的 mTLS Temporal 配置。其他 Node.js 版本必须满足 `package.json` 的精确 engines 范围。使用 `npm ci` 复现已提交的锁文件。模块职责、扩展入口和定向检查见[仓库地图](docs/REPOSITORY_MAP.md)。
 
 ```bash
 git clone https://github.com/Peerframe/openbot.git
@@ -150,19 +150,18 @@ npm run check:affected -- --base "$BASE_SHA" --head "$HEAD_SHA"
 实现/脚本交接前 `npm run check` 仍承担完整仓库校验。文字使用定向仓库门；AGENTS、skills、
 提示词还需真实发现/读取验收。契约、锁、生成器、构建、CI 和未知输入保守选择全部集合。
 
-范围基于 npm 锁文件的传递消费者图及少量 Python、Desktop 动态和打包映射。
+范围基于 npm 锁文件的传递消费者图及少量控制面、Desktop 动态和打包映射。
 `npm run ci:check` 包含选择/汇总反例和真实缓存/零测试验证。无局部测试的包不再暴露虚假的
 测试成功任务，明确依靠消费者覆盖及局部缺口。
 
 使用 npm 入口（`npm run` / `npm exec -- turbo`），让缓存通过 `npm_config_user_agent`
 纳入实际 npm、Node、OS、架构身份，以及源码、锁依赖图、生成器、配置和声明的运行环境。
 没有该身份的独立 Turbo 调用不作为资格证据。CI 仅复用 npm 下载缓存，不恢复过去的 Turbo 测试
-成功结果；本地缓存结果须明确标注。根级门和真实 Python、Temporal、安装物探针在此缓存之外。
+成功结果；本地缓存结果须明确标注。根级门和真实控制面、Temporal、安装物探针在此缓存之外。
 并行 job 各有 checkout，同一 job 先构建再打包并复用产物；过时 PR 可取消，main 与标签发行保留各自生命周期。
 
-安全检查覆盖 `npm audit --omit=dev --audit-level=high` 及 `sh scripts/audit-python.sh`。
-后者用隔离、固定版本工具审计精确 Python 生产闭包，拒绝遗漏、跳过和已知公告；网络失败不算
-干净审计。普通 PR 通过不代表已有无签名安装物、签名/公证或发行资格；载荷变化仍需在受支持目标
+锁定安装后通过 `npm audit --omit=dev --audit-level=high` 审计生产依赖。
+生产包依赖图和安装物检查拒绝缺失、开发专用或陈旧依赖；网络失败不算干净审计。普通 PR 通过不代表已有无签名安装物、签名/公证或发行资格；载荷变化仍需在受支持目标
 验证真实包的启动、拒绝和清理。
 
 ### 依赖更新流程

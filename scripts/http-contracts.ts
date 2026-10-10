@@ -5,7 +5,7 @@ import { mkdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { deflateSync } from "node:zlib";
 import { createDatabase } from "@openbot/db";
-import { allowlistedEnvironment } from "./python-acceptance-fixture.ts";
+import { allowlistedEnvironment } from "./acceptance-fixture.ts";
 import { serverContractFixture } from "./server-contract-fixture.ts";
 
 export async function runHttpContracts(selectedSuite: string, tlsDirectory?: string) {

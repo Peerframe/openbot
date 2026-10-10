@@ -16,7 +16,11 @@ import {
 } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { reviewedBinaryHashes } from "../linux-execution/native-config.ts";
+import {
+  reviewedBinaryHashes,
+  reviewedImage,
+  reviewedImageConfig,
+} from "../linux-execution/native-config.ts";
 import { command, type NativeCommand } from "../linux-execution/native-unit.ts";
 import { directory, digest } from "../linux-execution/protected-io.ts";
 import { ociIdentity, pinnedNativeMembers } from "./native-packet-archives.ts";
@@ -41,9 +45,6 @@ export const nativeDownloads = {
     size: 615188,
   },
 };
-const PYTHON_IMAGE = "python:3.12.13-slim-bookworm",
-  PYTHON_MANIFEST = "sha256:6e13e65c55e33adf203d77ee371cf8bf5d81bd4902ef07565721f46bf44917af",
-  PYTHON_CONFIG = "sha256:64d91f7b885eed272bba87909446b12ff408d4aaa5f1a0e9ca787bbea1a020b9";
 const CHROMIUM_IMAGE =
     "mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e",
   CHROMIUM_CONFIG = "sha256:fee853fafa59550d162cef52bca02d907694b44ebf6ef9fb075bcc0c65d8dedb";
@@ -56,11 +57,6 @@ const environment = {
 };
 const run = command(environment);
 export const packetCaptureBytes = 2 * 1024 * 1024;
-const browserPins = {
-  "deadline_probe.py": "ef19d46fd24bc5512ae880bcc895da8639f0d895e22347edf832d0a1a7950bb4",
-  "sandbox.py": "5859262340afb15ca7ac3153a586dbc96339fc71576fa4cd1a01151423fa7465",
-  "output_capacity.py": "1d25ff9f64ff1110d555c1431a0d1cfcf023c6338cd949b38fb88a79ed794ab6",
-};
 
 const present = (path: string) => {
   try {
@@ -223,6 +219,8 @@ export async function prepareNativePacket(
   bun: string,
   node: string,
   launcher: string,
+  nativeRuntime: string,
+  modules: string,
 ) {
   assert(
     process.platform === "linux" &&
@@ -243,11 +241,8 @@ export async function prepareNativePacket(
     await mkdir(join(BASE, path), { mode: 0o700 });
   await mkdir(PACKET, { mode: 0o700 });
   directory(BASE);
-  const linux = join(repository, "experiments/linux-execution"),
-    browser = join(repository, "experiments/browser-execution");
+  const browser = join(repository, "experiments/browser-execution");
   await verifyBrowserUpstream(upstream);
-  for (const [name, pin] of Object.entries(browserPins))
-    assert.equal(digest(join(linux, name)), pin, "Reviewed browser helper changed");
   assert.equal(
     digest(join(browser, "seccomp_profile.json")),
     "d00ad84f5a67031fe2bb64de8d77a5ad9c06adb82935ebdb3c18b5f7ba60a5d0",
@@ -301,11 +296,11 @@ export async function prepareNativePacket(
     await chmod(join(BASE, "bin", file), 0o755);
     assert.equal(digest(join(BASE, "bin", file)), pin);
   }
-  const python = await exportImage(
-    PYTHON_IMAGE,
-    join(BASE, "downloads/python-amd64.tar"),
-    PYTHON_CONFIG,
-    PYTHON_MANIFEST,
+  const command = await exportImage(
+    reviewedImage,
+    join(BASE, "downloads/command-node-amd64.tar"),
+    reviewedImageConfig,
+    reviewedImage.split("@")[1],
   );
   const chromium = await exportImage(
     CHROMIUM_IMAGE,
@@ -335,9 +330,28 @@ export async function prepareNativePacket(
     undefined,
     true,
   );
-  // The remaining reviewed browser composition is retained until its TS replacement passes native CI.
-  // No Python control plane, harness, venv or wheel is copied into this packet.
+  // All root browser executables are sealed TS bundles. The sandbox OS image remains pinned.
   await copy(launcher, join(BASE, "browser-launcher.cjs"));
+  await copy(nativeRuntime, join(BASE, "browser-native.cjs"));
+  assert.equal(JSON.parse(await readFile(join(modules, "package.json"), "utf8")).version, "3.3.2");
+  await mkdir(join(BASE, "node_modules"), { mode: 0o700 });
+  for (const [source, target] of [
+    [modules, "koffi"],
+    [join(dirname(modules), "@koromix/koffi-linux-x64"), "@koromix/koffi-linux-x64"],
+  ] as const) {
+    const destination = join(BASE, "node_modules", target);
+    await mkdir(dirname(destination), { recursive: true, mode: 0o700 });
+    await cp(source, destination, {
+      recursive: true,
+      dereference: false,
+      verbatimSymlinks: true,
+      errorOnExist: true,
+      force: false,
+    });
+    for (const entry of await packetFiles(destination))
+      await chmod(join(destination, entry.path), 0o600);
+  }
+  const browserModules = await packetFiles(join(BASE, "node_modules"));
   await copy(node, join(BASE, "node"));
   await chmod(join(BASE, "node"), 0o755);
   await cp(upstream, join(PACKET, "api"), {
@@ -361,52 +375,11 @@ export async function prepareNativePacket(
   await directories(join(PACKET, "api"));
   await copy(bun, join(PACKET, "bun"));
   await chmod(join(PACKET, "bun"), 0o755);
-  for (const name of await readdir(join(browser, "composition")))
-    if (/\.(py|mjs|nft)$/.test(name))
-      await copy(join(browser, "composition", name), join(PACKET, name));
-  for (const name of ["egress_policy.py", "browser_a1.py", "seccomp_profile.json"])
-    await copy(join(browser, name), join(PACKET, name));
-  await mkdir(join(PACKET, "reviewed"), { mode: 0o700 });
-  for (const name of Object.keys(browserPins))
-    await copy(join(linux, name), join(PACKET, "reviewed", name));
-  const adapt = async (path: string, changes: [string, string][]) => {
-    let text = await readFile(path, "utf8");
-    for (const [old, value] of changes) text = replaceExact(text, old, value);
-    await writeFile(path, text);
-  };
-  const deadline = join(PACKET, "reviewed/deadline_probe.py");
-  await adapt(deadline, [
-    ['BASE = Path("/opt/openbot-qualification-20260925-c8b2")', 'BASE = Path("/opt/obp4")'],
-  ]);
-  await adapt(join(PACKET, "browser_a1.py"), [
-    [
-      'ARCHIVE_SHA = "3f40f8c47fb570b8236014eda17d49d5020a5d9bc01a4a49606471cc82288f89"',
-      "ARCHIVE_SHA = " + JSON.stringify(chromium.archiveSha256),
-    ],
-    ["ARCHIVE_BYTES = 949432320", "ARCHIVE_BYTES = " + chromium.archiveBytes],
-    [browserPins["deadline_probe.py"], digest(deadline)],
-  ]);
+  for (const name of ["socket_probe.mjs", "tunnel_probe.mjs", "browser-entry.mjs", "fixture.nft"])
+    await copy(join(browser, "composition", name), join(PACKET, name));
+  await copy(join(browser, "seccomp_profile.json"), join(PACKET, "seccomp_profile.json"));
   const identity = "deadline-a1-p4" + randomBytes(3).toString("hex"),
-    program = join(PACKET, "run.py");
-  await adapt(program, [
-    ["deadline-a1-comp5", identity],
-    ["7d636842c8633beeaf30c512b6b022693cf1120b563c842dfc4bbc6d9441632e", squid.archiveSha256],
-    ["sha256:5b3968c26dd7b5cd7fdb69ecf90a85c277848993d613ee0fd01efa475892c671", squid.config],
-    ["sha256:fad04b80804e8de9228ddf78229712edb21ef86eb218c4d77de8dad1f1a74b8f", squid.manifest],
-    ["a8f9ebd1770ddc8e55dab7a68d4ec1ec1eebf374bb97cc65cf2c3cb373fc6791", digest(bun)],
-    [
-      "squid=json.loads(docker('image','inspect','openbot-squid77-debian-fixture:20260926'))[0]",
-      "docker('image','tag',SQUID_MANIFEST,'openbot-squid77-debian-fixture:20260926')\n        squid=json.loads(docker('image','inspect','openbot-squid77-debian-fixture:20260926'))[0]",
-    ],
-  ]);
-  await adapt(join(PACKET, "companion.py"), [
-    ["/opt/openbot-qualification-20260925-c8b2/units", "/opt/obp4/units"],
-  ]);
-  await copy(join(browser, "native-network/run_probe.py"), join(PACKET, "snapshot.py"));
-  await copy(join(browser, "native-network/network_probe.py"), join(PACKET, "network_probe.py"));
-  await adapt(join(PACKET, "snapshot.py"), [
-    ["/opt/openbot-qualification-20260925-c8b2/bin/docker", join(BASE, "bin/docker")],
-  ]);
+    program = join(BASE, "browser-native.cjs");
   await prepareNativeTls(join(PACKET, "tls"));
   const nss = join(BASE, "nss-tools");
   await run(["/usr/bin/dpkg-deb", "--extract", join(BASE, "downloads/nss.deb"), nss], 20000);
@@ -420,9 +393,11 @@ export async function prepareNativePacket(
     fixtureParent,
     nativeRoot: join(BASE, "units", identity),
     browserProgram: program,
+    browserProgramSha256: digest(program),
+    browserModules,
     packet: PACKET,
     reviewedBinaries: reviewedBinaryHashes,
-    python,
+    command,
     chromium,
     squid,
     bunSha256: digest(bun),
@@ -433,11 +408,11 @@ export async function prepareNativePacket(
       "fresh native root",
       "offline export hash bound to reviewed image config/layers",
       "exact Squid manifest tagged only inside private daemon",
-      "root-private source copies",
+      "root-private Node, Koffi and TS browser bundles",
       "Bun 1.3.14 from existing CI",
       "original browser listener only inside private network",
       "new synthetic TLS CA/NSS database",
-      "TS packet preparation without Python control/harness/venv/wheel",
+      "TS packet and browser composition without Python launchers/control/harness/venv/wheel",
     ],
   };
   await record(join(BASE, "PLAN.json"), plan);
@@ -458,13 +433,21 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
       value = args[index + 1];
     assert(
       key &&
-        ["--repository", "--upstream", "--bun", "--node", "--launcher"].includes(key) &&
+        [
+          "--repository",
+          "--upstream",
+          "--bun",
+          "--node",
+          "--launcher",
+          "--native",
+          "--koffi",
+        ].includes(key) &&
         value &&
         !values[key],
     );
     values[key] = realpathSync(value);
   }
-  assert.equal(Object.keys(values).length, 5, "Explicit native packet inputs required");
+  assert.equal(Object.keys(values).length, 7, "Explicit native packet inputs required");
   assert.equal(
     values["--repository"],
     resolve(dirname(fileURLToPath(import.meta.url)), "../.."),
@@ -478,6 +461,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
         values["--bun"]!,
         values["--node"]!,
         values["--launcher"]!,
+        values["--native"]!,
+        values["--koffi"]!,
       ),
     ),
   );

@@ -82,8 +82,8 @@ test("harness includes real installed and persistent consumers", () => {
   ]) {
     const plan = select(file);
     for (const job of [
-      "harness",
-      "python-runtime",
+      "contracts",
+      "control-runtime",
       "temporal-qualification",
       "server-container",
       "desktop-product",
@@ -99,7 +99,7 @@ test("runtime Markdown and prompt resources follow actual consumers", () => {
     "apps/server-python/src/openbot_server/prompts/work.md",
   ]) {
     const plan = select(file);
-    assert(plan.required.includes("python-runtime"), file);
+    assert(plan.required.includes("control-runtime"), file);
     assert(plan.required.includes("server-container"), file);
   }
   const web = select("apps/web/src/prompts/tool.md");
@@ -380,13 +380,13 @@ test("transitive runtime consumers keep platform, browser and Python qualificati
     ] as const satisfies readonly JobName[])
       assert(plan.required.includes(job), `${path}: ${job}`);
   }
-  assert(select("packages/employee-publisher/src/index.ts").required.includes("python-runtime"));
+  assert(select("packages/employee-publisher/src/index.ts").required.includes("control-runtime"));
 });
 
 test("actual Work HTTP consumers and conformance inputs retain the cross-language gate", () => {
   const mixed = select("apps/server/src/app.ts");
-  assert(mixed.required.includes("harness"));
-  assert(mixed.required.includes("python-runtime"));
+  assert(mixed.required.includes("contracts"));
+  assert(mixed.required.includes("control-runtime"));
   assert(mixed.workspaces.includes("@openbot/server"));
   assert.deepEqual(select("packages/contract-tests/src/work.ts").required, JOBS);
   for (const path of [
@@ -396,11 +396,11 @@ test("actual Work HTTP consumers and conformance inputs retain the cross-languag
     "apps/web/conformance/work-contract.acceptance.ts",
   ]) {
     const plan = select(path);
-    assert(plan.required.includes("harness"), path);
+    assert(plan.required.includes("contracts"), path);
     assert(plan.workspaces.includes("@openbot/web"));
     assert(plan.workspaces.includes("@openbot/desktop"));
   }
-  assert(!select("apps/web/src/components/ChannelMembersMenu.tsx").required.includes("harness"));
+  assert(!select("apps/web/src/components/ChannelMembersMenu.tsx").required.includes("contracts"));
 });
 
 test("browser probe and boundary test edits execute their actual regression suite", () => {
@@ -417,7 +417,7 @@ test("browser probe and boundary test edits execute their actual regression suit
     assert(plan.rootChecks.includes("test:browser:boundary"), file);
     assert(plan.required.includes("browser-egress"));
     assert(plan.required.includes("browser-product"));
-    assert(!plan.required.includes("python-runtime"));
+    assert(!plan.required.includes("control-runtime"));
   }
   assert(!select("README.md").rootChecks.includes("test:browser:boundary"));
 });
@@ -432,14 +432,14 @@ test("shared browser helpers and Work request schemas select their actual consum
     assert(plan.rootChecks.includes("test:browser:boundary"), file);
     assert(plan.required.includes("browser-product"));
   }
-  assert(select("apps/web/src/native-task-api.ts").required.includes("harness"));
-  assert(!select("apps/web/src/components/ChannelMembersMenu.tsx").required.includes("harness"));
+  assert(select("apps/web/src/native-task-api.ts").required.includes("contracts"));
+  assert(!select("apps/web/src/components/ChannelMembersMenu.tsx").required.includes("contracts"));
 });
 
 test("runtime-nested AGENTS resources cannot impersonate contributor rules", () => {
   assert(
     select("packages/harness/src/openbot_agent_runtime/prompts/AGENTS.md").required.includes(
-      "python-runtime",
+      "control-runtime",
     ),
   );
   assert(select("apps/web/src/resources/AGENTS.md").workspaces.includes("@openbot/web"));
@@ -476,9 +476,9 @@ test("workspace graph rejects malformed package dependencies", () => {
 
 test("the native parser source keeps types and installed Python consumers", () => {
   const plan = select("apps/server-python/src/openbot_server/parser_worker.ts");
-  assert(plan.rootChecks.includes("typecheck:parsers"));
+  assert(plan.rootChecks.includes("typecheck"));
   for (const job of [
-    "python-runtime",
+    "control-runtime",
     "server-container",
     "desktop-product",
   ] as const)
@@ -490,8 +490,8 @@ test("TS Work retains Python coexistence, real Temporal and package consumers", 
   assert(plan.workspaces.includes("@openbot/work"));
   assert(plan.workspaces.includes("@openbot/server"));
   for (const job of [
-    "harness",
-    "python-runtime",
+    "contracts",
+    "control-runtime",
     "temporal-qualification",
     "desktop-product",
   ] as const)

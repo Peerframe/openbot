@@ -7,10 +7,10 @@ import { setTimeout as delay } from "node:timers/promises";
 import type { Readable } from "node:stream";
 import { strictCommandJson } from "../../apps/server/dist/work-command-values.js";
 import { directory, digest, readBytes } from "../linux-execution/protected-io.ts";
-import { nativeBrowserFailure } from "./native-browser-protocol.ts";
+import { nativeBrowserFailure, nativeBrowserStage } from "./native-browser-protocol.ts";
 import { openNativeRelay } from "./native-browser-relay.ts";
 const BASE = "/opt/obp4",
-  PROGRAM = BASE + "/composition-20260926-a1/run.py",
+  PROGRAM = BASE + "/browser-native.cjs",
   LAUNCHER = BASE + "/browser-launcher.cjs";
 const environment = { PATH: "/usr/sbin:/usr/bin:/sbin:/bin", LANG: "C.UTF-8" };
 async function bounded<T>(promise: Promise<T>, milliseconds: number) {
@@ -75,8 +75,8 @@ function exit(child: ChildProcess) {
   return done;
 }
 async function operation(name: "finish" | "abort") {
-  // The reviewed composition is retained until its TS native replacement passes; never search PATH.
-  const child = spawn("/usr/bin/python3", ["-B", PROGRAM, name], {
+  // Only the sealed TS composition can operate on its original unit; never search PATH.
+  const child = spawn(BASE + "/node", [PROGRAM, name], {
     env: environment,
     stdio: "ignore",
   });
@@ -110,6 +110,7 @@ export async function launchNativeBrowser() {
   const plan = privateJson(BASE + "/PLAN.json");
   for (const [path, expected] of [
     [LAUNCHER, plan.browserLauncherSha256],
+    [PROGRAM, plan.browserProgramSha256],
     [BASE + "/node", plan.browserNodeSha256],
   ] as const) {
     const info = lstatSync(path);
@@ -134,7 +135,7 @@ export async function launchNativeBrowser() {
     phase = "readiness";
   const log = openSync(BASE + "/browser-private.log", "wx", 0o600);
   try {
-    child = spawn("/usr/bin/python3", ["-B", PROGRAM, "run"], {
+    child = spawn(BASE + "/node", [PROGRAM, "run"], {
       env: environment,
       stdio: ["ignore", log, log],
     });
@@ -233,7 +234,24 @@ export async function launchNativeBrowser() {
         /* Only bounded validated flags enter the public diagnostic. */
       }
     }
-    console.log(JSON.stringify(nativeBrowserFailure(phase, result)));
+    let nativeStage: string | undefined;
+    try {
+      nativeStage = nativeBrowserStage(
+        new TextDecoder("utf8", { fatal: true }).decode(
+          readBytes(BASE + "/browser-private.log", 2 * 1024 * 1024),
+        ),
+      );
+    } catch {
+      /* Unbounded or changed logs remain private and cannot supply a diagnostic. */
+    }
+    console.log(
+      JSON.stringify(
+        nativeBrowserFailure(phase, {
+          ...(result && typeof result === "object" ? result : {}),
+          nativeStage,
+        }),
+      ),
+    );
     return 1;
   }
   console.log(JSON.stringify(result));

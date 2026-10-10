@@ -78,7 +78,7 @@ export function validateSecurityWorkflow(source: string): void {
       'test "$(npm --version)" = "10.9.9"',
       "npm ci --ignore-scripts --audit=false",
       "npm audit --omit=dev --audit-level=high",
-      "scripts/audit-python.sh",
+      "node --test scripts/production-package-graph.test.ts",
       "umask 077",
       "ghcr.io/trufflesecurity/trufflehog@sha256:deb2af10659a488a14d262a323addcde099d99827a1cf1dc4e93c17915c39f08",
       "${{ github.workspace }}:/repo:ro",
@@ -219,14 +219,10 @@ export function validateSecurityWorkflow(source: string): void {
       );
   }
 
-  const harness = requiredJob(workflow, "harness");
-  const harnessCommands = hasCommands(
-    harness,
+  const contracts = requiredJob(workflow, "contracts");
+  const contractCommands = hasCommands(
+    contracts,
     [
-      "npm run harness:check",
-      "npm run harness:wheel",
-      "npm run harness:quality",
-      "derive-product-lock.py --check",
       "npm run contracts:check",
       "npm run contracts:test",
       "node apps/web/src/test/work-http-probe.mjs",
@@ -249,7 +245,7 @@ export function validateSecurityWorkflow(source: string): void {
     "npm run contracts:http:tls -- --suite models",
   ])
     assert(
-      harnessCommands.split("\n").some((line) => line.trim() === command),
+      contractCommands.split("\n").some((line) => line.trim() === command),
       `Harness requires the complete contract command: ${command}`,
     );
   const gate = requiredJob(workflow, "check");
@@ -278,13 +274,14 @@ export function validateSecurityWorkflow(source: string): void {
   assert.equal(aggregate.env.OPENBOT_CI_NEEDS, "${{ toJSON(needs) }}");
 }
 
-export function validatePythonProductWorkflow(source: string, migrationSource: string): void {
+export function validateProductWorkflow(source: string, migrationSource: string): void {
   const workflow = workflowDocument(source);
   const job = (id: string) => requiredJob(workflow, id);
+  hasCommands(job("control-runtime"), ["npm run dev:smoke", "npm run test:control:ts"], "TS control");
   hasCommands(
     job("temporal-qualification"),
-    ["--engine postgres-mtls --upgrade-archive", "--only-case product-owner-corrections"],
-    "Python Temporal",
+    ["npm run test:work:ts", "npm run test:temporal:boundary"],
+    "TS Temporal",
   );
   hasCommands(
     job("browser-product"),
@@ -301,6 +298,9 @@ export function validatePythonProductWorkflow(source: string, migrationSource: s
     [
       "experiments/work-journey/native-packet-prepare.ts",
       "experiments/work-journey/native-browser-launcher.ts",
+      "experiments/work-journey/native-browser.ts",
+      "--native",
+      "--koffi",
       "bzip2=1.0.8-5.1ubuntu0.1",
       "experiments/linux-execution/qualify-native.ts",
       "experiments/linux-execution/native-helper.ts",
@@ -314,7 +314,7 @@ export function validatePythonProductWorkflow(source: string, migrationSource: s
       "experiments/browser-execution/egress-fixture.Dockerfile",
       "experiments/browser-execution/qualify-egress.ts",
       "--fixture-image",
-      'sudo python3 -B "$root/run_probe.py" --docker /usr/bin/docker',
+      'sudo "$root/node" "$root/network-qualification.cjs" launch',
     ],
     "Browser egress",
   );
@@ -326,7 +326,7 @@ export function validatePythonProductWorkflow(source: string, migrationSource: s
     "Actual TS adjacent upgrade",
   );
   hasCommands(
-    job("harness"),
+    job("contracts"),
     ["npm run contracts:legacy", "npm run test:linux:contracts"],
     "Retained adapter compatibility and protected Host",
   );
@@ -336,7 +336,7 @@ export function validatePythonProductWorkflow(source: string, migrationSource: s
       .map((row) => `${String(row.runner)}:${String(row.arch)}`)
       .sort(),
     ["ubuntu-24.04-arm:arm64", "ubuntu-24.04:amd64"],
-    "Python container keeps both actual architectures.",
+    "TS container keeps both actual architectures.",
   );
   hasCommands(
     container,
@@ -346,7 +346,7 @@ export function validatePythonProductWorkflow(source: string, migrationSource: s
       "--file deploy/server/Dockerfile",
       "deploy/server/smoke-product.ts openbot-server:product-smoke",
     ],
-    "Python product container",
+    "TS product container",
   );
   const preview = job("desktop-product");
   assert.equal(preview.source["runs-on"], "macos-15");
@@ -371,25 +371,25 @@ export function validatePythonProductWorkflow(source: string, migrationSource: s
   assert.equal(
     job("synthetic-migration").uses,
     "./.github/workflows/s7-migration.yml",
-    "Python migration uses same-commit qualification.",
+    "SQL migration uses same-commit qualification.",
   );
   const migration = workflowDocument(migrationSource);
   const migrationOn = asMapping(migration.source.on);
   assert(
     migrationOn !== undefined && Object.hasOwn(migrationOn, "workflow_call"),
-    "Python migration needs same-commit qualification.",
+    "SQL migration needs same-commit qualification.",
   );
   hasCommands(
     requiredJob(migration, "synthetic-migration"),
     ["node experiments/s7-migration/qualify.mjs --report"],
-    "Python migration",
+    "SQL migration",
   );
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const workflow = await readFile(new URL("../.github/workflows/ci.yml", import.meta.url), "utf8");
   validateSecurityWorkflow(workflow);
-  validatePythonProductWorkflow(
+  validateProductWorkflow(
     workflow,
     await readFile(new URL("../.github/workflows/s7-migration.yml", import.meta.url), "utf8"),
   );

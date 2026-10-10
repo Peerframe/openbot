@@ -42,8 +42,8 @@ jobs:
           status=$?
           set -e
           node scripts/check-credential-findings.ts "${RUNNER_TEMP}/trufflehog-results.jsonl" "$status"
-      - name: Audit the complete Python product closure
-        run: sh scripts/audit-python.sh
+      - name: Verify the locked production package closure
+        run: node --test scripts/production-package-graph.test.ts
 
   validate:
     runs-on: ubuntu-24.04
@@ -359,8 +359,8 @@ jobs:
     needs: scope
     if: contains(fromJSON(needs.scope.outputs.plan).required, 'desktop-product')
 
-  python-runtime:
-    name: Python control, Worker and Temporal (Linux amd64)
+  control-runtime:
+    name: TS control and persisted authority (Linux amd64)
     runs-on: ubuntu-24.04
     # Keep API/SQL parity independent of the long recovery and browser qualification jobs.
     timeout-minutes: 50
@@ -382,39 +382,18 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22.22.2
-      - name: Verify Python and Server journeys in the isolated Linux fixture
-        run: node scripts/test-runtime-linux.ts
       - name: Select the reviewed npm version for control-plane parity
         run: npm install --global --ignore-scripts npm@10.9.9
       - name: Install existing TypeScript reference dependencies
         run: npm ci --ignore-scripts --audit=false
-      - name: Bootstrap optional model and durable Worker qualification
-        shell: bash
-        run: |
-          OPENBOT_CONTROL_PYTHON=python3.12 apps/server-python/scripts/bootstrap-worker.sh
-          apps/server-python/.worker-venv/bin/python -m pip check
-          apps/server-python/.worker-venv/bin/python -I apps/server-python/scripts/verify_environment.py --worker
-          apps/server-python/.worker-venv/bin/python -B experiments/work-journey/probe.py --help > /dev/null
-      - name: Verify fresh Python and Web source startup
+      - name: Verify fresh TS and Web source startup
         run: npm run dev:smoke
         env:
           OPENBOT_DEV_SMOKE_DATABASE_URL: postgres://openbot:openbot-ci-only@127.0.0.1:5545/openbot_python_dev_smoke
-      - name: Compile the frozen test-only Server oracle
-        run: npm run oracle:build
-      - name: Bootstrap the isolated Python control reference
-        run: apps/server-python/scripts/bootstrap.sh
-        env:
-          OPENBOT_CONTROL_PYTHON: python3.12
-      - name: Bootstrap the separate SDK for persisted control integration
-        run: packages/harness/scripts/bootstrap.sh
-      - name: Verify Python control models and HTTP boundaries
-        run: apps/server-python/scripts/check.sh -q
-      - name: Compare Python and TypeScript against owned PostgreSQL
-        run: npm run test:control:python
-        env:
-          OPENBOT_TEMPORAL_TEST_PYTHON: ${{ github.workspace }}/apps/server-python/.worker-venv/bin/python
+      - name: Verify TS control, persisted authority and frozen compatibility
+        run: npm run test:control:ts
     needs: scope
-    if: contains(fromJSON(needs.scope.outputs.plan).required, 'python-runtime')
+    if: contains(fromJSON(needs.scope.outputs.plan).required, 'control-runtime')
 
   temporal-qualification:
     name: Temporal durable recovery and upgrade (Linux amd64)
@@ -432,65 +411,24 @@ jobs:
           npm install --global --ignore-scripts npm@10.9.9
           npm ci --ignore-scripts --audit=false
           npm exec -- turbo run build --filter=@openbot/db
-      - name: Bootstrap the existing isolated Control and Runtime environments
-        run: |
-          apps/server-python/scripts/bootstrap.sh
-          packages/harness/scripts/bootstrap.sh
-        env:
-          OPENBOT_CONTROL_PYTHON: python3.12
-      - name: Prepare the exact durable Worker environment
-        shell: bash
-        run: |
-          python3.12 -m venv "$RUNNER_TEMP/openbot-work-reference"
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -m pip install \
-            -r apps/server-python/requirements-worker.lock
-          packages/harness/scripts/install-wheel.sh "$RUNNER_TEMP/openbot-work-reference/bin/python"
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -m pip check
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -I apps/server-python/scripts/verify_environment.py --worker
       - name: Qualify TS Work ownership, recovery and replay with mutual TLS
         run: npm run test:work:ts
-        env:
-          OPENBOT_TEMPORAL_TEST_PYTHON: ${{ runner.temp }}/openbot-work-reference/bin/python
       - name: Qualify TS mTLS rotation, engine/database SIGKILL and incompatible schemas
         run: npm run test:temporal:boundary
       - name: Qualify adjacent Temporal release recovery with PostgreSQL and mutual TLS
         shell: bash
-        env:
-          PYTHONPATH: apps/server-python/src:experiments/work-journey:experiments/linux-execution
         run: |
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B -m unittest discover -s experiments/linux-execution -p 'test_*.py' -q
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B -m pytest -q experiments/linux-execution/protected_host_test.py experiments/linux-execution/protected_native_test.py
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B -m pytest -q packages/harness/tests/test_temporal_agent.py experiments/work-journey/test_product_deferred_workflow.py
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B -m unittest discover -s experiments/work-journey -p 'test_*.py' -v
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
-            --engine postgres-mtls --only-case concurrent-runs
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
-            --engine postgres-mtls --only-case model-receipt-recovery
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
-            --engine postgres-mtls --only-case product-model-recovery
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
-            --engine postgres-mtls --only-case product-publication-recovery
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
-            --engine postgres-mtls --only-case product-concurrent-runs
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
-            --engine postgres-mtls --only-case product-deferred-approval
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
-            --engine postgres-mtls --only-case product-closed-repair
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
-            --engine postgres-mtls --only-case product-owner-corrections
           curl --proto '=https' --tlsv1.2 --fail --location --silent --show-error \
             --max-time 180 --max-filesize 93822307 \
             --output "$RUNNER_TEMP/temporal_1.31.3_linux_amd64.tar.gz" \
             https://github.com/temporalio/temporal/releases/download/v1.31.3/temporal_1.31.3_linux_amd64.tar.gz
           # The runner verifies pinned archive/member sizes and hashes before executing either binary.
           OPENBOT_TEMPORAL_PREVIOUS_ARCHIVE="$RUNNER_TEMP/temporal_1.31.3_linux_amd64.tar.gz" npm run test:temporal:upgrade
-          "$RUNNER_TEMP/openbot-work-reference/bin/python" -B experiments/work-journey/probe.py \
-            --engine postgres-mtls --upgrade-archive "$RUNNER_TEMP/temporal_1.31.3_linux_amd64.tar.gz"
     needs: scope
     if: contains(fromJSON(needs.scope.outputs.plan).required, 'temporal-qualification')
 
   browser-product:
-    name: Python product browser recovery (Linux amd64)
+    name: TS product browser recovery (Linux amd64)
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
@@ -530,10 +468,14 @@ jobs:
           node_modules/.bin/esbuild experiments/work-journey/native-browser-launcher.ts \
             --bundle --platform=node --format=cjs --target=node22 \
             --outfile="$RUNNER_TEMP/openbot-browser-launcher.cjs"
+          node_modules/.bin/esbuild experiments/work-journey/native-browser.ts \
+            --bundle --platform=node --format=cjs --target=node22 --external:koffi \
+            --outfile="$RUNNER_TEMP/openbot-browser-native.cjs"
           sudo env GITHUB_ACTIONS=true "$(command -v node)" --experimental-strip-types \
             experiments/work-journey/native-packet-prepare.ts \
             --repository "$GITHUB_WORKSPACE" \
             --launcher "$RUNNER_TEMP/openbot-browser-launcher.cjs" \
+            --native "$RUNNER_TEMP/openbot-browser-native.cjs" --koffi "$GITHUB_WORKSPACE/node_modules/koffi" \
             --upstream "$RUNNER_TEMP/openbot-browser-upstream" \
             --bun "$(command -v bun)" --node "$(command -v node)"
       - name: Qualify the migrated TS native adapter on original systemd and runsc
@@ -683,10 +625,13 @@ jobs:
           root=/opt/openbot-qualification-20260925-c8b2/network-20260926-a2
           sudo mkdir -p /opt/openbot-qualification-20260925-c8b2
           sudo mkdir -m 700 "$root"
-          sudo install -m 600 experiments/browser-execution/native-network/network_probe.py "$root/"
-          sudo install -m 600 experiments/browser-execution/native-network/run_probe.py "$root/"
+          node_modules/.bin/esbuild experiments/browser-execution/native-network/network-qualification.ts \
+            --bundle --platform=node --format=cjs --target=node22 \
+            --outfile="$RUNNER_TEMP/network-qualification.cjs"
+          sudo install -m 755 "$(command -v node)" "$root/node"
+          sudo install -m 600 "$RUNNER_TEMP/network-qualification.cjs" "$root/"
           sudo install -m 600 experiments/browser-execution/native-network/fixture.nft "$root/"
-          sudo python3 -B "$root/run_probe.py" --docker /usr/bin/docker
+          sudo "$root/node" "$root/network-qualification.cjs" launch
       - name: Retain content-free native network result
         if: always()
         run: |
@@ -705,12 +650,12 @@ jobs:
     if: contains(fromJSON(needs.scope.outputs.plan).required, 'browser-egress')
 
   synthetic-migration:
-    name: Python migration and paired restore (synthetic)
+    name: SQL migration and paired restore (synthetic)
     uses: ./.github/workflows/s7-migration.yml
     needs: scope
     if: contains(fromJSON(needs.scope.outputs.plan).required, 'synthetic-migration')
 
-  # Python product qualification and retained compatibility must each succeed independently.
+  # TS product qualification and retained compatibility must each succeed independently.
   check:
     if: always()
     needs:
@@ -719,8 +664,8 @@ jobs:
       - validate
       - portable
       - windows-worker-host
-      - harness
-      - python-runtime
+      - contracts
+      - control-runtime
       - temporal-qualification
       - browser-product
       - browser-egress
@@ -757,10 +702,10 @@ jobs:
       - id: scope
         name: Select from immutable PR base/head or full main qualification
         run: node scripts/ci-scope.ts --event "$GITHUB_EVENT_PATH" --github-output "$GITHUB_OUTPUT"
-  harness:
-    name: Installed harness, Python quality and Work contract
+  contracts:
+    name: TS Work and public consumer contracts
     needs: scope
-    if: contains(fromJSON(needs.scope.outputs.plan).required, 'harness')
+    if: contains(fromJSON(needs.scope.outputs.plan).required, 'contracts')
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -772,21 +717,6 @@ jobs:
           node-version: 22.22.2
           cache: npm
       - run: npm ci --ignore-scripts --audit=false
-      - name: Prepare separate locked Python environments
-        run: |-
-          packages/harness/scripts/bootstrap.sh
-          apps/server-python/scripts/bootstrap.sh
-          apps/server-python/scripts/bootstrap-worker.sh
-          packages/harness/scripts/bootstrap-quality.sh
-        env:
-          PYTHON: python3.12
-          OPENBOT_CONTROL_PYTHON: python3.12
-      - name: Verify the independent core, public consumers and clean wheel
-        run: |-
-          npm run harness:check
-          npm run harness:wheel
-          npm run harness:quality
-          apps/server-python/.worker-venv/bin/python -I apps/server-python/scripts/derive-product-lock.py --check
       - name: Verify the real TS HTTP/HTTPS contract consumers
         run: |-
           npm run contracts:check

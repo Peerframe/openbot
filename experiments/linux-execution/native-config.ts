@@ -21,7 +21,10 @@ export const reviewedBinaryHashes = {
   runsc: "c0f4ec0ac1198975d5cf919a78f2302426de096f69eebd33e50125c3ca42d699",
 };
 export const reviewedImage =
-  "python@sha256:6e13e65c55e33adf203d77ee371cf8bf5d81bd4902ef07565721f46bf44917af";
+  "node@sha256:713cfbf4a0ac19f40e1bb9919893e126b74a5c8cf5d0623c9f89515c8f74c6fa";
+export const reviewedImageTag = "node:24.21.0-bookworm-slim";
+export const reviewedImageConfig =
+  "sha256:1cc81b664ff520c96dde07893e717ff070f9f7bd8bbcec50e10fa2f3cb5c4b1c";
 export type NativeConfiguration = {
   base: string;
   binaries: string;
@@ -87,7 +90,7 @@ export function validateNativeConfiguration(config: NativeConfiguration) {
     same(config.binaryHashes, reviewedBinaryHashes) && config.image === reviewedImage,
     "missing_native_pin",
   );
-  requireFact(/^python:[A-Za-z0-9._-]+$/.test(config.imageTag), "image_tag_changed");
+  requireFact(config.imageTag === reviewedImageTag, "image_tag_changed");
   // Quotes/newlines cannot be introduced into the fixed TOML or systemd path properties.
   for (const value of [
     config.base,

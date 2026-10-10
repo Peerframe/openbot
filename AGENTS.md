@@ -13,11 +13,10 @@ the full contribution process are in [CONTRIBUTING](CONTRIBUTING.md).
 | `apps/web` | React Web UI ([rules](apps/web/AGENTS.md), [design entry](docs/design/README.md)) |
 | `apps/desktop` | Thin Electron shell that runs the product locally ([rules](apps/desktop/AGENTS.md)) |
 | `apps/server` | Single TypeScript control plane ([rules](apps/server/AGENTS.md), [ADR-0050](docs/decisions/0050-typescript-control-plane.md)) |
-| `apps/server-python` | Legacy Python control retained until packaging/CI retirement is approved ([rules](apps/server-python/AGENTS.md)) |
 | `apps/node`, `providers/*` | Worker Node and execution providers |
 | `packages/protocol` | Shared wire contracts ([rules](packages/protocol/AGENTS.md)) |
+| `packages/work` | TypeScript Temporal workflows and activities |
 | `packages/db` | PostgreSQL schema and migrations |
-| `packages/harness` | Python agent runtime ([rules](packages/harness/AGENTS.md)) |
 | `experiments/*` | Probes and fixtures that CI still runs; not product code |
 | `tests/oracles/legacy-server` | Frozen comparison input, never a product fallback ([rules](tests/oracles/legacy-server/AGENTS.md)) |
 | `docs/decisions` | ADRs: the accepted architecture decisions |

@@ -30,7 +30,7 @@ import {
   allowlistedEnvironment,
   OwnedDockerFixture,
   startControlPostgres,
-} from "../python-acceptance-fixture.ts";
+} from "../acceptance-fixture.ts";
 import { qualifyPythonDrain } from "./work-drain.ts";
 import { qualifyWorkProcessRecovery } from "./work-process.ts";
 import { qualifyDeadlineCloseRace } from "./work-deadline.ts";

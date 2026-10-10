@@ -17,7 +17,7 @@ import {
   allowlistedEnvironment,
   OwnedDockerFixture,
   startControlPostgres,
-} from "../../scripts/python-acceptance-fixture.ts";
+} from "../../scripts/acceptance-fixture.ts";
 import { startTemporalFixture } from "../../scripts/temporal-fixture.ts";
 import { reserveLoopbackPort } from "./product-native-controller.ts";
 

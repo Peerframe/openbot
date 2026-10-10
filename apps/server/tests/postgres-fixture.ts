@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { createDatabase } from "@openbot/db";
 import {
   OwnedDockerFixture, allowlistedEnvironment, startControlPostgres,
-} from "../../../scripts/python-acceptance-fixture.ts";
+} from "../../../scripts/acceptance-fixture.ts";
 
 export async function disposableDatabase() {
   const root = fileURLToPath(new URL("../../../", import.meta.url));

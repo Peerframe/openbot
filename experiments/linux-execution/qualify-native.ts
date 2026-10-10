@@ -22,7 +22,13 @@ import compatibility from "../../scripts/integration/fixtures/command-compatibil
 };
 import { LinuxNative, type NativeReservation } from "./linux-native.ts";
 import { nativeClock } from "./kernel-facts.ts";
-import { reviewedBinaryHashes, reviewedImage, type NativeConfiguration } from "./native-config.ts";
+import {
+  reviewedBinaryHashes,
+  reviewedImage,
+  reviewedImageTag,
+  reviewedImageConfig,
+  type NativeConfiguration,
+} from "./native-config.ts";
 import { cgroupMembers, NativeCommandFailure } from "./native-unit.ts";
 import {
   directory,
@@ -85,14 +91,14 @@ async function main() {
     join(dirname(modules), "@koromix/koffi-linux-x64"),
     join(base, "code/node_modules/@koromix/koffi-linux-x64"),
   );
-  const archive = join(packet, "downloads/python-amd64.tar"),
+  const archive = join(packet, "downloads/command-node-amd64.tar"),
     config: NativeConfiguration = {
       base,
       binaries: join(packet, "bin"),
       archive,
       archiveSha256: digest(archive),
       image: reviewedImage,
-      imageTag: "python:3.12.13-slim-bookworm",
+      imageTag: reviewedImageTag,
       helper: join(base, "code/native-helper.cjs"),
       helperSha256: digest(join(base, "code/native-helper.cjs")),
       node: join(base, "code/node"),
@@ -106,13 +112,12 @@ async function main() {
       readBytes(join(packet, "PLAN.json"), 2 * 1024 * 1024),
     ),
   ) as {
-    python: { archiveSha256: string; manifest: string; config: string };
+    command: { archiveSha256: string; manifest: string; config: string };
   };
   requireFact(
-    plan.python.archiveSha256 === config.archiveSha256 &&
-      plan.python.manifest === reviewedImage.split("@")[1] &&
-      plan.python.config ===
-        "sha256:64d91f7b885eed272bba87909446b12ff408d4aaa5f1a0e9ca787bbea1a020b9",
+    plan.command.archiveSha256 === config.archiveSha256 &&
+      plan.command.manifest === reviewedImage.split("@")[1] &&
+      plan.command.config === reviewedImageConfig,
     "reviewed_image_changed",
   );
   const native = await LinuxNative.open(config),
@@ -127,9 +132,9 @@ async function main() {
   operation.command.inputDigest = "sha256:" + createHash("sha256").update("[]").digest("hex");
   operation.command.limits.outputMiB = 64;
   operation.command.argv = [
-    "/usr/local/bin/python3",
-    "-c",
-    "import os,time\nf=open('/output/result.csv','xb');f.write(b'one,execution\\n');f.flush();os.fsync(f.fileno());f.close()",
+    "/usr/local/bin/node",
+    "-e",
+    "const fs = require('node:fs'); const fd = fs.openSync('/output/result.csv', 'wx'); fs.writeFileSync(fd, 'one,execution\\n'); fs.fsyncSync(fd); fs.closeSync(fd);",
   ];
   operation.command.output = { name: "result.csv", mediaType: "text/csv", maxBytes: 1024 };
   const binding = {

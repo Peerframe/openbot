@@ -126,7 +126,15 @@ test("NSS fixture imports and exposes only the generated public CA", async (t) =
 });
 test("packet preparation rejects an ordinary host before selecting paths or writing", async () => {
   await assert.rejects(
-    prepareNativePacket("/unused", "/unused", "/unused", "/unused", "/unused"),
+    prepareNativePacket(
+      "/unused",
+      "/unused",
+      "/unused",
+      "/unused",
+      "/unused",
+      "/unused",
+      "/unused",
+    ),
     /Disposable Linux CI only/,
   );
 });

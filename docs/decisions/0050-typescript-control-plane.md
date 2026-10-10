@@ -236,3 +236,23 @@ native Worker lifecycle/recovery qualification before removing other platform bi
 The existing installed app, profiles and rollback sets stay untouched until separate installation
 approval. Python retirement remains required by this ADR; approved implementation and qualified
 retirement are distinct from acceptance of the remaining standalone-Node packaging deviation.
+
+### Retained decisions after Python source retirement
+
+P5 preserves the established [Owner session](../research/python-owner-auth.md),
+[identity input](../research/python-identity-inputs.md), [identity transaction](../research/python-identity-transactions.md),
+[profile](../research/python-profile-details.md), [conversation](../research/python-conversations.md),
+[message read](../research/python-message-reads.md), [read projection](../research/python-control-read-slice.md)
+and [schema compatibility](../research/python-schema-compatibility.md) contracts through TS control
+cohorts, frozen compatibility outputs and real HTTP/SQL consumers. These records explain the
+semantics retained by the migration; their old setup commands are historical.
+
+The new Work path retains the [task authority](../research/python-task-authority.md),
+[model service](../research/python-model-services.md), [admission](../research/work-domain-admission.md),
+[artifact publication](../research/work-artifact-publication.md) and
+[lookup-only reconciliation](../research/work-reconciliation-commands.md) decisions.
+The [former supervisor](../research/python-control-runtime-supervision.md),
+[runtime activation](../research/python-runtime-activation.md) and
+[headless acceptance](../research/headless-runtime-acceptance.md) records document the retired
+process/wheel implementation; TS Work recovery, Linux native execution and packaged lifecycle checks
+replace those mechanisms without introducing a second authority or retrying unknown effects.

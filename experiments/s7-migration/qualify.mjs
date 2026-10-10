@@ -14,7 +14,7 @@ import { FileArtifactStorage } from "../../tests/oracles/legacy-server/dist/arti
 import {
   allowlistedEnvironment,
   OwnedDockerFixture,
-} from "../../scripts/python-acceptance-fixture.ts";
+} from "../../scripts/acceptance-fixture.ts";
 import { materializeHistory, readJson, root, sha256, verifySources } from "./sources.ts";
 
 // This entry point has no database URL or input-archive option: it owns every tested destination.

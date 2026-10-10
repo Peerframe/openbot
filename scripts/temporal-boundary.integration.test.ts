@@ -14,7 +14,7 @@ import {
   allowlistedEnvironment,
   OwnedDockerFixture,
   startControlPostgres,
-} from "./python-acceptance-fixture.ts";
+} from "./acceptance-fixture.ts";
 import { startTemporalFixture } from "./temporal-fixture.ts";
 import { issueTlsFixture } from "./tls-fixture.ts";
 import { heldWork } from "./integration/work-upgrade.ts";

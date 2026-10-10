@@ -2,8 +2,8 @@
 
 This is the single TypeScript control plane from [ADR-0050](../../docs/decisions/0050-typescript-control-plane.md).
 Read [README](README.md), the [repository map](../../docs/REPOSITORY_MAP.md) and the
-[shared protocol rules](../../packages/protocol/AGENTS.md). Legacy Python packaging/CI retirement
-is still pending; it is not a fallback or an additional writer inside this Server.
+[shared protocol rules](../../packages/protocol/AGENTS.md). Default packaging and required checks use TS. Legacy Python ownership values remain only for
+deployment-time history drain and compatibility evidence.
 
 Keep identity, authorization, routing, approvals, budgets, task/action facts, publication and audit
 in the Server. Validate original authority in the owning transaction; preserve committed results

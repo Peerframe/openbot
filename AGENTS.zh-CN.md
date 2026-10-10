@@ -12,11 +12,10 @@
 | `apps/web` | React 网页界面（[规则](apps/web/AGENTS.md)、[设计入口](docs/design/README.md)） |
 | `apps/desktop` | 在本机运行产品的轻量 Electron 外壳（[规则](apps/desktop/AGENTS.md)） |
 | `apps/server` | 单一 TypeScript 控制面（[规则](apps/server/AGENTS.md)、[ADR-0050](docs/decisions/0050-typescript-control-plane.md)） |
-| `apps/server-python` | 旧 Python 控制面，打包与 CI 退役尚待批准（[规则](apps/server-python/AGENTS.md)） |
 | `apps/node`、`providers/*` | 工作节点和执行提供方 |
 | `packages/protocol` | 共享的接口契约（[规则](packages/protocol/AGENTS.md)） |
+| `packages/work` | TypeScript Temporal 工作流与 Activity |
 | `packages/db` | PostgreSQL 表结构和迁移 |
-| `packages/harness` | Python 智能体运行时（[规则](packages/harness/AGENTS.md)） |
 | `experiments/*` | CI 仍在运行的探针和测试夹具，不是产品代码 |
 | `tests/oracles/legacy-server` | 冻结的对照输入，绝不作为产品后备（[规则](tests/oracles/legacy-server/AGENTS.md)） |
 | `docs/decisions` | ADR：已采纳的架构决定 |

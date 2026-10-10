@@ -54,3 +54,16 @@ test("host snapshot reads only selected state and cannot mutate Docker or firewa
     ),
   );
 });
+
+test("Linux snapshot reads the actual bounded forwarding fields without a native module", {
+  skip: process.platform !== "linux",
+}, async () => {
+  const value = await snapshotHost(
+    async (args) => (args[0]!.endsWith("nft") ? '{"nftables":[]}' : ""),
+    "/fixed/docker",
+    "/fixed/config",
+  );
+  assert.deepEqual(value.containers, []);
+  assert.deepEqual(Object.keys(value.sysctl), ["ipv4/ip_forward", "ipv6/conf/all/forwarding"]);
+  for (const forwarding of Object.values(value.sysctl)) assert.match(forwarding, /^[01]\n$/);
+});

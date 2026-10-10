@@ -19,7 +19,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   OwnedDockerFixture,
   allowlistedEnvironment,
-} from "../../scripts/python-acceptance-fixture.ts";
+} from "../../scripts/acceptance-fixture.ts";
 import { compileEgressPolicy } from "./egress-policy.ts";
 export function egressArguments(argv: readonly string[]): { image: string; output: string } {
   assert(

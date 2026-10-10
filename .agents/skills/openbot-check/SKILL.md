@@ -18,11 +18,9 @@ For a PR use its verified base/head; do not infer the diff from a stale remote b
    when needed; `npm exec -- turbo run build --filter=@openbot/web^...` uses the existing graph.
    The TS Server uses its workspace unit/integration commands, `npm run test:control:ts`,
    `npm run test:work:ts`, and `npm run contracts:http:ts` / `contracts:http:tls` for affected
-   product contracts. These fixtures own disposable PostgreSQL/Temporal resources. The old Python
-   gates remain required while retirement is pending. Core-only Python work uses `packages/harness/scripts/bootstrap.sh`, package `check.sh` and
-   `bootstrap-quality.sh` → `quality.sh --core`, without the product environment. Optional Temporal
-   and control adapters retain default `quality.sh` against the Worker closure and affected
-   integration checks. Work HTTP uses `npm run contracts:test`, which builds cold prerequisites;
+   product contracts. These fixtures own disposable PostgreSQL/Temporal resources.
+   `test:temporal:boundary` and `test:temporal:upgrade` retain transport, crash and upgrade gates.
+   Work HTTP uses `npm run contracts:test`, which builds cold prerequisites;
    direct Vitest assumes they already exist.
 3. For rules/skills/prompts run `npm run docs:check` and `npm run research:check`, plus the affected
    workflow tests. Verify actual discovery and a realistic reading task; file existence is insufficient.

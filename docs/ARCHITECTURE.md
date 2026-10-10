@@ -18,7 +18,7 @@ flowchart LR
   Node --> Provider[Execution Provider]
 ```
 
-## The Server is moving from Python to TypeScript
+## TypeScript Server migration
 
 [ADR-0050](decisions/0050-typescript-control-plane.md) moves the Server from `apps/server-python`
 to `apps/server` one route group at a time. Both use the same PostgreSQL schema
@@ -29,16 +29,16 @@ to `apps/server` one route group at a time. Both use the same PostgreSQL schema
 | P0–P2 | Done: shared contracts, the TS public entry, and forwarding to a private Python upstream |
 | P3 | Done: when selected, TS owns the Owner session and 109 of the 121 product operations, and is the only SSE publisher |
 | P4 | Done: when selected, TS also owns Work execution, its Temporal workers and the agent runtime; open Python histories drain on Python workers |
-| P5 | In progress: the explicit TS candidate is a single Server with direct Web/Worker entry and deployment-time legacy drain checks. The `apps/server` rename is implemented; Python retirement, complete qualification and the standalone-Node target decision remain open |
+| P5 | In progress: the explicit TS candidate is a single Server with direct Web/Worker entry and deployment-time legacy drain checks. The `apps/server` rename and Python control/harness retirement are implemented; final CI, package, UI and installation qualification remain open. Standalone Node is retained after the Electron permission probe failed |
 
-The P5 candidate removes group selection and forwarding. Default packaging still uses the legacy
-Python path pending retirement approval; the existing installation is not changed by this candidate.
+The P5 candidate removes group selection and forwarding. Default packaging uses TS with standalone
+Node; the existing installation changes only after review, backup and explicit installation approval.
 
 ## Runtime boundaries
 
 | Component | Responsibility | Authority it does not have |
 | --- | --- | --- |
-| Server (`apps/server`, `apps/server-python`) | Owner sessions, Bot and channel identity, membership, routing, task state, approvals, audit, agent execution and plugin access | Models and external data cannot override Server policy |
+| Server (`apps/server`) | Owner sessions, Bot and channel identity, membership, routing, task state, approvals, audit, agent execution and plugin access | Models and external data cannot override Server policy |
 | `apps/web` | Conversations, drafts, task supervision, settings and extension presentation | No database access, provider credentials or authorization decisions |
 | `apps/desktop` | Bundles the client, a typed restricted bridge, connection policy and the local Server lifecycle | Renderer content cannot call arbitrary main-process operations |
 | `apps/node` | Outbound enrollment, advertised capabilities, assignment lifecycle and Provider dispatch | Declaring a capability does not authorize a task or side effect |

@@ -1,3 +1,0 @@
-# Testable product Worker: runtime roots plus the existing test runner.
--r requirements-product.txt
--r requirements-dev.txt

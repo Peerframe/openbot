@@ -1,6 +1,6 @@
 /** Read-only identity/firewall comparison; never inspects container credentials or changes the host. */
 import { createHash } from "node:crypto";
-import { readKernelText } from "../linux-execution/output-capacity.ts";
+import { closeSync, constants, openSync, readSync } from "node:fs";
 import { requireFact } from "../linux-execution/protected-io.ts";
 import type { NativeCommand } from "../linux-execution/native-unit.ts";
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -22,11 +22,29 @@ export function nftSemantics(value: unknown): unknown {
     );
   return value;
 }
+// The two fixed sysctls need no capacity/FFI machinery; keep this read-only snapshot portable
+// inside the minimal kernel fixture, with a smaller bound than the general proc reader.
+function readForwarding(path: string) {
+  requireFact(
+    ["/proc/sys/net/ipv4/ip_forward", "/proc/sys/net/ipv6/conf/all/forwarding"].includes(path),
+    "unexpected_forwarding_path",
+  );
+  const fd = openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+  try {
+    const bytes = Buffer.alloc(4);
+    const length = readSync(fd, bytes, 0, bytes.length, null);
+    const value = bytes.subarray(0, length).toString("utf8");
+    requireFact(/^[01]\n$/.test(value), "invalid_forwarding_value");
+    return value;
+  } finally {
+    closeSync(fd);
+  }
+}
 export async function snapshotHost(
   run: NativeCommand,
   docker: string,
   config: string,
-  read = readKernelText,
+  read = readForwarding,
 ) {
   const cli = [docker, "--config", config, "--host", "unix:///var/run/docker.sock"],
     identities = (await run([...cli, "ps", "--no-trunc", "--format", "{{.ID}}"]))

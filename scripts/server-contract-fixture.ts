@@ -10,7 +10,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import { createDatabase } from "@openbot/db";
 import { DevProcessOwner } from "./dev-processes.ts";
-import { allowlistedEnvironment, OwnedDockerFixture, startControlPostgres } from "./python-acceptance-fixture.ts";
+import { allowlistedEnvironment, OwnedDockerFixture, startControlPostgres } from "./acceptance-fixture.ts";
 import { contractPluginFixture } from "./contract-plugin-fixture.ts";
 import { prepareProduct } from "../deploy/server/prepare-product.ts";
 import { startTemporalFixture } from "./temporal-fixture.ts";

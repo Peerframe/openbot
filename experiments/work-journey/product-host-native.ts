@@ -29,6 +29,8 @@ import { nativeClock } from "../linux-execution/kernel-facts.ts";
 import {
   reviewedBinaryHashes,
   reviewedImage,
+  reviewedImageTag,
+  reviewedImageConfig,
   trustedFile,
   type NativeConfiguration,
 } from "../linux-execution/native-config.ts";
@@ -159,21 +161,20 @@ async function prepare() {
       readBytes(PACKET + "/PLAN.json", 2 * 1024 * 1024),
     ),
   ) as {
-    python: { archiveSha256: string; manifest: string; config: string };
+    command: { archiveSha256: string; manifest: string; config: string };
   };
   requireFact(
-    plan.python.manifest === reviewedImage.split("@")[1] &&
-      plan.python.config ===
-        "sha256:64d91f7b885eed272bba87909446b12ff408d4aaa5f1a0e9ca787bbea1a020b9",
+    plan.command.manifest === reviewedImage.split("@")[1] &&
+      plan.command.config === reviewedImageConfig,
     "reviewed_image_changed",
   );
   const native: NativeConfiguration = {
     base: NATIVE,
     binaries: PACKET + "/bin",
-    archive: PACKET + "/downloads/python-amd64.tar",
-    archiveSha256: plan.python.archiveSha256,
+    archive: PACKET + "/downloads/command-node-amd64.tar",
+    archiveSha256: plan.command.archiveSha256,
     image: reviewedImage,
-    imageTag: "python:3.12.13-slim-bookworm",
+    imageTag: reviewedImageTag,
     helper: "/opt/obp5/code/native-helper.cjs",
     helperSha256: digest("/opt/obp5/code/native-helper.cjs"),
     node: NODE,

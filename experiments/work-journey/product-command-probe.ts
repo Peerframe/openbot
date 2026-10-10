@@ -23,7 +23,7 @@ import {
   allowlistedEnvironment,
   OwnedDockerFixture,
   startControlPostgres,
-} from "../../scripts/python-acceptance-fixture.ts";
+} from "../../scripts/acceptance-fixture.ts";
 import {
   startCommandHost,
   commandArguments,
@@ -176,7 +176,7 @@ export async function qualifyCommand(options: {
       timing,
       policy: {
         id: "offline-command",
-        image: "python@sha256:6e13e65c55e33adf203d77ee371cf8bf5d81bd4902ef07565721f46bf44917af",
+        image: "node@sha256:713cfbf4a0ac19f40e1bb9919893e126b74a5c8cf5d0623c9f89515c8f74c6fa",
         limits: {
           nanoCPUs: 1000000000,
           memoryMiB: 256,

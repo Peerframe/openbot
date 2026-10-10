@@ -12,13 +12,12 @@
   "include": [
     "**/*.ts",
     "../apps/desktop/scripts/**/*.ts",
-    "../apps/server-python/scripts/*.ts",
     "../deploy/server/*.ts",
     "../experiments/work-journey/desktop-temporal/*.ts",
-    "../apps/server-python/tests/command_node_vectors.ts",
     "../experiments/s7-migration/*.ts",
     "../experiments/browser-execution/*.ts",
-    "../experiments/linux-execution/*.ts"
+    "../experiments/linux-execution/*.ts",
+    "../experiments/browser-execution/native-network/*.ts"
   ],
   "exclude": [
     "node_modules",

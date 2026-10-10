@@ -11,7 +11,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { createDatabase } from "@openbot/db";
 import { createEntry } from "../../../server/dist/app.js";
 import { WorkService } from "../../../server/dist/work-service.js";
-import { allowlistedEnvironment, OwnedDockerFixture, startControlPostgres } from "../../../../scripts/python-acceptance-fixture.ts";
+import { allowlistedEnvironment, OwnedDockerFixture, startControlPostgres } from "../../../../scripts/acceptance-fixture.ts";
 
 export async function runWorkHttpProbe(serve = false) {
   const root = fileURLToPath(new URL("../../../../", import.meta.url));

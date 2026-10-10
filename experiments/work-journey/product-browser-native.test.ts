@@ -79,3 +79,30 @@ test("failure diagnostics discard private values and malformed native flags", as
   assert.equal(value.nativeBrowserFailure.nativeDeadlineSeconds, 600);
   assert.throws(() => nativeBrowserFailure("arbitrary private phase", {}));
 });
+
+test("native stage diagnostics accept only complete fixed lines and never leak raw log values", async () => {
+  const { nativeBrowserStage, nativeBrowserFailure } = await import("./native-browser-protocol.ts");
+  assert.equal(
+    nativeBrowserStage(
+      "private cookie\nnative-browser-stage:packet\nnative-browser-stage:images\nraw password",
+    ),
+    "images",
+  );
+  for (const raw of [
+    "native-browser-stage:secret-value",
+    "prefix native-browser-stage:unit",
+    "native-browser-stage:unit\rcookie",
+    "x".repeat(2 * 1024 * 1024 + 1),
+  ])
+    assert.equal(nativeBrowserStage(raw), undefined);
+  assert.equal(
+    nativeBrowserFailure("readiness", { nativeStage: "images", log: "private" })
+      .nativeBrowserFailure.nativeStage,
+    "images",
+  );
+  assert(
+    !JSON.stringify(
+      nativeBrowserFailure("readiness", { nativeStage: "private", log: "private" }),
+    ).includes("private"),
+  );
+});

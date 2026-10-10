@@ -55,7 +55,7 @@ if (argv.includes("--check")) {
     (await readFile(controlOutput, "utf8")) !== controlSchema
   )
     throw new Error("Control/Work contracts are stale; run npm run contracts:generate.");
-  console.log("Control/Work OpenAPI and Work types match TS; Python parity is a separate gate.");
+  console.log("Control/Work OpenAPI and Work types match TS; frozen legacy compatibility is a separate gate.");
 } else {
   await writeFile(openapiOutput, schema);
   await writeFile(controlOutput, controlSchema);

@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
-import { allowlistedEnvironment, OwnedDockerFixture, startControlPostgres } from "../../scripts/python-acceptance-fixture.ts";
+import { allowlistedEnvironment, OwnedDockerFixture, startControlPostgres } from "../../scripts/acceptance-fixture.ts";
 import { startTemporalFixture } from "../../scripts/temporal-fixture.ts";
 import { issueTlsFixture } from "../../scripts/tls-fixture.ts";
 const [image] = process.argv.slice(2);
