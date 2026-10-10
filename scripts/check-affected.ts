@@ -46,8 +46,9 @@ else {
           `${name}: no package-local tests; consumer coverage only, not a zero-test pass.`,
         );
     }
-    // Existing Turbo graph builds dependencies. Sequential phases prevent duplicate writers.
-    for (const task of ["typecheck", "test", "build"])
+    // Tests import their own compiled entry too; ^build alone only prepares dependencies.
+    // Sequential phases prevent duplicate writers and make cold checkouts reproducible.
+    for (const task of ["build", "typecheck", "test"])
       run([
         "exec",
         "--",
