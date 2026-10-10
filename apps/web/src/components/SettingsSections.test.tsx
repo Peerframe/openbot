@@ -72,7 +72,9 @@ it("lists audit events with tombstone labels and pages by the Server cursor", as
       expect.anything(),
     );
     expect(view.container.querySelectorAll(".audit-list li")).toHaveLength(3);
-    expect(view.container.textContent).toContain("unknown kind");
+    // An unknown type shows its category in Chinese, never the internal code.
+    expect(view.container.textContent).toContain("其他事件");
+    expect(view.container.textContent).not.toContain("unknown kind");
     expect(view.container.textContent).not.toContain("显示更早的记录");
   } finally {
     await view.unmount();
@@ -198,6 +200,42 @@ it.each([
     await interact(() => undefined);
     expect(view.container.textContent).toContain(`更改主 Bot：${title}`);
     expect(view.container.textContent).not.toContain("internal-");
+  } finally {
+    await view.unmount();
+  }
+});
+
+it("names every audit event in Chinese, falling back to its category for an unknown type", async () => {
+  const event = (id: string, type: string, category: string) => ({
+    id,
+    type,
+    category,
+    createdAt: "2026-10-10T00:00:00.000Z",
+    details: {},
+  });
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(
+      respond({
+        events: [
+          event("a", "AUTH_LOGIN_SUCCEEDED", "authentication"),
+          event("b", "MODEL_CONNECTION_CREATED", "settings"),
+          event("c", "AUTOMATION_PAUSED", "other"),
+          event("d", "AUTH_PASSKEY_ENROLLED", "authentication"),
+        ],
+      }),
+    ),
+  );
+  const view = await renderComponent(<AuditLogSettings />);
+  try {
+    await interact(() => undefined);
+    const titles = Array.from(view.container.querySelectorAll("strong")).map(
+      (item) => item.textContent,
+    );
+    expect(titles).toEqual(
+      expect.arrayContaining(["登录成功", "添加模型服务", "暂停例行任务", "登录事件"]),
+    );
+    expect(view.container.textContent).not.toMatch(/auth|passkey|automation/iu);
   } finally {
     await view.unmount();
   }
