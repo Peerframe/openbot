@@ -300,6 +300,7 @@ export function validatePythonProductWorkflow(source: string, migrationSource: s
     job("browser-product"),
     [
       "experiments/work-journey/native-packet-prepare.ts",
+      "experiments/work-journey/native-browser-launcher.ts",
       "bzip2=1.0.8-5.1ubuntu0.1",
       "experiments/linux-execution/qualify-native.ts",
       "experiments/linux-execution/native-helper.ts",

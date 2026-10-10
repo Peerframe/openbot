@@ -12,10 +12,12 @@ import {
   downloadNative,
   exportArguments,
   packetFiles,
+  packetCaptureBytes,
   prepareNativePacket,
   replaceExact,
   SQUID_TAG,
 } from "./native-packet-prepare.ts";
+import { SubprocessCommander } from "../linux-execution/subprocess.ts";
 import { prepareNativeTls } from "./native-packet-tls.ts";
 async function root(t: TestContext) {
   const path = await mkdtemp(join(tmpdir(), "openbot-native-input-"));
@@ -124,7 +126,7 @@ test("NSS fixture imports and exposes only the generated public CA", async (t) =
 });
 test("packet preparation rejects an ordinary host before selecting paths or writing", async () => {
   await assert.rejects(
-    prepareNativePacket("/unused", "/unused", "/unused", "/unused"),
+    prepareNativePacket("/unused", "/unused", "/unused", "/unused", "/unused"),
     /Disposable Linux CI only/,
   );
 });
@@ -195,4 +197,19 @@ test("real OpenSSL browser fixture verifies trusted TLS and rejects hostname and
     }
   }
   await assert.rejects(prepareNativeTls(path), /EEXIST/);
+});
+
+test("packet image/build capture fits the existing bounded commander", async () => {
+  const command = new SubprocessCommander({
+    binary: process.execPath,
+    captureLimit: packetCaptureBytes,
+  });
+  const result = await command.run(["-e", "process.stdout.write('fixture transport ready')"], 3000);
+  assert(result.ok);
+  assert.equal(result.stdout, "fixture transport ready");
+  const overflow = await command.run(
+    ["-e", `process.stdout.write("x".repeat(${packetCaptureBytes + 1}))`],
+    3000,
+  );
+  assert(!overflow.ok && overflow.outputTruncated && overflow.uncertain);
 });

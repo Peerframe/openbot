@@ -527,9 +527,13 @@ jobs:
           node_modules/.bin/esbuild experiments/work-journey/product_command_node.ts \
             --bundle --platform=node --format=cjs --target=node22 \
             --outfile="$RUNNER_TEMP/openbot-command-node.cjs"
+          node_modules/.bin/esbuild experiments/work-journey/native-browser-launcher.ts \
+            --bundle --platform=node --format=cjs --target=node22 \
+            --outfile="$RUNNER_TEMP/openbot-browser-launcher.cjs"
           sudo env GITHUB_ACTIONS=true "$(command -v node)" --experimental-strip-types \
             experiments/work-journey/native-packet-prepare.ts \
             --repository "$GITHUB_WORKSPACE" \
+            --launcher "$RUNNER_TEMP/openbot-browser-launcher.cjs" \
             --upstream "$RUNNER_TEMP/openbot-browser-upstream" \
             --bun "$(command -v bun)" --node "$(command -v node)"
       - name: Qualify the migrated TS native adapter on original systemd and runsc

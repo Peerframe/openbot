@@ -1140,7 +1140,11 @@ disposable Linux CI boundary. No upstream source is copied.
 
 The browser certificate fixture reuses the existing system OpenSSL test-certificate approach
 with EC P-256 named curves, a two-day disposable CA, exact example.com SAN/serverAuth leaves,
-and a separate self-signed unknown-CA leaf. A dedicated private pipe carries the CA signing
-key; the packet never stores it. Generated public CA trust is imported only into the packet's
+and a separate self-signed unknown-CA leaf. A fixed POSIX pipeline carries the CA signing
+key; the packet never stores it. The real Linux OpenSSL3 loader refuses reopening Node
+socketpair descriptors via /dev/fd, so the adapter supplies a kernel pipe using literal argv
+and a clean environment, with bounded capture and process-group termination. The
+[OpenSSL3 loader](https://github.com/openssl/openssl/blob/openssl-3.0.22/apps/lib/apps.c)
+and actual Linux3.0.22/macOS handshake tests verify this fixture-only integration. Generated public CA trust is imported only into the packet's
 new NSS database. Real TLS handshakes cover the valid name, wrong name and unknown CA.
 This replaces Python cryptography in fixture setup without changing product TLS provisioning.

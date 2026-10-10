@@ -332,6 +332,7 @@ test("Linux kernel and protected Host gates cannot be omitted or conditionally b
     ["harness", "npm run test:linux:contracts"],
     ["browser-product", "experiments/linux-execution/qualify-native.ts"],
     ["browser-product", "experiments/work-journey/native-packet-prepare.ts"],
+    ["browser-product", "experiments/work-journey/native-browser-launcher.ts"],
     ["browser-product", "bzip2=1.0.8-5.1ubuntu0.1"],
   ] as const) {
     assert.throws(() =>

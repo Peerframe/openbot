@@ -44,13 +44,7 @@ async function fixture(t: TestContext, overflow = false, success = false) {
   const replacement = t.mock.method(childProcess, "spawn", (command: unknown, args: unknown) => {
     calls++;
     assert.equal(command, "/usr/bin/sudo");
-    assert.deepEqual(args, [
-      "-n",
-      "/usr/bin/python3",
-      "-B",
-      "/opt/obp4/browser_launcher.py",
-      "--root",
-    ]);
+    assert.deepEqual(args, ["-n", "/opt/obp4/node", "/opt/obp4/browser-launcher.cjs", "--root"]);
     return realSpawn(process.execPath, ["-e", script], { stdio: "pipe" });
   });
   syncBuiltinESMExports();

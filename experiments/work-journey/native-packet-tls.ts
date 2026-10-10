@@ -4,32 +4,58 @@ import { randomBytes } from "node:crypto";
 import { spawn } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { Writable } from "node:stream";
 
 async function openssl(args: string[], key?: Buffer) {
-  const child = spawn("/usr/bin/openssl", args, {
-    env: { PATH: "/usr/bin:/bin", LANG: "C", LC_ALL: "C" },
-    stdio: ["ignore", "pipe", "pipe", "pipe"],
-  });
+  // Node's Unix stdio is a socketpair. OpenSSL3 cannot reopen it via /dev/fd on Linux.
+  // A fixed POSIX pipeline supplies a real kernel pipe; "$@" keeps every argument literal.
+  const child = key
+    ? spawn(
+        "/bin/sh",
+        [
+          "-c",
+          'exec /bin/cat | exec /usr/bin/openssl "$@"',
+          "openssl-fixture",
+          ...args.map((value) => (value === "/dev/fd/3" ? "/dev/stdin" : value)),
+        ],
+        {
+          env: { PATH: "/usr/bin:/bin", LANG: "C", LC_ALL: "C" },
+          detached: true,
+          stdio: "pipe",
+        },
+      )
+    : spawn("/usr/bin/openssl", args, {
+        env: { PATH: "/usr/bin:/bin", LANG: "C", LC_ALL: "C" },
+        detached: true,
+        stdio: "pipe",
+      });
+  const stop = () => {
+    if (child.pid) {
+      try {
+        process.kill(-child.pid, "SIGKILL");
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw error;
+      }
+    }
+  };
   let count = 0;
   const chunks: Buffer[] = [];
   const closed = new Promise<number | null>((resolve, reject) => {
     child.once("error", reject);
     child.once("close", resolve);
   });
-  const timer = setTimeout(() => child.kill("SIGKILL"), 20000);
-  const pipe = child.stdio[3] as Writable;
+  const timer = setTimeout(stop, 20000);
+  const pipe = child.stdin!;
   // A failed command can close the pipe before key delivery; its exit remains mandatory.
   pipe.on("error", () => {});
   pipe.end(key);
   child.stdout!.on("data", (chunk: Buffer) => {
     count += chunk.length;
     if (count <= 64 * 1024) chunks.push(chunk);
-    else child.kill("SIGKILL");
+    else stop();
   });
   child.stderr!.on("data", (chunk: Buffer) => {
     count += chunk.length;
-    if (count > 64 * 1024) child.kill("SIGKILL");
+    if (count > 64 * 1024) stop();
   });
   try {
     assert.equal(await closed, 0, "Fixture certificate command failed");

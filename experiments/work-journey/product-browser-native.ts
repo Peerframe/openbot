@@ -6,6 +6,7 @@ import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import { z } from "zod";
+import { nativeBrowserFailure } from "./native-browser-protocol.ts";
 import { strictCommandJson } from "../../apps/server/dist/work-command-values.js";
 import { jsonFile, privateJson, record } from "./browser-product-fixture.ts";
 import { qualifyBrowser, remoteBrowserConfiguration } from "./product-browser-probe.ts";
@@ -54,11 +55,11 @@ export async function qualifyNativeBrowser(
     (error: unknown) => (error as NodeJS.ErrnoException).code === "ENOENT",
     "Use a fresh owned browser output",
   );
-  // This root entry remains the existing disposable packet until its composition migration lands.
+  // This fixed root entry uses the disposable packet and its original native composition.
   // It never searches for a Host, accepts a remote target, or renews a native unit.
   const child = spawn(
     "/usr/bin/sudo",
-    ["-n", "/usr/bin/python3", "-B", "/opt/obp4/browser_launcher.py", "--root"],
+    ["-n", "/opt/obp4/node", "/opt/obp4/browser-launcher.cjs", "--root"],
     { stdio: "pipe" },
   );
   const exit = new Promise<number | null>((resolve, reject) => {
@@ -181,50 +182,4 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   });
 }
 
-/** Fixed public diagnostics; raw root errors, subprocess streams and configuration remain private. */
-export function nativeBrowserFailure(phase: string, value: unknown) {
-  const phases = ["readiness", "product", "finish", "expiry"];
-  assert(phases.includes(phase), "Native failure phase changed");
-  const object = (v: unknown): Record<string, unknown> =>
-    v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
-  const outer = object(value),
-    item = object(outer.nativeBrowserFailure),
-    flags = object(item.nativeFlags ?? value);
-  const codes = [
-    "verified_tls_tunnel_missing",
-    "tunnel_revocation_missing",
-    "tunnel_revocation_failed",
-    "native_timeout_changed",
-    "native_cgroup_not_empty",
-    "native_host_state_changed",
-    "image_name_missing",
-    "image_digest_missing",
-    "native_acceptance_failed",
-    "fixture_failed",
-  ];
-  const result: Record<string, unknown> = {
-    phase: typeof item.phase === "string" && phases.includes(item.phase) ? item.phase : phase,
-    code: typeof item.code === "string" && codes.includes(item.code) ? item.code : "fixture_failed",
-    nativeFlags: Object.fromEntries(
-      [
-        "accepted",
-        "actualRunsc",
-        "actualSquid",
-        "actualProductJourney",
-        "originalNativeExpiryVerified",
-        "failedOriginalUnitClosed",
-        "productionUnchanged",
-        "ownedRuntimeRemoved",
-      ]
-        .filter((k) => typeof flags[k] === "boolean")
-        .map((k) => [k, flags[k]]),
-    ),
-  };
-  for (const name of ["nativeDeadlineSeconds", "existingContainerCount"]) {
-    const n = item[name] ?? outer[name];
-    if (typeof n === "number" && Number.isInteger(n) && n >= 0 && n <= 65535) result[name] = n;
-  }
-  for (const name of ["failureCode", "cleanupFailureCode"])
-    if (typeof item[name] === "string" && codes.includes(item[name])) result[name] = item[name];
-  return { nativeBrowserFailure: result };
-}
+export { nativeBrowserFailure } from "./native-browser-protocol.ts";

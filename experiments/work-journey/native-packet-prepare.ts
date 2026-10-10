@@ -55,6 +55,7 @@ const environment = {
   DOCKER_BUILDKIT: "1",
 };
 const run = command(environment);
+export const packetCaptureBytes = 2 * 1024 * 1024;
 const browserPins = {
   "deadline_probe.py": "ef19d46fd24bc5512ae880bcc895da8639f0d895e22347edf832d0a1a7950bb4",
   "sandbox.py": "5859262340afb15ca7ac3153a586dbc96339fc71576fa4cd1a01151423fa7465",
@@ -135,7 +136,7 @@ async function exportImage(
   daemon = false,
 ) {
   assert(!present(path), "Fresh OCI archive required");
-  await run(exportArguments(image, path, manifest, daemon), 600000, 4 * 1024 * 1024);
+  await run(exportArguments(image, path, manifest, daemon), 600000, packetCaptureBytes);
   await chmod(path, 0o600);
   return {
     image,
@@ -221,6 +222,7 @@ export async function prepareNativePacket(
   upstream: string,
   bun: string,
   node: string,
+  launcher: string,
 ) {
   assert(
     process.platform === "linux" &&
@@ -242,8 +244,7 @@ export async function prepareNativePacket(
   await mkdir(PACKET, { mode: 0o700 });
   directory(BASE);
   const linux = join(repository, "experiments/linux-execution"),
-    browser = join(repository, "experiments/browser-execution"),
-    here = join(repository, "experiments/work-journey");
+    browser = join(repository, "experiments/browser-execution");
   await verifyBrowserUpstream(upstream);
   for (const [name, pin] of Object.entries(browserPins))
     assert.equal(digest(join(linux, name)), pin, "Reviewed browser helper changed");
@@ -324,7 +325,7 @@ export async function prepareNativePacket(
       browser,
     ],
     600000,
-    8 * 1024 * 1024,
+    packetCaptureBytes,
   );
   const squid = await exportImage(
     SQUID_TAG,
@@ -335,7 +336,9 @@ export async function prepareNativePacket(
   );
   // The remaining reviewed browser composition is retained until its TS replacement passes native CI.
   // No Python control plane, harness, venv or wheel is copied into this packet.
-  await copy(join(here, "p4_native_browser.py"), join(BASE, "browser_launcher.py"));
+  await copy(launcher, join(BASE, "browser-launcher.cjs"));
+  await copy(node, join(BASE, "node"));
+  await chmod(join(BASE, "node"), 0o755);
   await cp(upstream, join(PACKET, "api"), {
     recursive: true,
     dereference: false,
@@ -422,6 +425,8 @@ export async function prepareNativePacket(
     chromium,
     squid,
     bunSha256: digest(bun),
+    browserLauncherSha256: digest(join(BASE, "browser-launcher.cjs")),
+    browserNodeSha256: digest(join(BASE, "node")),
     packagingAdaptations: [
       "root-owned /opt ancestor on disposable runner",
       "fresh native root",
@@ -452,13 +457,13 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
       value = args[index + 1];
     assert(
       key &&
-        ["--repository", "--upstream", "--bun", "--node"].includes(key) &&
+        ["--repository", "--upstream", "--bun", "--node", "--launcher"].includes(key) &&
         value &&
         !values[key],
     );
     values[key] = realpathSync(value);
   }
-  assert.equal(Object.keys(values).length, 4, "Explicit native packet inputs required");
+  assert.equal(Object.keys(values).length, 5, "Explicit native packet inputs required");
   assert.equal(
     values["--repository"],
     resolve(dirname(fileURLToPath(import.meta.url)), "../.."),
@@ -471,6 +476,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
         values["--upstream"]!,
         values["--bun"]!,
         values["--node"]!,
+        values["--launcher"]!,
       ),
     ),
   );
