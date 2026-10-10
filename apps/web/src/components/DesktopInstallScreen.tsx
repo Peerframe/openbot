@@ -95,9 +95,14 @@ export function DesktopInstallScreen({
         }
         status={state.localDocker ? "正在等待 Docker 里的任务引擎启动…" : "正在等待任务引擎启动…"}
         actions={
-          <button className="ob-setup-primary" type="button" onClick={() => void install()}>
-            重试
-          </button>
+          <>
+            <button className="ob-setup-primary" type="button" onClick={() => void install()}>
+              重试
+            </button>
+            <button className="ob-setup-secondary" type="button" onClick={onBack}>
+              更改连接方式
+            </button>
+          </>
         }
       />
     );
