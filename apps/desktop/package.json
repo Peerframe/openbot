@@ -35,7 +35,7 @@
     "@openbot/protocol": "0.0.0",
     "@openbot/web": "0.0.0",
     "@types/write-file-atomic": "4.0.3",
-    "electron": "44.3.0",
+    "electron": "44.9.1",
     "electron-builder": "26.16.1"
   },
   "optionalDependencies": {
